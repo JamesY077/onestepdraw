@@ -1,5 +1,5 @@
 <template>
-  <div class="chat-page">
+  <div class="chat-page" :class="chatMode.isCreate ? 'is-create' : 'is-chat'">
     <div v-if="sidebarOpen" class="sidebar-backdrop" aria-hidden="true" @click="sidebarOpen = false" />
 
     <AgentSidebar
@@ -54,6 +54,26 @@
         </div>
       </header>
 
+      <div v-if="chatMode.isCreate" class="create-strip">
+        <span class="create-dot" aria-hidden="true" />
+        <span class="create-steps">
+          <strong>创作对话</strong>
+          <span class="create-step">说需求</span>
+          <span class="create-arrow" aria-hidden="true">→</span>
+          <span class="create-step">答几轮问题</span>
+          <span class="create-arrow" aria-hidden="true">→</span>
+          <span class="create-step">进剪辑台</span>
+        </span>
+        <button
+          v-if="activeProjectId"
+          type="button"
+          class="create-jump"
+          @click="router.push(`/edit/${activeProjectId}`)"
+        >
+          打开项目 ↗
+        </button>
+      </div>
+
       <div v-if="store.authExpired" class="expired-banner" role="alert">
         AIPing 登录已过期，正在返回登录页…
       </div>
@@ -70,7 +90,7 @@
           <div class="welcome-mark">
             <BrandMark :size="46" />
           </div>
-          <h2>今天想做什么？</h2>
+          <h2>{{ welcomeTitle }}</h2>
           <p class="welcome-copy">
             {{
               chatMode.isCreate
@@ -103,9 +123,11 @@
           <p class="welcome-note">
             <span class="note-dot" aria-hidden="true" />
             {{
-              localAgentStore.isLocalEngine
-                ? `由 ${localAgentStore.selectedLabel} 执行创作 · 对话只保存在这台设备`
-                : '已连接 AIPing · 对话只保存在这台设备'
+              chatMode.isCreate
+                ? '创作对话会自动建立剪辑项目 · 生成的素材按段落入轨'
+                : localAgentStore.isLocalEngine
+                  ? `由 ${localAgentStore.selectedLabel} 执行创作 · 对话只保存在这台设备`
+                  : '已连接 AIPing · 对话只保存在这台设备'
             }}
           </p>
         </section>
@@ -172,7 +194,10 @@ const draft = ref('')
 const sidebarOpen = ref(false)
 const stickToBottom = ref(true)
 
-const suggestions = [
+const suggestions = computed(() => (chatMode.isCreate ? createSuggestions : chatSuggestions))
+
+const welcomeTitle = computed(() => (chatMode.isCreate ? '想拍一支什么样的片？' : '今天想做什么？'))
+const chatSuggestions = [
   {
     title: '写一段产品文案',
     description: '克制、有质感的新品首发文案',
@@ -208,6 +233,34 @@ const suggestions = [
     description: '直接出视频，默认 768P',
     prompt: '帮我生成一段 5 秒的视频：雨夜霓虹灯下的复古跑车缓缓驶过，镜头低角度跟拍，16:9，768P。',
     icon: 'M4 6.5h16v11H4zM10.2 10 14 12l-3.8 2z',
+  },
+]
+
+/** 创作对话的快捷入口：直接能开拍的题，先澄清再进剪辑台。 */
+const createSuggestions = [
+  {
+    title: '拍一支雨夜短片',
+    description: '15 秒氛围片，先进剪辑台',
+    prompt: '我想拍一支 15 秒的雨夜短片：便利店门口的橘猫等雨停，暖灯和湿地面反光，安静、有电影感。',
+    icon: 'M4 6.5h16v11H4zM10.2 10 14 12l-3.8 2z',
+  },
+  {
+    title: '做一支产品展示片',
+    description: '从卖点到镜头节奏',
+    prompt: '帮我做一支 20 秒的极简香水产品展示片，白色背景、磨砂玻璃瓶、缓慢推近，最后落在品牌名上。',
+    icon: 'M4 6.5h16v11H4zM7.5 10.2a1.3 1.3 0 1 0 0 .01M4.6 16.5l4.3-4 3.2 2.8 2.5-2.2 4.8 3.6',
+  },
+  {
+    title: '把故事拆成分镜',
+    description: '先出拍摄单，再逐段落轨',
+    prompt: '把「一个人在深夜的城市里寻找灵感」拆成 4 个镜头，做成 20 秒短片，先给我拍摄单。',
+    icon: 'M4 6.5h16v11H4zM4 10h16M8 6.5v11',
+  },
+  {
+    title: '拍一个品牌氛围片',
+    description: '情绪、色调、运镜一次说清',
+    prompt: '给一个手冲咖啡品牌拍一支 15 秒氛围片：清晨木桌、水流、蒸汽、手部特写，暖色调，情绪安静。',
+    icon: 'M12 4.2 14 9l4.8 2-4.8 2-2 4.8-2-4.8L5.2 11 10 9z',
   },
 ]
 
@@ -858,6 +911,186 @@ onBeforeUnmount(() => {
 
   .welcome {
     padding-top: 44px;
+  }
+}
+
+/* ── 创作对话：略暖的纸张底色，和普通对话的白区隔开 ── */
+.chat-page.is-create {
+  background: #fbf8f1;
+}
+
+.is-create .chat-main {
+  background: transparent;
+}
+
+.is-create .chat-header {
+  border-bottom-color: #ece3d2;
+  background: rgba(253, 250, 243, 0.92);
+}
+
+.is-create .heading-sep {
+  color: #dccfb6;
+}
+
+.is-create .heading-sub {
+  color: #a2916f;
+}
+
+.is-create .mode-badge {
+  border-color: #e6dac2;
+  background: #fffdf7;
+  color: #8a7550;
+}
+
+.is-create .mode-badge.is-create {
+  border-color: #2b2318;
+  background: #2b2318;
+  color: #fdf8ee;
+}
+
+.is-create .project-shortcut {
+  border-color: #d8c8a8;
+  color: #7a6338;
+}
+
+.is-create .new-chat-icon:hover {
+  border-color: #ece3d2;
+  background: #fdfaf3;
+}
+
+.is-create .local-badge {
+  border-color: #e8dfcd;
+  background: #fdfaf3;
+  color: #9b8b6b;
+}
+
+.create-strip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: none;
+  padding: 7px 20px;
+  border-bottom: 1px solid #efe6d4;
+  background: linear-gradient(90deg, #f8f0df 0%, #fdfaf3 58%, #fdfaf3 100%);
+  color: #7d6a45;
+  font-size: 11px;
+}
+
+.create-dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: #c08a3e;
+  box-shadow: 0 0 0 3px rgba(192, 138, 62, 0.16);
+}
+
+.create-steps {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.create-steps strong {
+  color: #5c4a26;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.create-step {
+  color: #99875f;
+}
+
+.create-arrow {
+  color: #cbb894;
+}
+
+.create-jump {
+  margin-left: auto;
+  padding: 3px 9px;
+  border: 1px solid #ddcba7;
+  border-radius: 999px;
+  background: #fffdf7;
+  color: #6f5a2d;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.create-jump:hover {
+  border-color: #cbb387;
+  background: #fdf5e4;
+}
+
+.is-create .welcome h2 {
+  color: #211c14;
+}
+
+.is-create .welcome-mark {
+  filter: drop-shadow(0 10px 24px rgba(150, 112, 48, 0.16));
+}
+
+.is-create .welcome-copy {
+  color: #8d7f63;
+}
+
+.is-create .suggestion-card {
+  border-color: #ece3d2;
+  background: #fffdf8;
+}
+
+.is-create .suggestion-card:hover {
+  border-color: #dccdae;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(140, 106, 46, 0.09);
+}
+
+.is-create .suggestion-icon {
+  border-color: #eee3cd;
+  background: #f7f0e1;
+  color: #96763c;
+}
+
+.is-create .suggestion-arrow {
+  color: #ccb995;
+}
+
+.is-create .suggestion-card:hover .suggestion-arrow {
+  color: #7d6330;
+}
+
+.is-create .note-dot {
+  background: #c08a3e;
+}
+
+.is-create .welcome-note {
+  color: #a4957a;
+}
+
+.is-create .composer-area {
+  background: linear-gradient(180deg, rgba(251, 248, 241, 0) 0%, #fbf8f1 24%);
+}
+
+.is-create .chat-scroll::-webkit-scrollbar-thumb {
+  background: #e3d8c3;
+  background-clip: padding-box;
+}
+
+@media (max-width: 640px) {
+  .create-strip {
+    padding: 6px 14px;
+  }
+
+  .create-step,
+  .create-arrow {
+    display: none;
   }
 }
 </style>

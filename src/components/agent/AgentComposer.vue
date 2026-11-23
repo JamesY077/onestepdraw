@@ -1,8 +1,8 @@
 <template>
   <div class="composer-wrap">
-    <div class="composer" :class="{ 'is-focused': focused, 'is-streaming': disabled }">
+    <div class="composer" :class="{ 'is-focused': focused, 'is-streaming': disabled, 'is-create': isCreateTone }">
       <div class="composer-modes">
-        <div class="mode-switch" role="group" aria-label="对话模式">
+        <div class="mode-switch conversation-switch" role="group" aria-label="对话模式">
           <button
             type="button"
             :class="{ active: !chatMode.isCreate }"
@@ -18,26 +18,6 @@
             @click="chatMode.setConversation('create')"
           >
             创作对话
-          </button>
-        </div>
-
-        <div class="mode-switch" role="group" aria-label="自动模式">
-          <button
-            type="button"
-            :class="{ active: !chatMode.isAuto }"
-            :aria-pressed="!chatMode.isAuto"
-            @click="chatMode.setAutomation('default')"
-          >
-            默认模式
-          </button>
-          <button
-            type="button"
-            class="auto-switch"
-            :class="{ active: chatMode.isAuto }"
-            :aria-pressed="chatMode.isAuto"
-            @click="chatMode.setAutomation('auto')"
-          >
-            完全模式
           </button>
         </div>
 
@@ -138,6 +118,30 @@
             </div>
           </div>
 
+          <div class="mode-switch automation-switch" role="group" aria-label="自动模式">
+            <button
+              type="button"
+              :class="{ active: !chatMode.isAuto }"
+              :aria-pressed="!chatMode.isAuto"
+              title="默认模式：先分轮问清需求"
+              @click="chatMode.setAutomation('default')"
+            >
+              默认模式
+            </button>
+            <button
+              type="button"
+              class="auto-switch"
+              :class="{ active: chatMode.isAuto }"
+              :aria-pressed="chatMode.isAuto"
+              title="完全模式：模型自行决策，直接产出"
+              @click="chatMode.setAutomation('auto')"
+            >
+              完全模式
+            </button>
+          </div>
+        </div>
+
+        <div class="composer-actions">
           <div v-if="!localAgentStore.isLocalEngine" ref="modelRef" class="model-anchor">
             <button
               type="button"
@@ -168,6 +172,7 @@
                   autocomplete="off"
                   spellcheck="false"
                   @keydown.stop
+                  @keydown.esc.stop="modelMenuOpen = false"
                 />
               </div>
 
@@ -215,9 +220,6 @@
               </div>
             </div>
           </div>
-        </div>
-
-        <div class="composer-actions">
           <button
             v-if="disabled"
             type="button"
@@ -260,10 +262,14 @@ import { BUILTIN_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 
-const props = withDefaults(defineProps<{ disabled?: boolean; placeholder?: string }>(), {
-  disabled: false,
-  placeholder: '',
-})
+const props = withDefaults(
+  defineProps<{ disabled?: boolean; placeholder?: string; tone?: 'auto' | 'create' | 'chat' }>(),
+  {
+    disabled: false,
+    placeholder: '',
+    tone: 'auto',
+  },
+)
 const emit = defineEmits<{
   (event: 'send', content: string): void
   (event: 'stop'): void
@@ -273,6 +279,10 @@ const router = useRouter()
 const localAgentStore = useLocalAgentStore()
 const modelStore = useModelStore()
 const chatMode = useChatModeStore()
+/** tone=auto 跟随模式开关；剪辑台里固定为创作色。 */
+const isCreateTone = computed(() =>
+  props.tone === 'auto' ? chatMode.isCreate : props.tone === 'create',
+)
 const engineRef = ref<HTMLElement | null>(null)
 const engineMenuOpen = ref(false)
 const modelRef = ref<HTMLElement | null>(null)
@@ -562,7 +572,6 @@ defineExpose({ focus })
 }
 
 .model-menu {
-  width: 336px;
   max-height: min(64vh, 430px);
   display: flex;
   flex-direction: column;
@@ -688,6 +697,13 @@ defineExpose({ focus })
   box-shadow:
     0 1px 2px rgba(17, 17, 16, 0.04),
     0 14px 40px rgba(17, 17, 16, 0.12);
+}
+
+/* 模型选择在发送按钮左边，菜单要向右对齐，避免超出视口。 */
+.engine-menu.model-menu {
+  right: 0;
+  left: auto;
+  width: 336px;
 }
 
 .engine-menu-head {
@@ -913,5 +929,108 @@ defineExpose({ focus })
   .model-menu {
     width: min(86vw, 336px);
   }
+
+  .engine-menu.model-menu {
+    width: min(78vw, 336px);
+  }
+
+  .automation-switch button {
+    padding: 3px 7px;
+  }
+}
+
+/* ── 创作对话：输入框换成温暖的纸张色，和普通对话一眼区分 ── */
+.composer.is-create {
+  border-color: #e8ddc9;
+  background: #fffdf8;
+  box-shadow:
+    0 1px 2px rgba(120, 92, 44, 0.04),
+    0 10px 32px rgba(120, 92, 44, 0.07);
+}
+
+.composer.is-create.is-focused {
+  border-color: #d3bd93;
+  box-shadow:
+    0 1px 2px rgba(120, 92, 44, 0.05),
+    0 12px 36px rgba(120, 92, 44, 0.1);
+}
+
+.composer.is-create .conversation-switch {
+  border-color: #ece0c9;
+  background: #f9f2e3;
+}
+
+.composer.is-create .conversation-switch button {
+  color: #a08f6d;
+}
+
+.composer.is-create .conversation-switch button:hover {
+  color: #5f4d2a;
+}
+
+.composer.is-create .conversation-switch button.active {
+  background: #2b2318;
+  color: #fdf8ee;
+  box-shadow: none;
+}
+
+.composer.is-create .mode-tip {
+  color: #b09d78;
+}
+
+.composer.is-create .composer-input {
+  color: #241d13;
+}
+
+.composer.is-create .composer-input::placeholder {
+  color: #b3a284;
+}
+
+.composer.is-create .engine-button {
+  color: #8d7c5d;
+}
+
+.composer.is-create .engine-button:hover {
+  border-color: #efe4d1;
+  background: #fbf5e9;
+  color: #5f4d2b;
+}
+
+.composer.is-create .model-button {
+  color: #9c8a68;
+}
+
+.composer.is-create .automation-switch {
+  border-color: #ece0c9;
+  background: #f9f2e3;
+}
+
+.composer.is-create .automation-switch button {
+  color: #a5946f;
+}
+
+.composer.is-create .automation-switch button.active {
+  background: #fffdf8;
+  color: #6d5829;
+  box-shadow: 0 1px 2px rgba(120, 92, 44, 0.12);
+}
+
+.composer.is-create .automation-switch button.auto-switch.active {
+  background: #9a6b25;
+  color: #fffaf0;
+  box-shadow: none;
+}
+
+.composer.is-create .send-button {
+  background: #2b2318;
+}
+
+.composer.is-create .send-button:hover:not(:disabled) {
+  background: #40331f;
+}
+
+.composer.is-create .send-button:disabled {
+  background: #f0e8d8;
+  color: #c3b393;
 }
 </style>

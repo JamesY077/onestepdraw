@@ -43,6 +43,7 @@
         <AgentComposer
           ref="composerRef"
           v-model="draft"
+          tone="create"
           :disabled="agentStore.isStreaming"
           placeholder="描述要改的地方，或继续生成…"
           @send="send"
@@ -325,29 +326,40 @@ function openFullChat() {
 }
 
 .sc-composer :deep(.composer-bottom) {
+  flex-wrap: wrap;
+  row-gap: 5px;
   padding: 2px 6px 6px 10px;
+}
+
+/* 剪辑台对话栏更窄：先放 Agent 与自动程度，模型与发送换到下一行右侧。 */
+.sc-composer :deep(.composer-pickers) {
+  flex: 0 0 auto;
+}
+
+.sc-composer :deep(.composer-actions) {
+  margin-left: auto;
+}
+
+.sc-composer :deep(.engine-button) {
+  max-width: 128px;
+  font-size: 10.5px;
+}
+
+.sc-composer :deep(.model-button) {
+  max-width: 140px;
+}
+
+.sc-composer :deep(.model-button .engine-label) {
+  max-width: 116px;
 }
 
 .sc-composer :deep(.composer-hint) {
   display: none;
 }
 
+/* 剪辑台里始终是创作对话，隐藏「普通/创作」切换那一行，只保留自动程度。 */
 .sc-composer :deep(.composer-modes) {
-  padding: 8px 10px 0;
-  gap: 5px;
-}
-
-/* 剪辑台里始终是创作对话，隐藏「普通/创作」切换，只保留自动程度。 */
-.sc-composer :deep(.mode-switch:first-child) {
   display: none;
-}
-
-.sc-composer :deep(.mode-tip) {
-  display: none;
-}
-
-.sc-composer :deep(.engine-button) {
-  font-size: 10.5px;
 }
 
 .sc-composer :deep(.engine-menu) {
