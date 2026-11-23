@@ -6,6 +6,26 @@
         <strong>创作对话</strong>
         <span class="sc-engine">{{ agentStore.isStreaming ? '正在生成' : engineLabel }}</span>
       </div>
+      <div class="sc-auto" role="group" aria-label="自动程度">
+        <button
+          type="button"
+          :class="{ active: !chatMode.isAuto }"
+          :aria-pressed="!chatMode.isAuto"
+          title="默认模式：先分轮问清需求"
+          @click="chatMode.setAutomation('default')"
+        >
+          默认
+        </button>
+        <button
+          type="button"
+          :class="{ active: chatMode.isAuto }"
+          :aria-pressed="chatMode.isAuto"
+          title="完全模式：模型自行决策，直接产出"
+          @click="chatMode.setAutomation('auto')"
+        >
+          完全
+        </button>
+      </div>
     </header>
 
     <div ref="scrollRef" class="sc-scroll">
@@ -138,9 +158,10 @@ function retry() {
 .sc-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   flex: none;
-  padding: 11px 14px;
+  padding: 9px 12px 9px 14px;
   border-bottom: 1px solid #f0f0ea;
 }
 
@@ -149,6 +170,46 @@ function retry() {
   align-items: center;
   gap: 6px;
   min-width: 0;
+}
+
+/* 窄侧栏里把自动程度放到标题行，给输入区腾出一整行。 */
+.sc-auto {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  padding: 2px;
+  border: 1px solid #ecece6;
+  border-radius: 7px;
+  background: #fafaf7;
+}
+
+.sc-auto button {
+  padding: 2px 7px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #9a9a92;
+  font-family: inherit;
+  font-size: 9.5px;
+  font-weight: 550;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.sc-auto button:hover {
+  color: #4a4a44;
+}
+
+.sc-auto button.active {
+  background: #ffffff;
+  color: #1d1d1b;
+  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.07);
+}
+
+.sc-auto button:last-child.active {
+  background: #111110;
+  color: #fafaf7;
+  box-shadow: none;
 }
 
 .sc-dot {
@@ -264,18 +325,30 @@ function retry() {
 }
 
 .sc-composer :deep(.composer-bottom) {
-  flex-wrap: wrap;
-  row-gap: 5px;
-  padding: 2px 6px 6px 10px;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 2px 8px 8px 10px;
 }
 
-/* 剪辑台对话栏更窄：先放 Agent 与自动程度，模型与发送换到下一行右侧。 */
+/* 自动程度在标题行；输入区只在同一行放素材、Agent、模型和发送。 */
+.sc-composer :deep(.automation-switch) {
+  display: none;
+}
+
 .sc-composer :deep(.composer-pickers) {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .sc-composer :deep(.composer-actions) {
+  flex: 0 1 auto;
+  min-width: 0;
   margin-left: auto;
+  gap: 4px;
+}
+
+.sc-composer :deep(.model-anchor) {
+  min-width: 0;
 }
 
 /* 面板窄，Agent 只留状态点，名字放进悬停提示，避免和模型名一起换行。 */
@@ -289,11 +362,11 @@ function retry() {
 }
 
 .sc-composer :deep(.model-button) {
-  max-width: 140px;
+  max-width: 124px;
 }
 
 .sc-composer :deep(.model-button .engine-label) {
-  max-width: 116px;
+  max-width: 100px;
 }
 
 .sc-composer :deep(.composer-hint) {

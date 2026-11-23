@@ -70,6 +70,18 @@
             <path d="M19.2 11H9.8a4.3 4.3 0 0 0 0 8.6h2.4" />
           </svg>
         </button>
+        <button
+          type="button"
+          class="tl-icon"
+          title="快捷键（?）"
+          aria-label="查看剪辑快捷键"
+          @click="$emit('shortcuts')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="6" width="18" height="12" rx="2.6" />
+            <path d="M6.5 9.5h.01M9.8 9.5h.01M13.2 9.5h.01M16.5 9.5h.01M7.2 14.2h9.6" />
+          </svg>
+        </button>
         <span class="tl-divider" />
         <div class="tl-zoomgroup">
           <button type="button" class="tl-zoomstep" title="缩小（Ctrl+滚轮）" @click="zoomStep(-1)">−</button>
@@ -83,42 +95,44 @@
     <div class="tl-body">
       <div class="tl-gutter">
         <div class="tl-gutter-ruler" />
-        <div
-          v-for="track in project.tracks"
-          :key="track.id"
-          class="tl-track-head"
-          :class="`kind-${track.kind}`"
-        >
-          <span class="track-kind" aria-hidden="true">
-            <svg v-if="track.kind === 'video'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
-              <rect x="3.2" y="5" width="17.6" height="14" rx="3" />
-              <path d="M10.2 9.5 15 12l-4.8 2.5z" fill="currentColor" stroke="none" />
-            </svg>
-            <svg v-else-if="track.kind === 'overlay'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
-              <rect x="4.5" y="4.5" width="11" height="11" rx="2" />
-              <path d="M9 19h9a1 1 0 0 0 1-1v-9" opacity="0.6" />
-            </svg>
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
-              <path d="M4.5 12v0M8 8.5v7M11.5 6v12M15 9v6M18.5 10.5v3" />
-            </svg>
-          </span>
-          <span class="track-name">{{ track.name }}</span>
-          <button
-            type="button"
-            class="track-mute"
-            :class="{ muted: track.muted }"
-            :title="track.muted ? '取消静音' : '静音'"
-            @click="$emit('toggle-mute', track.id)"
-          >
-            <svg v-if="!track.muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4.5 9.5h3L12 6v12L7.5 14.5h-3z" />
-              <path d="M15.5 9a4 4 0 0 1 0 6M18 6.8a7 7 0 0 1 0 10.4" />
-            </svg>
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
-              <path d="M4.5 9.5h3L12 6v12L7.5 14.5h-3z" />
-              <path d="m16 10 4 4M20 10l-4 4" />
-            </svg>
-          </button>
+        <div ref="gutterInnerRef" class="tl-gutter-inner">
+          <div
+            v-for="track in project.tracks"
+            :key="track.id"
+            class="tl-track-head"
+            :class="`kind-${track.kind}`"
+            >
+            <span class="track-kind" aria-hidden="true">
+              <svg v-if="track.kind === 'video'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+                <rect x="3.2" y="5" width="17.6" height="14" rx="3" />
+                <path d="M10.2 9.5 15 12l-4.8 2.5z" fill="currentColor" stroke="none" />
+              </svg>
+              <svg v-else-if="track.kind === 'overlay'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+                <rect x="4.5" y="4.5" width="11" height="11" rx="2" />
+                <path d="M9 19h9a1 1 0 0 0 1-1v-9" opacity="0.6" />
+              </svg>
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+                <path d="M4.5 12v0M8 8.5v7M11.5 6v12M15 9v6M18.5 10.5v3" />
+              </svg>
+            </span>
+            <span class="track-name">{{ track.name }}</span>
+            <button
+              type="button"
+              class="track-mute"
+              :class="{ muted: track.muted }"
+              :title="track.muted ? '取消静音' : '静音'"
+              @click="$emit('toggle-mute', track.id)"
+            >
+              <svg v-if="!track.muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4.5 9.5h3L12 6v12L7.5 14.5h-3z" />
+                <path d="M15.5 9a4 4 0 0 1 0 6M18 6.8a7 7 0 0 1 0 10.4" />
+              </svg>
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+                <path d="M4.5 9.5h3L12 6v12L7.5 14.5h-3z" />
+                <path d="m16 10 4 4M20 10l-4 4" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -239,10 +253,12 @@ const emit = defineEmits<{
   (event: 'undo'): void
   (event: 'redo'): void
   (event: 'fit'): void
+  (event: 'shortcuts'): void
   (event: 'update:pxPerSec', value: number): void
 }>()
 
 const scrollRef = ref<HTMLElement | null>(null)
+const gutterInnerRef = ref<HTMLElement | null>(null)
 const rulerRef = ref<HTMLElement | null>(null)
 const guideRef = ref<HTMLElement | null>(null)
 const playheadRef = ref<HTMLElement | null>(null)
@@ -348,6 +364,10 @@ function syncViewport() {
   if (!element) return
   scrollLeft.value = element.scrollLeft
   viewWidth.value = element.clientWidth
+  // 轨道变多、时间轴变矮时，左侧轨道头跟着轨道一起纵向滚动。
+  if (gutterInnerRef.value) {
+    gutterInnerRef.value.style.transform = `translate3d(0, ${-element.scrollTop}px, 0)`
+  }
 }
 
 function timeFromClientX(clientX: number): number {
@@ -600,6 +620,14 @@ watch(
   () => nextTick(paintPlayhead),
 )
 
+watch(
+  () => props.project.id,
+  () => {
+    if (scrollRef.value) scrollRef.value.scrollTop = 0
+    nextTick(syncViewport)
+  },
+)
+
 function handleDrop(event: DragEvent, trackId: string) {
   dropTrackId.value = ''
   const assetId = event.dataTransfer?.getData('application/onestep-asset') || ''
@@ -834,6 +862,7 @@ onBeforeUnmount(() => {
 .tl-gutter {
   width: 116px;
   flex: none;
+  overflow: hidden;
   border-right: 1px solid #f0f0ea;
   background: #fbfbf8;
 }
@@ -841,6 +870,12 @@ onBeforeUnmount(() => {
 .tl-gutter-ruler {
   height: 26px;
   border-bottom: 1px solid #f0f0ea;
+  background: #fbfbf8;
+}
+
+/* 轨道头的纵向位置由滚动容器同步，和右侧轨道保持对齐。 */
+.tl-gutter-inner {
+  will-change: transform;
 }
 
 .tl-track-head {
@@ -902,9 +937,8 @@ onBeforeUnmount(() => {
 .tl-scroll {
   flex: 1;
   min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  overscroll-behavior-x: contain;
+  overflow: auto;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
 }
 
@@ -914,9 +948,12 @@ onBeforeUnmount(() => {
 }
 
 .tl-ruler {
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 3;
   height: 26px;
   border-bottom: 1px solid #f0f0ea;
+  background: #fbfbf8;
   cursor: ew-resize;
   touch-action: none;
 }

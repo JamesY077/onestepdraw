@@ -528,6 +528,24 @@ export const useEditProjectStore = defineStore('editProject', () => {
     return copy.id
   }
 
+  /** 把剪贴板里的片段插到指定轨道的时间点，返回新片段 id。 */
+  function insertClip(
+    projectId: string,
+    trackId: string,
+    clip: TimelineClip,
+    at: number,
+  ): string | null {
+    const project = getProject(projectId)
+    const track = project?.tracks.find((item) => item.id === trackId)
+    if (!project || !track || !kindFitsTrack(clip.kind, track)) return null
+    recordHistory(project)
+    const start = Math.max(0, Math.min(MAX_PROJECT_SECONDS - clip.duration, at))
+    const copy: TimelineClip = { ...clip, id: makeId('clip'), start }
+    track.clips.push(copy)
+    touch(project)
+    return copy.id
+  }
+
   /** 整段平移，用于方向键微调。 */
   function nudgeClip(projectId: string, clipId: string, delta: number) {
     const project = getProject(projectId)
@@ -658,6 +676,7 @@ export const useEditProjectStore = defineStore('editProject', () => {
     removeClip,
     splitClip,
     duplicateClip,
+    insertClip,
     nudgeClip,
     setTrackMuted,
     applyTimelineOps,

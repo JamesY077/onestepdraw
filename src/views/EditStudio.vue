@@ -80,7 +80,10 @@
       v-if="project"
       class="es-body"
       :class="{ 'chat-open': mobileChatOpen }"
-      :style="{ '--studio-chat-width': `${chatWidth}px` }"
+      :style="{
+        '--studio-chat-width': `${chatWidth}px`,
+        '--studio-timeline-height': `${timelineHeight}px`,
+      }"
     >
       <aside class="es-rail">
         <div class="rail-tabs">
@@ -163,6 +166,17 @@
       </main>
 
       <div ref="timelineRef" class="es-timeline">
+        <div
+          class="timeline-resizer"
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label="调整时间轴高度"
+          title="拖动调整时间轴高度，双击复位"
+          @pointerdown="startTimelineResize"
+          @dblclick="resetTimelineHeight"
+        >
+          <span aria-hidden="true" />
+        </div>
         <TimelineTracks
           v-model:pxPerSec="pxPerSec"
           :project="project"
@@ -182,6 +196,7 @@
           @undo="undo"
           @redo="redo"
           @fit="fitTimeline"
+          @shortcuts="shortcutsOpen = true"
         />
       </div>
 
@@ -228,6 +243,28 @@
       </div>
     </div>
 
+    <div v-if="shortcutsOpen" class="shortcuts-backdrop" @click.self="shortcutsOpen = false">
+      <section class="shortcuts-panel" role="dialog" aria-modal="true" aria-label="剪辑快捷键">
+        <header>
+          <div>
+            <strong>剪辑快捷键</strong>
+            <p>剪辑台里直接按，输入框内不会触发。</p>
+          </div>
+          <button type="button" aria-label="关闭快捷键面板" @click="shortcutsOpen = false">✕</button>
+        </header>
+        <div class="shortcuts-grid">
+          <div v-for="group in SHORTCUT_GROUPS" :key="group.title" class="shortcut-group">
+            <h4>{{ group.title }}</h4>
+            <div v-for="item in group.items" :key="`${group.title}-${item.label}`" class="shortcut-row">
+              <span>{{ item.label }}</span>
+              <kbd>{{ item.keys }}</kbd>
+            </div>
+          </div>
+        </div>
+        <footer>macOS 用 ⌘，Windows / Linux 用 Ctrl；按 <kbd>?</kbd> 随时打开。</footer>
+      </section>
+    </div>
+
     <div v-if="toast" class="es-toast" role="status">{{ toast }}</div>
 
   </div>
@@ -250,6 +287,7 @@ import {
   MAX_PROJECT_SECONDS,
   PROJECT_ASPECT_RATIOS,
   type ProjectAsset,
+  type TimelineClip,
 } from '@/types/edit'
 
 const route = useRoute()
@@ -262,18 +300,57 @@ const railTab = ref<'projects' | 'assets'>('projects')
 const mainRef = ref<HTMLElement | null>(null)
 const timelineRef = ref<HTMLElement | null>(null)
 const CHAT_WIDTH_KEY = 'onestep_studio_chat_width_v1'
+const TIMELINE_HEIGHT_KEY = 'onestep_studio_timeline_height_v1'
+const TIMELINE_MIN_HEIGHT = 150
 const chatWidth = ref(readChatWidth())
+const timelineHeight = ref(readTimelineHeight())
+const shortcutsOpen = ref(false)
 const pxPerSec = ref(52)
 const clock = ref('00:00.0')
 const playing = ref(false)
 const selectedClipId = ref('')
 const mobileChatOpen = ref(false)
 const toast = ref('')
+const clipboard = ref<{ trackId: string; clip: TimelineClip } | null>(null)
 const exporting = ref(false)
 const exportRatio = ref(0)
 const exportNote = ref('准备素材')
 let exportAbort: AbortController | null = null
 let toastTimer: number | null = null
+
+const SHORTCUT_GROUPS = [
+  {
+    title: '播放与定位',
+    items: [
+      { label: '播放 / 暂停', keys: 'Space' },
+      { label: '前后 0.1 秒', keys: '← / →' },
+      { label: '前后 1 秒', keys: '⇧ ← / →' },
+      { label: '跳到片头 / 片尾', keys: 'Home / End' },
+    ],
+  },
+  {
+    title: '编辑',
+    items: [
+      { label: '在播放头分割', keys: '⌘B / ⌘K' },
+      { label: '复制片段', keys: '⌘D' },
+      { label: '复制 / 剪切', keys: '⌘C / ⌘X' },
+      { label: '粘贴到播放头', keys: '⌘V' },
+      { label: '删除片段', keys: 'Delete' },
+      { label: '撤销 / 重做', keys: '⌘Z / ⇧⌘Z' },
+    ],
+  },
+  {
+    title: '视图',
+    items: [
+      { label: '缩放时间轴', keys: '+ / −' },
+      { label: '适配窗口', keys: '\\' },
+      { label: '微调选中片段', keys: '⌥ ← / →' },
+      { label: '静音所在轨道', keys: 'M' },
+      { label: '取消选择 / 关闭面板', keys: 'Esc' },
+      { label: '导出 MP4', keys: '⌘S' },
+    ],
+  },
+]
 
 const projectId = computed(() => String(route.params.id || ''))
 const project = computed(() => projectStore.getProject(projectId.value))
@@ -484,6 +561,89 @@ function removeSelectedClip() {
   selectedClipId.value = ''
 }
 
+function selectedClipRef(): { trackId: string; clip: TimelineClip } | null {
+  if (!project.value || !selectedClipId.value) return null
+  for (const track of project.value.tracks) {
+    const clip = track.clips.find((item) => item.id === selectedClipId.value)
+    if (clip) return { trackId: track.id, clip }
+  }
+  return null
+}
+
+function copySelected() {
+  const found = selectedClipRef()
+  if (!found) return
+  clipboard.value = { trackId: found.trackId, clip: { ...found.clip } }
+  showToast('已复制片段，⌘V 粘贴到播放头')
+}
+
+function cutSelected() {
+  const found = selectedClipRef()
+  if (!found) return
+  clipboard.value = { trackId: found.trackId, clip: { ...found.clip } }
+  removeSelectedClip()
+  showToast('已剪切片段，⌘V 粘贴到播放头')
+}
+
+function pasteClipboard() {
+  if (!project.value || !clipboard.value) {
+    showToast('剪贴板里还没有片段')
+    return
+  }
+  const { clip, trackId } = clipboard.value
+  const fits = (kind: string, trackKind: string) =>
+    kind === 'audio' ? trackKind === 'audio' : trackKind !== 'audio'
+  const target =
+    project.value.tracks.find((track) => track.id === trackId && fits(clip.kind, track.kind)) ||
+    project.value.tracks.find((track) => fits(clip.kind, track.kind))
+  if (!target) {
+    showToast('没有能放下这个片段的轨道')
+    return
+  }
+  let start = playhead.value
+  const overlapped = target.clips.some(
+    (item) => start < item.start + item.duration && start + clip.duration > item.start,
+  )
+  if (overlapped) {
+    // 播放头后面被占住时，顺延到最近的空位，避免粘出互相压住的片段。
+    const ordered = [...target.clips].sort((a, b) => a.start - b.start)
+    let moved = true
+    while (moved) {
+      moved = false
+      for (const item of ordered) {
+        if (start < item.start + item.duration && start + clip.duration > item.start) {
+          start = item.start + item.duration
+          moved = true
+        }
+      }
+    }
+  }
+  if (start + clip.duration > MAX_PROJECT_SECONDS) {
+    showToast('播放头后面没有足够的空位')
+    return
+  }
+  const id = projectStore.insertClip(project.value.id, target.id, clip, start)
+  if (!id) {
+    showToast('这个位置放不下片段')
+    return
+  }
+  selectedClipId.value = id
+  showToast(overlapped ? `已粘贴到 ${start.toFixed(1)}s（避开已有片段）` : `已粘贴到 ${start.toFixed(1)}s`)
+}
+
+function zoomBy(factor: number) {
+  pxPerSec.value = Math.max(14, Math.min(140, Math.round(pxPerSec.value * factor)))
+}
+
+function muteSelectedTrack() {
+  const found = selectedClipRef()
+  if (!found || !project.value) return
+  const track = project.value.tracks.find((item) => item.id === found.trackId)
+  if (!track) return
+  projectStore.setTrackMuted(project.value.id, track.id, !track.muted)
+  showToast(track.muted ? '已恢复声音' : '已静音这条轨道')
+}
+
 function clipAtPlayhead(): string {
   if (!project.value) return ''
   const time = playhead.value
@@ -591,6 +751,48 @@ function cancelExport() {
 function fitTimeline() {
   const width = (timelineRef.value?.clientWidth || mainRef.value?.clientWidth || window.innerWidth) - 116 - 28
   pxPerSec.value = Math.max(14, Math.min(140, Math.round(width / Math.max(10, timelineDuration.value))))
+}
+
+function maxTimelineHeight(): number {
+  return Math.max(TIMELINE_MIN_HEIGHT, Math.min(720, window.innerHeight - 260))
+}
+
+function readTimelineHeight(): number {
+  const saved = Number(localStorage.getItem(TIMELINE_HEIGHT_KEY))
+  const fallback = Math.round(window.innerHeight * 0.23)
+  if (Number.isFinite(saved) && saved >= TIMELINE_MIN_HEIGHT) {
+    return Math.min(maxTimelineHeight(), Math.round(saved))
+  }
+  return Math.max(TIMELINE_MIN_HEIGHT, Math.min(maxTimelineHeight(), fallback))
+}
+
+function startTimelineResize(event: PointerEvent) {
+  event.preventDefault()
+  const startY = event.clientY
+  const startHeight = timelineHeight.value
+  const move = (moveEvent: PointerEvent) => {
+    const next = startHeight - (moveEvent.clientY - startY)
+    timelineHeight.value = Math.max(
+      TIMELINE_MIN_HEIGHT,
+      Math.min(maxTimelineHeight(), Math.round(next)),
+    )
+  }
+  const stop = () => {
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', stop)
+    localStorage.setItem(TIMELINE_HEIGHT_KEY, String(timelineHeight.value))
+  }
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerup', stop)
+}
+
+function resetTimelineHeight() {
+  timelineHeight.value = Math.max(
+    TIMELINE_MIN_HEIGHT,
+    Math.min(maxTimelineHeight(), Math.round(window.innerHeight * 0.23)),
+  )
+  localStorage.setItem(TIMELINE_HEIGHT_KEY, String(timelineHeight.value))
+  showToast('时间轴高度已复位')
 }
 
 function maxChatWidth(): number {
@@ -712,6 +914,13 @@ function handleKeydown(event: KeyboardEvent) {
       target.tagName === 'SELECT' ||
       target.isContentEditable)
   if (editing) return
+  if (shortcutsOpen.value) {
+    if (event.key === 'Escape' || event.key === '?') {
+      event.preventDefault()
+      shortcutsOpen.value = false
+    }
+    return
+  }
   if (event.metaKey || event.ctrlKey) {
     const key = event.key.toLowerCase()
     if (key === 'z') {
@@ -720,7 +929,7 @@ function handleKeydown(event: KeyboardEvent) {
       else undo()
       return
     }
-    if (key === 'b') {
+    if (key === 'b' || key === 'k') {
       event.preventDefault()
       splitAtPlayhead()
       return
@@ -730,11 +939,81 @@ function handleKeydown(event: KeyboardEvent) {
       duplicateSelected()
       return
     }
+    if (key === 'c') {
+      event.preventDefault()
+      copySelected()
+      return
+    }
+    if (key === 'x') {
+      event.preventDefault()
+      cutSelected()
+      return
+    }
+    if (key === 'v') {
+      event.preventDefault()
+      pasteClipboard()
+      return
+    }
     if (key === 's') {
       event.preventDefault()
       void startExport()
       return
     }
+    if (key === '=' || key === '+') {
+      event.preventDefault()
+      zoomBy(1.25)
+      return
+    }
+    if (key === '-' || key === '_') {
+      event.preventDefault()
+      zoomBy(0.8)
+      return
+    }
+    if (key === '0') {
+      event.preventDefault()
+      fitTimeline()
+      return
+    }
+    return
+  }
+  if (event.key === '?') {
+    event.preventDefault()
+    shortcutsOpen.value = !shortcutsOpen.value
+    return
+  }
+  if (event.key === '+' || event.key === '=') {
+    event.preventDefault()
+    zoomBy(1.25)
+    return
+  }
+  if (event.key === '-') {
+    event.preventDefault()
+    zoomBy(0.8)
+    return
+  }
+  if (event.key === '\\') {
+    event.preventDefault()
+    fitTimeline()
+    return
+  }
+  if (event.key === 'Escape') {
+    shortcutsOpen.value = false
+    selectedClipId.value = ''
+    return
+  }
+  if (event.key === 'Home') {
+    event.preventDefault()
+    seek(0)
+    return
+  }
+  if (event.key === 'End') {
+    event.preventDefault()
+    seek(timelineDuration.value)
+    return
+  }
+  if (event.key === 'm' || event.key === 'M') {
+    event.preventDefault()
+    muteSelectedTrack()
     return
   }
   if (event.code === 'Space') {
@@ -796,6 +1075,9 @@ watch(
 function clampChatWidth() {
   if (window.innerWidth > 1180 && chatWidth.value > maxChatWidth()) {
     chatWidth.value = maxChatWidth()
+  }
+  if (timelineHeight.value > maxTimelineHeight()) {
+    timelineHeight.value = maxTimelineHeight()
   }
 }
 
@@ -973,7 +1255,7 @@ onBeforeUnmount(() => {
   position: relative;
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr) var(--studio-chat-width, 400px);
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) var(--studio-timeline-height, 220px);
   grid-template-areas:
     'rail main chat'
     'timeline timeline chat';
@@ -990,6 +1272,7 @@ onBeforeUnmount(() => {
 }
 
 .es-timeline {
+  position: relative;
   grid-area: timeline;
   display: flex;
   flex-direction: column;
@@ -1332,6 +1615,123 @@ onBeforeUnmount(() => {
   box-shadow: 0 8px 24px rgba(17, 17, 16, 0.2);
 }
 
+.shortcuts-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 940;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(17, 17, 16, 0.28);
+  backdrop-filter: blur(2px);
+}
+
+.shortcuts-panel {
+  width: min(560px, 100%);
+  max-height: min(640px, calc(100dvh - 40px));
+  overflow-y: auto;
+  padding: 14px 16px 12px;
+  border: 1px solid #e6e6df;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px -24px rgba(17, 17, 16, 0.45);
+}
+
+.shortcuts-panel header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0ea;
+}
+
+.shortcuts-panel header strong {
+  color: #1d1d1b;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.shortcuts-panel header p {
+  margin: 3px 0 0;
+  color: #a3a39b;
+  font-size: 10px;
+}
+
+.shortcuts-panel header button {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #9a9a92;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.shortcuts-panel header button:hover {
+  border-color: #ecece6;
+  color: #111110;
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 12px 0 6px;
+}
+
+.shortcut-group h4 {
+  margin: 0 0 5px;
+  color: #b0b0a8;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+  color: #5f5f57;
+  font-size: 10.5px;
+}
+
+.shortcut-row kbd,
+.shortcuts-panel footer kbd {
+  flex: none;
+  padding: 1px 5px;
+  border: 1px solid #ecece6;
+  border-bottom-color: #dcdcd4;
+  border-radius: 5px;
+  background: #fafaf7;
+  color: #6b6b63;
+  font-family: inherit;
+  font-size: 9.5px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.shortcuts-panel footer {
+  padding-top: 8px;
+  border-top: 1px solid #f0f0ea;
+  color: #b0b0a8;
+  font-size: 9.5px;
+}
+
+@media (max-width: 640px) {
+  .shortcuts-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+}
+
 .export-panel {
   position: fixed;
   left: 50%;
@@ -1414,6 +1814,35 @@ onBeforeUnmount(() => {
   cursor: default;
 }
 
+/* 时间轴上沿可上下拖动，调高后轨道区自己滚动 */
+.timeline-resizer {
+  position: absolute;
+  top: -5px;
+  right: 0;
+  left: 0;
+  z-index: 24;
+  display: flex;
+  height: 10px;
+  align-items: center;
+  justify-content: center;
+  cursor: row-resize;
+  touch-action: none;
+}
+
+.timeline-resizer > span {
+  width: 44px;
+  height: 3px;
+  border-radius: 999px;
+  background: #e2e0d8;
+  transition: width 140ms ease, background 140ms ease;
+}
+
+.timeline-resizer:hover > span,
+.timeline-resizer:active > span {
+  width: 68px;
+  background: #b9b3a6;
+}
+
 /* 对话栏可拖拽改宽，边界只画一条细线 */
 .chat-resizer {
   position: absolute;
@@ -1469,9 +1898,17 @@ onBeforeUnmount(() => {
 @media (max-width: 980px) {
   .es-body {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
     grid-template-areas:
       'main'
       'timeline';
+  }
+  .es-timeline {
+    height: min(34vh, 240px);
+    max-height: none;
+  }
+  .timeline-resizer {
+    display: none;
   }
   .es-chat {
     position: fixed;
