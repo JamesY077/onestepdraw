@@ -95,6 +95,38 @@ function trackEnd(track: EditTrack): number {
   return track.clips.reduce((end, clip) => Math.max(end, clipEnd(clip)), 0)
 }
 
+/**
+ * 撤销快照：结构用 JSON 序列化，但长 URL（data:/blob:/http）抽成占位符，
+ * 避免每一步操作都把几 MB 的 base64 复制一遍。
+ */
+const LONG_URL = /^(data:|blob:|https?:)/
+
+function freezeProject(project: EditProject): string {
+  const urls: string[] = []
+  const data = JSON.stringify(project, (_key, value) => {
+    if (typeof value === 'string' && value.length > 256 && LONG_URL.test(value)) {
+      const existing = urls.indexOf(value)
+      if (existing >= 0) return `__url_${existing}__`
+      urls.push(value)
+      return `__url_${urls.length - 1}__`
+    }
+    return value
+  })
+  return `{"urls":${JSON.stringify(urls)},"data":${JSON.stringify(data)}}`
+}
+
+function thawProject(snapshot: string): EditProject {
+  const parsed = JSON.parse(snapshot) as { urls: string[]; data: string }
+  return JSON.parse(parsed.data, (_key, value) => {
+    if (typeof value === 'string' && value.startsWith('__url_') && value.endsWith('__')) {
+      return parsed.urls[Number(value.slice(6, -2))] ?? ''
+    }
+    return value
+  }) as EditProject
+}
+
+const HISTORY_LIMIT = 40
+
 export function projectDuration(project: EditProject | null): number {
   if (!project) return DEFAULT_DURATION
   const end = project.tracks.reduce((value, track) => Math.max(value, trackEnd(track)), 0)
@@ -111,6 +143,61 @@ export const useEditProjectStore = defineStore('editProject', () => {
   const activeProjectId = ref<string>(projects.value[0]?.id || '')
   /** 本地存储写满时置为 true，页面据此提示可能未保存。 */
   const storageError = ref(false)
+  /** 撤销栈变化时递增，页面用它来刷新按钮可用状态。 */
+  const historyTick = ref(0)
+  const history = new Map<string, { undo: string[]; redo: string[] }>()
+
+  function historyBucket(projectId: string) {
+    let bucket = history.get(projectId)
+    if (!bucket) {
+      bucket = { undo: [], redo: [] }
+      history.set(projectId, bucket)
+    }
+    return bucket
+  }
+
+  /** 在改动之前调用，记录一次可撤销的步骤。 */
+  function recordHistory(project: EditProject) {
+    const bucket = historyBucket(project.id)
+    bucket.undo.push(freezeProject(project))
+    if (bucket.undo.length > HISTORY_LIMIT) bucket.undo.shift()
+    bucket.redo.length = 0
+    historyTick.value += 1
+  }
+
+  function canUndo(projectId: string): boolean {
+    return (history.get(projectId)?.undo.length || 0) > 0
+  }
+
+  function canRedo(projectId: string): boolean {
+    return (history.get(projectId)?.redo.length || 0) > 0
+  }
+
+  function undo(projectId: string): boolean {
+    const project = getProject(projectId)
+    const bucket = historyBucket(projectId)
+    const snapshot = bucket.undo.pop()
+    if (!project || !snapshot) return false
+    bucket.redo.push(freezeProject(project))
+    Object.assign(project, thawProject(snapshot))
+    project.updatedAt = Date.now()
+    historyTick.value += 1
+    persist()
+    return true
+  }
+
+  function redo(projectId: string): boolean {
+    const project = getProject(projectId)
+    const bucket = historyBucket(projectId)
+    const snapshot = bucket.redo.pop()
+    if (!project || !snapshot) return false
+    bucket.undo.push(freezeProject(project))
+    Object.assign(project, thawProject(snapshot))
+    project.updatedAt = Date.now()
+    historyTick.value += 1
+    persist()
+    return true
+  }
 
   const sortedProjects = computed(() =>
     [...projects.value].sort((a, b) => b.updatedAt - a.updatedAt),
@@ -212,6 +299,7 @@ export const useEditProjectStore = defineStore('editProject', () => {
   ): TimelineClip | null {
     const project = getProject(projectId)
     if (!project) return null
+    recordHistory(project)
 
     const existing = project.assets.find(
       (asset) => asset.url === input.url && asset.kind === input.kind,
@@ -292,6 +380,7 @@ export const useEditProjectStore = defineStore('editProject', () => {
     if (!project) return
     const found = findClip(project, clipId)
     if (!found) return
+    recordHistory(project)
     const { clip } = found
     if (typeof patch.start === 'number') {
       clip.start = Math.max(0, Math.min(MAX_PROJECT_SECONDS, patch.start))
@@ -312,6 +401,7 @@ export const useEditProjectStore = defineStore('editProject', () => {
     for (const track of project.tracks) {
       const index = track.clips.findIndex((clip) => clip.id === clipId)
       if (index >= 0) {
+        recordHistory(project)
         track.clips.splice(index, 1)
         touch(project)
         return
@@ -319,10 +409,62 @@ export const useEditProjectStore = defineStore('editProject', () => {
     }
   }
 
+  /** 在指定时间点把片段切成两段，返回右半段的 id。 */
+  function splitClip(projectId: string, clipId: string, atTime: number): string | null {
+    const project = getProject(projectId)
+    if (!project) return null
+    const found = findClip(project, clipId)
+    if (!found) return null
+    const { track, clip } = found
+    const end = clip.start + clip.duration
+    if (atTime <= clip.start + MIN_CLIP_SECONDS || atTime >= end - MIN_CLIP_SECONDS) return null
+    recordHistory(project)
+    const right: TimelineClip = {
+      ...clip,
+      id: makeId('clip'),
+      start: atTime,
+      duration: end - atTime,
+      trimStart: (clip.trimStart || 0) + (atTime - clip.start),
+    }
+    clip.duration = atTime - clip.start
+    track.clips.push(right)
+    touch(project)
+    return right.id
+  }
+
+  /** 复制片段，紧接在原片段后面。 */
+  function duplicateClip(projectId: string, clipId: string): string | null {
+    const project = getProject(projectId)
+    if (!project) return null
+    const found = findClip(project, clipId)
+    if (!found) return null
+    recordHistory(project)
+    const copy: TimelineClip = {
+      ...found.clip,
+      id: makeId('clip'),
+      start: Math.min(MAX_PROJECT_SECONDS, found.clip.start + found.clip.duration),
+    }
+    found.track.clips.push(copy)
+    touch(project)
+    return copy.id
+  }
+
+  /** 整段平移，用于方向键微调。 */
+  function nudgeClip(projectId: string, clipId: string, delta: number) {
+    const project = getProject(projectId)
+    if (!project) return
+    const found = findClip(project, clipId)
+    if (!found || !Number.isFinite(delta) || !delta) return
+    recordHistory(project)
+    found.clip.start = Math.max(0, Math.min(MAX_PROJECT_SECONDS, found.clip.start + delta))
+    touch(project)
+  }
+
   function setTrackMuted(projectId: string, trackId: string, muted: boolean) {
     const project = getProject(projectId)
     const track = project?.tracks.find((item) => item.id === trackId)
     if (!project || !track) return
+    recordHistory(project)
     track.muted = muted
     touch(project)
   }
@@ -331,6 +473,8 @@ export const useEditProjectStore = defineStore('editProject', () => {
   function applyTimelineOps(projectId: string, ops: unknown[]): { applied: number; skipped: number } {
     const project = getProject(projectId)
     if (!project) return { applied: 0, skipped: ops.length }
+    if (!ops.length) return { applied: 0, skipped: 0 }
+    recordHistory(project)
     let applied = 0
     let skipped = 0
     for (const raw of ops) {
@@ -362,8 +506,13 @@ export const useEditProjectStore = defineStore('editProject', () => {
       if (kind === 'trim') {
         const duration = Number(op.duration)
         const start = Number(op.start)
+        const previousStart = clip.start
         if (Number.isFinite(start)) clip.start = Math.max(0, start)
         if (Number.isFinite(duration)) clip.duration = Math.max(MIN_CLIP_SECONDS, duration)
+        // 裁左边时同步 trimStart，音频波形和视频取帧才不会错位。
+        if (Number.isFinite(start) && clip.kind !== 'image') {
+          clip.trimStart = Math.max(0, (clip.trimStart || 0) + (clip.start - previousStart))
+        }
         if (Number.isFinite(start) || Number.isFinite(duration)) applied += 1
         else skipped += 1
         continue
@@ -412,6 +561,7 @@ export const useEditProjectStore = defineStore('editProject', () => {
     activeProjectId,
     activeProject,
     storageError,
+    historyTick,
     getProject,
     findProjectByConversation,
     createProject,
@@ -424,9 +574,17 @@ export const useEditProjectStore = defineStore('editProject', () => {
     addAssetToTrack,
     updateClip,
     removeClip,
+    splitClip,
+    duplicateClip,
+    nudgeClip,
     setTrackMuted,
     applyTimelineOps,
     projectSummary,
     persist,
+    recordHistory,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
   }
 })

@@ -5,61 +5,73 @@
         class="stage-frame"
         :style="{ width: `${frameSize.width}px`, height: `${frameSize.height}px` }"
       >
-      <div class="stage-canvas">
-        <template v-for="item in activeClips" :key="`${item.track.id}-${item.clip.id}`">
-          <video
-            v-if="item.clip.kind === 'video'"
-            :ref="(el) => setVideoRef(item.clip.id, el)"
-            class="stage-video"
-            :src="item.clip.url"
-            :poster="item.clip.thumbnail || undefined"
-            playsinline
-            preload="auto"
-            @loadedmetadata="syncMedia"
-          />
-          <img
-            v-else-if="item.clip.kind === 'image'"
-            class="stage-media"
-            :src="item.clip.url"
-            alt=""
-            :style="{ opacity: item.clip.opacity ?? 1 }"
-          />
-          <audio
-            v-else
-            :ref="(el) => setAudioRef(item.clip.id, el)"
-            :src="item.clip.url"
-            preload="auto"
-            @loadedmetadata="syncMedia"
-          />
-        </template>
+        <div class="stage-canvas">
+          <template v-for="item in mediaNodes" :key="item.key">
+            <video
+              v-if="item.clip.kind === 'video'"
+              :ref="(el) => setVideoRef(item.clip.id, el)"
+              class="stage-video"
+              :class="{ 'is-idle': !visibleSet.has(item.clip.id) }"
+              :src="item.clip.url"
+              :poster="item.clip.thumbnail || undefined"
+              playsinline
+              preload="auto"
+              @loadedmetadata="syncMedia"
+            />
+            <img
+              v-else-if="item.clip.kind === 'image'"
+              class="stage-media"
+              :class="{ 'is-idle': !visibleSet.has(item.clip.id) }"
+              :src="item.clip.url"
+              alt=""
+              :style="{ opacity: visibleSet.has(item.clip.id) ? item.clip.opacity ?? 1 : 0 }"
+            />
+            <audio
+              v-else
+              :ref="(el) => setAudioRef(item.clip.id, el)"
+              :src="item.clip.url"
+              preload="auto"
+              @loadedmetadata="syncMedia"
+            />
+          </template>
 
-        <div v-if="!activeClips.length" class="stage-empty">
-          <template v-if="hasClips">
-            <p>当前时间点没有画面</p>
-            <span>移动播放头，或双击轨道上的片段跳到它的开头。</span>
-          </template>
-          <template v-else>
-            <p>时间轴还是空的</p>
-            <span>把左侧素材拖到轨道，或在右侧对话框里描述你要的画面。</span>
-          </template>
+          <div v-if="!visibleSet.size" class="stage-empty">
+            <template v-if="hasClips">
+              <p>当前时间点没有画面</p>
+              <span>拖动播放头，或双击轨道上的片段跳到它的开头。</span>
+            </template>
+            <template v-else>
+              <p>时间轴还是空的</p>
+              <span>把左侧素材拖到轨道，或描述你要的画面。</span>
+            </template>
+          </div>
         </div>
-      </div>
       </div>
     </div>
 
     <footer class="stage-bar">
-      <span class="stage-time">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
+      <span class="stage-time">{{ timeText }}</span>
       <span class="stage-meta">{{ project.aspectRatio }} · {{ project.resolution }} · {{ project.fps }}fps</span>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  shallowRef,
+  watch,
+} from 'vue'
 import type { EditProject, TimelineClip } from '@/types/edit'
 import { projectDuration } from '@/stores/editProjectStore'
+import { playhead } from '@/features/edit/playhead'
 
-const props = defineProps<{ project: EditProject; currentTime: number; playing: boolean }>()
+const props = defineProps<{ project: EditProject; playing: boolean }>()
 
 const videoRefs = new Map<string, HTMLVideoElement>()
 const audioRefs = new Map<string, HTMLAudioElement>()
@@ -90,6 +102,9 @@ onMounted(() => {
     frameObserver.observe(viewportRef.value)
   }
   window.addEventListener('resize', fitFrame)
+  refreshActive()
+  paintTime()
+  void nextTick(syncMedia)
 })
 
 onBeforeUnmount(() => {
@@ -100,22 +115,52 @@ onBeforeUnmount(() => {
 
 watch(() => props.project.aspectRatio, () => nextTick(fitFrame))
 
-const hasClips = computed(() =>
-  props.project.tracks.some((track) => track.clips.length > 0),
-)
+const hasClips = computed(() => props.project.tracks.some((track) => track.clips.length > 0))
 
-const activeClips = computed(() => {
-  const time = props.currentTime
-  const list: Array<{ track: EditProject['tracks'][number]; clip: TimelineClip }> = []
+/** 只依赖 project：播放过程中不重建媒体节点。 */
+const mediaNodes = computed(() => {
+  const list: Array<{ key: string; clip: TimelineClip }> = []
   for (const track of props.project.tracks) {
-    for (const clip of track.clips) {
-      if (time >= clip.start - 0.001 && time < clip.start + clip.duration) {
-        list.push({ track, clip })
-      }
-    }
+    for (const clip of track.clips) list.push({ key: `${track.id}-${clip.id}`, clip })
   }
   return list
 })
+
+const clipIndex = computed(() => {
+  const map = new Map<string, { track: EditProject['tracks'][number]; clip: TimelineClip }>()
+  for (const track of props.project.tracks) {
+    for (const clip of track.clips) map.set(clip.id, { track, clip })
+  }
+  return map
+})
+
+/** 当前时间点可见的片段集合：只有集合变化时才触发重渲染。 */
+const visibleSet = shallowRef<Set<string>>(new Set())
+let lastSignature = ''
+
+const timeText = ref('00:00.00 / 00:00.00')
+let lastPaint = -1
+
+function refreshActive() {
+  const time = playhead.value
+  const ids: string[] = []
+  for (const track of props.project.tracks) {
+    for (const clip of track.clips) {
+      if (time >= clip.start - 0.001 && time < clip.start + clip.duration) ids.push(clip.id)
+    }
+  }
+  const signature = ids.join('|')
+  if (signature === lastSignature) return
+  lastSignature = signature
+  visibleSet.value = new Set(ids)
+}
+
+function paintTime() {
+  const time = playhead.value
+  if (Math.abs(time - lastPaint) < 0.09 && time !== 0 && time !== duration.value) return
+  lastPaint = time
+  timeText.value = `${formatTime(time)} / ${formatTime(duration.value)}`
+}
 
 function setVideoRef(id: string, el: unknown) {
   if (el instanceof HTMLVideoElement) videoRefs.set(id, el)
@@ -128,47 +173,71 @@ function setAudioRef(id: string, el: unknown) {
 }
 
 function targetTime(clip: TimelineClip): number {
-  const offset = Math.max(0, props.currentTime - clip.start)
+  const offset = Math.max(0, playhead.value - clip.start)
   return (clip.trimStart || 0) + Math.min(clip.duration, offset)
 }
 
+let previousActive: string[] = []
+
 function syncMedia() {
-  for (const { track, clip } of activeClips.value) {
-    if (clip.kind === 'video') {
-      const el = videoRefs.get(clip.id)
-      if (!el) continue
-      el.volume = track.muted ? 0 : Math.min(1, clip.volume ?? 1)
-      const target = targetTime(clip)
-      if (Math.abs(el.currentTime - target) > 0.24 && !el.seeking) {
-        try {
-          el.currentTime = target
-        } catch {
-          // 元数据还没就绪时忽略，loadedmetadata 会再同步一次。
-        }
+  const active = visibleSet.value
+  for (const id of previousActive) {
+    if (active.has(id)) continue
+    const el = videoRefs.get(id) || audioRefs.get(id)
+    if (el && !el.paused) el.pause()
+  }
+  for (const id of active) {
+    const item = clipIndex.value.get(id)
+    if (!item) continue
+    const { track, clip } = item
+    const el = clip.kind === 'video'
+      ? videoRefs.get(clip.id)
+      : clip.kind === 'audio'
+        ? audioRefs.get(clip.id)
+        : null
+    if (!el) continue
+    el.volume = track.muted ? 0 : Math.min(1, clip.volume ?? 1)
+    const target = targetTime(clip)
+    if (Math.abs(el.currentTime - target) > 0.24 && !el.seeking) {
+      try {
+        el.currentTime = target
+      } catch {
+        // 元数据还没就绪时忽略，loadedmetadata 会再同步一次。
       }
-      if (props.playing) void el.play().catch(() => {})
-      else if (!el.paused) el.pause()
-    } else if (clip.kind === 'audio') {
-      const el = audioRefs.get(clip.id)
-      if (!el) continue
-      el.volume = track.muted ? 0 : Math.min(1, clip.volume ?? 1)
-      const target = targetTime(clip)
-      if (Math.abs(el.currentTime - target) > 0.24 && !el.seeking) {
-        try {
-          el.currentTime = target
-        } catch {
-          // 同上。
-        }
-      }
-      if (props.playing) void el.play().catch(() => {})
-      else if (!el.paused) el.pause()
+    }
+    if (props.playing) {
+      if (el.paused) void el.play().catch(() => {})
+    } else if (!el.paused) {
+      el.pause()
     }
   }
+  previousActive = [...active]
 }
 
 watch(
-  () => [props.currentTime, props.playing, activeClips.value.length],
-  () => nextTick(syncMedia),
+  playhead,
+  () => {
+    refreshActive()
+    paintTime()
+    syncMedia()
+  },
+  { flush: 'post' },
+)
+
+watch(
+  () => props.playing,
+  () => syncMedia(),
+)
+
+watch(
+  () => props.project.id,
+  () => {
+    lastSignature = ''
+    lastPaint = -1
+    refreshActive()
+    paintTime()
+    void nextTick(syncMedia)
+  },
 )
 
 function formatTime(seconds: number): string {
@@ -226,6 +295,13 @@ function formatTime(seconds: number): string {
   height: 100%;
   object-fit: contain;
   background: #0b0b0a;
+  transition: opacity 90ms linear;
+}
+
+.stage-video.is-idle,
+.stage-media.is-idle {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .stage-canvas audio {

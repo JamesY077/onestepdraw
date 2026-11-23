@@ -45,7 +45,10 @@
               <option :value="60">60</option>
             </select>
           </label>
-          <button type="button" class="top-action export" @click="exportProject">导出工程</button>
+          <button type="button" class="top-action json" @click="exportProject">导出工程</button>
+          <button type="button" class="top-action export" :disabled="exporting" @click="startExport">
+            {{ exporting ? `导出 ${Math.round(exportRatio * 100)}%` : '导出视频' }}
+          </button>
         </template>
         <button type="button" class="top-icon" title="设置" aria-label="设置" @click="router.push('/settings')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -149,7 +152,48 @@
                 <path d="M6 5v14M18 6l-8 6 8 6z" />
               </svg>
             </button>
-            <span class="toolbar-time">{{ formatClock(currentTime) }} / {{ formatClock(timelineDuration) }}</span>
+            <span class="toolbar-time">{{ clock }} / {{ formatClock(timelineDuration) }}</span>
+            <span class="tool-button-sep" />
+            <button
+              type="button"
+              class="tool-button"
+              :disabled="!selectedClipId"
+              title="在播放头处分割（⌘B）"
+              @click="splitAtPlayhead"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v18" />
+                <path d="M7 7.5 12 12l-5 4.5zM17 7.5 12 12l5 4.5z" />
+              </svg>
+              分割
+            </button>
+            <button
+              type="button"
+              class="tool-button"
+              :disabled="!selectedClipId"
+              title="复制片段（⌘D）"
+              @click="duplicateSelected"
+            >
+              复制
+            </button>
+            <button
+              type="button"
+              class="tool-button"
+              :disabled="!canUndo"
+              title="撤销（⌘Z）"
+              @click="undo"
+            >
+              撤销
+            </button>
+            <button
+              type="button"
+              class="tool-button"
+              :disabled="!canRedo"
+              title="重做（⇧⌘Z）"
+              @click="redo"
+            >
+              重做
+            </button>
             <span class="toolbar-spacer" />
             <button
               v-if="selectedClipId"
@@ -163,7 +207,7 @@
           </div>
 
           <div class="preview-stage">
-            <StudioPreview :project="project" :current-time="currentTime" :playing="playing" />
+            <StudioPreview :project="project" :playing="playing" />
           </div>
         </section>
 
@@ -173,8 +217,9 @@
         <TimelineTracks
           v-model:pxPerSec="pxPerSec"
           :project="project"
-          :current-time="currentTime"
           :selected-clip-id="selectedClipId"
+          :playing="playing"
+          hint="Ctrl+滚轮缩放 · 拖动吸附"
           @seek="seek"
           @select="selectedClipId = $event"
           @move-clip="moveClip"
@@ -216,6 +261,18 @@
       </ul>
     </div>
 
+    <div v-if="exporting" class="export-panel" role="status">
+      <div class="export-head">
+        <strong>正在导出 MP4</strong>
+        <span>{{ exportNote }}</span>
+      </div>
+      <div class="export-bar"><i :style="{ width: `${Math.round(exportRatio * 100)}%` }" /></div>
+      <div class="export-foot">
+        <span>{{ Math.round(exportRatio * 100) }}%</span>
+        <button type="button" @click="cancelExport">取消</button>
+      </div>
+    </div>
+
     <div v-if="toast" class="es-toast" role="status">{{ toast }}</div>
 
   </div>
@@ -230,9 +287,11 @@ import TimelineTracks from '@/components/edit/TimelineTracks.vue'
 import StudioChat from '@/components/edit/StudioChat.vue'
 import { useAgentStore } from '@/stores/agentStore'
 import { useEditProjectStore, projectDuration } from '@/stores/editProjectStore'
+import { playhead, setPlayhead } from '@/features/edit/playhead'
+import { exportProjectVideo } from '@/features/edit/exportVideo'
 import {
-  PROJECT_ASPECT_RATIOS,
   MAX_PROJECT_SECONDS,
+  PROJECT_ASPECT_RATIOS,
   type EditTrackKind,
   type ProjectAsset,
 } from '@/types/edit'
@@ -248,17 +307,29 @@ const timelineRef = ref<HTMLElement | null>(null)
 const CHAT_WIDTH_KEY = 'onestep_studio_chat_width_v1'
 const chatWidth = ref(readChatWidth())
 const pxPerSec = ref(52)
-const currentTime = ref(0)
+const clock = ref('00:00.0')
 const playing = ref(false)
 const selectedClipId = ref('')
 const mobileChatOpen = ref(false)
 const toast = ref('')
+const exporting = ref(false)
+const exportRatio = ref(0)
+const exportNote = ref('准备素材')
+let exportAbort: AbortController | null = null
 let toastTimer: number | null = null
 
 const projectId = computed(() => String(route.params.id || ''))
 const project = computed(() => projectStore.getProject(projectId.value))
 const conversationId = computed(() => project.value?.conversationId || '')
 const timelineDuration = computed(() => projectDuration(project.value))
+const canUndo = computed(() => {
+  void projectStore.historyTick
+  return !!project.value && projectStore.canUndo(project.value.id)
+})
+const canRedo = computed(() => {
+  void projectStore.historyTick
+  return !!project.value && projectStore.canRedo(project.value.id)
+})
 
 function clipCount(item: { tracks: Array<{ clips: unknown[] }> }): number {
   return item.tracks.reduce((count, track) => count + track.clips.length, 0)
@@ -290,7 +361,8 @@ function ensureConversation(projectValue: NonNullable<ReturnType<typeof projectS
 
 function openProject(id: string) {
   playing.value = false
-  currentTime.value = 0
+  setPlayhead(0)
+  syncClock()
   selectedClipId.value = ''
   mobileChatOpen.value = false
   router.push(`/edit/${id}`)
@@ -345,30 +417,44 @@ function setFps(event: Event) {
 }
 
 function seek(time: number) {
-  currentTime.value = Math.max(0, Math.min(MAX_PROJECT_SECONDS, time))
+  setPlayhead(Math.max(0, Math.min(MAX_PROJECT_SECONDS, time)))
+  syncClock()
+}
+
+function syncClock() {
+  const value = playhead.value
+  const minutes = Math.floor(value / 60)
+  const rest = value % 60
+  clock.value = `${String(minutes).padStart(2, '0')}:${rest.toFixed(1).padStart(4, '0')}`
 }
 
 function togglePlay() {
   if (!project.value) return
-  if (currentTime.value >= timelineDuration.value - 0.05) currentTime.value = 0
+  if (playhead.value >= timelineDuration.value - 0.05) seek(0)
   playing.value = !playing.value
 }
 
 let raf = 0
 let lastTs = 0
+let lastClock = 0
 
 function tick(timestamp: number) {
   if (!playing.value) return
   if (!lastTs) lastTs = timestamp
   const delta = (timestamp - lastTs) / 1000
   lastTs = timestamp
-  const next = currentTime.value + delta
+  const next = playhead.value + delta
   if (next >= timelineDuration.value) {
-    currentTime.value = timelineDuration.value
+    setPlayhead(timelineDuration.value)
+    syncClock()
     playing.value = false
     return
   }
-  currentTime.value = next
+  setPlayhead(next)
+  if (timestamp - lastClock > 80) {
+    lastClock = timestamp
+    syncClock()
+  }
   raf = requestAnimationFrame(tick)
 }
 
@@ -387,9 +473,20 @@ function moveClip(payload: { clipId: string; start: number }) {
 
 function trimClip(payload: { clipId: string; start: number; duration: number }) {
   if (!project.value) return
+  let trimStart: number | undefined
+  for (const track of project.value.tracks) {
+    const clip = track.clips.find((item) => item.id === payload.clipId)
+    if (!clip) continue
+    const delta = payload.start - clip.start
+    if (Math.abs(delta) > 0.001 && clip.kind !== 'image') {
+      trimStart = Math.max(0, (clip.trimStart ?? 0) + delta)
+    }
+    break
+  }
   projectStore.updateClip(project.value.id, payload.clipId, {
     start: payload.start,
     duration: payload.duration,
+    ...(trimStart === undefined ? {} : { trimStart }),
   })
 }
 
@@ -422,6 +519,110 @@ function removeSelectedClip() {
   if (!project.value || !selectedClipId.value) return
   projectStore.removeClip(project.value.id, selectedClipId.value)
   selectedClipId.value = ''
+}
+
+function clipAtPlayhead(): string {
+  if (!project.value) return ''
+  const time = playhead.value
+  if (selectedClipId.value) {
+    for (const track of project.value.tracks) {
+      const clip = track.clips.find((item) => item.id === selectedClipId.value)
+      if (clip && time > clip.start + 0.2 && time < clip.start + clip.duration - 0.2) {
+        return clip.id
+      }
+    }
+  }
+  for (const track of project.value.tracks) {
+    for (const clip of track.clips) {
+      if (time > clip.start + 0.2 && time < clip.start + clip.duration - 0.2) return clip.id
+    }
+  }
+  return ''
+}
+
+function splitAtPlayhead() {
+  if (!project.value) return
+  const target = clipAtPlayhead()
+  if (!target) {
+    showToast('把播放头放到片段中间再分割')
+    return
+  }
+  const rightId = projectStore.splitClip(project.value.id, target, playhead.value)
+  if (!rightId) {
+    showToast('这个位置没法分割')
+    return
+  }
+  selectedClipId.value = rightId
+  showToast('已在播放头处分割')
+}
+
+function duplicateSelected() {
+  if (!project.value || !selectedClipId.value) return
+  const id = projectStore.duplicateClip(project.value.id, selectedClipId.value)
+  if (id) {
+    selectedClipId.value = id
+    showToast('已复制片段')
+  }
+}
+
+function nudgeSelected(delta: number) {
+  if (!project.value || !selectedClipId.value) return
+  projectStore.nudgeClip(project.value.id, selectedClipId.value, delta)
+}
+
+function undo() {
+  if (!project.value) return
+  if (projectStore.undo(project.value.id)) showToast('已撤销')
+}
+
+function redo() {
+  if (!project.value) return
+  if (projectStore.redo(project.value.id)) showToast('已重做')
+}
+
+async function startExport() {
+  if (!project.value || exporting.value) return
+  if (!project.value.tracks.some((track) => track.clips.length > 0)) {
+    showToast('时间轴还是空的，先加几个片段再导出')
+    return
+  }
+  playing.value = false
+  const projectValue = project.value
+  const controller = new AbortController()
+  exportAbort = controller
+  exporting.value = true
+  exportRatio.value = 0
+  exportNote.value = '读取素材'
+  try {
+    const result = await exportProjectVideo(projectValue, {
+      signal: controller.signal,
+      onProgress: (ratio, note) => {
+        exportRatio.value = ratio
+        exportNote.value = note
+      },
+    })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(result.blob)
+    link.download = `${projectValue.name || 'onestep'}.mp4`
+    link.click()
+    window.setTimeout(() => URL.revokeObjectURL(link.href), 4000)
+    const size = result.blob.size < 1024 * 1024
+      ? `${Math.round(result.blob.size / 1024)}KB`
+      : `${(result.blob.size / 1024 / 1024).toFixed(1)}MB`
+    showToast(
+      `已导出 ${result.width}×${result.height} · ${size}${result.hasAudio ? '' : ' · 无音轨'}`,
+    )
+  } catch (error) {
+    if ((error as DOMException)?.name === 'AbortError') showToast('已取消导出')
+    else showToast((error as Error)?.message || '导出失败')
+  } finally {
+    exporting.value = false
+    exportAbort = null
+  }
+}
+
+function cancelExport() {
+  exportAbort?.abort()
 }
 
 function fitTimeline() {
@@ -555,6 +756,31 @@ function handleKeydown(event: KeyboardEvent) {
       target.tagName === 'SELECT' ||
       target.isContentEditable)
   if (editing) return
+  if (event.metaKey || event.ctrlKey) {
+    const key = event.key.toLowerCase()
+    if (key === 'z') {
+      event.preventDefault()
+      if (event.shiftKey) redo()
+      else undo()
+      return
+    }
+    if (key === 'b') {
+      event.preventDefault()
+      splitAtPlayhead()
+      return
+    }
+    if (key === 'd') {
+      event.preventDefault()
+      duplicateSelected()
+      return
+    }
+    if (key === 's') {
+      event.preventDefault()
+      void startExport()
+      return
+    }
+    return
+  }
   if (event.code === 'Space') {
     event.preventDefault()
     togglePlay()
@@ -564,10 +790,12 @@ function handleKeydown(event: KeyboardEvent) {
     removeSelectedClip()
   } else if (event.key === 'ArrowLeft') {
     event.preventDefault()
-    seek(currentTime.value - (event.shiftKey ? 1 : 0.1))
+    if (event.altKey && selectedClipId.value) nudgeSelected(-(event.shiftKey ? 1 : 0.1))
+    else seek(playhead.value - (event.shiftKey ? 1 : 0.1))
   } else if (event.key === 'ArrowRight') {
     event.preventDefault()
-    seek(currentTime.value + (event.shiftKey ? 1 : 0.1))
+    if (event.altKey && selectedClipId.value) nudgeSelected(event.shiftKey ? 1 : 0.1)
+    else seek(playhead.value + (event.shiftKey ? 1 : 0.1))
   }
 }
 
@@ -576,7 +804,8 @@ watch(
   (id, previous) => {
     if (previous !== undefined) {
       playing.value = false
-      currentTime.value = 0
+      setPlayhead(0)
+      syncClock()
       selectedClipId.value = ''
     }
     if (id && project.value) {
@@ -596,6 +825,18 @@ watch(
   },
 )
 
+/** 撤销/删除后选中的片段可能已经不存在，顺手清理。 */
+watch(
+  () => projectStore.historyTick,
+  () => {
+    if (!project.value || !selectedClipId.value) return
+    const exists = project.value.tracks.some((track) =>
+      track.clips.some((clip) => clip.id === selectedClipId.value),
+    )
+    if (!exists) selectedClipId.value = ''
+  },
+)
+
 function clampChatWidth() {
   if (window.innerWidth > 1180 && chatWidth.value > maxChatWidth()) {
     chatWidth.value = maxChatWidth()
@@ -604,6 +845,7 @@ function clampChatWidth() {
 
 onMounted(() => {
   if (project.value) ensureConversation(project.value)
+  syncClock()
   nextTick(fitTimeline)
   window.addEventListener('keydown', handleKeydown)
   window.addEventListener('resize', clampChatWidth)
@@ -611,6 +853,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf)
+  exportAbort?.abort()
   window.removeEventListener('keydown', handleKeydown)
   window.removeEventListener('resize', clampChatWidth)
   if (toastTimer !== null) window.clearTimeout(toastTimer)
@@ -799,7 +1042,7 @@ onBeforeUnmount(() => {
 }
 
 .es-timeline > * {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
 }
 
@@ -1043,6 +1286,13 @@ onBeforeUnmount(() => {
   gap: 5px;
   flex: none;
   padding-bottom: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.preview-toolbar::-webkit-scrollbar {
+  display: none;
 }
 
 .play-button {
@@ -1066,8 +1316,10 @@ onBeforeUnmount(() => {
 
 .tool-button {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
   height: 26px;
   padding: 0 8px;
   border: 1px solid transparent;
@@ -1094,7 +1346,27 @@ onBeforeUnmount(() => {
   color: #c0503f;
 }
 
+.tool-button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.tool-button:disabled:hover {
+  border-color: transparent;
+  background: transparent;
+  color: #8c8c84;
+}
+
+.tool-button-sep {
+  width: 1px;
+  height: 15px;
+  margin: 0 2px;
+  background: #e6e6df;
+}
+
 .toolbar-time {
+  flex: none;
+  white-space: nowrap;
   margin-left: 4px;
   color: #8c8c84;
   font-size: 10.5px;
@@ -1201,6 +1473,88 @@ onBeforeUnmount(() => {
   box-shadow: 0 8px 24px rgba(17, 17, 16, 0.2);
 }
 
+.export-panel {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  z-index: 960;
+  width: min(360px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  padding: 12px 14px;
+  border: 1px solid #ecece6;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 18px 40px -18px rgba(17, 17, 16, 0.35);
+}
+
+.export-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.export-head strong {
+  color: #1d1d1b;
+  font-size: 11.5px;
+  font-weight: 650;
+}
+
+.export-head span {
+  overflow: hidden;
+  color: #a3a39b;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.export-bar {
+  height: 3px;
+  border-radius: 999px;
+  background: #f0f0ea;
+  overflow: hidden;
+}
+
+.export-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #b4472f;
+  transition: width 160ms linear;
+}
+
+.export-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 7px;
+  color: #a3a39b;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.export-foot button {
+  padding: 2px 8px;
+  border: 1px solid #ecece6;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #6b6b63;
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.export-foot button:hover {
+  border-color: #cfcfc7;
+  color: #111110;
+}
+
+.top-action:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 /* 对话栏可拖拽改宽，边界只画一条细线 */
 .chat-resizer {
   position: absolute;
@@ -1246,6 +1600,9 @@ onBeforeUnmount(() => {
   }
   .save-state,
   .top-field span {
+    display: none;
+  }
+  .top-action.json {
     display: none;
   }
 }
@@ -1307,12 +1664,27 @@ onBeforeUnmount(() => {
     flex: none;
   }
   .save-state,
-  .top-action.export,
+  .top-action.json,
   .top-icon {
     display: none;
   }
   .top-action {
     padding: 5px 8px;
+  }
+  .preview-toolbar {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    overflow: visible;
+  }
+  .toolbar-time,
+  .tool-button-sep {
+    display: none;
+  }
+  .toolbar-spacer {
+    display: none;
+  }
+  .preview-toolbar .tool-button.danger {
+    margin-left: auto;
   }
 }
 </style>
