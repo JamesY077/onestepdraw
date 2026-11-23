@@ -3,13 +3,15 @@ import type { EditProject } from '@/types/edit'
 /** 吸附候选点：片段边缘、播放头、0 秒。 */
 export function collectSnapTargets(
   project: EditProject,
-  options: { excludeClipId?: string; playhead?: number } = {},
+  options: { excludeClipId?: string; excludeClipIds?: string[]; playhead?: number } = {},
 ): number[] {
   const targets = new Set<number>([0])
   if (Number.isFinite(options.playhead)) targets.add(Math.max(0, options.playhead as number))
+  const excluded = new Set(options.excludeClipIds || [])
+  if (options.excludeClipId) excluded.add(options.excludeClipId)
   for (const track of project.tracks) {
     for (const clip of track.clips) {
-      if (clip.id === options.excludeClipId) continue
+      if (excluded.has(clip.id)) continue
       targets.add(round(clip.start))
       targets.add(round(clip.start + clip.duration))
     }

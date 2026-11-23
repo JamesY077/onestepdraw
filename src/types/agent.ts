@@ -39,6 +39,30 @@ export interface AgentTemplateRef {
   source: 'builtin' | 'custom'
 }
 
+/**
+ * 时间轴片段快照：只描述用户选中的片段。
+ * 选中片段发给 AI 时用它做上下文，避免把整条时间轴都塞进这一轮请求。
+ */
+export interface AgentClipRef {
+  id: string
+  name: string
+  kind: 'video' | 'image' | 'audio'
+  trackId: string
+  trackName: string
+  trackKind: 'video' | 'overlay' | 'audio'
+  /** 秒。 */
+  start: number
+  /** 秒。 */
+  duration: number
+  url: string
+  thumbnail?: string
+  trimStart?: number
+  volume?: number
+  opacity?: number
+  /** 素材库里的原始名字，方便模型理解画面来源。 */
+  assetName?: string
+}
+
 /** 输入框一次提交的内容。 */
 export interface ComposerSubmit {
   content: string
@@ -117,6 +141,8 @@ export interface AgentMessage {
   attachments?: AgentAttachment[]
   /** 用户这一轮引用的模板，可以多个。 */
   templates?: AgentTemplateRef[]
+  /** 用户这一轮选中的时间轴片段；有值表示只针对这些片段修改。 */
+  clips?: AgentClipRef[]
 }
 
 /** 对话所在的工作模式：普通对话只聊；创作对话的结果进入剪辑项目。 */

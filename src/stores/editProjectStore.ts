@@ -488,6 +488,25 @@ export const useEditProjectStore = defineStore('editProject', () => {
     }
   }
 
+  /** 批量删除选中片段；只记一步撤销。 */
+  function removeClips(projectId: string, clipIds: string[]): number {
+    const project = getProject(projectId)
+    if (!project || !clipIds.length) return 0
+    const ids = new Set(clipIds)
+    const count = project.tracks.reduce(
+      (total, track) => total + track.clips.filter((clip) => ids.has(clip.id)).length,
+      0,
+    )
+    if (!count) return 0
+    recordHistory(project)
+    for (const track of project.tracks) {
+      track.clips = track.clips.filter((clip) => !ids.has(clip.id))
+    }
+    pruneEmptyTracks(project)
+    touch(project)
+    return count
+  }
+
   /** 在指定时间点把片段切成两段，返回右半段的 id。 */
   function splitClip(projectId: string, clipId: string, atTime: number): string | null {
     const project = getProject(projectId)
@@ -554,6 +573,51 @@ export const useEditProjectStore = defineStore('editProject', () => {
     if (!found || !Number.isFinite(delta) || !delta) return
     recordHistory(project)
     found.clip.start = Math.max(0, Math.min(MAX_PROJECT_SECONDS, found.clip.start + delta))
+    touch(project)
+  }
+
+  /** 多选拖动：所有片段一起平移，只记一步撤销。 */
+  function moveClips(projectId: string, clipIds: string[], delta: number) {
+    nudgeClips(projectId, clipIds, delta)
+  }
+
+  /** 批量微调选中片段；只记一步撤销。 */
+  function nudgeClips(projectId: string, clipIds: string[], delta: number) {
+    const project = getProject(projectId)
+    if (!project || !Number.isFinite(delta) || !delta) return
+    const ids = new Set(clipIds)
+    const clips = project.tracks.flatMap((track) => track.clips.filter((clip) => ids.has(clip.id)))
+    if (!clips.length) return
+    recordHistory(project)
+    for (const clip of clips) {
+      clip.start = Math.max(0, Math.min(MAX_PROJECT_SECONDS, clip.start + delta))
+    }
+    touch(project)
+  }
+
+  /** 批量改属性；只记一步撤销。 */
+  function updateClips(
+    projectId: string,
+    clipIds: string[],
+    patch: Partial<Pick<TimelineClip, 'start' | 'duration' | 'trimStart' | 'volume' | 'opacity'>>,
+  ) {
+    const project = getProject(projectId)
+    if (!project || !clipIds.length) return
+    const ids = new Set(clipIds)
+    const clips = project.tracks.flatMap((track) => track.clips.filter((clip) => ids.has(clip.id)))
+    if (!clips.length) return
+    recordHistory(project)
+    for (const clip of clips) {
+      if (typeof patch.start === 'number') {
+        clip.start = Math.max(0, Math.min(MAX_PROJECT_SECONDS, patch.start))
+      }
+      if (typeof patch.duration === 'number') {
+        clip.duration = Math.max(MIN_CLIP_SECONDS, Math.min(MAX_PROJECT_SECONDS, patch.duration))
+      }
+      if (typeof patch.trimStart === 'number') clip.trimStart = Math.max(0, patch.trimStart)
+      if (typeof patch.volume === 'number') clip.volume = Math.max(0, Math.min(1, patch.volume))
+      if (typeof patch.opacity === 'number') clip.opacity = Math.max(0, Math.min(1, patch.opacity))
+    }
     touch(project)
   }
 
@@ -674,10 +738,14 @@ export const useEditProjectStore = defineStore('editProject', () => {
     addAssetToTrack,
     updateClip,
     removeClip,
+    removeClips,
     splitClip,
     duplicateClip,
     insertClip,
     nudgeClip,
+    nudgeClips,
+    moveClips,
+    updateClips,
     setTrackMuted,
     applyTimelineOps,
     projectSummary,

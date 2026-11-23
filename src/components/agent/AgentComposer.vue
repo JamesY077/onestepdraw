@@ -446,11 +446,18 @@ import {
 import type { AgentAttachment, ComposerSubmit } from '@/types/agent'
 
 const props = withDefaults(
-  defineProps<{ disabled?: boolean; placeholder?: string; tone?: 'auto' | 'create' | 'chat' }>(),
+  defineProps<{
+    disabled?: boolean
+    placeholder?: string
+    tone?: 'auto' | 'create' | 'chat'
+    /** 输入框之外还有可用上下文（例如选中的时间轴片段）时，允许空文本发送。 */
+    canSendExtra?: boolean
+  }>(),
   {
     disabled: false,
     placeholder: '',
     tone: 'auto',
+    canSendExtra: false,
   },
 )
 const emit = defineEmits<{
@@ -492,7 +499,10 @@ const canSend = computed(
   () =>
     !props.disabled &&
     pendingCount.value === 0 &&
-    (!!text.value.trim() || attachments.value.length > 0 || templateStore.applied.length > 0),
+    (!!text.value.trim() ||
+      attachments.value.length > 0 ||
+      templateStore.applied.length > 0 ||
+      props.canSendExtra),
 )
 
 const placeholderText = computed(() => {

@@ -162,7 +162,16 @@
             />
           </div>
         </section>
-
+        <ClipInspector
+          v-if="inspectorOpen && selectedEntries.length"
+          :entries="selectedEntries"
+          @close="inspectorOpen = false"
+          @ask-ai="askAiForSelection"
+          @update-clip="updateSelectedClip"
+          @duplicate="duplicateSelected"
+          @split="splitAtPlayhead"
+          @remove="removeSelectedClip"
+        />
       </main>
 
       <div ref="timelineRef" class="es-timeline">
@@ -181,18 +190,22 @@
           v-model:pxPerSec="pxPerSec"
           :project="project"
           :selected-clip-id="selectedClipId"
+          :selected-clip-ids="selectedClipIds"
           :playing="playing"
           :can-undo="canUndo"
           :can-redo="canRedo"
           @seek="seek"
-          @select="selectedClipId = $event"
+          @select="handleTimelineSelect"
           @move-clip="moveClip"
+          @move-clips="moveClips"
           @trim-clip="trimClip"
           @toggle-mute="toggleMute"
           @add-asset="handleAddAsset"
           @split="splitAtPlayhead"
           @duplicate="duplicateSelected"
           @remove="removeSelectedClip"
+          @ask-ai="askAiForSelection"
+          @inspector="inspectorOpen = true"
           @undo="undo"
           @redo="redo"
           @fit="fitTimeline"
@@ -201,7 +214,13 @@
       </div>
 
       <div class="es-chat">
-        <StudioChat :conversation-id="conversationId" :project-id="project.id" />
+        <StudioChat
+          ref="studioChatRef"
+          :conversation-id="conversationId"
+          :project-id="project.id"
+          :selected-clips="selectedAgentClips"
+          @clear-clips="clearTimelineSelection"
+        />
       </div>
 
       <div
@@ -277,14 +296,17 @@ import BrandMark from '@/components/agent/BrandMark.vue'
 import StudioPreview from '@/components/edit/StudioPreview.vue'
 import TimelineTracks from '@/components/edit/TimelineTracks.vue'
 import StudioChat from '@/components/edit/StudioChat.vue'
+import ClipInspector from '@/components/edit/ClipInspector.vue'
 import { useAgentStore } from '@/stores/agentStore'
 import { useEditProjectStore, projectDuration } from '@/stores/editProjectStore'
 import { playhead, setPlayhead } from '@/features/edit/playhead'
 import { exportProjectVideo } from '@/features/edit/exportVideo'
 import { confirmDialog } from '@/features/ui/dialog'
+import type { AgentClipRef } from '@/types/agent'
 import {
   MAX_PROJECT_SECONDS,
   PROJECT_ASPECT_RATIOS,
+  type EditTrackKind,
   type ProjectAsset,
   type TimelineClip,
 } from '@/types/edit'
@@ -315,6 +337,9 @@ const pxPerSec = ref(52)
 const clock = ref('00:00.0')
 const playing = ref(false)
 const selectedClipId = ref('')
+const selectedClipIds = ref<string[]>([])
+const inspectorOpen = ref(false)
+const studioChatRef = ref<InstanceType<typeof StudioChat> | null>(null)
 const mobileChatOpen = ref(false)
 const toast = ref('')
 const clipboard = ref<{ trackId: string; clip: TimelineClip } | null>(null)
@@ -342,6 +367,8 @@ const SHORTCUT_GROUPS = [
       { label: '复制 / 剪切', keys: '⌘C / ⌘X' },
       { label: '粘贴到播放头', keys: '⌘V' },
       { label: '删除片段', keys: 'Delete' },
+      { label: '全选片段', keys: '⌘A' },
+      { label: '把选中片段发给 AI', keys: '⌘ Enter' },
       { label: '撤销 / 重做', keys: '⌘Z / ⇧⌘Z' },
     ],
   },
@@ -403,7 +430,7 @@ function openProject(id: string) {
   playing.value = false
   setPlayhead(0)
   syncClock()
-  selectedClipId.value = ''
+  clearTimelineSelection()
   mobileChatOpen.value = false
   router.push(`/edit/${id}`)
 }
@@ -517,6 +544,11 @@ function moveClip(payload: { clipId: string; start: number }) {
   projectStore.updateClip(project.value.id, payload.clipId, { start: payload.start })
 }
 
+function moveClips(payload: { ids: string[]; delta: number }) {
+  if (!project.value || !payload.ids.length || !payload.delta) return
+  projectStore.moveClips(project.value.id, payload.ids, payload.delta)
+}
+
 function trimClip(payload: { clipId: string; start: number; duration: number }) {
   if (!project.value) return
   let trimStart: number | undefined
@@ -562,9 +594,10 @@ function startAssetDrag(event: DragEvent, assetId: string) {
 }
 
 function removeSelectedClip() {
-  if (!project.value || !selectedClipId.value) return
-  projectStore.removeClip(project.value.id, selectedClipId.value)
-  selectedClipId.value = ''
+  if (!project.value || !selectedClipIds.value.length) return
+  const count = projectStore.removeClips(project.value.id, selectedClipIds.value)
+  clearTimelineSelection()
+  if (count > 1) showToast(`已删除 ${count} 个片段`)
 }
 
 function selectedClipRef(): { trackId: string; clip: TimelineClip } | null {
@@ -574,6 +607,100 @@ function selectedClipRef(): { trackId: string; clip: TimelineClip } | null {
     if (clip) return { trackId: track.id, clip }
   }
   return null
+}
+
+interface SelectedClipEntry {
+  clip: TimelineClip
+  trackId: string
+  trackName: string
+  trackKind: EditTrackKind
+}
+
+const selectedEntries = computed<SelectedClipEntry[]>(() => {
+  const current = project.value
+  if (!current || !selectedClipIds.value.length) return []
+  const ids = new Set(selectedClipIds.value)
+  const entries: SelectedClipEntry[] = []
+  for (const track of current.tracks) {
+    for (const clip of [...track.clips].sort((a, b) => a.start - b.start)) {
+      if (!ids.has(clip.id)) continue
+      entries.push({
+        clip,
+        trackId: track.id,
+        trackName: track.name,
+        trackKind: track.kind,
+      })
+    }
+  }
+  return entries
+})
+
+const selectedAgentClips = computed<AgentClipRef[]>(() =>
+  selectedEntries.value.map(({ clip, trackId, trackName, trackKind }) => {
+    const asset = clip.assetId
+      ? project.value?.assets.find((item) => item.id === clip.assetId)
+      : project.value?.assets.find((item) => item.url === clip.url)
+    return {
+      id: clip.id,
+      name: clip.name,
+      kind: clip.kind,
+      trackId,
+      trackName,
+      trackKind,
+      start: Math.round(clip.start * 1000) / 1000,
+      duration: Math.round(clip.duration * 1000) / 1000,
+      url: clip.url,
+      thumbnail: clip.thumbnail || (clip.kind === 'image' ? clip.url : undefined),
+      trimStart: clip.trimStart,
+      volume: clip.volume,
+      opacity: clip.opacity,
+      assetName: asset?.name,
+    }
+  }),
+)
+
+function handleTimelineSelect(payload: { ids: string[]; primary: string }) {
+  selectedClipIds.value = [...payload.ids]
+  selectedClipId.value = payload.primary || payload.ids[payload.ids.length - 1] || ''
+  if (!selectedClipIds.value.length) inspectorOpen.value = false
+}
+
+function clearTimelineSelection() {
+  selectedClipIds.value = []
+  selectedClipId.value = ''
+  inspectorOpen.value = false
+}
+
+function askAiForSelection() {
+  if (!selectedAgentClips.value.length) {
+    showToast('先在时间轴上选中要修改的片段')
+    return
+  }
+  if (agentStore.isStreaming) {
+    showToast('正在生成，等这一条结束再发')
+    return
+  }
+  if (window.innerWidth <= 1180) mobileChatOpen.value = true
+  void nextTick(() => studioChatRef.value?.focusComposer())
+  showToast(`已把 ${selectedAgentClips.value.length} 个选中片段带到对话里`)
+}
+
+function updateSelectedClip(payload: {
+  ids?: string[]
+  patch: Partial<Pick<TimelineClip, 'start' | 'duration' | 'volume' | 'opacity' | 'name'>>
+}) {
+  if (!project.value) return
+  const ids = payload.ids?.length ? payload.ids : selectedClipIds.value
+  if (!ids.length) return
+  const { name, ...rest } = payload.patch
+  if (name !== undefined && ids.length === 1) {
+    projectStore.updateClip(project.value.id, ids[0], { name })
+  }
+  // 多选时「起点」只有一个值，统一写会把片段叠到一起，这里只允许单段改起点。
+  if (ids.length > 1) delete rest.start
+  if (Object.keys(rest).length) {
+    projectStore.updateClips(project.value.id, ids, rest)
+  }
 }
 
 function copySelected() {
@@ -634,6 +761,7 @@ function pasteClipboard() {
     return
   }
   selectedClipId.value = id
+  selectedClipIds.value = [id]
   showToast(overlapped ? `已粘贴到 ${start.toFixed(1)}s（避开已有片段）` : `已粘贴到 ${start.toFixed(1)}s`)
 }
 
@@ -682,21 +810,27 @@ function splitAtPlayhead() {
     return
   }
   selectedClipId.value = rightId
+  selectedClipIds.value = [rightId]
   showToast('已在播放头处分割')
 }
 
 function duplicateSelected() {
-  if (!project.value || !selectedClipId.value) return
-  const id = projectStore.duplicateClip(project.value.id, selectedClipId.value)
-  if (id) {
-    selectedClipId.value = id
-    showToast('已复制片段')
+  if (!project.value || !selectedClipIds.value.length) return
+  const ids: string[] = []
+  for (const clipId of selectedClipIds.value) {
+    const id = projectStore.duplicateClip(project.value.id, clipId)
+    if (id) ids.push(id)
+  }
+  if (ids.length) {
+    selectedClipIds.value = ids
+    selectedClipId.value = ids[ids.length - 1]
+    showToast(ids.length > 1 ? `已复制 ${ids.length} 个片段` : '已复制片段')
   }
 }
 
 function nudgeSelected(delta: number) {
-  if (!project.value || !selectedClipId.value) return
-  projectStore.nudgeClip(project.value.id, selectedClipId.value, delta)
+  if (!project.value || !selectedClipIds.value.length) return
+  projectStore.nudgeClips(project.value.id, selectedClipIds.value, delta)
 }
 
 function undo() {
@@ -911,6 +1045,15 @@ function relativeTime(timestamp: number): string {
   return `${Math.floor(diff / 86_400_000)} 天前`
 }
 
+function selectAllClips() {
+  if (!project.value) return
+  const ids = project.value.tracks.flatMap((track) =>
+    [...track.clips].sort((a, b) => a.start - b.start).map((clip) => clip.id),
+  )
+  selectedClipIds.value = ids
+  selectedClipId.value = ids[ids.length - 1] || ''
+}
+
 function handleKeydown(event: KeyboardEvent) {
   const target = event.target as HTMLElement | null
   const editing =
@@ -933,6 +1076,16 @@ function handleKeydown(event: KeyboardEvent) {
       event.preventDefault()
       if (event.shiftKey) redo()
       else undo()
+      return
+    }
+    if (key === 'a') {
+      event.preventDefault()
+      selectAllClips()
+      return
+    }
+    if (key === 'enter') {
+      event.preventDefault()
+      askAiForSelection()
       return
     }
     if (key === 'b' || key === 'k') {
@@ -1004,7 +1157,7 @@ function handleKeydown(event: KeyboardEvent) {
   }
   if (event.key === 'Escape') {
     shortcutsOpen.value = false
-    selectedClipId.value = ''
+    clearTimelineSelection()
     return
   }
   if (event.key === 'Home') {
@@ -1026,16 +1179,16 @@ function handleKeydown(event: KeyboardEvent) {
     event.preventDefault()
     togglePlay()
   } else if (event.key === 'Delete' || event.key === 'Backspace') {
-    if (!selectedClipId.value) return
+    if (!selectedClipIds.value.length) return
     event.preventDefault()
     removeSelectedClip()
   } else if (event.key === 'ArrowLeft') {
     event.preventDefault()
-    if (event.altKey && selectedClipId.value) nudgeSelected(-(event.shiftKey ? 1 : 0.1))
+    if (event.altKey && selectedClipIds.value.length) nudgeSelected(-(event.shiftKey ? 1 : 0.1))
     else seek(playhead.value - (event.shiftKey ? 1 : 0.1))
   } else if (event.key === 'ArrowRight') {
     event.preventDefault()
-    if (event.altKey && selectedClipId.value) nudgeSelected(event.shiftKey ? 1 : 0.1)
+    if (event.altKey && selectedClipIds.value.length) nudgeSelected(event.shiftKey ? 1 : 0.1)
     else seek(playhead.value + (event.shiftKey ? 1 : 0.1))
   }
 }
@@ -1047,7 +1200,7 @@ watch(
       playing.value = false
       setPlayhead(0)
       syncClock()
-      selectedClipId.value = ''
+      clearTimelineSelection()
     }
     if (id && project.value) {
       const conversation = ensureConversation(project.value)
@@ -1070,11 +1223,18 @@ watch(
 watch(
   () => projectStore.historyTick,
   () => {
-    if (!project.value || !selectedClipId.value) return
-    const exists = project.value.tracks.some((track) =>
-      track.clips.some((clip) => clip.id === selectedClipId.value),
+    if (!project.value || !selectedClipIds.value.length) return
+    const alive = new Set(
+      project.value.tracks.flatMap((track) => track.clips.map((clip) => clip.id)),
     )
-    if (!exists) selectedClipId.value = ''
+    const kept = selectedClipIds.value.filter((id) => alive.has(id))
+    if (kept.length !== selectedClipIds.value.length) {
+      selectedClipIds.value = kept
+      if (!kept.includes(selectedClipId.value)) {
+        selectedClipId.value = kept[kept.length - 1] || ''
+      }
+      if (!kept.length) inspectorOpen.value = false
+    }
   },
 )
 
@@ -1275,6 +1435,11 @@ onBeforeUnmount(() => {
 
 .es-main {
   grid-area: main;
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 }
 
 .es-timeline {
@@ -1508,18 +1673,11 @@ onBeforeUnmount(() => {
   font-size: 9px;
 }
 
-.es-main {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-}
-
 .es-preview {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
   min-height: 0;
   padding: 10px 14px 8px;
   background: #f7f7f3;
@@ -1932,7 +2090,7 @@ onBeforeUnmount(() => {
   .es-body.chat-open .es-chat {
     transform: none;
   }
-    .chat-launch {
+  .chat-launch {
     display: inline-flex;
   }
   .chat-launch.active {

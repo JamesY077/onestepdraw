@@ -5,6 +5,7 @@ import { LocalAgentError, streamLocalAgent, type LocalAgentMessage } from '@/api
 import type {
   AgentAttachment,
   AgentChatMessage,
+  AgentClipRef,
   AgentContentPart,
   AgentConversation,
   AgentMessage,
@@ -20,6 +21,11 @@ import {
   templateAssets,
   toModelImage,
 } from '@/features/agent/attachments'
+import {
+  collectClipImages,
+  describeClipContext,
+  persistableClip,
+} from '@/features/agent/clipContext'
 import {
   buildAgentGeneration,
   describeAgentGeneration,
@@ -114,6 +120,8 @@ export interface AgentSendOptions {
   attachments?: AgentAttachment[]
   /** 本轮引用的模板，可以多个。 */
   templates?: AgentTemplateRef[]
+  /** 本轮选中的时间轴片段；只把这几段交给模型。 */
+  clips?: AgentClipRef[]
 }
 
 export const useAgentStore = defineStore('agent', () => {
@@ -152,6 +160,9 @@ export const useAgentStore = defineStore('agent', () => {
                   ...template,
                   assets: template.assets?.map(persistableAttachment),
                 }))
+              : undefined,
+            clips: message.clips?.length
+              ? message.clips.map(persistableClip)
               : undefined,
           })),
         }))
@@ -233,13 +244,11 @@ export const useAgentStore = defineStore('agent', () => {
       message.role === 'assistant' && message.generation
         ? `\n\n[系统记录] 已调用${message.generation.kind === 'image' ? '图片' : '视频'}生成：${describeAgentGeneration(message.generation)}。`
         : ''
-    return `${message.content}${note}${askContext(message)}${describeAttachments(
-      message.attachments,
-      { includePaths },
-    )}${describeTemplates(message.templates)}${describeAttachments(
-      templateAssets(message.templates),
-      { includePaths },
-    )}`.trim()
+    return `${message.content}${note}${askContext(message)}${describeClipContext(
+      message.clips,
+    )}${describeAttachments(message.attachments, { includePaths })}${describeTemplates(
+      message.templates,
+    )}${describeAttachments(templateAssets(message.templates), { includePaths })}`.trim()
   }
 
   function latestUserMessage(history: AgentMessage[]): AgentMessage | null {
@@ -260,13 +269,17 @@ export const useAgentStore = defineStore('agent', () => {
           (message.content.trim() ||
             message.generation ||
             message.attachments?.length ||
-            message.templates?.length),
+            message.templates?.length ||
+            message.clips?.length),
       )
       .slice(-MAX_CONTEXT_MESSAGES)
 
     const latestUser = latestUserMessage(source)
     const imageUrls = latestUser
-      ? collectAttachmentImages(latestUser.attachments, latestUser.templates)
+      ? [
+          ...collectClipImages(latestUser.clips),
+          ...collectAttachmentImages(latestUser.attachments, latestUser.templates),
+        ]
       : []
     const modelImages: string[] = []
     for (const url of imageUrls) {
@@ -324,7 +337,8 @@ export const useAgentStore = defineStore('agent', () => {
           (message.content.trim() ||
             message.generation ||
             message.attachments?.length ||
-            message.templates?.length),
+            message.templates?.length ||
+            message.clips?.length),
       )
       .slice(-MAX_CONTEXT_MESSAGES)
       .map<LocalAgentMessage>((message) => ({
@@ -675,7 +689,8 @@ export const useAgentStore = defineStore('agent', () => {
     const content = rawContent.trim()
     const attachments = (options.attachments || []).slice(0, MAX_ATTACHMENTS)
     const templates = options.templates?.length ? options.templates : undefined
-    if ((!content && !attachments.length && !templates?.length) || streamingId.value) return
+    const clips = options.clips?.length ? options.clips : undefined
+    if ((!content && !attachments.length && !templates?.length && !clips?.length) || streamingId.value) return
 
     let conversation = options.conversationId
       ? findConversation(options.conversationId)
@@ -698,6 +713,7 @@ export const useAgentStore = defineStore('agent', () => {
       status: 'done',
       attachments: attachments.length ? attachments : undefined,
       templates,
+      clips,
     })
     const assistantMessage = reactive<AgentMessage>({
       id: createId(),
@@ -714,6 +730,7 @@ export const useAgentStore = defineStore('agent', () => {
       const titleSource =
         content ||
         templates?.[0]?.name ||
+        clips?.[0]?.name ||
         attachments[0]?.name ||
         ''
       conversation.title = makeTitle(titleSource)

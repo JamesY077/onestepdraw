@@ -6,7 +6,7 @@
 
     <div class="message-main">
       <div
-        v-if="message.role === 'user' && (message.templates?.length || message.attachments?.length)"
+        v-if="message.role === 'user' && (message.templates?.length || message.attachments?.length || message.clips?.length)"
         class="message-refs"
       >
         <div
@@ -54,6 +54,24 @@
             </span>
             <span class="ref-asset-name">{{ item.name }}</span>
           </component>
+        </div>
+        <div v-if="message.clips?.length" class="ref-clips">
+          <span v-for="clip in message.clips" :key="clip.id" class="ref-clip">
+            <img v-if="clip.thumbnail" :src="clip.thumbnail" alt="" />
+            <span v-else class="ref-clip-icon" aria-hidden="true">
+              <svg v-if="clip.kind === 'audio'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                <path d="M6 10v4M10 7.5v9M14 9v6M18 11v2" />
+              </svg>
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+                <rect x="3.5" y="5.5" width="17" height="13" rx="3" />
+                <path d="M10.4 9.6 15 12l-4.6 2.4z" fill="currentColor" stroke="none" />
+              </svg>
+            </span>
+            <span class="ref-clip-copy">
+              <strong>{{ clip.name }}</strong>
+              <small>{{ clip.start.toFixed(1) }}s → {{ (clip.start + clip.duration).toFixed(1) }}s</small>
+            </span>
+          </span>
         </div>
       </div>
 
@@ -320,6 +338,69 @@ async function copyContent() {
   font-size: 9.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ref-clips {
+  display: flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.ref-clip {
+  display: inline-flex;
+  max-width: 176px;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px 3px 3px;
+  border: 1px solid #ecdcd3;
+  border-radius: 8px;
+  background: #fdf8f5;
+}
+
+.ref-clip img,
+.ref-clip-icon {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 5px;
+  background: #f4ece7;
+  object-fit: cover;
+}
+
+.ref-clip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #b4553a;
+}
+
+.ref-clip-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ref-clip-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ref-clip-copy strong {
+  overflow: hidden;
+  color: #4a2f26;
+  font-size: 9.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ref-clip-copy small {
+  color: #b09286;
+  font-size: 8.5px;
+  font-variant-numeric: tabular-nums;
 }
 
 .user-bubble {

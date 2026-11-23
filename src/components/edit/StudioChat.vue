@@ -53,12 +53,35 @@
     </div>
 
     <div class="sc-composer">
+      <div v-if="selectedClips.length" class="sc-selection" aria-label="选中片段上下文">
+        <div class="sc-selection-head">
+          <span class="sc-selection-title">
+            <i aria-hidden="true" />
+            只改选中的 {{ selectedClips.length }} 个片段
+          </span>
+          <button type="button" @click="$emit('clear-clips')">取消选择</button>
+        </div>
+        <div class="sc-selection-list">
+          <span
+            v-for="clip in selectedClips"
+            :key="clip.id"
+            class="sc-selection-chip"
+            :title="`${clip.name} · ${clip.start.toFixed(1)}s → ${(clip.start + clip.duration).toFixed(1)}s`"
+          >
+            <img v-if="clipThumb(clip)" :src="clipThumb(clip)" alt="" />
+            <span v-else class="sc-selection-kind">{{ kindLetter(clip.kind) }}</span>
+            <span class="sc-selection-name">{{ clip.name }}</span>
+            <span class="sc-selection-time">{{ clip.duration.toFixed(1) }}s</span>
+          </span>
+        </div>
+      </div>
       <AgentComposer
         ref="composerRef"
         v-model="draft"
         tone="create"
         :disabled="agentStore.isStreaming"
-        placeholder="描述要改的地方，或继续生成…"
+        :can-send-extra="selectedClips.length > 0"
+        :placeholder="selectedClips.length ? '说清楚这几段要怎么改，只影响选中片段…' : '描述要改的地方，或继续生成…'"
         @send="send"
         @stop="agentStore.stopStreaming"
       />
@@ -74,9 +97,19 @@ import { useAgentStore } from '@/stores/agentStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
-import type { ComposerSubmit } from '@/types/agent'
+import type { AgentClipRef, ComposerSubmit } from '@/types/agent'
 
-const props = defineProps<{ conversationId: string; projectId: string }>()
+const props = withDefaults(
+  defineProps<{
+    conversationId: string
+    projectId: string
+    /** 时间轴上当前选中的片段；有值时这一轮只把这几段发给 AI。 */
+    selectedClips?: AgentClipRef[]
+  }>(),
+  { selectedClips: () => [] },
+)
+
+const emit = defineEmits<{ (event: 'clear-clips'): void }>()
 
 const agentStore = useAgentStore()
 const chatMode = useChatModeStore()
@@ -116,16 +149,20 @@ watch(
 function send(payload: ComposerSubmit) {
   const text = payload.content.trim()
   if (
-    (!text && !payload.attachments.length && !payload.templates?.length) ||
+    (!text && !payload.attachments.length && !payload.templates?.length && !props.selectedClips.length) ||
     agentStore.isStreaming
   ) return
-  void agentStore.sendMessage(text, {
+  const clips = props.selectedClips.length
+    ? props.selectedClips.map((clip) => ({ ...clip }))
+    : undefined
+  void agentStore.sendMessage(text || (clips ? '请先看看选中的片段，并给出具体修改建议。' : ''), {
     conversationId: props.conversationId,
     mode: 'create',
     automation: chatMode.automation,
     projectId: props.projectId,
     attachments: payload.attachments,
     templates: payload.templates,
+    clips,
   })
 }
 
@@ -143,6 +180,21 @@ function retry() {
   agentStore.selectConversation(props.conversationId)
   void agentStore.regenerate()
 }
+
+function clipThumb(clip: AgentClipRef): string {
+  if (clip.thumbnail) return clip.thumbnail
+  return clip.kind === 'image' ? clip.url : ''
+}
+
+function kindLetter(kind: AgentClipRef['kind']): string {
+  return kind === 'audio' ? '音' : kind === 'image' ? '图' : '视'
+}
+
+function focusComposer() {
+  composerRef.value?.focus()
+}
+
+defineExpose({ focusComposer })
 
 </script>
 
@@ -319,6 +371,115 @@ function retry() {
   flex: none;
   padding: 8px 10px 10px;
   border-top: 1px solid #f3f3ed;
+}
+
+.sc-selection {
+  margin-bottom: 7px;
+  padding: 6px 7px 7px;
+  border: 1px solid #f0e3dc;
+  border-radius: 8px;
+  background: #fdf8f5;
+}
+
+.sc-selection-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.sc-selection-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #9c4a30;
+  font-size: 9.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sc-selection-title i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #b4553a;
+}
+
+.sc-selection-head button {
+  flex: none;
+  padding: 1px 5px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #a3867a;
+  font-family: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.sc-selection-head button:hover {
+  border-color: #ecd9cf;
+  color: #8f3d26;
+}
+
+.sc-selection-list {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 1px;
+  scrollbar-width: none;
+}
+
+.sc-selection-list::-webkit-scrollbar {
+  display: none;
+}
+
+.sc-selection-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  max-width: 168px;
+  height: 24px;
+  padding: 0 5px 0 3px;
+  border: 1px solid #eadfd8;
+  border-radius: 5px;
+  background: #ffffff;
+}
+
+.sc-selection-chip img,
+.sc-selection-kind {
+  width: 22px;
+  height: 18px;
+  flex: none;
+  border-radius: 3px;
+  background: #f2ece7;
+  object-fit: cover;
+}
+
+.sc-selection-kind {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #a3867a;
+  font-size: 8.5px;
+}
+
+.sc-selection-name {
+  overflow: hidden;
+  color: #4a4a44;
+  font-size: 9.5px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-selection-time {
+  flex: none;
+  color: #b0a8a0;
+  font-size: 8.5px;
+  font-variant-numeric: tabular-nums;
 }
 
 .sc-composer :deep(.composer-input) {
