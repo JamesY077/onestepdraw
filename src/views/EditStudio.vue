@@ -302,6 +302,7 @@ import { useEditProjectStore, projectDuration } from '@/stores/editProjectStore'
 import { playhead, setPlayhead } from '@/features/edit/playhead'
 import { exportProjectVideo } from '@/features/edit/exportVideo'
 import { confirmDialog } from '@/features/ui/dialog'
+import { consumeTemplatesFlash, describeTemplatesFlash } from '@/features/template/navigation'
 import type { AgentClipRef } from '@/types/agent'
 import {
   MAX_PROJECT_SECONDS,
@@ -1251,9 +1252,19 @@ onMounted(() => {
   if (project.value) ensureConversation(project.value)
   syncClock()
   nextTick(fitTimeline)
+  announceTemplates()
   window.addEventListener('keydown', handleKeydown)
   window.addEventListener('resize', clampChatWidth)
 })
+
+/** 从模板库回来：把模板挂进这一轮对话，并聚焦输入框。 */
+function announceTemplates() {
+  const flash = consumeTemplatesFlash()
+  if (!flash) return
+  showToast(`${describeTemplatesFlash(flash)}，说一下想怎么改`)
+  if (window.innerWidth <= 1180) mobileChatOpen.value = true
+  void nextTick(() => studioChatRef.value?.focusComposer())
+}
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf)

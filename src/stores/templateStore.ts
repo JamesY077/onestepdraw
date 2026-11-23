@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { AgentAttachment, AgentTemplateRef } from '@/types/agent'
 import { MAX_ATTACHMENTS, persistableAttachment } from '@/features/agent/attachments'
+import { templatePosterUrl } from '@/features/template/poster'
 import type { BuiltinTemplate, UserTemplateGroup } from '@/features/template/types'
 
 const GROUPS_KEY = 'onestep_template_groups_v1'
@@ -142,7 +143,8 @@ export const useTemplateStore = defineStore('template', () => {
       category: template.category,
       guide: template.guide,
       // 原素材静帧与 AI 示例图都能当视觉参考；纯占位图不带。
-      images: template.still || template.generated ? [template.poster] : [],
+      images:
+        template.still || template.generated ? [templatePosterUrl(template.poster)] : [],
       source: 'builtin',
     })
   }

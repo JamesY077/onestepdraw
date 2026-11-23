@@ -104,7 +104,18 @@
           @click="toggleSelected(item.id)"
         >
           <span class="tpl-poster">
-            <img :src="item.poster" :alt="`${item.name}参考图`" loading="lazy" />
+            <img
+              v-if="!brokenPosters.has(item.id)"
+              :src="templatePosterUrl(item.poster)"
+              :alt="`${item.name}参考图`"
+              loading="lazy"
+              decoding="async"
+              @error="markPosterBroken(item.id)"
+            />
+            <span v-else class="tpl-poster-fallback" aria-hidden="true">
+              <em>{{ item.code }}</em>
+              <span>{{ item.name }}</span>
+            </span>
             <span class="tpl-poster-tag">{{ item.category }}</span>
             <span v-if="item.generated" class="tpl-poster-still">AI 示例</span>
             <span v-else-if="!item.still" class="tpl-poster-still">文字参考</span>
@@ -303,6 +314,14 @@ import {
   readAttachment,
 } from '@/features/agent/attachments'
 import { BUILTIN_TEMPLATES, TEMPLATE_CATEGORIES } from '@/features/template/builtin'
+import { templatePosterUrl } from '@/features/template/poster'
+import {
+  clearTemplatesReturn,
+  flashTemplatesApplied,
+  peekTemplatesReturn,
+  rememberTemplatesReturn,
+  sanitizeReturnPath,
+} from '@/features/template/navigation'
 import type { AgentAttachment } from '@/types/agent'
 import type { BuiltinTemplate, UserTemplateGroup } from '@/features/template/types'
 
@@ -316,6 +335,14 @@ const query = ref('')
 const category = ref('all')
 /** 可以一次选多个模板，没有数量上限。 */
 const selectedIds = ref<string[]>([])
+/** 海报加载失败的条目，退回带编号的占位卡，避免出现空白框。 */
+const brokenPosters = ref<Set<string>>(new Set())
+
+function markPosterBroken(id: string) {
+  const next = new Set(brokenPosters.value)
+  next.add(id)
+  brokenPosters.value = next
+}
 
 const stillCount = computed(() => BUILTIN_TEMPLATES.filter((item) => item.still).length)
 const generatedCount = computed(() => BUILTIN_TEMPLATES.filter((item) => item.generated).length)
@@ -374,30 +401,47 @@ function switchTab(tab: 'builtin' | 'custom' | 'skill') {
 
 /** 打开模板库时带的返回地址（例如从剪辑台进来）。 */
 function fromPath(): string {
-  const from = typeof route.query.from === 'string' ? route.query.from : ''
-  return from.startsWith('/') && !from.startsWith('/templates') ? from : ''
+  const from = sanitizeReturnPath(route.query.from)
+  return from || peekTemplatesReturn()
 }
 
-function goBack() {
-  closeEditor()
+/** 引用完 / 点返回时，带着选择回到原来的对话或剪辑台。 */
+function navigateBack(fallback: 'history' | 'chat') {
   const back = fromPath()
-  if (back) {
+  clearTemplatesReturn()
+  if (back && (fallback === 'history' || hasComposer(back))) {
     router.replace(back)
+    return
+  }
+  // 直接打开模板库时没有来源页：引用完一律回到创作对话，别退到浏览器上一页。
+  if (fallback === 'chat') {
+    router.replace('/chat')
     return
   }
   if (window.history.length > 1) router.back()
   else router.replace('/chat')
 }
 
+/** 只有带输入框的页面才值得把模板带回去。 */
+function hasComposer(path: string): boolean {
+  return /^\/(chat|edit|video|image|voice)(\/|$|\?)/.test(path)
+}
+
+function goBack() {
+  closeEditor()
+  navigateBack('history')
+}
+
 function applySelection() {
   if (!selectedCount.value) return
+  const names = [...selectedNames.value]
   for (const template of selectedBuiltinList.value) templateStore.applyBuiltin(template)
   for (const group of selectedGroupList.value) templateStore.applyGroup(group)
   chatMode.setConversation('create')
   selectedIds.value = []
-  const back = fromPath()
-  if (back) router.replace(back)
-  else router.push('/chat')
+  // 目标页面读到这条提示后会聚焦输入框，并把模板挂在输入框上方。
+  flashTemplatesApplied({ count: names.length, names })
+  navigateBack('chat')
 }
 
 /* ------------------------------ 我的模板编辑 ------------------------------ */
@@ -521,6 +565,8 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
   const tab = String(route.query.tab || '')
   if (tab === 'custom' || tab === 'skill' || tab === 'builtin') templateStore.tab = tab
+  // 记住入口，哪怕之后刷新 / 直接重开模板库也能原路返回。
+  rememberTemplatesReturn(String(route.query.from || ''))
 })
 onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
 </script>
@@ -830,6 +876,37 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
 
 .tpl-card:hover .tpl-poster img {
   transform: scale(1.025);
+}
+
+/* 海报加载失败时的兜底：至少还能看到编号与风格名。 */
+.tpl-poster-fallback {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(180, 85, 58, 0.12), transparent 58%),
+    linear-gradient(135deg, #f7f4ef, #efeae3);
+  color: #8d8179;
+}
+
+.tpl-poster-fallback em {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #8f5340;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.tpl-poster-fallback span {
+  font-size: 9.5px;
+  font-weight: 550;
 }
 
 .tpl-poster-tag {

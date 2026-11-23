@@ -155,7 +155,11 @@
 
       <div class="composer-area">
         <div class="composer-inner">
-          <p v-if="chatMode.isCreate" class="composer-mode-note">
+          <p v-if="templatesNotice" class="composer-templates-note" role="status">
+            <i class="note-dot" aria-hidden="true" />
+            {{ templatesNotice }}
+          </p>
+          <p v-else-if="chatMode.isCreate" class="composer-mode-note">
             <i class="note-dot" aria-hidden="true" />
             创作模式 · 生成结果会自动进入剪辑项目
           </p>
@@ -189,6 +193,7 @@ import { useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useEditProjectStore } from '@/stores/editProjectStore'
+import { consumeTemplatesFlash, describeTemplatesFlash } from '@/features/template/navigation'
 import type { ComposerSubmit } from '@/types/agent'
 
 const store = useAgentStore()
@@ -211,6 +216,9 @@ const composerRef = ref<InstanceType<typeof AgentComposer> | null>(null)
 const draft = ref('')
 const sidebarOpen = ref(false)
 const stickToBottom = ref(true)
+/** 从模板库引用回来后，在输入框上方说明一句。 */
+const templatesNotice = ref('')
+let templatesNoticeTimer = 0
 
 const suggestions = computed(() => (chatMode.isCreate ? createSuggestions : chatSuggestions))
 
@@ -508,11 +516,28 @@ onMounted(() => {
     router.replace(`/chat/${store.activeId}`)
   }
   nextTick(() => resetScroll('auto'))
+  announceTemplates()
   window.addEventListener('keydown', handleGlobalKeydown)
   window.addEventListener('beforeunload', flushConversations)
 })
 
+/** 从模板库回来：说明引用了什么，并把焦点放回输入框。 */
+function announceTemplates() {
+  const flash = consumeTemplatesFlash()
+  if (!flash) return
+  templatesNotice.value = `${describeTemplatesFlash(flash)}，直接说你想改哪里或想拍什么。`
+  void nextTick(() => {
+    composerRef.value?.focus()
+    resetScroll('auto')
+  })
+  window.clearTimeout(templatesNoticeTimer)
+  templatesNoticeTimer = window.setTimeout(() => {
+    templatesNotice.value = ''
+  }, 6000)
+}
+
 onBeforeUnmount(() => {
+  window.clearTimeout(templatesNoticeTimer)
   store.flush()
   window.removeEventListener('keydown', handleGlobalKeydown)
   window.removeEventListener('beforeunload', flushConversations)
@@ -1138,6 +1163,26 @@ onBeforeUnmount(() => {
   background: var(--create-accent);
 }
 
+/* 从模板库回来时的一句确认，替代模式提示，说明模板已经挂上了 */
+.composer-templates-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 7px 3px;
+  color: #9c4a30;
+  font-size: 10.5px;
+  font-weight: 550;
+  letter-spacing: 0.01em;
+}
+
+.composer-templates-note .note-dot {
+  width: 5px;
+  height: 5px;
+  flex: none;
+  border-radius: 50%;
+  background: #b4553a;
+}
+
 @media (max-width: 640px) {
   .is-create .welcome h2 {
     font-size: 27px;
@@ -1150,6 +1195,10 @@ onBeforeUnmount(() => {
   }
 
   .composer-mode-note {
+    font-size: 10px;
+  }
+
+  .composer-templates-note {
     font-size: 10px;
   }
 }
