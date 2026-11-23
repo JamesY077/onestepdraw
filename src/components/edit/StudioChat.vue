@@ -1,62 +1,53 @@
 <template>
-  <aside class="studio-chat" :class="{ 'is-collapsed': collapsed }">
+  <aside class="studio-chat">
     <header class="sc-head">
       <div class="sc-title">
         <span class="sc-dot" aria-hidden="true" />
         <strong>创作对话</strong>
         <span class="sc-engine">{{ agentStore.isStreaming ? '正在生成' : engineLabel }}</span>
       </div>
-      <div class="sc-head-actions">
-        <button type="button" class="sc-link" title="打开完整对话" @click="openFullChat">完整对话 ↗</button>
-        <button type="button" class="sc-toggle" :aria-label="collapsed ? '展开对话' : '收起对话'" @click="collapsed = !collapsed">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-            <path :d="collapsed ? 'm14 6-6 6 6 6' : 'm10 6 6 6-6 6'" />
-          </svg>
-        </button>
-      </div>
     </header>
 
-    <template v-if="!collapsed">
-      <div ref="scrollRef" class="sc-scroll">
-        <section v-if="!messages.length" class="sc-empty">
-          <p>继续用对话改这支片。</p>
-          <span>可以直接说「第二个镜头换成夜景」「把配乐调小一点」，也可以继续生成新素材，结果会自动落到时间轴。</span>
-          <div class="sc-chips">
-            <button v-for="chip in chips" :key="chip" type="button" @click="sendChip(chip)">{{ chip }}</button>
-          </div>
-        </section>
+    <div ref="scrollRef" class="sc-scroll">
+      <section v-if="!messages.length" class="sc-empty">
+        <p>继续用对话改这支片。</p>
+        <span>可以直接说「第二个镜头换成夜景」「把配乐调小一点」，也可以继续生成新素材，结果会自动落到时间轴。</span>
+        <div class="sc-chips">
+          <button v-for="chip in chips" :key="chip" type="button" @click="sendChip(chip)">{{ chip }}</button>
+        </div>
+      </section>
 
-        <section v-else class="sc-messages" aria-live="polite">
-          <AgentMessage
-            v-for="message in messages"
-            :key="message.id"
-            :message="message"
-            :is-streaming="message.status === 'streaming'"
-            :can-retry="message.id === lastAssistantId"
-            @retry="retry"
-            @generation-retry="agentStore.retryGeneration"
-          />
-        </section>
-      </div>
-
-      <div class="sc-composer">
-        <AgentComposer
-          ref="composerRef"
-          v-model="draft"
-          tone="create"
-          :disabled="agentStore.isStreaming"
-          placeholder="描述要改的地方，或继续生成…"
-          @send="send"
-          @stop="agentStore.stopStreaming"
+      <section v-else class="sc-messages" aria-live="polite">
+        <AgentMessage
+          v-for="message in messages"
+          :key="message.id"
+          :message="message"
+          :is-streaming="message.status === 'streaming'"
+          :can-retry="message.id === lastAssistantId"
+          compact
+          @retry="retry"
+          @generation-retry="agentStore.retryGeneration"
+          @ask-answer="handleAskAnswer"
         />
-      </div>
-    </template>
+      </section>
+    </div>
+
+    <div class="sc-composer">
+      <AgentComposer
+        ref="composerRef"
+        v-model="draft"
+        tone="create"
+        :disabled="agentStore.isStreaming"
+        placeholder="描述要改的地方，或继续生成…"
+        @send="send"
+        @stop="agentStore.stopStreaming"
+      />
+    </div>
   </aside>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import AgentComposer from '@/components/agent/AgentComposer.vue'
 import AgentMessage from '@/components/agent/AgentMessage.vue'
 import { useAgentStore } from '@/stores/agentStore'
@@ -70,12 +61,9 @@ const agentStore = useAgentStore()
 const chatMode = useChatModeStore()
 const localAgentStore = useLocalAgentStore()
 const modelStore = useModelStore()
-const router = useRouter()
-
 const scrollRef = ref<HTMLElement | null>(null)
 const composerRef = ref<InstanceType<typeof AgentComposer> | null>(null)
 const draft = ref('')
-const collapsed = ref(false)
 
 const chips = ['按推荐', '开始生成', '节奏放慢一点']
 
@@ -120,44 +108,36 @@ function sendChip(content: string) {
   composerRef.value?.focus()
 }
 
+function handleAskAnswer(payload: { messageId: string; optionId: string; label: string }) {
+  agentStore.answerAsk(payload.messageId, payload.optionId, payload.label)
+}
+
 function retry() {
   if (agentStore.isStreaming) return
   agentStore.selectConversation(props.conversationId)
   void agentStore.regenerate()
 }
 
-function openFullChat() {
-  router.push(`/chat/${props.conversationId}`)
-}
 </script>
 
 <style scoped>
 .studio-chat {
   display: flex;
   flex-direction: column;
-  width: 356px;
-  flex: none;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
   min-height: 0;
   border-left: 1px solid #ecece6;
   background: #ffffff;
 }
 
-.studio-chat.is-collapsed {
-  width: 44px;
-}
-
-@media (max-width: 1180px) {
-  .studio-chat {
-    width: 320px;
-  }
-}
-
 .sc-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px;
+  flex: none;
+  padding: 11px 14px;
   border-bottom: 1px solid #f0f0ea;
 }
 
@@ -190,51 +170,6 @@ function openFullChat() {
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.sc-head-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.sc-link {
-  padding: 2px 4px;
-  border: 0;
-  background: transparent;
-  color: #a3a39b;
-  font-family: inherit;
-  font-size: 10px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.sc-link:hover {
-  color: #111110;
-}
-
-.sc-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: #9a9a92;
-  cursor: pointer;
-}
-
-.sc-toggle svg {
-  width: 13px;
-  height: 13px;
-}
-
-.sc-toggle:hover {
-  border-color: #ecece6;
-  color: #111110;
 }
 
 .sc-scroll {
@@ -340,9 +275,14 @@ function openFullChat() {
   margin-left: auto;
 }
 
-.sc-composer :deep(.engine-button) {
-  max-width: 128px;
-  font-size: 10.5px;
+/* 面板窄，Agent 只留状态点，名字放进悬停提示，避免和模型名一起换行。 */
+.sc-composer :deep(.engine-anchor > .engine-button) {
+  max-width: none;
+  padding: 4px;
+}
+
+.sc-composer :deep(.engine-anchor > .engine-button .engine-label) {
+  display: none;
 }
 
 .sc-composer :deep(.model-button) {

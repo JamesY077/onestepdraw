@@ -45,7 +45,7 @@
               <option :value="60">60</option>
             </select>
           </label>
-          <button type="button" class="top-action" @click="exportProject">导出工程</button>
+          <button type="button" class="top-action export" @click="exportProject">导出工程</button>
         </template>
         <button type="button" class="top-icon" title="设置" aria-label="设置" @click="router.push('/settings')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -53,11 +53,24 @@
             <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.11a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.11A1.7 1.7 0 0 0 4.67 8.9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.11A1.7 1.7 0 0 0 15.1 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v.11a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.11a1.7 1.7 0 0 0-1.49.86z" />
           </svg>
         </button>
+        <button
+          type="button"
+          class="top-action chat-launch"
+          :class="{ active: mobileChatOpen }"
+          @click="mobileChatOpen = !mobileChatOpen"
+        >
+          {{ mobileChatOpen ? '关闭对话' : '创作对话' }}
+        </button>
         <button type="button" class="top-action primary" @click="createNewProject">新建项目</button>
       </div>
     </header>
 
-    <div v-if="project" class="es-body" :class="{ 'chat-open': mobileChatOpen }">
+    <div
+      v-if="project"
+      class="es-body"
+      :class="{ 'chat-open': mobileChatOpen }"
+      :style="{ '--studio-chat-width': `${chatWidth}px` }"
+    >
       <aside class="es-rail">
         <div class="rail-tabs">
           <button type="button" :class="{ active: railTab === 'projects' }" @click="railTab = 'projects'">项目</button>
@@ -124,7 +137,7 @@
         </div>
       </aside>
 
-      <main class="es-main">
+      <main ref="mainRef" class="es-main">
         <section class="es-preview">
           <div class="preview-toolbar">
             <button type="button" class="play-button" :title="playing ? '暂停' : '播放'" @click="togglePlay">
@@ -154,6 +167,9 @@
           </div>
         </section>
 
+      </main>
+
+      <div ref="timelineRef" class="es-timeline">
         <TimelineTracks
           v-model:pxPerSec="pxPerSec"
           :project="project"
@@ -167,27 +183,20 @@
           @add-asset="handleAddAsset"
           @fit="fitTimeline"
         />
-      </main>
+      </div>
 
       <div class="es-chat">
         <StudioChat :conversation-id="conversationId" :project-id="project.id" />
       </div>
-    </div>
 
-    <button
-      v-if="project"
-      type="button"
-      class="mobile-chat-toggle"
-      :aria-label="mobileChatOpen ? '收起对话' : '打开创作对话'"
-      @click="mobileChatOpen = !mobileChatOpen"
-    >
-      <svg v-if="!mobileChatOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
-        <path d="M4.5 5.8h15v10.4h-8.1L7 20.2v-4H4.5z" />
-      </svg>
-      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-        <path d="m6 6 12 12M18 6 6 18" />
-      </svg>
-    </button>
+      <div
+        class="chat-resizer"
+        role="separator"
+        aria-orientation="vertical"
+        title="拖动调整对话栏宽度"
+        @pointerdown="startChatResize"
+      />
+    </div>
 
     <div v-else class="es-empty">
       <BrandMark :size="44" />
@@ -234,6 +243,10 @@ const projectStore = useEditProjectStore()
 const agentStore = useAgentStore()
 
 const railTab = ref<'projects' | 'assets'>('projects')
+const mainRef = ref<HTMLElement | null>(null)
+const timelineRef = ref<HTMLElement | null>(null)
+const CHAT_WIDTH_KEY = 'onestep_studio_chat_width_v1'
+const chatWidth = ref(readChatWidth())
 const pxPerSec = ref(52)
 const currentTime = ref(0)
 const playing = ref(false)
@@ -412,8 +425,39 @@ function removeSelectedClip() {
 }
 
 function fitTimeline() {
-  const width = window.innerWidth - 116 - (window.innerWidth > 1100 ? 360 : 16) - 56
+  const width = (timelineRef.value?.clientWidth || mainRef.value?.clientWidth || window.innerWidth) - 116 - 28
   pxPerSec.value = Math.max(14, Math.min(140, Math.round(width / Math.max(10, timelineDuration.value))))
+}
+
+function maxChatWidth(): number {
+  return Math.max(360, Math.min(600, window.innerWidth - 760))
+}
+
+function readChatWidth(): number {
+  const saved = Number(localStorage.getItem(CHAT_WIDTH_KEY))
+  if (Number.isFinite(saved) && saved >= 340) return Math.min(maxChatWidth(), saved)
+  return Math.round(Math.min(maxChatWidth(), Math.max(400, window.innerWidth * 0.27)))
+}
+
+let resizing = false
+
+function startChatResize(event: PointerEvent) {
+  if (window.innerWidth < 1181) return
+  event.preventDefault()
+  resizing = true
+  const move = (moveEvent: PointerEvent) => {
+    if (!resizing) return
+    const next = window.innerWidth - moveEvent.clientX
+    chatWidth.value = Math.max(360, Math.min(maxChatWidth(), Math.round(next)))
+  }
+  const stop = () => {
+    resizing = false
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', stop)
+    localStorage.setItem(CHAT_WIDTH_KEY, String(chatWidth.value))
+  }
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerup', stop)
 }
 
 async function handleUpload(event: Event) {
@@ -552,15 +596,23 @@ watch(
   },
 )
 
+function clampChatWidth() {
+  if (window.innerWidth > 1180 && chatWidth.value > maxChatWidth()) {
+    chatWidth.value = maxChatWidth()
+  }
+}
+
 onMounted(() => {
   if (project.value) ensureConversation(project.value)
   nextTick(fitTimeline)
   window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('resize', clampChatWidth)
 })
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(raf)
   window.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('resize', clampChatWidth)
   if (toastTimer !== null) window.clearTimeout(toastTimer)
   playing.value = false
 })
@@ -719,8 +771,42 @@ onBeforeUnmount(() => {
 }
 
 .es-body {
-  display: flex;
+  position: relative;
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr) var(--studio-chat-width, 400px);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'rail main chat'
+    'timeline timeline chat';
   flex: 1;
+  min-height: 0;
+}
+
+.es-rail {
+  grid-area: rail;
+}
+
+.es-main {
+  grid-area: main;
+}
+
+.es-timeline {
+  grid-area: timeline;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.es-timeline > * {
+  flex: 1;
+  min-height: 0;
+}
+
+.es-chat {
+  grid-area: chat;
+  display: flex;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -1027,6 +1113,7 @@ onBeforeUnmount(() => {
 
 .preview-stage > * {
   flex: 1;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -1114,19 +1201,48 @@ onBeforeUnmount(() => {
   box-shadow: 0 8px 24px rgba(17, 17, 16, 0.2);
 }
 
-.es-chat {
-  display: flex;
-  flex: none;
-  min-height: 0;
+/* 对话栏可拖拽改宽，边界只画一条细线 */
+.chat-resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: var(--studio-chat-width, 400px);
+  z-index: 30;
+  width: 7px;
+  transform: translateX(3px);
+  cursor: col-resize;
+  touch-action: none;
 }
 
-.mobile-chat-toggle {
+.chat-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 1px;
+  background: transparent;
+  transition: background 140ms ease;
+}
+
+.chat-resizer:hover::after {
+  background: #b9b3a6;
+}
+
+.chat-launch {
   display: none;
 }
 
 @media (max-width: 1180px) {
-  .es-rail {
-    width: 200px;
+  .es-body {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-areas:
+      'main chat'
+      'timeline chat';
+  }
+  .es-rail,
+  .chat-resizer {
+    display: none;
   }
   .save-state,
   .top-field span {
@@ -1135,52 +1251,68 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 980px) {
-  .es-rail {
-    display: none;
+  .es-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'main'
+      'timeline';
+  }
+  .es-chat {
+    position: fixed;
+    top: 52px;
+    right: 0;
+    bottom: 0;
+    z-index: 70;
+    width: min(420px, 94vw);
+    border-left: 1px solid #e6e4dc;
+    background: #ffffff;
+    box-shadow: -18px 0 44px -30px rgba(17, 17, 16, 0.55);
+    transform: translateX(102%);
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .es-body.chat-open .es-chat {
+    transform: none;
+  }
+    .chat-launch {
+    display: inline-flex;
+  }
+  .chat-launch.active {
+    border-color: #111110;
+    background: #111110;
+    color: #ffffff;
   }
 }
 
 @media (max-width: 820px) {
-  .es-chat {
-    display: none;
-    position: fixed;
-    inset: 52px 0 0;
-    z-index: 60;
-    background: #ffffff;
-  }
-  .es-body.chat-open .es-chat {
-    display: flex;
-  }
-  .es-body.chat-open .es-chat > :deep(.studio-chat) {
-    width: 100%;
-    border-left: 0;
-  }
-  .mobile-chat-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    right: 14px;
-    bottom: 126px;
-    z-index: 61;
-    width: 42px;
-    height: 42px;
-    padding: 0;
-    border: 1px solid #e0e0d8;
-    border-radius: 50%;
-    background: #111110;
-    color: #ffffff;
-    box-shadow: 0 8px 22px rgba(17, 17, 16, 0.2);
-  }
-  .mobile-chat-toggle svg {
-    width: 18px;
-    height: 18px;
-  }
   .project-name {
     width: 110px;
   }
   .top-field {
     display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .project-name {
+    width: auto;
+    min-width: 0;
+    max-width: 96px;
+    flex: 1 1 auto;
+  }
+  .es-top-left {
+    flex: 1;
+    min-width: 0;
+  }
+  .es-top-right {
+    flex: none;
+  }
+  .save-state,
+  .top-action.export,
+  .top-icon {
+    display: none;
+  }
+  .top-action {
+    padding: 5px 8px;
   }
 }
 </style>

@@ -1,6 +1,10 @@
 <template>
   <div class="stage">
-    <div class="stage-frame" :style="{ aspectRatio: project.aspectRatio.replace(':', ' / ') }">
+    <div ref="viewportRef" class="stage-viewport">
+      <div
+        class="stage-frame"
+        :style="{ width: `${frameSize.width}px`, height: `${frameSize.height}px` }"
+      >
       <div class="stage-canvas">
         <template v-for="item in activeClips" :key="`${item.track.id}-${item.clip.id}`">
           <video
@@ -40,6 +44,7 @@
           </template>
         </div>
       </div>
+      </div>
     </div>
 
     <footer class="stage-bar">
@@ -50,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import type { EditProject, TimelineClip } from '@/types/edit'
 import { projectDuration } from '@/stores/editProjectStore'
 
@@ -60,6 +65,40 @@ const videoRefs = new Map<string, HTMLVideoElement>()
 const audioRefs = new Map<string, HTMLAudioElement>()
 
 const duration = computed(() => projectDuration(props.project))
+
+/** 预览框严格按项目比例缩放，避免容器被拉高后画面变形、留大黑边。 */
+const viewportRef = ref<HTMLElement | null>(null)
+const frameSize = reactive({ width: 0, height: 0 })
+let frameObserver: ResizeObserver | null = null
+
+function fitFrame() {
+  const element = viewportRef.value
+  if (!element) return
+  const [rawW, rawH] = props.project.aspectRatio.split(':').map((value) => Number(value) || 1)
+  const availableWidth = element.clientWidth
+  const availableHeight = element.clientHeight
+  if (!availableWidth || !availableHeight) return
+  const scale = Math.min(availableWidth / rawW, availableHeight / rawH)
+  frameSize.width = Math.max(1, Math.floor(rawW * scale))
+  frameSize.height = Math.max(1, Math.floor(rawH * scale))
+}
+
+onMounted(() => {
+  fitFrame()
+  if (typeof ResizeObserver !== 'undefined' && viewportRef.value) {
+    frameObserver = new ResizeObserver(fitFrame)
+    frameObserver.observe(viewportRef.value)
+  }
+  window.addEventListener('resize', fitFrame)
+})
+
+onBeforeUnmount(() => {
+  frameObserver?.disconnect()
+  frameObserver = null
+  window.removeEventListener('resize', fitFrame)
+})
+
+watch(() => props.project.aspectRatio, () => nextTick(fitFrame))
 
 const hasClips = computed(() =>
   props.project.tracks.some((track) => track.clips.length > 0),
@@ -144,15 +183,24 @@ function formatTime(seconds: number): string {
 .stage {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
   min-height: 0;
   height: 100%;
 }
 
-.stage-frame {
+.stage-viewport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex: 1;
   min-height: 0;
-  max-width: 100%;
-  margin: 0 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stage-frame {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;

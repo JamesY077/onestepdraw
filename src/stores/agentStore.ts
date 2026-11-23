@@ -7,9 +7,12 @@ import { buildAgentSystemPrompt } from '@/features/agent/prompt'
 import {
   buildAgentGeneration,
   describeAgentGeneration,
+  extractAgentAsk,
   extractAgentTimelineOps,
   extractAgentToolCalls,
+  extractLegacyAsk,
   extractMediaUrls,
+  stripAgentAskBlocks,
   stripAgentControlBlocks,
   stripAgentTimelineBlocks,
   type AgentToolCall,
@@ -188,7 +191,7 @@ export const useAgentStore = defineStore('agent', () => {
             : ''
         return {
           role: message.role,
-          content: `${message.content}${note}`.trim(),
+          content: `${message.content}${note}${askContext(message)}`.trim(),
         }
       })
 
@@ -210,7 +213,7 @@ export const useAgentStore = defineStore('agent', () => {
             : ''
         return {
           role: message.role,
-          content: `${message.content}${note}`.trim(),
+          content: `${message.content}${note}${askContext(message)}`.trim(),
         }
       })
   }
@@ -242,6 +245,49 @@ export const useAgentStore = defineStore('agent', () => {
       source: 'chat',
     })
     if (clip) generation.attachedToProject = true
+  }
+
+  /** 选择题已经渲染成卡片，但模型下一轮仍需知道问了什么、用户选了什么。 */
+  function askContext(message: AgentMessage): string {
+    const ask = message.ask
+    if (!ask) return ''
+    const list = ask.options.map((option, index) => `${index + 1}. ${option.label}`).join(' / ')
+    const picked = ask.answer ? `[用户选择] ${ask.answer}` : '[用户尚未选择]'
+    return `\n\n[选择题] ${ask.header} · ${ask.question}\n[选项] ${list}\n${picked}`
+  }
+
+  /** 把回复里的选择题块解析成卡片数据，并从正文里移除。 */
+  function applyAskFromReply(message: AgentMessage) {
+    const blockAsk = extractAgentAsk(message.content)
+    if (blockAsk) {
+      message.ask = blockAsk
+      message.content = stripAgentAskBlocks(message.content)
+      return
+    }
+    const legacy = extractLegacyAsk(message.content)
+    if (legacy) {
+      message.ask = legacy.ask
+      message.content = legacy.rest
+    }
+  }
+
+  /** 用户点选卡片：先记录答案，再把答案作为一条用户消息发给模型。 */
+  function answerAsk(messageId: string, optionId: string, label: string) {
+    if (streamingId.value) return
+    const conversation =
+      conversations.value.find((item) => item.messages.some((msg) => msg.id === messageId)) || null
+    if (!conversation) return
+    const message = conversation.messages.find((msg) => msg.id === messageId)
+    const ask = message?.ask
+    if (!message || !ask || ask.answerId) return
+
+    const text = optionId === 'custom' ? label.trim() : `${optionId}. ${label}`
+    if (!text) return
+    ask.answerId = optionId
+    ask.answer = text
+    conversation.updatedAt = Date.now()
+    persistNow()
+    void sendMessage(text, { conversationId: conversation.id })
   }
 
   /** 模型输出的时间轴操作直接落到项目里，并把操作块从正文去掉。 */
@@ -432,6 +478,7 @@ export const useAgentStore = defineStore('agent', () => {
         } else {
           assistant.status = 'done'
           applyTimelineOpsFromReply(conversation, assistant)
+          applyAskFromReply(assistant)
           attachLocalMediaToProject(conversation, assistant.content)
         }
       } else {
@@ -456,6 +503,7 @@ export const useAgentStore = defineStore('agent', () => {
         const toolCalls = extractAgentToolCalls(raw)
         assistant.content = raw
         applyTimelineOpsFromReply(conversation, assistant)
+        applyAskFromReply(assistant)
         assistant.content = stripAgentControlBlocks(assistant.content)
         const visible = assistant.content
 
@@ -604,6 +652,7 @@ export const useAgentStore = defineStore('agent', () => {
     deleteConversation,
     clearAll,
     sendMessage,
+    answerAsk,
     regenerate,
     retryGeneration,
     stopStreaming,

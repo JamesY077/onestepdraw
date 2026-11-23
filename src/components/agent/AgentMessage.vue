@@ -33,6 +33,14 @@
           <span class="streaming-dot" />
         </div>
 
+        <AgentAskCard
+          v-if="message.ask"
+          :ask="message.ask"
+          :compact="compact"
+          :disabled="isStreaming"
+          @answer="$emit('ask-answer', { messageId: message.id, ...$event })"
+        />
+
         <AgentGenerationCard
           v-if="message.generation"
           :generation="message.generation"
@@ -76,13 +84,19 @@ import { computed, ref } from 'vue'
 import BrandMark from './BrandMark.vue'
 import MarkdownView from './MarkdownView.vue'
 import AgentGenerationCard from './AgentGenerationCard.vue'
+import AgentAskCard from './AgentAskCard.vue'
 import { stripAgentControlBlocks } from '@/features/agent/tools'
 import type { AgentMessage } from '@/types/agent'
 
-const props = withDefaults(defineProps<{ message: AgentMessage; isStreaming: boolean; canRetry?: boolean }>(), {
-  canRetry: false,
-})
-defineEmits<{ (event: 'retry'): void; (event: 'generation-retry', id: string): void }>()
+const props = withDefaults(
+  defineProps<{ message: AgentMessage; isStreaming: boolean; canRetry?: boolean; compact?: boolean }>(),
+  { canRetry: false, compact: false },
+)
+defineEmits<{
+  (event: 'retry'): void
+  (event: 'generation-retry', id: string): void
+  (event: 'ask-answer', payload: { messageId: string; optionId: string; label: string }): void
+}>()
 
 const copied = ref(false)
 

@@ -1,4 +1,4 @@
-import type { AgentGeneration, AgentGenerationKind } from '@/types/agent'
+import type { AgentAsk, AgentAskOption, AgentGeneration, AgentGenerationKind } from '@/types/agent'
 
 /** 对话 Agent 默认使用的图片 / 视频模型。 */
 export const AGENT_IMAGE_MODEL = 'Doubao-Seedream-5.0-lite'
@@ -75,9 +75,131 @@ export function stripAgentTimelineBlocks(content: string): string {
     .trim()
 }
 
-/** 展示用：同时去掉生成工具块与时间轴操作块。 */
+const ASK_FENCE = /```onestep-ask[ \t]*\r?\n([\s\S]*?)```/
+
+/**
+ * 从回复里解析「一次一个问题」的选择题。
+ * 结构来自 ```onestep-ask { ... }```；只有前三个选项 + 自定义，最多四个。
+ */
+export function extractAgentAsk(content: string): AgentAsk | null {
+  const match = ASK_FENCE.exec(content)
+  if (!match) return null
+
+  let parsed: any
+  try {
+    parsed = JSON.parse(match[1].trim())
+  } catch {
+    return null
+  }
+
+  const question = String(parsed?.question || parsed?.q || '').trim()
+  if (!question) return null
+
+  const rawOptions = Array.isArray(parsed?.options) ? parsed.options : []
+  const options: AgentAskOption[] = []
+  for (const raw of rawOptions.slice(0, 3)) {
+    const label =
+      typeof raw === 'string' ? raw.trim() : String(raw?.label || raw?.text || raw?.title || '').trim()
+    if (!label) continue
+    options.push({
+      id: String(options.length + 1),
+      label,
+      recommended: Boolean(raw?.recommended || raw?.pick || raw?.isRecommended),
+      hint: typeof raw === 'object' ? String(raw?.hint || raw?.detail || '').trim() || undefined : undefined,
+    })
+  }
+  if (options.length < 2) return null
+
+  const customHint = String(parsed?.custom?.hint || parsed?.customHint || '').trim()
+
+  return {
+    header: String(parsed?.header || parsed?.topic || parsed?.title || '').trim() || '确认一下',
+    question,
+    options,
+    customHint: customHint || undefined,
+    allowCustom: parsed?.allowCustom !== false,
+  }
+}
+
+/** 流式输出时，未闭合的 ask 块也要从正文里裁掉。 */
+export function stripAgentAskBlocks(content: string): string {
+  return content
+    .replace(/```onestep-ask[ \t]*\r?\n[\s\S]*?```/g, '')
+    .replace(/```onestep-ask[\s\S]*$/, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+/**
+ * 兜底：模型没按 ask 块输出，而是写了「❓ Q1 · 动作 / 1. … / 4. 自定义…」时，
+ * 也把它收成同一张选择题卡片，避免又要用户手打数字。
+ */
+export function extractLegacyAsk(content: string): { ask: AgentAsk; rest: string } | null {
+  const lines = content.split('\n')
+  const start = lines.findIndex((line) => /^\s*(?:❓|\?\ufe0f?)\s*/.test(line) && /Q\s*\d|·/.test(line))
+  if (start < 0) return null
+
+  const headerLine = lines[start].replace(/^\s*(?:❓|\?\ufe0f?)\s*/, '')
+  const parts = headerLine
+    .replace(/\*+/g, '')
+    .split(/[·:：]/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+  let header = parts[0] || ''
+  // 「Q1 · 动作」只保留「动作」
+  if (/^Q\s*\d+$/i.test(header)) header = parts[1] || header
+
+  let cursor = start + 1
+  while (cursor < lines.length && !lines[cursor].trim()) cursor += 1
+  if (cursor >= lines.length) return null
+  const question = lines[cursor].replace(/^[*\s]+/, '').replace(/\*+$/g, '').trim()
+  if (!question) return null
+  cursor += 1
+
+  const options: AgentAskOption[] = []
+  let customHint = ''
+  let end = cursor
+  for (; cursor < lines.length; cursor += 1) {
+    const line = lines[cursor]
+    const optionMatch = /^\s*(?:[-*]\s*)?(\d)[.、)]\s*(.+)$/.exec(line)
+    if (!optionMatch) {
+      if (!line.trim() && options.length) break
+      if (options.length) break
+      continue
+    }
+    const index = Number(optionMatch[1])
+    let label = optionMatch[2].replace(/\*+/g, '').trim()
+    const recommended = /(?:←|<-|＜-)\s*推荐/.test(label)
+    label = label.replace(/\s*(?:←|<-|＜-)\s*推荐\s*$/, '').trim()
+    if (index === 4 || /^自定义/.test(label)) {
+      customHint = label.replace(/^自定义\s*[:：]?\s*/, '').trim()
+    } else if (index <= 3 && label) {
+      options.push({ id: String(options.length + 1), label, recommended })
+    }
+    end = cursor
+  }
+
+  if (options.length < 2) return null
+
+  // 顺手去掉「回复 1 / 2 / 3 直接选」这类文字提示，卡片上已经用不到了。
+  if (lines[end + 1] !== undefined && /^\s*回复\s*\d/.test(lines[end + 1])) end += 1
+
+  return {
+    ask: {
+      header: header || '确认一下',
+      question,
+      options,
+      customHint: customHint || undefined,
+      allowCustom: true,
+    },
+    rest: [...lines.slice(0, start), ...lines.slice(end + 1)].join('\n').replace(/\n{3,}/g, '\n\n').trim(),
+  }
+}
+
+
+/** 展示用：同时去掉生成工具块、时间轴操作块与选择题块。 */
 export function stripAgentControlBlocks(content: string): string {
-  return stripAgentTimelineBlocks(stripAgentToolBlocks(content))
+  return stripAgentAskBlocks(stripAgentTimelineBlocks(stripAgentToolBlocks(content)))
 }
 
 const MEDIA_EXT: Record<string, 'image' | 'video' | 'audio'> = {

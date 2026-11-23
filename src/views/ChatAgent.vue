@@ -134,6 +134,7 @@
             :can-retry="message.id === lastAssistantId"
             @retry="handleRetry"
             @generation-retry="handleGenerationRetry"
+            @ask-answer="handleAskAnswer"
           />
         </section>
       </div>
@@ -376,6 +377,12 @@ async function handleRetry() {
 
 function handleGenerationRetry(messageId: string) {
   store.retryGeneration(messageId)
+}
+
+function handleAskAnswer(payload: { messageId: string; optionId: string; label: string }) {
+  stickToBottom.value = true
+  store.answerAsk(payload.messageId, payload.optionId, payload.label)
+  nextTick(() => scrollToBottom('smooth'))
 }
 
 function applySuggestion(prompt: string) {

@@ -29,6 +29,28 @@ export interface AgentGeneration {
   attachedToProject?: boolean
 }
 
+/** Agent 向用户提的单个选择题，由对话里的 ```onestep-ask 块解析而来。 */
+export interface AgentAskOption {
+  id: string
+  label: string
+  recommended?: boolean
+  /** 选项下面的一行补充说明，例如适用场景。 */
+  hint?: string
+}
+
+export interface AgentAsk {
+  header: string
+  question: string
+  options: AgentAskOption[]
+  /** 自定义选项的说明，默认「写你自己的答案」。 */
+  customHint?: string
+  allowCustom: boolean
+  /** 用户已选中的选项 id，'custom' 表示自己写的。 */
+  answerId?: string
+  /** 用户选择后的原文，用于展示。 */
+  answer?: string
+}
+
 export interface AgentMessage {
   id: string
   role: AgentRole
@@ -43,6 +65,8 @@ export interface AgentMessage {
   model?: string
   /** 本条回复触发的图片 / 视频生成任务。 */
   generation?: AgentGeneration
+  /** 本条回复向用户提出的选择题（一次只有一个）。 */
+  ask?: AgentAsk
 }
 
 /** 对话所在的工作模式：普通对话只聊；创作对话的结果进入剪辑项目。 */
