@@ -503,6 +503,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { confirmDialog } from '@/features/ui/dialog'
 import ApiKeyInput from '@/components/ApiKeyInput.vue'
 import StudioIsland from '@/components/StudioIsland.vue'
 import { useApiStore } from '@/stores/apiStore'
@@ -578,7 +579,14 @@ function saveCustomAgent() {
   }, 2600)
 }
 
-function removeCustomAgent() {
+async function removeCustomAgent() {
+  const ok = await confirmDialog({
+    title: '删除自定义命令',
+    message: '删除后这条自定义命令不会保留，之后会继续使用内置模型。',
+    confirmText: '删除',
+    danger: true,
+  })
+  if (!ok) return
   localAgentStore.clearCustomAgent()
   customName.value = ''
   customCommand.value = ''
@@ -819,12 +827,17 @@ async function handleSaveConfig() {
   }
 }
 
-function handleClear() {
-  if (confirm('确定要清除配置并退出吗？')) {
-    apiStore.clear()
-    chatStore.clearMessages()
-    router.replace('/setup')
-  }
+async function handleClear() {
+  const ok = await confirmDialog({
+    title: '清除配置',
+    message: '清除配置并退出？本机保存的对话也会一起清空。',
+    confirmText: '清除并退出',
+    danger: true,
+  })
+  if (!ok) return
+  apiStore.clear()
+  chatStore.clearMessages()
+  router.replace('/setup')
 }
 
 /* ---------------------------------- 创作偏好 ---------------------------------- */

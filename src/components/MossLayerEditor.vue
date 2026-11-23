@@ -264,6 +264,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { confirmDialog } from '@/features/ui/dialog'
 import type { MossLayout, MossLayoutItem, MossLayoutLabel } from '@/types/layout'
 import {
   clampLayoutItem,
@@ -664,9 +665,15 @@ async function regenerate() {
 }
 
 /** 改动未应用时关闭前二次确认，避免用户误以为已经生成。 */
-function requestClose() {
+async function requestClose() {
   if (dirty.value) {
-    const ok = window.confirm('布局已修改但还没重新生成，关闭会放弃这些修改。确定关闭吗？')
+    const ok = await confirmDialog({
+      title: '放弃修改',
+      message: '布局已修改但还没重新生成，关闭会放弃这些修改。',
+      confirmText: '放弃修改',
+      cancelText: '继续编辑',
+      danger: true,
+    })
     if (!ok) return
   }
   emit('close')

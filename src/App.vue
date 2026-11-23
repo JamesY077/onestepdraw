@@ -4,11 +4,13 @@
       <router-view />
     </main>
     <AddToProjectDialog />
+    <AppDialog />
   </div>
 </template>
 
 <script setup lang="ts">
 import AddToProjectDialog from '@/components/common/AddToProjectDialog.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 </script>
 
 <style>

@@ -83,6 +83,7 @@
 import { computed, ref } from 'vue'
 import BrandMark from './BrandMark.vue'
 import type { AgentConversation } from '@/types/agent'
+import { confirmDialog } from '@/features/ui/dialog'
 import { getApiKey } from '@/api/config'
 
 const props = defineProps<{
@@ -141,8 +142,14 @@ const filteredGroups = computed(() => {
   return groups.filter((group) => group.items.length > 0)
 })
 
-function handleDelete(conversation: AgentConversation) {
-  if (!window.confirm(`删除对话「${conversation.title || '新对话'}」？`)) return
+async function handleDelete(conversation: AgentConversation) {
+  const ok = await confirmDialog({
+    title: '删除对话',
+    message: `删除对话「${conversation.title || '新对话'}」？删除后无法恢复。`,
+    confirmText: '删除',
+    danger: true,
+  })
+  if (!ok) return
   emit('delete', conversation.id)
 }
 </script>

@@ -236,6 +236,7 @@ import { useAgentStore } from '@/stores/agentStore'
 import { useEditProjectStore, projectDuration } from '@/stores/editProjectStore'
 import { playhead, setPlayhead } from '@/features/edit/playhead'
 import { exportProjectVideo } from '@/features/edit/exportVideo'
+import { confirmDialog } from '@/features/ui/dialog'
 import {
   MAX_PROJECT_SECONDS,
   PROJECT_ASPECT_RATIOS,
@@ -328,8 +329,14 @@ function createNewProject() {
   openProject(created.id)
 }
 
-function removeProject(id: string) {
-  if (!window.confirm('删除这个项目？项目里的时间轴和素材会被移除，已生成的原始文件不受影响。')) return
+async function removeProject(id: string) {
+  const ok = await confirmDialog({
+    title: '删除项目',
+    message: '删除这个项目？项目里的时间轴和素材会被移除，已生成的原始文件不受影响。',
+    confirmText: '删除',
+    danger: true,
+  })
+  if (!ok) return
   const wasActive = id === projectId.value
   projectStore.deleteProject(id)
   if (wasActive) router.push('/edit')

@@ -163,6 +163,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { confirmDialog } from '@/features/ui/dialog'
 import AgentSidebar from '@/components/agent/AgentSidebar.vue'
 import AgentComposer from '@/components/agent/AgentComposer.vue'
 import AgentMessage from '@/components/agent/AgentMessage.vue'
@@ -327,9 +328,14 @@ function handleDelete(id: string) {
   nextTick(() => resetScroll('auto'))
 }
 
-function handleLogout() {
+async function handleLogout() {
   if (store.isStreaming) store.stopStreaming()
-  if (!window.confirm('退出登录？本机保存的对话不会被删除。')) return
+  const ok = await confirmDialog({
+    title: '退出登录',
+    message: '退出登录？本机保存的对话不会被删除。',
+    confirmText: '退出登录',
+  })
+  if (!ok) return
   store.flush()
   apiStore.clear()
   router.replace('/login')

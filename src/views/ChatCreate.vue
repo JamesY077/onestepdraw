@@ -912,6 +912,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick, onMounted, computed, watch, onBeforeUnmount } from 'vue'
+import { alertDialog } from '@/features/ui/dialog'
 import { useRoute } from 'vue-router'
 import MossLayerEditor from '@/components/MossLayerEditor.vue'
 import ModelSelector from '@/components/ModelSelector.vue'
@@ -2361,7 +2362,10 @@ async function handlePolishPrompt() {
   try {
     validatePromptOrThrow(prompt)
   } catch (error) {
-    alert(getReadableErrorMessage(error, '请检查提示词后重试。'))
+    void alertDialog({
+      title: '生成失败',
+      message: getReadableErrorMessage(error, '请检查提示词后重试。'),
+    })
     return
   }
 
@@ -2389,7 +2393,10 @@ async function handlePolishPrompt() {
     await nextTick()
     promptInputRef.value?.focus()
   } catch (error) {
-    alert(getReadableErrorMessage(error, '润色失败，请稍后重试。'))
+    void alertDialog({
+      title: '润色失败',
+      message: getReadableErrorMessage(error, '润色失败，请稍后重试。'),
+    })
   } finally {
     isPolishing.value = false
   }
@@ -2635,7 +2642,10 @@ async function handleSend() {
     try {
       validatePromptOrThrow(prompt)
     } catch (error) {
-      alert(getReadableErrorMessage(error, '提示词校验失败，请修改后重试。'))
+      void alertDialog({
+        title: '提示词校验失败',
+        message: getReadableErrorMessage(error, '提示词校验失败，请修改后重试。'),
+      })
       return
     }
   }

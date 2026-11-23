@@ -1484,6 +1484,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { confirmDialog, alertDialog } from '@/features/ui/dialog'
 import StudioHeader from '@/components/StudioHeader.vue'
 import StudioIsland from '@/components/StudioIsland.vue'
 import VoicePlayer from '@/components/VoicePlayer.vue'
@@ -2195,7 +2196,13 @@ async function handleDesignVoice() {
 }
 
 async function handleDeleteDesignedVoice(voice: StoredDesignedVoice) {
-  if (!window.confirm(`删除音色「${voice.name}」？删除后该音色将无法再用于合成。`)) return
+  const ok = await confirmDialog({
+    title: '删除音色',
+    message: `删除音色「${voice.name}」？删除后该音色将无法再用于合成。`,
+    confirmText: '删除',
+    danger: true,
+  })
+  if (!ok) return
 
   deletingDesignedId.value = voice.voiceId
   let remoteMessage = ''
@@ -2215,7 +2222,10 @@ async function handleDeleteDesignedVoice(voice: StoredDesignedVoice) {
   }
 
   if (remoteMessage) {
-    window.alert(`${remoteMessage}\n已从本机列表移除，未用于合成的远端音色会在 7 天后自动过期。`)
+    await alertDialog({
+      title: '已从本机列表移除',
+      message: `${remoteMessage}\n未用于合成的远端音色会在 7 天后自动过期。`,
+    })
   }
 }
 
@@ -2396,9 +2406,15 @@ async function pushHistory(generated: SpeechResult, voiceName: string, sourceTex
   return saved
 }
 
-function clearHistory() {
+async function clearHistory() {
   if (!history.value.length) return
-  if (!window.confirm('确定清空配音音频库吗？清空后，视频多模态参考里也不能再选择这些音频。')) return
+  const ok = await confirmDialog({
+    title: '清空音频库',
+    message: '清空配音音频库？清空后，视频多模态参考里也不能再选择这些音频。',
+    confirmText: '清空',
+    danger: true,
+  })
+  if (!ok) return
 
   history.value.forEach((item) => revokeUrl(item.audioUrl))
   history.value = []
@@ -2711,7 +2727,13 @@ function useVoiceForSpeech(voiceId: string) {
 }
 
 async function handleDeleteVoice(voice: StoredClonedVoice) {
-  if (!window.confirm(`删除音色「${voice.name}」？删除后该音色将无法再用于合成。`)) return
+  const ok = await confirmDialog({
+    title: '删除音色',
+    message: `删除音色「${voice.name}」？删除后该音色将无法再用于合成。`,
+    confirmText: '删除',
+    danger: true,
+  })
+  if (!ok) return
 
   deletingVoiceId.value = voice.voiceId
   let remoteMessage = ''
@@ -2727,7 +2749,10 @@ async function handleDeleteVoice(voice: StoredClonedVoice) {
   }
 
   if (remoteMessage) {
-    window.alert(`${remoteMessage}\n已从本机列表移除，未保存的远端音色会在 7 天后自动过期。`)
+    await alertDialog({
+      title: '已从本机列表移除',
+      message: `${remoteMessage}\n未保存的远端音色会在 7 天后自动过期。`,
+    })
   }
 }
 

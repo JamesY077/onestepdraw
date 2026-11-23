@@ -1,3 +1,5 @@
+import { alertDialog } from '@/features/ui/dialog'
+
 export class AppError extends Error {
   title: string
   code?: string
@@ -12,7 +14,10 @@ export class AppError extends Error {
 
 export function showErrorMessage(error: unknown, fallback = '操作失败，请稍后重试。') {
   const message = error instanceof Error ? error.message : fallback
-  window.alert(message || fallback)
+  void alertDialog({
+    title: error instanceof AppError ? error.title : '提示',
+    message: message || fallback,
+  })
 }
 
 export function normalizeErrorMessage(error: unknown, fallback = '操作失败，请稍后重试。') {

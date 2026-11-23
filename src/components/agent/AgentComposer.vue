@@ -725,7 +725,9 @@ defineExpose({ focus })
 
 .engine-count {
   color: #b3b3ab;
+  font-size: 9.5px;
   font-weight: 500;
+  letter-spacing: 0;
 }
 
 .engine-group-label {
