@@ -33,6 +33,8 @@ export interface AgentMessage {
   content: string
   /** 推理模型的思考过程（如上游返回 reasoning_content）。 */
   reasoning?: string
+  /** 本机 CLI Agent 的运行日志（stderr），默认折叠展示。 */
+  logs?: string
   createdAt: number
   status: AgentMessageStatus
   error?: string

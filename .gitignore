@@ -28,3 +28,6 @@ test-results/
 *.njsproj
 *.sln
 *.sw?
+
+# 本机 Agent 生成产物
+generated/

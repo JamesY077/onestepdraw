@@ -6,7 +6,7 @@
         v-model="text"
         class="composer-input"
         rows="1"
-        :placeholder="placeholder"
+        :placeholder="placeholderText"
         :disabled="false"
         @focus="focused = true"
         @blur="focused = false"
@@ -15,9 +15,83 @@
       />
 
       <div class="composer-bottom">
-        <div class="composer-model" :title="AGENT_MODEL_DESCRIPTION">
-          <span class="model-dot" aria-hidden="true" />
-          {{ AGENT_MODEL_NAME }}
+        <div ref="engineRef" class="engine-anchor">
+          <button
+            type="button"
+            class="engine-button"
+            :class="{ 'is-local': localAgentStore.isLocalEngine }"
+            :title="engineTitle"
+            :aria-expanded="engineMenuOpen"
+            aria-haspopup="listbox"
+            @click="toggleEngineMenu"
+          >
+            <span class="model-dot" aria-hidden="true" />
+            <span class="engine-label">{{ localAgentStore.selectedLabel }}</span>
+            <svg class="engine-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m7 14 5-5 5 5" />
+            </svg>
+          </button>
+
+          <div v-if="engineMenuOpen" class="engine-menu" role="listbox" aria-label="选择执行创作的 Agent">
+            <div class="engine-menu-head">
+              <span>使用哪个 Agent</span>
+              <span class="engine-count">{{ localAgentStore.installedCount }} 个本机</span>
+            </div>
+
+            <button
+              type="button"
+              class="engine-option"
+              :class="{ active: localAgentStore.selectedId === BUILTIN_ENGINE_ID }"
+              role="option"
+              :aria-selected="localAgentStore.selectedId === BUILTIN_ENGINE_ID"
+              @click="chooseEngine(BUILTIN_ENGINE_ID)"
+            >
+              <span class="option-mark" aria-hidden="true" />
+              <span class="option-copy">
+                <strong>AIPing · DeepSeek</strong>
+                <small>内置模型，无需安装</small>
+              </span>
+              <span v-if="localAgentStore.selectedId === BUILTIN_ENGINE_ID" class="option-check">✓</span>
+            </button>
+
+            <template v-if="localAgentStore.installedAgents.length">
+              <p class="engine-group-label">本机 Agent</p>
+              <button
+                v-for="agent in localAgentStore.installedAgents"
+                :key="agent.id"
+                type="button"
+                class="engine-option"
+                :class="{ active: localAgentStore.selectedId === agent.id }"
+                role="option"
+                :aria-selected="localAgentStore.selectedId === agent.id"
+                @click="chooseEngine(agent.id)"
+              >
+                <span class="option-mark local" aria-hidden="true" />
+                <span class="option-copy">
+                  <strong>{{ agent.name }}</strong>
+                  <small>{{ [agent.vendor, agent.version].filter(Boolean).join(' · ') }}</small>
+                </span>
+                <span v-if="localAgentStore.selectedId === agent.id" class="option-check">✓</span>
+              </button>
+            </template>
+
+            <p v-else class="engine-empty">
+              {{
+                localAgentStore.isScanning
+                  ? '正在扫描本机 Agent…'
+                  : localAgentStore.status === 'error'
+                    ? '本地扫描不可用，请用 npm start 启动'
+                    : '还没有检测到已安装的 Agent'
+              }}
+            </p>
+
+            <div class="engine-menu-foot">
+              <button type="button" class="engine-link" :disabled="localAgentStore.isScanning" @click="rescan">
+                {{ localAgentStore.isScanning ? '扫描中…' : '重新扫描' }}
+              </button>
+              <button type="button" class="engine-link" @click="openSettings">安装与管理</button>
+            </div>
+          </div>
         </div>
 
         <div class="composer-actions">
@@ -57,21 +131,77 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
-import { AGENT_MODEL_DESCRIPTION, AGENT_MODEL_NAME } from '@/api/agent'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { BUILTIN_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 
 const props = withDefaults(defineProps<{ disabled?: boolean; placeholder?: string }>(), {
   disabled: false,
-  placeholder: '给 OneStep 发消息…',
+  placeholder: '',
 })
 const emit = defineEmits<{
   (event: 'send', content: string): void
   (event: 'stop'): void
 }>()
 
+const router = useRouter()
+const localAgentStore = useLocalAgentStore()
+const engineRef = ref<HTMLElement | null>(null)
+const engineMenuOpen = ref(false)
 const text = defineModel<string>({ default: '' })
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const focused = ref(false)
+
+const placeholderText = computed(
+  () => props.placeholder || `给 ${localAgentStore.selectedLabel} 发消息…`,
+)
+const engineTitle = computed(() =>
+  localAgentStore.isLocalEngine
+    ? `${localAgentStore.selectedLabel} · ${localAgentStore.selectedHint}`
+    : 'AIPing · DeepSeek，内置模型',
+)
+
+function toggleEngineMenu() {
+  if (props.disabled) return
+  engineMenuOpen.value = !engineMenuOpen.value
+  if (engineMenuOpen.value) localAgentStore.ensureScanned()
+}
+
+function chooseEngine(id: string) {
+  if (props.disabled) return
+  localAgentStore.select(id)
+  engineMenuOpen.value = false
+}
+
+function rescan() {
+  void localAgentStore.scan(true)
+}
+
+function openSettings() {
+  engineMenuOpen.value = false
+  router.push('/settings#agents')
+}
+
+function handleDocumentPointer(event: MouseEvent) {
+  if (!engineMenuOpen.value) return
+  if (engineRef.value?.contains(event.target as Node)) return
+  engineMenuOpen.value = false
+}
+
+function handleDocumentKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') engineMenuOpen.value = false
+}
+
+onMounted(() => {
+  localAgentStore.ensureScanned()
+  document.addEventListener('mousedown', handleDocumentPointer)
+  document.addEventListener('keydown', handleDocumentKeydown)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', handleDocumentPointer)
+  document.removeEventListener('keydown', handleDocumentKeydown)
+})
 
 function resize() {
   const textarea = textareaRef.value
@@ -157,22 +287,207 @@ defineExpose({ focus })
   padding: 6px 10px 9px 14px;
 }
 
-.composer-model {
+.engine-anchor {
+  position: relative;
+  min-width: 0;
+}
+
+.engine-button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  max-width: 250px;
+  padding: 4px 7px 4px 5px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
   color: #8b8b83;
+  font-family: inherit;
   font-size: 11.5px;
   font-weight: 550;
   white-space: nowrap;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.engine-button:hover {
+  border-color: #e9e9e3;
+  background: #fafaf8;
+  color: #4a4a44;
+}
+
+.engine-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.engine-caret {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  color: #b4b4ac;
 }
 
 .model-dot {
   width: 6px;
   height: 6px;
+  flex: none;
   border-radius: 50%;
   background: #5aa77a;
   box-shadow: 0 0 0 2.5px rgba(90, 167, 122, 0.13);
+}
+
+.engine-button.is-local .model-dot {
+  background: #4f86c6;
+  box-shadow: 0 0 0 2.5px rgba(79, 134, 198, 0.14);
+}
+
+.engine-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  width: 266px;
+  max-height: min(58vh, 380px);
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid #e6e6df;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(17, 17, 16, 0.04),
+    0 14px 40px rgba(17, 17, 16, 0.12);
+}
+
+.engine-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px 7px;
+  color: #8d8d85;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.engine-count {
+  color: #b3b3ab;
+  font-weight: 500;
+}
+
+.engine-group-label {
+  margin: 7px 8px 3px;
+  color: #a8a8a0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.engine-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #2c2c28;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.engine-option:hover {
+  background: #f7f7f3;
+}
+
+.engine-option.active {
+  background: #f3f3ee;
+}
+
+.option-mark {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: #5aa77a;
+}
+
+.option-mark.local {
+  background: #4f86c6;
+}
+
+.option-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.option-copy strong {
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.option-copy small {
+  overflow: hidden;
+  color: #96968e;
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.option-check {
+  flex: none;
+  color: #55554e;
+  font-size: 11px;
+}
+
+.engine-empty {
+  margin: 4px 8px 8px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  background: #fafaf7;
+  color: #9c9c94;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.engine-menu-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 7px 6px 2px;
+  border-top: 1px solid #f0f0ea;
+}
+
+.engine-link {
+  padding: 3px 5px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #7f7f77;
+  font-family: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.engine-link:hover:not(:disabled) {
+  background: #f4f4ef;
+  color: #33332e;
+}
+
+.engine-link:disabled {
+  color: #b7b7af;
+  cursor: default;
 }
 
 .composer-actions {

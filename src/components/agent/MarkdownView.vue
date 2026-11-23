@@ -26,7 +26,11 @@ renderer.code = ({ text, lang }) => {
 }
 
 renderer.link = ({ href, title, text }) => {
-  const safeHref = escapeHtml(href || '')
+  const rawHref = href || ''
+  const safeHref = escapeHtml(rawHref)
+  if (/^\/generated\/.+\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(rawHref)) {
+    return `<video class="md-video" controls preload="metadata" src="${safeHref}"></video>`
+  }
   const safeTitle = title ? ` title="${escapeHtml(title)}"` : ''
   return `<a href="${safeHref}"${safeTitle} target="_blank" rel="noopener noreferrer">${text}</a>`
 }
@@ -173,6 +177,16 @@ async function handleClick(event: MouseEvent) {
   color: #2b2b27;
   font-family: 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
   font-size: 0.88em;
+}
+
+.markdown-body :deep(.md-video) {
+  display: block;
+  width: 100%;
+  max-width: 620px;
+  margin: 12px 0;
+  border: 1px solid #e9e9e3;
+  border-radius: 12px;
+  background: #000000;
 }
 
 .markdown-body :deep(.md-code) {

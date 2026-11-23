@@ -25,7 +25,7 @@
         <div class="chat-heading">
           <h1>{{ headerTitle }}</h1>
           <span class="heading-sep" aria-hidden="true">/</span>
-          <span class="heading-sub">{{ AGENT_MODEL_NAME }}</span>
+          <span class="heading-sub">{{ localAgentStore.selectedLabel }}</span>
         </div>
 
         <div class="header-actions">
@@ -46,6 +46,13 @@
 
       <div v-if="store.authExpired" class="expired-banner" role="alert">
         AIPing 登录已过期，正在返回登录页…
+      </div>
+
+      <div v-else-if="localAgentStore.pendingSelection" class="engine-warning" role="status">
+        <span>
+          没有检测到 {{ localAgentStore.pendingSelection.name }}，当前使用内置 AIPing 模型。
+        </span>
+        <button type="button" @click="localAgentStore.scan(true)">重新扫描</button>
       </div>
 
       <div ref="scrollRef" class="chat-scroll" @scroll="handleScroll">
@@ -81,7 +88,11 @@
 
           <p class="welcome-note">
             <span class="note-dot" aria-hidden="true" />
-            已连接 AIPing · 对话只保存在这台设备
+            {{
+              localAgentStore.isLocalEngine
+                ? `由 ${localAgentStore.selectedLabel} 执行创作 · 对话只保存在这台设备`
+                : '已连接 AIPing · 对话只保存在这台设备'
+            }}
           </p>
         </section>
 
@@ -125,10 +136,11 @@ import BrandMark from '@/components/agent/BrandMark.vue'
 import StudioIsland from '@/components/StudioIsland.vue'
 import { useAgentStore } from '@/stores/agentStore'
 import { useApiStore } from '@/stores/apiStore'
-import { AGENT_MODEL_NAME } from '@/api/agent'
+import { useLocalAgentStore } from '@/stores/localAgentStore'
 
 const store = useAgentStore()
 const apiStore = useApiStore()
+const localAgentStore = useLocalAgentStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -336,6 +348,7 @@ function flushConversations() {
 }
 
 onMounted(() => {
+  localAgentStore.ensureScanned()
   const id = typeof route.params.id === 'string' ? route.params.id : ''
   if (id && store.conversations.some((conversation) => conversation.id === id)) {
     store.selectConversation(id)
@@ -477,6 +490,35 @@ onBeforeUnmount(() => {
   color: #a04444;
   font-size: 12.5px;
   text-align: center;
+}
+
+.engine-warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 20px;
+  border-bottom: 1px solid #f0ead9;
+  background: #fdfbf3;
+  color: #8a7a45;
+  font-size: 12px;
+  text-align: center;
+}
+
+.engine-warning button {
+  padding: 2px 7px;
+  border: 1px solid #ebe2c8;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #7d6d36;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.engine-warning button:hover {
+  border-color: #dcd0ae;
+  background: #fffdf6;
 }
 
 .chat-scroll {

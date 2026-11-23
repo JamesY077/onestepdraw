@@ -1,6 +1,7 @@
 import { computed, reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { AGENT_MODEL_ID, AgentApiError, streamAgentChat } from '@/api/agent'
+import { LocalAgentError, streamLocalAgent, type LocalAgentMessage } from '@/api/localAgents'
 import type { AgentChatMessage, AgentConversation, AgentMessage } from '@/types/agent'
 import { DEFAULT_AGENT_SYSTEM_PROMPT } from '@/features/agent/prompt'
 import {
@@ -13,6 +14,8 @@ import {
 import { buildImageParams, buildVideoParams } from '@/features/generate/buildParams'
 import { pollVideoStatus } from '@/features/generate/video'
 import { generateImage, generateVideo } from '@/api/aiping'
+import { CUSTOM_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
+import { useApiStore } from '@/stores/apiStore'
 
 const STORAGE_KEY = 'onestep_agent_conversations_v1'
 const MAX_CONVERSATIONS = 50
@@ -172,6 +175,26 @@ export const useAgentStore = defineStore('agent', () => {
     ]
   }
 
+  /** 本机 CLI Agent 使用纯对话记录，系统提示词由本地服务统一拼装。 */
+  function buildLocalContext(conversation: AgentConversation): LocalAgentMessage[] {
+    return conversation.messages
+      .filter(
+        (message) =>
+          message.status !== 'error' && (message.content.trim() || message.generation),
+      )
+      .slice(-MAX_CONTEXT_MESSAGES)
+      .map<LocalAgentMessage>((message) => {
+        const note =
+          message.role === 'assistant' && message.generation
+            ? `\n\n[系统记录] 已调用${message.generation.kind === 'image' ? '图片' : '视频'}生成：${describeAgentGeneration(message.generation)}。`
+            : ''
+        return {
+          role: message.role,
+          content: `${message.content}${note}`.trim(),
+        }
+      })
+  }
+
   function stopStreaming() {
     if (abortController) {
       abortController.abort()
@@ -280,40 +303,82 @@ export const useAgentStore = defineStore('agent', () => {
     authExpired.value = false
     let pendingTool: AgentToolCall | null = null
 
+    const localAgentStore = useLocalAgentStore()
+    const apiStore = useApiStore()
+    const engine = localAgentStore.isLocalEngine ? localAgentStore.selectedAgent : null
+
     try {
-      await streamAgentChat({
-        messages: buildContext(conversation),
-        model: AGENT_MODEL_ID,
-        signal: controller.signal,
-        onDelta: (text) => {
-          assistant.content += text
-          conversation.updatedAt = Date.now()
-          schedulePersist()
-        },
-        onReasoning: (text) => {
-          assistant.reasoning = (assistant.reasoning || '') + text
-          conversation.updatedAt = Date.now()
-          schedulePersist()
-        },
-      })
+      if (engine) {
+        assistant.model = engine.name
+        const result = await streamLocalAgent({
+          agentId: engine.id,
+          messages: buildLocalContext(conversation),
+          apiKey: apiStore.apiKey || '',
+          apiBaseUrl: apiStore.apiBaseUrl || '',
+          custom:
+            engine.id === CUSTOM_ENGINE_ID
+              ? { name: localAgentStore.custom.name, command: localAgentStore.custom.command }
+              : undefined,
+          signal: controller.signal,
+          onDelta: (text) => {
+            assistant.content += text
+            conversation.updatedAt = Date.now()
+            schedulePersist()
+          },
+          onLog: (text) => {
+            const next = (assistant.logs || '') + text
+            assistant.logs = next.length > 8000 ? next.slice(-8000) : next
+            conversation.updatedAt = Date.now()
+            schedulePersist()
+          },
+        })
 
-      const raw = assistant.content
-      const toolCalls = extractAgentToolCalls(raw)
-      const visible = stripAgentToolBlocks(raw)
-      assistant.content = visible
-
-      if (!visible && !toolCalls.length) {
-        assistant.status = 'error'
-        assistant.error = '模型没有返回内容，请重试。'
+        if (!assistant.content.trim()) {
+          assistant.status = 'error'
+          assistant.error =
+            result.exitCode === 0
+              ? `${engine.name} 没有返回内容，请重试或展开运行日志查看。`
+              : `${engine.name} 退出（code ${result.exitCode}）。${
+                  result.stderrTail.split('\n').filter(Boolean).slice(-1)[0] || ''
+                }`
+        } else {
+          assistant.status = 'done'
+        }
       } else {
-        assistant.status = 'done'
-        if (toolCalls.length) {
-          const call = toolCalls[0]
-          if (buildAgentGeneration(call)) {
-            pendingTool = call
-          } else if (!visible) {
-            assistant.status = 'error'
-            assistant.error = '没有解析到可执行的生成参数，请补充画面内容后重试。'
+        await streamAgentChat({
+          messages: buildContext(conversation),
+          model: AGENT_MODEL_ID,
+          signal: controller.signal,
+          onDelta: (text) => {
+            assistant.content += text
+            conversation.updatedAt = Date.now()
+            schedulePersist()
+          },
+          onReasoning: (text) => {
+            assistant.reasoning = (assistant.reasoning || '') + text
+            conversation.updatedAt = Date.now()
+            schedulePersist()
+          },
+        })
+
+        const raw = assistant.content
+        const toolCalls = extractAgentToolCalls(raw)
+        const visible = stripAgentToolBlocks(raw)
+        assistant.content = visible
+
+        if (!visible && !toolCalls.length) {
+          assistant.status = 'error'
+          assistant.error = '模型没有返回内容，请重试。'
+        } else {
+          assistant.status = 'done'
+          if (toolCalls.length) {
+            const call = toolCalls[0]
+            if (buildAgentGeneration(call)) {
+              pendingTool = call
+            } else if (!visible) {
+              assistant.status = 'error'
+              assistant.error = '没有解析到可执行的生成参数，请补充画面内容后重试。'
+            }
           }
         }
       }
@@ -328,6 +393,9 @@ export const useAgentStore = defineStore('agent', () => {
         assistant.status = 'error'
         assistant.error = error.message
         if (error.kind === 'auth') authExpired.value = true
+      } else if (error instanceof LocalAgentError) {
+        assistant.status = 'error'
+        assistant.error = error.message
       } else {
         assistant.status = 'error'
         assistant.error = error?.message || '生成失败，请稍后重试。'

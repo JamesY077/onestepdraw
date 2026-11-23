@@ -18,6 +18,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { exec } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { buildCustomAgent, buildRunPrompt, detectAgents, getInstalledAgent, runAgent } from './agents.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '../..')
@@ -136,6 +137,197 @@ function sendFile(res, filePath, statusCode = 200) {
   fs.createReadStream(filePath).pipe(res)
 }
 
+function readJsonBody(req, limit = 2_000_000) {
+  return new Promise((resolve, reject) => {
+    let size = 0
+    const chunks = []
+    req.on('data', (chunk) => {
+      size += chunk.length
+      if (size > limit) {
+        reject(new Error('请求内容过大。'))
+        req.destroy()
+        return
+      }
+      chunks.push(chunk)
+    })
+    req.on('end', () => {
+      try {
+        const raw = Buffer.concat(chunks).toString('utf8')
+        resolve(raw ? JSON.parse(raw) : {})
+      } catch {
+        reject(new Error('请求内容不是合法 JSON。'))
+      }
+    })
+    req.on('error', reject)
+  })
+}
+
+function sendJson(res, statusCode, payload) {
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+  })
+  res.end(JSON.stringify(payload))
+}
+
+function currentBaseUrl() {
+  const address = server.address()
+  const port = typeof address === 'object' && address ? address.port : startPort
+  return `http://${host}:${port}`
+}
+
+async function handleAgents(req, res, requestUrl) {
+  const refresh = new URL(requestUrl, 'http://localhost').searchParams.get('refresh') === '1'
+  try {
+    const agents = await detectAgents({ refresh })
+    sendJson(res, 200, {
+      agents,
+      rootDir,
+      platform: process.platform,
+      scannedAt: new Date().toISOString(),
+    })
+  } catch (error) {
+    sendJson(res, 500, { error: { message: error?.message || '扫描本机 Agent 失败。' } })
+  }
+}
+
+async function handleAgentRun(req, res) {
+  const origin = typeof req.headers.origin === 'string' ? req.headers.origin : ''
+  if (origin) {
+    let originHost = ''
+    try {
+      originHost = new URL(origin).host
+    } catch {
+      originHost = ''
+    }
+    const address = server.address()
+    const port = typeof address === 'object' && address ? address.port : startPort
+    const allowedHosts = new Set([`${host}:${port}`, `localhost:${port}`, `127.0.0.1:${port}`])
+    if (!originHost || !allowedHosts.has(originHost)) {
+      sendJson(res, 403, { error: { message: '拒绝来自其他站点的 Agent 调用。' } })
+      return
+    }
+  }
+
+  const contentType = String(req.headers['content-type'] || '').toLowerCase()
+  if (!contentType.includes('application/json')) {
+    sendJson(res, 415, { error: { message: '请求必须使用 application/json。' } })
+    return
+  }
+
+  let body
+  try {
+    body = await readJsonBody(req)
+  } catch (error) {
+    sendJson(res, 400, { error: { message: error?.message || '请求解析失败。' } })
+    return
+  }
+
+  const agentId = typeof body?.agentId === 'string' ? body.agentId : ''
+  const messages = Array.isArray(body?.messages) ? body.messages : []
+  const apiKey = typeof body?.apiKey === 'string' ? body.apiKey.trim() : ''
+  const apiBaseUrl = typeof body?.apiBaseUrl === 'string' ? body.apiBaseUrl.trim() : ''
+
+  if (!agentId) {
+    sendJson(res, 400, { error: { message: '缺少 agentId。' } })
+    return
+  }
+
+  let installed = null
+  if (agentId === 'custom') {
+    const custom = body?.custom && typeof body.custom === 'object' ? body.custom : null
+    installed = buildCustomAgent({
+      name: typeof custom?.name === 'string' ? custom.name : '',
+      command: typeof custom?.command === 'string' ? custom.command : '',
+    })
+    if (!installed) {
+      sendJson(res, 400, { error: { message: '自定义命令为空，请先在设置里填写。' } })
+      return
+    }
+  } else {
+    installed = await getInstalledAgent(agentId)
+  }
+
+  if (!installed) {
+    sendJson(res, 404, { error: { message: '没有检测到该 Agent，请先在设置里扫描或安装。' } })
+    return
+  }
+
+  const { preset, command } = installed
+  const baseUrl = currentBaseUrl()
+  const prompt = buildRunPrompt({
+    messages,
+    rootDir,
+    baseUrl,
+    agentName: preset.name,
+  })
+
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  })
+  if (typeof res.flushHeaders === 'function') res.flushHeaders()
+
+  const send = (payload) => {
+    if (res.writableEnded) return
+    res.write(`data: ${JSON.stringify(payload)}\n\n`)
+  }
+
+  send({
+    type: 'start',
+    agent: { id: preset.id, name: preset.name, vendor: preset.vendor },
+    baseUrl,
+  })
+
+  const { child, done, stop } = runAgent({
+    preset,
+    command,
+    prompt,
+    rootDir,
+    baseUrl,
+    apiKey: /^sk-/.test(apiKey) ? apiKey : '',
+    apiBaseUrl,
+    onDelta: (text) => send({ type: 'delta', text }),
+    onLog: (text) => send({ type: 'log', text }),
+  })
+
+  let closed = false
+  const finish = (payload) => {
+    if (closed) return
+    closed = true
+    clearTimeout(timer)
+    send(payload)
+    if (!res.writableEnded) res.end()
+  }
+
+  const timer = setTimeout(() => {
+    stop('SIGTERM')
+    finish({ type: 'error', message: 'Agent 运行超过 30 分钟，已自动停止。' })
+  }, 30 * 60 * 1000)
+  timer.unref?.()
+
+  res.on('close', () => {
+    if (closed) return
+    closed = true
+    clearTimeout(timer)
+    stop('SIGTERM')
+  })
+
+  done.then((result) => {
+    if (result.error) {
+      finish({ type: 'error', message: result.error })
+      return
+    }
+    finish({
+      type: 'done',
+      exitCode: result.exitCode,
+      stderrTail: result.stderrTail || '',
+    })
+  })
+}
+
 const server = http.createServer((req, res) => {
   const requestUrl = req.url || '/'
 
@@ -144,6 +336,26 @@ const server = http.createServer((req, res) => {
       proxy.handler(req, res)
       return
     }
+  }
+
+  if (requestUrl === '/local/agent/run') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' })
+      res.end('Method Not Allowed')
+      return
+    }
+    void handleAgentRun(req, res)
+    return
+  }
+
+  if (requestUrl.startsWith('/local/agents')) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' })
+      res.end('Method Not Allowed')
+      return
+    }
+    void handleAgents(req, res, requestUrl)
+    return
   }
 
   if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -176,6 +388,19 @@ const server = http.createServer((req, res) => {
         platform: process.platform,
       }),
     )
+    return
+  }
+
+  if (pathname.startsWith('/generated/')) {
+    const relative = path.normalize(pathname.slice('/generated/'.length)).replace(/^(\.\.[/\\])+/, '')
+    const generatedRoot = path.join(rootDir, 'generated')
+    const filePath = path.join(generatedRoot, relative)
+    if (filePath.startsWith(generatedRoot) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      sendFile(res, filePath)
+      return
+    }
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+    res.end('Not Found')
     return
   }
 

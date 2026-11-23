@@ -76,6 +76,167 @@
             <p v-if="testStatus" :class="['notice', testStatusType]">{{ testStatus }}</p>
           </section>
 
+          <!-- 本机 Agent -->
+          <section id="agents" class="panel">
+            <div class="panel-head panel-head-row">
+              <div>
+                <h2>本机 Agent</h2>
+                <p>
+                  OneStep 启动后会自动扫描这台电脑上已安装的 CLI Agent。选中后，对话会交给它执行，
+                  可以直接读写项目、生成图片和视频。
+                </p>
+              </div>
+              <button
+                class="btn ghost"
+                type="button"
+                :disabled="localAgentStore.isScanning"
+                @click="scanAgents"
+              >
+                {{ localAgentStore.isScanning ? '扫描中…' : '重新扫描' }}
+              </button>
+            </div>
+
+            <div class="engine-summary">
+              <div class="engine-current">
+                <span
+                  class="engine-status-dot"
+                  :class="{ local: localAgentStore.isLocalEngine }"
+                  aria-hidden="true"
+                />
+                <div class="engine-current-copy">
+                  <strong>当前：{{ localAgentStore.selectedLabel }}</strong>
+                  <small>{{ localAgentStore.selectedHint || '内置模型，无需安装任何 CLI' }}</small>
+                </div>
+              </div>
+              <span class="tag ok">已安装 {{ localAgentStore.installedCount }} 个</span>
+            </div>
+
+            <p v-if="localAgentStore.status === 'error'" class="notice error">
+              {{ localAgentStore.error }}
+            </p>
+            <p v-else-if="localAgentStore.isScanning" class="notice">
+              正在扫描 PATH 与常见安装目录…
+            </p>
+
+            <div v-if="localAgentStore.installedAgents.length" class="engine-list">
+              <div
+                v-for="agent in localAgentStore.installedAgents"
+                :key="agent.id"
+                class="engine-row"
+                :class="{ selected: localAgentStore.selectedId === agent.id }"
+              >
+                <div class="engine-row-main">
+                  <strong>
+                    {{ agent.name }}
+                    <span class="engine-vendor">{{ agent.vendor }}</span>
+                  </strong>
+                  <span class="engine-meta">{{ agent.version || '版本未知' }}</span>
+                  <span v-if="agent.commandPath" class="engine-path mono">{{ agent.commandPath }}</span>
+                </div>
+                <button
+                  class="btn tiny"
+                  type="button"
+                  :disabled="localAgentStore.selectedId === agent.id"
+                  @click="selectEngine(agent.id)"
+                >
+                  {{ localAgentStore.selectedId === agent.id ? '使用中' : '使用这个' }}
+                </button>
+              </div>
+            </div>
+            <p v-else-if="!localAgentStore.isScanning" class="engine-empty-note">
+              还没有检测到已安装的 Agent。可以从下方安装一个，或填写自定义命令。
+            </p>
+
+            <div class="engine-row builtin-row">
+              <div class="engine-row-main">
+                <strong>AIPing · DeepSeek <span class="engine-vendor">内置</span></strong>
+                <span class="engine-meta">不依赖本机 CLI，开箱可用</span>
+              </div>
+              <button
+                class="btn tiny"
+                type="button"
+                :disabled="!localAgentStore.isLocalEngine"
+                @click="selectEngine('builtin')"
+              >
+                {{ localAgentStore.isLocalEngine ? '切回内置' : '使用中' }}
+              </button>
+            </div>
+
+            <details v-if="localAgentStore.missingAgents.length" class="advanced-block">
+              <summary>安装更多 Agent（{{ localAgentStore.missingAgents.length }}）</summary>
+              <div class="install-list">
+                <div v-for="agent in localAgentStore.missingAgents" :key="agent.id" class="install-row">
+                  <div class="install-copy">
+                    <strong>{{ agent.name }} <span class="engine-vendor">{{ agent.vendor }}</span></strong>
+                    <code class="install-command">{{ agent.installCommand }}</code>
+                    <p v-if="agent.installHint" class="field-hint">{{ agent.installHint }}</p>
+                  </div>
+                  <div class="install-actions">
+                    <button class="btn tiny" type="button" @click="copyInstall(agent)">
+                      {{ copiedInstallId === agent.id ? '已复制' : '复制命令' }}
+                    </button>
+                    <a
+                      v-if="agent.installUrl"
+                      class="text-link"
+                      :href="agent.installUrl"
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      官网 ↗
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <div class="panel-subhead">
+              <strong>自定义命令</strong>
+              <p>列表里没有的 Agent，可以用任意可执行命令接入。命令里的 <code>{prompt}</code> 会被替换成对话内容。</p>
+            </div>
+
+            <div class="custom-agent-grid">
+              <div class="field">
+                <label for="custom-agent-name">显示名称</label>
+                <input
+                  id="custom-agent-name"
+                  v-model.trim="customName"
+                  class="text-input"
+                  placeholder="例如 WorkBuddy"
+                />
+              </div>
+              <div class="field">
+                <label for="custom-agent-command">命令模板</label>
+                <input
+                  id="custom-agent-command"
+                  v-model.trim="customCommand"
+                  class="text-input mono"
+                  placeholder='例如 workbuddy run --cwd . "{prompt}"'
+                />
+              </div>
+            </div>
+
+            <p class="field-hint">
+              不写 <code>{prompt}</code> 时，提示词会自动追加到命令末尾。命令在项目根目录执行。
+            </p>
+
+            <div class="panel-actions">
+              <button class="btn solid" type="button" :disabled="!customCommand.trim()" @click="saveCustomAgent">
+                保存并使用
+              </button>
+              <button v-if="localAgentStore.custom.command" class="btn ghost" type="button" @click="removeCustomAgent">
+                删除自定义命令
+              </button>
+            </div>
+
+            <p v-if="customStatus" class="notice success">{{ customStatus }}</p>
+
+            <ul class="agent-notes">
+              <li>Agent 会在项目目录中运行，权限与你本机终端一致，请只选择自己信任的 Agent。</li>
+              <li>扫描由本地服务完成；用静态托管或远程访问打开页面时，本机 Agent 不可用。</li>
+              <li>对话仍在 OneStep 里进行，记录只保存在这台设备。</li>
+            </ul>
+          </section>
+
           <!-- 创作偏好 -->
           <section id="creation" class="panel">
             <div class="panel-head">
@@ -342,6 +503,7 @@ import {
   useSettingsStore,
 } from '@/stores/settingsStore'
 import { useSkillStore } from '@/stores/skillStore'
+import { useLocalAgentStore } from '@/stores/localAgentStore'
 import { DEFAULT_QUALITY_SKILLS } from '@/features/skill/builtin'
 import { maskApiKey } from '@/utils/format'
 import { testConnectionWithDetail } from '@/api/aiping'
@@ -352,6 +514,7 @@ const apiStore = useApiStore()
 const chatStore = useChatStore()
 const settingsStore = useSettingsStore()
 const skillStore = useSkillStore()
+const localAgentStore = useLocalAgentStore()
 const defaultQualitySkills = DEFAULT_QUALITY_SKILLS
 
 const showEditConfig = ref(false)
@@ -371,12 +534,56 @@ const defaultPolishModel = DEFAULT_PROMPT_POLISH_MODEL
 const translationStatus = ref('')
 const defaultTranslationModel = DEFAULT_TRANSLATION_MODEL
 
+const customName = ref(localAgentStore.custom.name)
+const customCommand = ref(localAgentStore.custom.command)
+const customStatus = ref('')
+const copiedInstallId = ref('')
+
+function scanAgents() {
+  void localAgentStore.scan(true)
+}
+
+function selectEngine(id: string) {
+  localAgentStore.select(id)
+}
+
+async function copyInstall(agent: { id: string; installCommand: string }) {
+  if (await copyText(agent.installCommand)) {
+    copiedInstallId.value = agent.id
+    window.setTimeout(() => {
+      if (copiedInstallId.value === agent.id) copiedInstallId.value = ''
+    }, 1600)
+  }
+}
+
+function saveCustomAgent() {
+  if (!customCommand.value.trim()) return
+  localAgentStore.saveCustomAgent({ name: customName.value, command: customCommand.value })
+  customName.value = localAgentStore.custom.name
+  customCommand.value = localAgentStore.custom.command
+  customStatus.value = `已保存，后续对话将由 ${localAgentStore.selectedLabel} 执行。`
+  window.setTimeout(() => {
+    customStatus.value = ''
+  }, 2600)
+}
+
+function removeCustomAgent() {
+  localAgentStore.clearCustomAgent()
+  customName.value = ''
+  customCommand.value = ''
+  customStatus.value = '已删除自定义命令，当前使用内置模型。'
+  window.setTimeout(() => {
+    customStatus.value = ''
+  }, 2200)
+}
+
 const maskedKeyText = computed(() => (apiStore.apiKey ? maskApiKey(apiStore.apiKey) : '未设置'))
 
 /* ---------------------------------- 分区导航 ---------------------------------- */
 
 const navItems = [
   { id: 'account', label: '账号与连接' },
+  { id: 'agents', label: '本机 Agent' },
   { id: 'creation', label: '创作偏好' },
   { id: 'skills', label: '默认 Skill' },
   { id: 'agent', label: '安装到 Agent' },
@@ -521,8 +728,12 @@ async function loadLocalInfo() {
 onMounted(() => {
   settingsStore.loadFromStorage()
   skillStore.loadFromStorage()
+  localAgentStore.ensureScanned()
   void loadLocalInfo()
   setupSectionObserver()
+  if (window.location.hash === '#agents') {
+    window.setTimeout(() => scrollToSection('agents'), 120)
+  }
 })
 
 onUnmounted(() => {
@@ -1534,6 +1745,264 @@ label {
     max-height: min(88dvh, 720px);
     overflow-y: auto;
     padding: 22px 18px;
+  }
+}
+/* ------------------------------ 本机 Agent ------------------------------ */
+
+.panel-head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.panel-head-row > div {
+  min-width: 0;
+}
+
+.panel-head-row .btn {
+  flex: none;
+  margin-top: 2px;
+}
+
+.engine-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0 12px;
+  padding: 13px 14px;
+  border: 1px solid #e9e9e3;
+  border-radius: 11px;
+  background: #fdfdfb;
+}
+
+.engine-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.engine-status-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: #58a274;
+  box-shadow: 0 0 0 3px rgba(88, 162, 116, 0.12);
+}
+
+.engine-status-dot.local {
+  background: #4f86c6;
+  box-shadow: 0 0 0 3px rgba(79, 134, 198, 0.13);
+}
+
+.engine-current-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.engine-current-copy strong {
+  color: #242421;
+  font-size: 12.8px;
+  font-weight: 600;
+}
+
+.engine-current-copy small {
+  overflow: hidden;
+  color: #99998f;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.engine-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.engine-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 13px;
+  border: 1px solid #ecece6;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.engine-row.selected {
+  border-color: #d7d7cd;
+  background: #fbfbf7;
+}
+
+.builtin-row {
+  margin-top: 10px;
+  border-style: dashed;
+  background: #fdfdfb;
+}
+
+.engine-row-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.engine-row-main strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #262622;
+  font-size: 12.8px;
+  font-weight: 600;
+}
+
+.engine-vendor {
+  padding: 1px 6px;
+  border: 1px solid #ecece6;
+  border-radius: 999px;
+  color: #96968c;
+  font-size: 9.5px;
+  font-weight: 500;
+}
+
+.engine-meta {
+  color: #8f8f86;
+  font-size: 11px;
+}
+
+.engine-path {
+  overflow: hidden;
+  max-width: 420px;
+  color: #aaaaa1;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.engine-empty-note {
+  margin: 0 0 4px;
+  padding: 12px 13px;
+  border: 1px dashed #e6e6df;
+  border-radius: 10px;
+  color: #9c9c92;
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.install-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.install-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #efefe9;
+  border-radius: 9px;
+  background: #fdfdfb;
+}
+
+.install-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.install-copy strong {
+  color: #2b2b27;
+  font-size: 12.2px;
+  font-weight: 600;
+}
+
+.install-command {
+  overflow-x: auto;
+  padding: 5px 8px;
+  border: 1px solid #ecece5;
+  border-radius: 6px;
+  background: #f7f7f2;
+  color: #55554d;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  white-space: pre;
+}
+
+.install-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.panel-subhead {
+  margin: 22px 0 10px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0ea;
+}
+
+.panel-subhead strong {
+  color: #242421;
+  font-size: 12.8px;
+  font-weight: 600;
+}
+
+.panel-subhead p {
+  margin: 4px 0 0;
+  color: #94948b;
+  font-size: 11.5px;
+  line-height: 1.65;
+}
+
+.panel-subhead code,
+.field-hint code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #f4f4ef;
+  color: #66665e;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+}
+
+.custom-agent-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .panel-head-row {
+    flex-direction: column;
+  }
+
+  .engine-row,
+  .install-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .engine-row .btn,
+  .install-actions {
+    align-self: flex-start;
+  }
+
+  .custom-agent-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .engine-path {
+    max-width: 100%;
   }
 }
 </style>

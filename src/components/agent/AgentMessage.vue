@@ -8,6 +8,15 @@
       <div v-if="message.role === 'user'" class="user-bubble">{{ message.content }}</div>
 
       <template v-else>
+        <details v-if="message.logs" class="reasoning-block">
+          <summary>
+            <span class="reasoning-dot" aria-hidden="true" />
+            运行日志
+            <span v-if="message.status === 'streaming'" class="reasoning-running">进行中</span>
+          </summary>
+          <pre class="reasoning-text">{{ message.logs }}</pre>
+        </details>
+
         <details v-if="message.reasoning" class="reasoning-block">
           <summary>
             <span class="reasoning-dot" aria-hidden="true" />
@@ -42,6 +51,7 @@
       </template>
 
       <footer class="message-meta">
+        <span v-if="message.role === 'assistant' && message.model" class="message-engine">{{ message.model }}</span>
         <span class="message-time">{{ timeLabel }}</span>
         <div class="message-actions">
           <button v-if="displayContent" type="button" class="text-action" @click="copyContent">
@@ -253,6 +263,15 @@ async function copyContent() {
 .agent-message:hover .message-meta,
 .agent-message.is-user .message-meta {
   opacity: 1;
+}
+
+.message-engine {
+  max-width: 180px;
+  overflow: hidden;
+  color: #b0b0a8;
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .message-time {
