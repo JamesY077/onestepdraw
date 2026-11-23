@@ -173,7 +173,9 @@ ensure_env_file() {
 
 install_dependencies() {
   if [ -d "node_modules" ] && [ -f "node_modules/.package-lock.json" ]; then
-    return
+    if [ ! "package.json" -nt "node_modules/.package-lock.json" ]; then
+      return
+    fi
   fi
 
   echo "正在安装依赖…"
