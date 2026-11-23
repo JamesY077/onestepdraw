@@ -294,29 +294,41 @@ export function describeAttachments(
   return `\n\n[用户上传的参考素材]\n${lines.join('\n')}`
 }
 
-/** 模板参考说明，放在用户消息后面一起交给模型。 */
-export function describeTemplate(template: {
-  name: string
-  category: string
-  guide: string
-  images: string[]
-} | undefined | null): string {
-  if (!template) return ''
-  const images = template.images.length ? `\n参考图：${template.images.length} 张（已随消息附带）` : ''
-  return `\n\n[已应用模板] ${template.name} · ${template.category}\n${template.guide.trim()}${images}`
+type TemplateLike = { name: string; category: string; guide: string; images: string[] }
+
+/** 模板参考说明，放在用户消息后面一起交给模型；引用多个时逐条列出来。 */
+export function describeTemplates(templates: TemplateLike[] | undefined | null): string {
+  if (!templates?.length) return ''
+  return templates
+    .map((template, index) => {
+      const label = templates.length > 1 ? `模板 ${index + 1}` : '模板'
+      const images = template.images.length
+        ? `\n参考图：${template.images.length} 张（已随消息附带）`
+        : ''
+      return `\n\n[已应用${label}] ${template.name} · ${template.category}\n${template.guide.trim()}${images}`
+    })
+    .join('')
+}
+
+/** 模板组里的参考素材清单；组里的附件也要一起交给模型。 */
+export function templateAssets(templates: { assets?: AgentAttachment[] }[] | undefined | null): AgentAttachment[] {
+  if (!templates?.length) return []
+  return templates.flatMap((template) => template.assets || [])
 }
 
 /** 本轮可送进模型查看的图片：图片素材 + 视频关键帧 + 模板参考图。 */
 export function collectAttachmentImages(
   attachments: AgentAttachment[] | undefined,
-  template?: { images: string[] } | null,
+  templates?: { images: string[] }[] | null,
 ): string[] {
   const urls: string[] = []
   for (const item of attachments || []) {
     if (item.kind === 'image' && item.url) urls.push(item.url)
     if (item.kind === 'video' && item.frames?.length) urls.push(...item.frames)
   }
-  if (template?.images?.length) urls.push(...template.images)
+  for (const template of templates || []) {
+    if (template.images?.length) urls.push(...template.images)
+  }
   return [...new Set(urls)].slice(0, 10)
 }
 

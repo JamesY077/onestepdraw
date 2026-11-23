@@ -363,11 +363,11 @@ async function handleLogout() {
 }
 
 async function handleSend(payload: ComposerSubmit) {
-  const { content, attachments, template } = payload
+  const { content, attachments, templates } = payload
   stickToBottom.value = true
   if (chatMode.isCreate) {
     const conversation = store.activeConversation || store.createConversation(true)
-    const titleSource = content || template?.name || attachments[0]?.name || ''
+    const titleSource = content || templates?.[0]?.name || attachments[0]?.name || ''
     const project =
       projectStore.findProjectByConversation(conversation.id) ||
       projectStore.createProject(projectTitle(titleSource), conversation.id)
@@ -377,7 +377,7 @@ async function handleSend(payload: ComposerSubmit) {
       mode: 'create',
       automation: chatMode.automation,
       attachments,
-      template,
+      templates,
     })
     // 先让 activeId 监听把 /chat 路由同步完，再进剪辑台，避免被 replace 抢回。
     await nextTick()
@@ -390,7 +390,7 @@ async function handleSend(payload: ComposerSubmit) {
     mode: 'chat',
     automation: chatMode.automation,
     attachments,
-    template,
+    templates,
   })
   syncRouteWithActive()
   await nextTick()

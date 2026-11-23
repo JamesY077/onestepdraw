@@ -43,7 +43,8 @@ export interface AgentTemplateRef {
 export interface ComposerSubmit {
   content: string
   attachments: AgentAttachment[]
-  template?: AgentTemplateRef | null
+  /** 本轮引用的模板，可以多个，互不覆盖。 */
+  templates?: AgentTemplateRef[]
 }
 
 /** 单条消息状态：流式输出中 / 已完成 / 已停止 / 失败。 */
@@ -114,8 +115,8 @@ export interface AgentMessage {
   ask?: AgentAsk
   /** 用户这一轮上传的参考素材。 */
   attachments?: AgentAttachment[]
-  /** 用户这一轮应用的模板参考。 */
-  template?: AgentTemplateRef
+  /** 用户这一轮引用的模板，可以多个。 */
+  templates?: AgentTemplateRef[]
 }
 
 /** 对话所在的工作模式：普通对话只聊；创作对话的结果进入剪辑项目。 */

@@ -98,10 +98,10 @@
           type="button"
           class="tpl-card"
           :class="{
-            selected: selection.kind === 'builtin' && selection.id === item.id,
+            selected: isSelected(item.id),
             applied: templateStore.isApplied(item.id),
           }"
-          @click="selectBuiltin(item)"
+          @click="toggleSelected(item.id)"
         >
           <span class="tpl-poster">
             <img :src="item.poster" :alt="`${item.name}参考图`" loading="lazy" />
@@ -109,6 +109,7 @@
             <span v-if="item.generated" class="tpl-poster-still">AI 示例</span>
             <span v-else-if="!item.still" class="tpl-poster-still">文字参考</span>
             <span v-if="templateStore.isApplied(item.id)" class="tpl-poster-state">已应用</span>
+            <span v-if="isSelected(item.id)" class="tpl-poster-pick" aria-hidden="true">✓</span>
           </span>
           <span class="tpl-card-copy">
             <strong>{{ item.name }}</strong>
@@ -223,13 +224,13 @@
               :key="group.id"
               class="tpl-group"
               :class="{
-                selected: selection.kind === 'custom' && selection.id === group.id,
+                selected: isSelected(group.id),
                 applied: templateStore.isApplied(group.id),
               }"
               role="button"
               tabindex="0"
-              @click="selectGroup(group)"
-              @keydown.enter.prevent="selectGroup(group)"
+              @click="toggleSelected(group.id)"
+              @keydown.enter.prevent="toggleSelected(group.id)"
             >
               <span class="tpl-group-cover">
                 <img v-if="groupCover(group)" :src="groupCover(group)" alt="" />
@@ -259,29 +260,29 @@
 
       <footer v-if="templateStore.tab !== 'skill'" class="tpl-foot">
         <div class="tpl-selection">
-          <template v-if="selectedTemplate">
-            <span class="tpl-selection-label">已选择</span>
-            <strong>{{ selectedTemplate.name }}</strong>
-            <small>{{ selectedTemplate.category }}</small>
+          <template v-if="selectedCount">
+            <span class="tpl-selection-label">已选 {{ selectedCount }} 个</span>
+            <strong>{{ selectedNames.join('、') }}</strong>
+            <small>可继续点选，数量不限；应用后一起引用到创作对话</small>
           </template>
-          <template v-else-if="templateStore.applied">
-            <span class="tpl-selection-label">当前应用</span>
-            <strong>{{ templateStore.applied.name }}</strong>
-            <small>{{ templateStore.applied.category }}</small>
+          <template v-else-if="templateStore.applied.length">
+            <span class="tpl-selection-label">当前引用 {{ templateStore.applied.length }} 个</span>
+            <strong>{{ appliedNames }}</strong>
+            <small>输入框里会以 @模板N 的形式挂成引用</small>
           </template>
-          <span v-else class="tpl-selection-empty">选择一个模板后点击应用</span>
+          <span v-else class="tpl-selection-empty">点选模板，可多选，数量不限</span>
         </div>
         <div class="tpl-foot-actions">
           <button
-            v-if="templateStore.applied"
+            v-if="templateStore.applied.length"
             type="button"
             class="tpl-secondary"
             @click="templateStore.clearApplied()"
           >
-            取消应用
+            清空已引用
           </button>
-          <button type="button" class="tpl-primary" :disabled="!selectedTemplate" @click="applySelection">
-            应用到创作对话
+          <button type="button" class="tpl-primary" :disabled="!selectedCount" @click="applySelection">
+            引用选中模板
           </button>
         </div>
       </footer>
@@ -289,7 +290,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTemplateStore } from '@/stores/templateStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
@@ -313,10 +314,8 @@ const route = useRoute()
 
 const query = ref('')
 const category = ref('all')
-const selection = reactive<{ kind: 'builtin' | 'custom'; id: string }>({
-  kind: 'builtin',
-  id: '',
-})
+/** 可以一次选多个模板，没有数量上限。 */
+const selectedIds = ref<string[]>([])
 
 const stillCount = computed(() => BUILTIN_TEMPLATES.filter((item) => item.still).length)
 const generatedCount = computed(() => BUILTIN_TEMPLATES.filter((item) => item.generated).length)
@@ -341,39 +340,36 @@ const filteredTemplates = computed(() => {
   })
 })
 
+const selectedBuiltinList = computed(() =>
+  selectedIds.value
+    .map((id) => BUILTIN_TEMPLATES.find((item) => item.id === id))
+    .filter((item): item is BuiltinTemplate => !!item),
+)
+const selectedGroupList = computed(() =>
+  selectedIds.value
+    .map((id) => templateStore.groups.find((group) => group.id === id))
+    .filter((group): group is UserTemplateGroup => !!group),
+)
+const selectedCount = computed(() => selectedBuiltinList.value.length + selectedGroupList.value.length)
+const selectedNames = computed(() => [
+  ...selectedBuiltinList.value.map((item) => item.name),
+  ...selectedGroupList.value.map((item) => item.name),
+])
+const appliedNames = computed(() => templateStore.applied.map((item) => item.name).join('、'))
 
-const selectedBuiltin = computed(() =>
-  selection.kind === 'builtin'
-    ? BUILTIN_TEMPLATES.find((item) => item.id === selection.id) || null
-    : null,
-)
-const selectedGroup = computed(() =>
-  selection.kind === 'custom'
-    ? templateStore.groups.find((item) => item.id === selection.id) || null
-    : null,
-)
-const selectedTemplate = computed(() =>
-  selectedBuiltin.value || selectedGroup.value
-    ? {
-        name: selectedBuiltin.value?.name || selectedGroup.value?.name || '',
-        category: selectedBuiltin.value?.category || '我的模板',
-      }
-    : null,
-)
-
-function selectBuiltin(item: BuiltinTemplate) {
-  selection.kind = 'builtin'
-  selection.id = item.id
+function isSelected(id: string): boolean {
+  return selectedIds.value.includes(id)
 }
 
-function selectGroup(group: UserTemplateGroup) {
-  selection.kind = 'custom'
-  selection.id = group.id
+function toggleSelected(id: string) {
+  selectedIds.value = isSelected(id)
+    ? selectedIds.value.filter((item) => item !== id)
+    : [...selectedIds.value, id]
 }
 
 function switchTab(tab: 'builtin' | 'custom' | 'skill') {
   templateStore.tab = tab
-  selection.id = ''
+  selectedIds.value = []
 }
 
 /** 打开模板库时带的返回地址（例如从剪辑台进来）。 */
@@ -394,11 +390,11 @@ function goBack() {
 }
 
 function applySelection() {
-  if (selectedBuiltin.value) templateStore.applyBuiltin(selectedBuiltin.value)
-  else if (selectedGroup.value) templateStore.applyGroup(selectedGroup.value)
-  else return
+  if (!selectedCount.value) return
+  for (const template of selectedBuiltinList.value) templateStore.applyBuiltin(template)
+  for (const group of selectedGroupList.value) templateStore.applyGroup(group)
   chatMode.setConversation('create')
-  selection.id = ''
+  selectedIds.value = []
   const back = fromPath()
   if (back) router.replace(back)
   else router.push('/chat')
@@ -485,7 +481,7 @@ function saveGroup() {
     draftError.value = '分组名不能为空。'
     return
   }
-  selectGroup(group)
+  if (!isSelected(group.id)) selectedIds.value = [...selectedIds.value, group.id]
   closeEditor()
 }
 
@@ -498,7 +494,7 @@ async function removeGroup(group: UserTemplateGroup) {
   })
   if (!ok) return
   templateStore.deleteGroup(group.id)
-  if (selection.kind === 'custom' && selection.id === group.id) selection.id = ''
+  selectedIds.value = selectedIds.value.filter((id) => id !== group.id)
 }
 
 function groupCover(group: UserTemplateGroup): string {
@@ -515,9 +511,9 @@ function handleKeydown(event: KeyboardEvent) {
     closeEditor()
     return
   }
-  if (selection.id) {
+  if (selectedIds.value.length) {
     event.preventDefault()
-    selection.id = ''
+    selectedIds.value = []
   }
 }
 
@@ -859,6 +855,23 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
   color: #ffffff;
   font-size: 8.5px;
   font-weight: 600;
+}
+
+.tpl-poster-pick {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  background: #111110;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 /* 没有参考静帧时明确标出来，避免把占位图当成真实截图。 */

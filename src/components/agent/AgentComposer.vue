@@ -32,28 +32,42 @@
         <span class="mode-tip">{{ modeTip }}</span>
       </div>
 
-      <div v-if="templateStore.applied" class="applied-template">
-        <span class="template-cover">
-          <img v-if="templateStore.applied.images[0]" :src="templateStore.applied.images[0]" alt="" />
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-            <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
-            <path d="M3.8 15.5 8.6 11l3.4 3 2.8-2.4 5.4 4.1" />
-          </svg>
-        </span>
-        <span class="template-copy">
-          <strong>{{ templateStore.applied.name }}</strong>
-          <small>模板参考 · {{ templateStore.applied.category }}</small>
+      <div v-if="templateStore.applied.length" class="applied-templates" aria-label="已引用模板">
+        <span class="applied-templates-label">模板</span>
+        <span
+          v-for="(template, index) in templateStore.applied"
+          :key="template.id"
+          class="applied-template-chip"
+          :title="`${template.name} · ${template.category}`"
+        >
+          <span class="applied-template-ref">@模板{{ index + 1 }}</span>
+          <img
+            v-if="template.images[0]"
+            class="applied-template-thumb"
+            :src="template.images[0]"
+            alt=""
+          />
+          <span class="applied-template-name">{{ template.name }}</span>
+          <button
+            type="button"
+            class="applied-template-remove"
+            :aria-label="`移除模板 ${template.name}`"
+            title="移除这个模板"
+            @click="templateStore.removeApplied(template.id)"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </button>
         </span>
         <button
           type="button"
-          class="template-remove"
-          title="取消模板参考"
-          aria-label="取消模板参考"
-          @click="templateStore.clearApplied()"
+          class="applied-templates-add"
+          title="继续从模板库添加模板"
+          aria-label="继续从模板库添加模板"
+          @click="openTemplatePage('builtin')"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-            <path d="m6 6 12 12M18 6 6 18" />
-          </svg>
+          +
         </button>
       </div>
 
@@ -170,7 +184,7 @@
           <button
             type="button"
             class="composer-icon"
-            :class="{ active: templateStore.applied }"
+            :class="{ active: templateStore.applied.length > 0 }"
             title="模板库"
             aria-label="打开模板库"
             @click="openTemplatePage('builtin')"
@@ -478,7 +492,7 @@ const canSend = computed(
   () =>
     !props.disabled &&
     pendingCount.value === 0 &&
-    (!!text.value.trim() || attachments.value.length > 0),
+    (!!text.value.trim() || attachments.value.length > 0 || templateStore.applied.length > 0),
 )
 
 const placeholderText = computed(() => {
@@ -703,11 +717,13 @@ function submit() {
   const payload: ComposerSubmit = {
     content,
     attachments: [...attachments.value],
-    template: templateStore.applied,
+    templates: [...templateStore.applied],
   }
   emit('send', payload)
   text.value = ''
   attachments.value = []
+  // 模板和上传素材一样是「这一条消息」的引用，发完就清空。
+  templateStore.clearApplied()
   attachNotice.value = ''
   nextTick(() => {
     resize()
@@ -853,63 +869,106 @@ defineExpose({ focus })
   position: relative;
 }
 
-.applied-template {
+.applied-templates {
   display: flex;
   align-items: center;
-  gap: 9px;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-height: 78px;
   margin: 8px 12px 0;
-  padding: 6px 8px 6px 6px;
-  border: 1px solid #ecdcd3;
-  border-radius: 10px;
-  background: #fdf7f4;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
-.template-cover {
+.applied-templates-label {
+  flex: none;
+  color: #a3a39b;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.applied-template-chip {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  flex: none;
-  overflow: hidden;
-  border-radius: 7px;
-  background: #ffffff;
-  color: #b4472f;
+  gap: 5px;
+  max-width: 260px;
+  padding: 3px 4px 3px 9px;
+  border-radius: 999px;
+  background: #111110;
+  color: #ffffff;
 }
 
-.template-cover img {
-  width: 100%;
-  height: 100%;
+.applied-template-ref {
+  flex: none;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 9.5px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.applied-template-thumb {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 4px;
   object-fit: cover;
 }
 
-.template-cover svg {
-  width: 17px;
-  height: 17px;
-}
-
-.template-copy {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.template-copy strong {
+.applied-template-name {
   overflow: hidden;
-  color: #3b2a23;
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 550;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.template-copy small {
-  color: #a98a7d;
-  font-size: 10px;
+.applied-template-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  cursor: pointer;
 }
 
-.template-remove,
+.applied-template-remove svg {
+  width: 9px;
+  height: 9px;
+}
+
+.applied-template-remove:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.applied-templates-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  padding: 0;
+  border: 1px dashed #d8d8d0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #8c8c84;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.applied-templates-add:hover {
+  border-color: #b9b9b1;
+  color: #1d1d1b;
+}
+
 .attach-remove {
   display: inline-flex;
   align-items: center;
@@ -926,13 +985,11 @@ defineExpose({ focus })
   cursor: pointer;
 }
 
-.template-remove svg,
 .attach-remove svg {
   width: 12px;
   height: 12px;
 }
 
-.template-remove:hover,
 .attach-remove:hover {
   background: rgba(180, 71, 47, 0.08);
   color: #b4472f;

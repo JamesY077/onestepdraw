@@ -6,11 +6,15 @@
 
     <div class="message-main">
       <div
-        v-if="message.role === 'user' && (message.template || message.attachments?.length)"
+        v-if="message.role === 'user' && (message.templates?.length || message.attachments?.length)"
         class="message-refs"
       >
-        <div v-if="message.template" class="ref-template">
-          <img v-if="message.template.images[0]" :src="message.template.images[0]" alt="" />
+        <div
+          v-for="(template, index) in message.templates || []"
+          :key="template.id"
+          class="ref-template"
+        >
+          <img v-if="template.images[0]" :src="template.images[0]" alt="" />
           <span class="ref-template-icon" v-else aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
               <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
@@ -18,8 +22,8 @@
             </svg>
           </span>
           <span class="ref-template-copy">
-            <strong>{{ message.template.name }}</strong>
-            <small>模板参考 · {{ message.template.category }}</small>
+            <strong>@模板{{ index + 1 }} {{ template.name }}</strong>
+            <small>模板参考 · {{ template.category }}</small>
           </span>
         </div>
         <div v-if="message.attachments?.length" class="ref-assets">

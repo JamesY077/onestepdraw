@@ -15,8 +15,9 @@ import {
   MAX_ATTACHMENTS,
   collectAttachmentImages,
   describeAttachments,
-  describeTemplate,
+  describeTemplates,
   persistableAttachment,
+  templateAssets,
   toModelImage,
 } from '@/features/agent/attachments'
 import {
@@ -82,9 +83,21 @@ function loadConversations(): AgentConversation[] {
       .filter(isConversation)
       .map((conversation) => ({
         ...conversation,
-        messages: conversation.messages.filter(
-          (message) => message && typeof message.content === 'string' && typeof message.role === 'string',
-        ),
+        messages: conversation.messages
+          .filter(
+            (message: any) =>
+              message && typeof message.content === 'string' && typeof message.role === 'string',
+          )
+          .map((message: any) => {
+            // 旧版本一条消息只存一个模板，迁移成引用列表。
+            const templates = Array.isArray(message.templates)
+              ? message.templates
+              : message.template
+                ? [message.template]
+                : undefined
+            const { template: _legacyTemplate, ...rest } = message
+            return { ...rest, templates }
+          }),
       }))
       .sort((a, b) => b.updatedAt - a.updatedAt)
   } catch {
@@ -99,8 +112,8 @@ export interface AgentSendOptions {
   projectId?: string
   /** 本轮上传的参考素材。 */
   attachments?: AgentAttachment[]
-  /** 本轮应用的模板参考。 */
-  template?: AgentTemplateRef | null
+  /** 本轮引用的模板，可以多个。 */
+  templates?: AgentTemplateRef[]
 }
 
 export const useAgentStore = defineStore('agent', () => {
@@ -134,11 +147,11 @@ export const useAgentStore = defineStore('agent', () => {
           messages: conversation.messages.slice(-MAX_MESSAGES_PER_CONVERSATION).map((message) => ({
             ...message,
             attachments: message.attachments?.map(persistableAttachment),
-            template: message.template
-              ? {
-                  ...message.template,
-                  assets: message.template.assets?.map(persistableAttachment),
-                }
+            templates: message.templates?.length
+              ? message.templates.map((template) => ({
+                  ...template,
+                  assets: template.assets?.map(persistableAttachment),
+                }))
               : undefined,
           })),
         }))
@@ -223,8 +236,8 @@ export const useAgentStore = defineStore('agent', () => {
     return `${message.content}${note}${askContext(message)}${describeAttachments(
       message.attachments,
       { includePaths },
-    )}${describeTemplate(message.template)}${describeAttachments(
-      message.template?.assets,
+    )}${describeTemplates(message.templates)}${describeAttachments(
+      templateAssets(message.templates),
       { includePaths },
     )}`.trim()
   }
@@ -244,13 +257,16 @@ export const useAgentStore = defineStore('agent', () => {
       .filter(
         (message) =>
           message.status !== 'error' &&
-          (message.content.trim() || message.generation || message.attachments?.length || message.template),
+          (message.content.trim() ||
+            message.generation ||
+            message.attachments?.length ||
+            message.templates?.length),
       )
       .slice(-MAX_CONTEXT_MESSAGES)
 
     const latestUser = latestUserMessage(source)
     const imageUrls = latestUser
-      ? collectAttachmentImages(latestUser.attachments, latestUser.template)
+      ? collectAttachmentImages(latestUser.attachments, latestUser.templates)
       : []
     const modelImages: string[] = []
     for (const url of imageUrls) {
@@ -305,7 +321,10 @@ export const useAgentStore = defineStore('agent', () => {
       .filter(
         (message) =>
           message.status !== 'error' &&
-          (message.content.trim() || message.generation || message.attachments?.length || message.template),
+          (message.content.trim() ||
+            message.generation ||
+            message.attachments?.length ||
+            message.templates?.length),
       )
       .slice(-MAX_CONTEXT_MESSAGES)
       .map<LocalAgentMessage>((message) => ({
@@ -655,8 +674,8 @@ export const useAgentStore = defineStore('agent', () => {
   async function sendMessage(rawContent: string, options: AgentSendOptions = {}) {
     const content = rawContent.trim()
     const attachments = (options.attachments || []).slice(0, MAX_ATTACHMENTS)
-    const template = options.template || undefined
-    if ((!content && !attachments.length && !template) || streamingId.value) return
+    const templates = options.templates?.length ? options.templates : undefined
+    if ((!content && !attachments.length && !templates?.length) || streamingId.value) return
 
     let conversation = options.conversationId
       ? findConversation(options.conversationId)
@@ -678,7 +697,7 @@ export const useAgentStore = defineStore('agent', () => {
       createdAt: now,
       status: 'done',
       attachments: attachments.length ? attachments : undefined,
-      template,
+      templates,
     })
     const assistantMessage = reactive<AgentMessage>({
       id: createId(),
@@ -694,7 +713,7 @@ export const useAgentStore = defineStore('agent', () => {
     if (conversation.title === EMPTY_CONVERSATION_TITLE) {
       const titleSource =
         content ||
-        template?.name ||
+        templates?.[0]?.name ||
         attachments[0]?.name ||
         ''
       conversation.title = makeTitle(titleSource)

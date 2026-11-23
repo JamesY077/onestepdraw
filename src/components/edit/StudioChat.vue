@@ -115,19 +115,22 @@ watch(
 
 function send(payload: ComposerSubmit) {
   const text = payload.content.trim()
-  if ((!text && !payload.attachments.length && !payload.template) || agentStore.isStreaming) return
+  if (
+    (!text && !payload.attachments.length && !payload.templates?.length) ||
+    agentStore.isStreaming
+  ) return
   void agentStore.sendMessage(text, {
     conversationId: props.conversationId,
     mode: 'create',
     automation: chatMode.automation,
     projectId: props.projectId,
     attachments: payload.attachments,
-    template: payload.template,
+    templates: payload.templates,
   })
 }
 
 function sendChip(content: string) {
-  send({ content, attachments: [], template: null })
+  send({ content, attachments: [], templates: [] })
   composerRef.value?.focus()
 }
 

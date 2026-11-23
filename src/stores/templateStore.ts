@@ -40,22 +40,38 @@ function loadGroups(): UserTemplateGroup[] {
   }
 }
 
-function loadApplied(): AgentTemplateRef | null {
+function normalizeApplied(value: any): AgentTemplateRef | null {
+  if (!value || typeof value.id !== 'string' || typeof value.name !== 'string') return null
+  return {
+    ...value,
+    images: Array.isArray(value.images)
+      ? value.images.filter((url: unknown) => typeof url === 'string')
+      : [],
+    guide: typeof value.guide === 'string' ? value.guide : '',
+    assets: Array.isArray(value.assets)
+      ? value.assets.filter((asset: AgentAttachment) => asset && typeof asset.url === 'string')
+      : undefined,
+  }
+}
+
+/** 引用列表可以存多个；旧版本只存了一个对象，这里一并兼容。 */
+function loadApplied(): AgentTemplateRef[] {
   try {
     const raw = localStorage.getItem(APPLIED_KEY)
-    if (!raw) return null
+    if (!raw) return []
     const parsed = JSON.parse(raw)
-    if (!parsed || typeof parsed.id !== 'string' || typeof parsed.name !== 'string') return null
-    return {
-      ...parsed,
-      images: Array.isArray(parsed.images) ? parsed.images.filter((url: unknown) => typeof url === 'string') : [],
-      guide: typeof parsed.guide === 'string' ? parsed.guide : '',
-      assets: Array.isArray(parsed.assets)
-        ? parsed.assets.filter((asset: AgentAttachment) => asset && typeof asset.url === 'string')
-        : undefined,
+    const list = Array.isArray(parsed) ? parsed : [parsed]
+    const seen = new Set<string>()
+    const result: AgentTemplateRef[] = []
+    for (const item of list) {
+      const normalized = normalizeApplied(item)
+      if (!normalized || seen.has(normalized.id)) continue
+      seen.add(normalized.id)
+      result.push(normalized)
     }
+    return result
   } catch {
-    return null
+    return []
   }
 }
 
@@ -70,7 +86,7 @@ function save(key: string, value: unknown) {
 export const useTemplateStore = defineStore('template', () => {
   const tab = ref<'builtin' | 'custom' | 'skill'>('builtin')
   const groups = ref<UserTemplateGroup[]>(loadGroups())
-  const applied = ref<AgentTemplateRef | null>(loadApplied())
+  const applied = ref<AgentTemplateRef[]>(loadApplied())
   const draftGroupId = ref<string | null>(null)
 
   const sortedGroups = computed(() =>
@@ -88,7 +104,7 @@ export const useTemplateStore = defineStore('template', () => {
   }
 
   function persistApplied() {
-    if (!applied.value) {
+    if (!applied.value.length) {
       try {
         localStorage.removeItem(APPLIED_KEY)
       } catch {
@@ -96,16 +112,27 @@ export const useTemplateStore = defineStore('template', () => {
       }
       return
     }
-    save(APPLIED_KEY, {
-      ...applied.value,
-      assets: applied.value.assets?.map(persistableAttachment),
-    })
+    save(
+      APPLIED_KEY,
+      applied.value.map((template) => ({
+        ...template,
+        assets: template.assets?.map(persistableAttachment),
+      })),
+    )
   }
 
+  /** 追加一个模板；同一个 id 再引用时更新内容，不会重复占位。 */
   function applyTemplate(template: AgentTemplateRef) {
-    applied.value = template
+    const index = applied.value.findIndex((item) => item.id === template.id)
+    if (index >= 0) applied.value.splice(index, 1, template)
+    else applied.value.push(template)
     persistApplied()
     draftGroupId.value = null
+  }
+
+  function removeApplied(id: string) {
+    applied.value = applied.value.filter((item) => item.id !== id)
+    persistApplied()
   }
 
   function applyBuiltin(template: BuiltinTemplate) {
@@ -144,12 +171,12 @@ export const useTemplateStore = defineStore('template', () => {
   }
 
   function clearApplied() {
-    applied.value = null
+    applied.value = []
     persistApplied()
   }
 
   function isApplied(id: string): boolean {
-    return applied.value?.id === id
+    return applied.value.some((item) => item.id === id)
   }
 
   function createGroup(input: { name: string; note: string; assets: AgentAttachment[] }): UserTemplateGroup | null {
@@ -183,14 +210,14 @@ export const useTemplateStore = defineStore('template', () => {
     group.updatedAt = Date.now()
     persistGroups()
     // 正在应用的模板跟着更新，避免模板库与输入框上的参考对不上。
-    if (applied.value?.id === id) applyGroup(group)
+    if (isApplied(id)) applyGroup(group)
     return group
   }
 
   function deleteGroup(id: string) {
     groups.value = groups.value.filter((group) => group.id !== id)
     persistGroups()
-    if (applied.value?.id === id) clearApplied()
+    if (isApplied(id)) removeApplied(id)
   }
 
   function startDraftGroup(id?: string) {
@@ -211,6 +238,7 @@ export const useTemplateStore = defineStore('template', () => {
     applyBuiltin,
     applyGroup,
     clearApplied,
+    removeApplied,
     isApplied,
     createGroup,
     updateGroup,
