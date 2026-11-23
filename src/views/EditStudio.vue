@@ -70,7 +70,7 @@
           :class="{ active: mobileChatOpen }"
           @click="mobileChatOpen = !mobileChatOpen"
         >
-          {{ mobileChatOpen ? '关闭对话' : '创作对话' }}
+          {{ mobileChatOpen ? '关闭对话' : pendingClipCount ? `创作对话 · ${pendingClipCount}` : '创作对话' }}
         </button>
         <button type="button" class="top-action primary" @click="createNewProject">新建项目</button>
       </div>
@@ -188,6 +188,7 @@
         </div>
         <TimelineTracks
           v-model:pxPerSec="pxPerSec"
+          v-model:note="clipNote"
           :project="project"
           :selected-clip-id="selectedClipId"
           :selected-clip-ids="selectedClipIds"
@@ -219,7 +220,13 @@
           :conversation-id="conversationId"
           :project-id="project.id"
           :selected-clips="selectedAgentClips"
+          :pending-batches="pendingClipBatches"
+          :clip-note="clipNote"
           @clear-clips="clearTimelineSelection"
+          @clear-note="clipNote = ''"
+          @remove-batch="removePendingBatch"
+          @clear-pending="clearPendingBatches"
+          @consume-pending="consumePendingBatches"
         />
       </div>
 
@@ -369,7 +376,7 @@ const SHORTCUT_GROUPS = [
       { label: '粘贴到播放头', keys: '⌘V' },
       { label: '删除片段', keys: 'Delete' },
       { label: '全选片段', keys: '⌘A' },
-      { label: '把选中片段发给 AI', keys: '⌘ Enter' },
+      { label: '把选中片段加入待发送', keys: '⌘ Enter' },
       { label: '撤销 / 重做', keys: '⌘Z / ⇧⌘Z' },
     ],
   },
@@ -680,10 +687,27 @@ const selectedAgentClips = computed<AgentClipRef[]>(() =>
   }),
 )
 
+/** 当前选中片段对应的修改意见，时间轴顶部和待发送区共用。 */
+const clipNote = ref('')
+
+interface PendingClipBatch {
+  id: string
+  note: string
+  clips: AgentClipRef[]
+}
+
+/** 右侧「待发送区」：可以反复选片段 + 写意见，最后统一发送。 */
+const pendingClipBatches = ref<PendingClipBatch[]>([])
+const pendingClipCount = computed(() =>
+  pendingClipBatches.value.reduce((total, batch) => total + batch.clips.length, 0),
+)
+
 function handleTimelineSelect(payload: { ids: string[]; primary: string }) {
-  selectedClipIds.value = [...payload.ids]
-  selectedClipId.value = payload.primary || payload.ids[payload.ids.length - 1] || ''
-  if (!selectedClipIds.value.length) inspectorOpen.value = false
+  const nextIds = [...payload.ids]
+  if (nextIds.join('|') !== selectedClipIds.value.join('|')) clipNote.value = ''
+  selectedClipIds.value = nextIds
+  selectedClipId.value = payload.primary || nextIds[nextIds.length - 1] || ''
+  if (!nextIds.length) inspectorOpen.value = false
 }
 
 function clearTimelineSelection() {
@@ -692,18 +716,43 @@ function clearTimelineSelection() {
   inspectorOpen.value = false
 }
 
+/** 把当前选中片段和这段修改意见放进右侧待发送区，不立刻发送。 */
 function askAiForSelection() {
   if (!selectedAgentClips.value.length) {
     showToast('先在时间轴上选中要修改的片段')
     return
   }
-  if (agentStore.isStreaming) {
-    showToast('正在生成，等这一条结束再发')
-    return
-  }
-  if (window.innerWidth <= 1180) mobileChatOpen.value = true
+  if (!project.value) return
+  const note = clipNote.value.trim()
+  const clips = selectedAgentClips.value
+  const incoming = new Set(clips.map((clip) => clip.id))
+  // 同一段重复加入时以最新的意见为准，避免待发送区里出现重复片段。
+  const kept = pendingClipBatches.value
+    .map((batch) => ({ ...batch, clips: batch.clips.filter((clip) => !incoming.has(clip.id)) }))
+    .filter((batch) => batch.clips.length > 0)
+  kept.push({
+    id: `batch_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    note,
+    clips: clips.map((clip) => ({ ...clip, note: note || undefined })),
+  })
+  pendingClipBatches.value = kept
+  clipNote.value = ''
+  clearTimelineSelection()
   void nextTick(() => studioChatRef.value?.focusComposer())
-  showToast(`已把 ${selectedAgentClips.value.length} 个选中片段带到对话里`)
+  showToast(`已加入待发送 · ${clips.length} 段，可继续选下一段`)
+}
+
+function removePendingBatch(id: string) {
+  pendingClipBatches.value = pendingClipBatches.value.filter((batch) => batch.id !== id)
+}
+
+function clearPendingBatches() {
+  pendingClipBatches.value = []
+}
+
+/** 发送成功后清空队列；发送前不改动，失败时还能继续编辑。 */
+function consumePendingBatches() {
+  pendingClipBatches.value = []
 }
 
 function updateSelectedClip(payload: {
@@ -1222,6 +1271,9 @@ watch(
       setPlayhead(0)
       syncClock()
       clearTimelineSelection()
+      // 换项目后上一支片的待发送内容不再适用。
+      pendingClipBatches.value = []
+      clipNote.value = ''
     }
     if (id && project.value) {
       autoOpeningProject.value = false
@@ -1257,6 +1309,20 @@ watch(
       }
       if (!kept.length) inspectorOpen.value = false
     }
+  },
+)
+
+/** 片段被删掉后，待发送区里对应的条目也要同步移除。 */
+watch(
+  () => project.value?.tracks.flatMap((track) => track.clips.map((clip) => clip.id)).join('|') || '',
+  () => {
+    if (!pendingClipBatches.value.length) return
+    const alive = new Set(
+      project.value?.tracks.flatMap((track) => track.clips.map((clip) => clip.id)) || [],
+    )
+    pendingClipBatches.value = pendingClipBatches.value
+      .map((batch) => ({ ...batch, clips: batch.clips.filter((clip) => alive.has(clip.id)) }))
+      .filter((batch) => batch.clips.length > 0)
   },
 )
 

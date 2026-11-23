@@ -115,7 +115,7 @@
       </div>
 
       <p class="ci-hint">
-        发给 AI 时只带这 {{ entries.length }} 段的时间、素材和参数，并把修改范围限定在选中片段内。
+        发给 AI 会把这 {{ entries.length }} 段加入右侧待发送区，只带时间、素材和参数；可以继续选其他片段，最后统一发送。
       </p>
     </div>
   </aside>

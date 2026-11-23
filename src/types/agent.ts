@@ -61,6 +61,8 @@ export interface AgentClipRef {
   opacity?: number
   /** 素材库里的原始名字，方便模型理解画面来源。 */
   assetName?: string
+  /** 用户为这一段写的修改意见；多段排队发送时逐段带上。 */
+  note?: string
 }
 
 /** 输入框一次提交的内容。 */

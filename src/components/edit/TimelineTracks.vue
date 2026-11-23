@@ -49,7 +49,7 @@
           type="button"
           class="tl-action ai"
           :disabled="!selectedClipIds.length"
-          title="把选中片段发给 AI（⌘ Enter）"
+          title="把选中片段加入右侧待发送区（⌘ Enter）"
           @click="$emit('ask-ai')"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -106,14 +106,34 @@
     </header>
 
     <div v-if="selectedClipIds.length" class="tl-selectbar">
-      <span class="tl-selectcount">{{ selectedClipIds.length }} 段已选</span>
-      <span class="tl-selectnames">{{ selectedSummary }}</span>
-      <button type="button" class="tl-selectprops" @click="$emit('inspector')">属性</button>
-      <button type="button" class="tl-selectask" @click="$emit('ask-ai')">
-        发给 AI
-        <kbd>⌘ ↵</kbd>
-      </button>
-      <button type="button" class="tl-selectclear" @click="$emit('select', { ids: [], primary: '' })">取消选择</button>
+      <div class="tl-selectsummary">
+        <span class="tl-selectcount">{{ selectedClipIds.length }} 段已选</span>
+        <span class="tl-selectnames">{{ selectedSummary }}</span>
+      </div>
+      <input
+        v-model="noteText"
+        class="tl-selectnote"
+        type="text"
+        maxlength="200"
+        :placeholder="selectedClipIds.length > 1 ? '描述这几段要怎么改…' : '描述这段要怎么改…'"
+        aria-label="给选中片段的修改意见"
+        @keydown.stop
+        @keydown.enter.prevent="askAi"
+      />
+      <div class="tl-selectactions">
+        <button type="button" class="tl-selectprops" @click="$emit('inspector')">属性</button>
+        <button type="button" class="tl-selectask" @click="askAi">
+          发给 AI
+          <kbd>⌘ ↵</kbd>
+        </button>
+        <button
+          type="button"
+          class="tl-selectclear"
+          @click="$emit('select', { ids: [], primary: '' }); $emit('update:note', '')"
+        >
+          取消选择
+        </button>
+      </div>
     </div>
 
     <div class="tl-body">
@@ -312,6 +332,8 @@ const props = defineProps<{
   project: EditProject
   selectedClipId: string
   selectedClipIds: string[]
+  /** 当前选中片段的修改意见，和右侧待发送区共用。 */
+  note: string
   pxPerSec: number
   playing: boolean
   canUndo: boolean
@@ -321,6 +343,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'seek', time: number): void
   (event: 'select', payload: { ids: string[]; primary: string }): void
+  (event: 'update:note', value: string): void
   (event: 'move-clip', payload: { clipId: string; start: number }): void
   (event: 'move-clips', payload: { ids: string[]; delta: number }): void
   (event: 'trim-clip', payload: { clipId: string; start: number; duration: number }): void
@@ -484,6 +507,16 @@ const selectedSummary = computed(() => {
   const shown = names.slice(0, 3).join('、')
   return names.length > 3 ? `${shown} 等 ${names.length} 段` : shown
 })
+
+const noteText = computed({
+  get: () => props.note,
+  set: (value: string) => emit('update:note', value),
+})
+
+/** 把当前选中的片段交给右侧待发送区，文字意见跟着一起带走。 */
+function askAi() {
+  emit('ask-ai')
+}
 
 function findClip(clipId: string): { track: EditTrack; clip: TimelineClip } | null {
   for (const track of props.project.tracks) {
@@ -1243,12 +1276,53 @@ onBeforeUnmount(() => {
 .tl-selectbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
   flex: none;
-  height: 32px;
-  padding: 0 12px;
+  min-height: 34px;
+  padding: 5px 12px;
   border-bottom: 1px solid #f0e6e0;
   background: #fdf8f5;
+}
+
+.tl-selectsummary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 34%;
+}
+
+.tl-selectnote {
+  flex: 1 1 160px;
+  min-width: 110px;
+  height: 24px;
+  padding: 0 9px;
+  border: 1px solid #ecdbd2;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #3d2b23;
+  font-family: inherit;
+  font-size: 10.5px;
+  outline: none;
+}
+
+.tl-selectnote::placeholder {
+  color: #b39d92;
+}
+
+.tl-selectnote:focus {
+  border-color: #c98a72;
+  box-shadow: 0 0 0 2px rgba(180, 85, 58, 0.1);
+}
+
+.tl-selectactions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  margin-left: auto;
 }
 
 .tl-selectcount {

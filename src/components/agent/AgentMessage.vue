@@ -70,6 +70,7 @@
             <span class="ref-clip-copy">
               <strong>{{ clip.name }}</strong>
               <small>{{ clip.start.toFixed(1) }}s → {{ (clip.start + clip.duration).toFixed(1) }}s</small>
+              <em v-if="clip.note" class="ref-clip-note" :title="clip.note">{{ clip.note }}</em>
             </span>
           </span>
         </div>
@@ -401,6 +402,17 @@ async function copyContent() {
   color: #b09286;
   font-size: 8.5px;
   font-variant-numeric: tabular-nums;
+}
+
+.ref-clip-note {
+  max-width: 156px;
+  overflow: hidden;
+  color: #9c4a30;
+  font-size: 9px;
+  font-style: normal;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .user-bubble {

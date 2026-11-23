@@ -41,14 +41,23 @@ function clipLine(clip: AgentClipRef, index: number): string {
   return `${index + 1}. ${details.join('｜')}`
 }
 
+function clipNoteLine(clip: AgentClipRef): string {
+  const note = typeof clip.note === 'string' ? clip.note.replace(/\s+/g, ' ').trim() : ''
+  return note ? `   修改意见：${note}` : ''
+}
+
 /** 追加到用户消息后面的选中片段清单；没有选中片段时返回空字符串。 */
 export function describeClipContext(clips?: AgentClipRef[]): string {
   if (!clips?.length) return ''
   const lines = [
     `[选中片段 · 只改这些] 用户在本轮选中了 ${clips.length} 个片段，请只针对下面的片段回答和修改；`,
-    '不要改动未选中的片段，也不需要重做整支片。需要移动 / 裁剪 / 删除 / 调音量时，',
+    '不要改动未选中的片段，也不需要重做整支片。带「修改意见」的片段优先按那条意见处理，',
+    '每条修改意见只作用于它所属的片段。需要移动 / 裁剪 / 删除 / 调音量时，',
     '继续使用 onestep-timeline 操作块，clipId 必须使用下面的 id：',
-    ...clips.map(clipLine),
+    ...clips.flatMap((clip, index) => {
+      const note = clipNoteLine(clip)
+      return note ? [clipLine(clip, index), note] : [clipLine(clip, index)]
+    }),
   ]
   return lines.join('\n')
 }

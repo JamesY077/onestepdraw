@@ -53,15 +53,49 @@
     </div>
 
     <div class="sc-composer">
-      <div v-if="selectedClips.length" class="sc-selection" aria-label="选中片段上下文">
+      <div v-if="pendingBatches.length || selectedClips.length" class="sc-selection" aria-label="待发送的片段修改">
         <div class="sc-selection-head">
           <span class="sc-selection-title">
             <i aria-hidden="true" />
-            只改选中的 {{ selectedClips.length }} 个片段
+            <template v-if="pendingBatches.length">
+              待发送 {{ queuedCount }} 段 · {{ pendingBatches.length }} 条修改
+            </template>
+            <template v-else>只改选中的 {{ selectedClips.length }} 个片段</template>
           </span>
-          <button type="button" @click="$emit('clear-clips')">取消选择</button>
+          <button v-if="pendingBatches.length" type="button" @click="$emit('clear-pending')">清空</button>
+          <button v-else type="button" @click="$emit('clear-clips')">取消选择</button>
         </div>
-        <div class="sc-selection-list">
+
+        <ul v-if="pendingBatches.length" class="sc-queue">
+          <li v-for="batch in pendingBatches" :key="batch.id" class="sc-queue-item">
+            <span class="sc-queue-thumbs" aria-hidden="true">
+              <template v-for="clip in batch.clips.slice(0, 3)" :key="clip.id">
+                <img v-if="clipThumb(clip)" :src="clipThumb(clip)" alt="" />
+                <span v-else class="sc-queue-kind">{{ kindLetter(clip.kind) }}</span>
+              </template>
+              <span v-if="batch.clips.length > 3" class="sc-queue-more">+{{ batch.clips.length - 3 }}</span>
+            </span>
+            <span class="sc-queue-copy">
+              <strong>{{ batch.clips.map((clip) => clip.name).join('、') }}</strong>
+              <span class="sc-queue-note" :class="{ 'is-empty': !batch.note }" :title="batch.note || ''">
+                {{ batch.note || '让 AI 针对这段给出修改建议' }}
+              </span>
+            </span>
+            <button
+              type="button"
+              class="sc-queue-remove"
+              title="移出待发送"
+              aria-label="移出待发送"
+              @click="$emit('remove-batch', batch.id)"
+            >×</button>
+          </li>
+        </ul>
+
+        <p v-if="pendingBatches.length && selectedClips.length" class="sc-queue-live">
+          还有 {{ selectedClips.length }} 段正在选中，点时间轴上的「发给 AI」才会加入
+        </p>
+
+        <div v-if="!pendingBatches.length" class="sc-selection-list">
           <span
             v-for="clip in selectedClips"
             :key="clip.id"
@@ -80,8 +114,8 @@
         v-model="draft"
         tone="create"
         :disabled="agentStore.isStreaming"
-        :can-send-extra="selectedClips.length > 0"
-        :placeholder="selectedClips.length ? '说清楚这几段要怎么改，只影响选中片段…' : '描述要改的地方，或继续生成…'"
+        :can-send-extra="selectedClips.length > 0 || pendingBatches.length > 0"
+        :placeholder="composerPlaceholder"
         @send="send"
         @stop="agentStore.stopStreaming"
       />
@@ -99,17 +133,33 @@ import { useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
 import type { AgentClipRef, ComposerSubmit } from '@/types/agent'
 
+interface PendingClipBatch {
+  id: string
+  note: string
+  clips: AgentClipRef[]
+}
+
 const props = withDefaults(
   defineProps<{
     conversationId: string
     projectId: string
     /** 时间轴上当前选中的片段；有值时这一轮只把这几段发给 AI。 */
     selectedClips?: AgentClipRef[]
+    /** 已经加入待发送区的多段修改，发送时统一带上。 */
+    pendingBatches?: PendingClipBatch[]
+    /** 时间轴顶部正在写的意见；直接发送当前选中片段时也带上。 */
+    clipNote?: string
   }>(),
-  { selectedClips: () => [] },
+  { selectedClips: () => [], pendingBatches: () => [], clipNote: '' },
 )
 
-const emit = defineEmits<{ (event: 'clear-clips'): void }>()
+const emit = defineEmits<{
+  (event: 'clear-clips'): void
+  (event: 'clear-note'): void
+  (event: 'remove-batch', id: string): void
+  (event: 'clear-pending'): void
+  (event: 'consume-pending'): void
+}>()
 
 const agentStore = useAgentStore()
 const chatMode = useChatModeStore()
@@ -135,6 +185,32 @@ const engineLabel = computed(() =>
   localAgentStore.isLocalEngine ? localAgentStore.selectedLabel : modelStore.selectedId,
 )
 
+/** 待发送区里按片段去重，同一段以最后一次写的意见为准。 */
+const queuedClips = computed<AgentClipRef[]>(() => {
+  const map = new Map<string, AgentClipRef>()
+  for (const batch of props.pendingBatches) {
+    const note = batch.note.trim()
+    for (const clip of batch.clips) {
+      const previous = map.get(clip.id)
+      map.set(clip.id, { ...clip, note: note || previous?.note || clip.note })
+    }
+  }
+  return [...map.values()]
+})
+
+const queuedCount = computed(() => queuedClips.value.length)
+
+/** 有待发送内容时只发队列；没有队列时沿用「直接发当前选中片段」。 */
+const outgoingClips = computed(() =>
+  queuedClips.value.length ? queuedClips.value : props.selectedClips,
+)
+
+const composerPlaceholder = computed(() => {
+  if (props.pendingBatches.length) return '补充整体要求，或直接点发送…'
+  if (props.selectedClips.length) return '说清楚这几段要怎么改，只影响选中片段…'
+  return '描述要改的地方，或继续生成…'
+})
+
 function scrollToBottom() {
   const element = scrollRef.value
   if (!element) return
@@ -148,22 +224,31 @@ watch(
 
 function send(payload: ComposerSubmit) {
   const text = payload.content.trim()
+  const queued = queuedClips.value.length > 0
+  const directNote = queued ? '' : props.clipNote.trim()
+  const clips = outgoingClips.value.map((clip) => ({
+    ...clip,
+    note: clip.note || directNote || undefined,
+  }))
   if (
-    (!text && !payload.attachments.length && !payload.templates?.length && !props.selectedClips.length) ||
+    (!text && !payload.attachments.length && !payload.templates?.length && !clips.length) ||
     agentStore.isStreaming
   ) return
-  const clips = props.selectedClips.length
-    ? props.selectedClips.map((clip) => ({ ...clip }))
-    : undefined
-  void agentStore.sendMessage(text || (clips ? '请先看看选中的片段，并给出具体修改建议。' : ''), {
+  // 没写整体要求、片段也没带意见时，给模型一个明确的最小指令。
+  const fallback = clips.length && !clips.some((clip) => clip.note)
+    ? '请先看看选中的片段，并给出具体修改建议。'
+    : ''
+  void agentStore.sendMessage(text || fallback, {
     conversationId: props.conversationId,
     mode: 'create',
     automation: chatMode.automation,
     projectId: props.projectId,
     attachments: payload.attachments,
     templates: payload.templates,
-    clips,
+    clips: clips.length ? clips : undefined,
   })
+  if (queued) emit('consume-pending')
+  else if (directNote) emit('clear-note')
 }
 
 function sendChip(content: string) {
@@ -421,6 +506,120 @@ defineExpose({ focusComposer })
 .sc-selection-head button:hover {
   border-color: #ecd9cf;
   color: #8f3d26;
+}
+
+.sc-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 148px;
+  margin: 0;
+  padding: 0 1px 0 0;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-width: thin;
+}
+
+.sc-queue-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 5px;
+  border: 1px solid #f0e5df;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.sc-queue-thumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.sc-queue-thumbs img,
+.sc-queue-kind {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 3px;
+  background: #f2ece7;
+  color: #a3867a;
+  font-size: 8.5px;
+  object-fit: cover;
+}
+
+.sc-queue-kind {
+  display: inline-flex;
+}
+
+.sc-queue-more {
+  flex: none;
+  color: #b0a8a0;
+  font-size: 8.5px;
+}
+
+.sc-queue-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sc-queue-copy strong {
+  overflow: hidden;
+  color: #3d2b23;
+  font-size: 9.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-queue-note {
+  overflow: hidden;
+  color: #9c4a30;
+  font-size: 9px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-queue-note.is-empty {
+  color: #b3a49b;
+  font-style: italic;
+}
+
+.sc-queue-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #b3a49b;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sc-queue-remove:hover {
+  background: #f7ece6;
+  color: #9c4a30;
+}
+
+.sc-queue-live {
+  margin: 5px 0 0;
+  color: #a3867a;
+  font-size: 9px;
+  line-height: 1.4;
 }
 
 .sc-selection-list {
