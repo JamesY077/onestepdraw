@@ -3,8 +3,13 @@
     <main class="app-main">
       <router-view />
     </main>
+    <AddToProjectDialog />
   </div>
 </template>
+
+<script setup lang="ts">
+import AddToProjectDialog from '@/components/common/AddToProjectDialog.vue'
+</script>
 
 <style>
 #app {

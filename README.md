@@ -92,7 +92,28 @@ API Key 只保存在当前浏览器会话中，不会写入项目文件或上传
 
 Agent 会先确认缺失的关键参数，然后调用本机模型。生成结果以卡片形式出现在消息下方，可点击查看原图 / 播放视频。视频生成会显示排队与渲染进度。
 
-视频走的是内置的 **grill-me 视频版**：先按决策树分 1–2 轮提问（每轮 2–4 个问题，每个问题都带推荐答案），你可以直接回「按推荐」，它会给出拍摄单，你回「生成」后才真正开始渲染。想跳过提问，就说「直接生成 / 你决定」。
+### 两种对话模式
+
+输入框上方有两组开关：
+
+- **普通对话 / 创作对话**：普通对话只聊不建项目；创作对话在你说完需求后自动创建项目并进入剪辑台。
+- **默认模式 / 完全模式**：默认模式会分轮提问；完全模式由模型自己补齐所有细节，在同一条回复里直接生成，不需要你回答任何问题。
+
+### 剪辑台（创作对话）
+
+进入剪辑台后，同一个项目里同时有：
+
+- **预览区**：按时间轴播放当前画面，支持空格播放 / 暂停、方向键微调播放头；
+- **时间轴**：画面 / 叠加 / 音频三条轨道，拖动片段改位置，拖两端裁剪，双击跳到片段开头，Delete 删除；
+- **素材库**：对话里生成的图片、视频、配音会自动入库；也可以从本机上传（≤1.2MB，保存在本地）；
+- **创作对话**：继续用自然语言改片，例如「把第二个镜头挪到 2 秒」「删掉最后一段」「音量小一点」，模型会输出时间轴操作并在本地直接执行；
+- **按段落入轨**：创作对话里生成的图片、视频会自动按类型落到对应轨道，音频落到音频轨。
+
+项目保存在本机 `localStorage`（`onestep_edit_projects_v1`），可在剪辑台左侧切换、重命名和删除。点「导出工程」会下载项目 JSON，包含素材地址与完整时间轴。
+
+### 全站「添加至项目」
+
+图片生成、视频生成、配音音频库、Skill 测试结果、对话里的生成结果卡，都带「添加至项目」按钮。点击后选择目标项目即可把素材加入素材库并追加到对应轨道，方便把散落在各模块的产出统一到一个片子里。
 
 默认参数：
 
@@ -206,13 +227,20 @@ src/
   api/localAgents.ts      # 本机 Agent 扫描与 SSE 调用
   components/agent/       # 对话页组件（侧栏、消息、输入框、Markdown、生成结果卡）
   features/agent/prompt.ts# Agent 系统提示词（含工具调用协议与 grill-me 视频澄清）
-  features/agent/tools.ts # 工具块解析、默认参数与生成任务构建
+  features/agent/tools.ts # 工具块 / 时间轴操作解析、默认参数与生成任务构建
   features/generate/      # 图片 / 视频参数构建与轮询
+  components/edit/        # 剪辑台：预览、时间轴、创作对话
+  components/common/      # 添加至项目按钮与全局项目弹窗
   stores/agentStore.ts    # 本地会话持久化、发送与生成执行
+  stores/chatModeStore.ts # 普通 / 创作对话、默认 / 完全模式
+  stores/editProjectStore.ts # 剪辑项目、轨道、片段与时间轴操作
+  stores/assetInboxStore.ts  # 全站「添加至项目」投递
   stores/localAgentStore.ts # 本机 Agent 检测、选择与自定义命令
   stores/modelStore.ts    # 对话模型选择与持久化
+  types/edit.ts           # 项目 / 轨道 / 片段数据模型
   views/ApiKeySetup.vue   # 登录页
   views/ChatAgent.vue     # 对话主页
+  views/EditStudio.vue    # 剪辑台主页
 skills/grill-me/SKILL.md  # 视频版拷问协议，前端与本机 Agent 共用
 server/local/server.mjs   # 本地静态服务 + API 代理 + Agent 运行接口
 server/local/agents.mjs   # Agent 预设、PATH 扫描与进程流式输出
@@ -223,5 +251,6 @@ start-windows.bat         # Windows 一键启动
 
 ## 说明
 
-- `/image`、`/video`、`/voice`、`/model3d`、`/skill`、`/settings` 仍可通过右侧悬浮导航或地址直接访问。
+- `/edit`（剪辑项目）、`/image`、`/video`、`/voice`、`/model3d`、`/skill`、`/settings` 仍可通过右侧悬浮导航或地址直接访问。
+- 剪辑台内隐藏悬浮导航，避免遮挡对话面板；用左上角返回对话、右上角齿轮进入设置。
 - 「动作捕捉 / 视频动捕」入口已移除。

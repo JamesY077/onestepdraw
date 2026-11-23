@@ -103,6 +103,10 @@
                     <div class="tile-tools">
                       <button class="tile-btn" type="button" @click.stop="openVideoPreview(index)">播放</button>
                       <button class="tile-btn" type="button" @click.stop="downloadVideoResult(result)">下载</button>
+                      <AddToProjectButton
+                        :asset="videoInboxAsset(result, index)"
+                        compact
+                      />
                       <button class="tile-btn" type="button" @click.stop="regenerateBatch(currentVideoBatch)">重生成</button>
                     </div>
                     <span class="tile-size">{{ videoMetaLabel(result) }}</span>
@@ -915,6 +919,7 @@ import CameraMovementGuide from '@/components/CameraMovementGuide.vue'
 import AudioLibraryPicker from '@/components/AudioLibraryPicker.vue'
 import StudioHeader from '@/components/StudioHeader.vue'
 import StudioIsland from '@/components/StudioIsland.vue'
+import AddToProjectButton from '@/components/common/AddToProjectButton.vue'
 import SkillPicker from '@/components/SkillPicker.vue'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { DEFAULT_EXPAND_SYSTEM_PROMPT } from '@/stores/settingsStore'
@@ -1174,6 +1179,18 @@ function downloadVideoResult(result: GenerateResult) {
   document.body.appendChild(link)
   link.click()
   link.remove()
+}
+
+function videoInboxAsset(result: GenerateResult, index: number) {
+  const base = (currentVideoBatch.value?.prompt || '生成视频').trim().slice(0, 24) || '生成视频'
+  return {
+    name: index > 0 ? `${base} ${index + 1}` : base,
+    kind: 'video' as const,
+    url: result.url,
+    thumbnail: result.thumbnail || undefined,
+    duration: currentVideoBatch.value?.duration || 5,
+    source: 'library' as const,
+  }
 }
 
 function videoMetaLabel(result: GenerateResult) {
@@ -7317,6 +7334,21 @@ async function handleRegenerate(message: Message) {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
+}
+
+.tile-tools :deep(.add-to-project) {
+  min-height: 26px;
+  padding: 0 9px;
+  border-color: rgba(17, 17, 16, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: rgba(29, 29, 27, 0.82);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.tile-tools :deep(.add-to-project svg) {
+  display: none;
 }
 
 .tile-btn {

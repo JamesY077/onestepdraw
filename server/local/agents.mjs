@@ -327,7 +327,15 @@ function readVideoInterviewProtocol(rootDir) {
 }
 
 /** 把前端对话整理成一次性的 CLI 任务提示词。 */
-export function buildRunPrompt({ messages, rootDir, baseUrl, agentName }) {
+export function buildRunPrompt({
+  messages,
+  rootDir,
+  baseUrl,
+  agentName,
+  mode = 'chat',
+  automation = 'default',
+  projectSummary = '',
+}) {
   const history = (Array.isArray(messages) ? messages : [])
     .filter(
       (message) =>
@@ -343,6 +351,41 @@ export function buildRunPrompt({ messages, rootDir, baseUrl, agentName }) {
       return `${role}：${content.length > 4000 ? `${content.slice(0, 4000)}…` : content}`
     })
     .join('\n\n')
+
+  const modeBlock =
+    mode === 'create'
+      ? [
+          '',
+          '## 当前模式：创作对话',
+          '- 目标是完成一支视频，结果会自动进入剪辑项目，不要向用户描述磁盘路径。',
+          '- 生成脚本输出的 /generated/... 链接会在回复后自动加入时间轴，直接用 Markdown 展示。',
+          ...(automation === 'auto'
+            ? [
+                '- 当前是完全模式：不要向用户提问，所有未定细节由你按推荐值决定，直接生成。',
+              ]
+            : ['- 当前是默认模式：按 grill-me 协议分轮澄清，确认拍摄单后再生成。']),
+          ...(projectSummary
+            ? [
+                '',
+                '## 当前剪辑项目',
+                projectSummary,
+                '',
+                '当用户要求移动、裁剪、删除片段或调整音量/透明度时，在回复最后输出：',
+                '```onestep-timeline',
+                '{"ops":[{"op":"move","clipId":"片段ID","start":12.5}]}',
+                '```',
+                '支持 move（start）、trim（start/duration）、delete、volume / opacity（value 0-1）。片段 ID 必须来自上面的摘要。',
+              ]
+            : []),
+        ]
+      : [
+          '',
+          '## 当前模式：普通对话',
+          '- 正常聊天与创作建议。生成结果留在对话里，不自动进入剪辑项目。',
+          ...(automation === 'auto'
+            ? ['- 当前是完全模式：不要提问，直接按推荐值产出结果。']
+            : []),
+        ]
 
   return [
     `你是 ${agentName}，正在 OneStep 的对话区里工作。`,
@@ -368,6 +411,7 @@ export function buildRunPrompt({ messages, rootDir, baseUrl, agentName }) {
     '- 能直接完成的任务就直接做，不要只给方案。',
     '- 只修改与当前任务相关的文件，不要执行删除类命令，不要提交 git。',
     '- 用中文回答，先说结果，再简要说明改了什么。',
+    ...modeBlock,
     '',
     '## grill-me 视频创作协议',
     readVideoInterviewProtocol(rootDir) || '（协议文件缺失，按上面的工作原则执行。）',

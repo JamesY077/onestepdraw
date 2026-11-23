@@ -68,6 +68,11 @@
         preload="metadata"
       />
 
+      <div class="generation-actions">
+        <AddToProjectButton :asset="inboxAssets" compact />
+        <span v-if="generation.attachedToProject" class="attached-note">已自动加入创作项目</span>
+      </div>
+
       <p class="result-note">结果链接由上游临时提供，建议及时下载保存。</p>
     </div>
 
@@ -81,9 +86,33 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { AgentGeneration } from '@/types/agent'
+import AddToProjectButton from '@/components/common/AddToProjectButton.vue'
 
 const props = defineProps<{ generation: AgentGeneration }>()
 defineEmits<{ (event: 'retry'): void }>()
+
+const inboxAssets = computed(() => {
+  const baseName = props.generation.prompt.slice(0, 24) || '生成素材'
+  if (props.generation.kind === 'image') {
+    return (props.generation.images || []).map((url, index) => ({
+      name: `${baseName}${(props.generation.images?.length || 0) > 1 ? ` ${index + 1}` : ''}`,
+      kind: 'image' as const,
+      url,
+      source: 'chat' as const,
+    }))
+  }
+  if (!props.generation.videoUrl) return []
+  return [
+    {
+      name: baseName,
+      kind: 'video' as const,
+      url: props.generation.videoUrl,
+      thumbnail: props.generation.thumbnail,
+      duration: props.generation.duration,
+      source: 'chat' as const,
+    },
+  ]
+})
 
 const statusLabel = computed(() => {
   if (props.generation.status === 'succeeded') return '已完成'
@@ -292,6 +321,19 @@ const progressLabel = computed(() => {
   border: 1px solid #e8e8e2;
   border-radius: 11px;
   background: #111111;
+}
+
+.generation-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 9px;
+}
+
+.attached-note {
+  color: #6b8a6c;
+  font-size: 10px;
 }
 
 .result-note {

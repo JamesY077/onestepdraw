@@ -3,12 +3,15 @@ import { defineStore } from 'pinia'
 import { AGENT_MODEL_ID, AgentApiError, streamAgentChat } from '@/api/agent'
 import { LocalAgentError, streamLocalAgent, type LocalAgentMessage } from '@/api/localAgents'
 import type { AgentChatMessage, AgentConversation, AgentMessage } from '@/types/agent'
-import { DEFAULT_AGENT_SYSTEM_PROMPT } from '@/features/agent/prompt'
+import { buildAgentSystemPrompt } from '@/features/agent/prompt'
 import {
   buildAgentGeneration,
   describeAgentGeneration,
+  extractAgentTimelineOps,
   extractAgentToolCalls,
-  stripAgentToolBlocks,
+  extractMediaUrls,
+  stripAgentControlBlocks,
+  stripAgentTimelineBlocks,
   type AgentToolCall,
 } from '@/features/agent/tools'
 import { buildImageParams, buildVideoParams } from '@/features/generate/buildParams'
@@ -17,6 +20,8 @@ import { generateImage, generateVideo } from '@/api/aiping'
 import { CUSTOM_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useApiStore } from '@/stores/apiStore'
 import { useModelStore } from '@/stores/modelStore'
+import { useEditProjectStore } from '@/stores/editProjectStore'
+import type { AutomationMode, ConversationMode } from '@/stores/chatModeStore'
 
 const STORAGE_KEY = 'onestep_agent_conversations_v1'
 const MAX_CONVERSATIONS = 50
@@ -66,6 +71,13 @@ function loadConversations(): AgentConversation[] {
   } catch {
     return []
   }
+}
+
+export interface AgentSendOptions {
+  conversationId?: string
+  mode?: ConversationMode
+  automation?: AutomationMode
+  projectId?: string
 }
 
 export const useAgentStore = defineStore('agent', () => {
@@ -155,6 +167,16 @@ export const useAgentStore = defineStore('agent', () => {
     persistNow()
   }
 
+  function systemPromptFor(conversation: AgentConversation): string {
+    const projects = useEditProjectStore()
+    const project = projects.getProject(conversation.projectId)
+    return buildAgentSystemPrompt({
+      mode: conversation.mode || 'chat',
+      automation: conversation.automation || 'default',
+      projectSummary: project ? projects.projectSummary(project) : undefined,
+    })
+  }
+
   function buildContext(conversation: AgentConversation): AgentChatMessage[] {
     const history = conversation.messages
       .filter((message) => message.status !== 'error' && (message.content.trim() || message.generation))
@@ -170,10 +192,7 @@ export const useAgentStore = defineStore('agent', () => {
         }
       })
 
-    return [
-      { role: 'system', content: DEFAULT_AGENT_SYSTEM_PROMPT },
-      ...history,
-    ]
+    return [{ role: 'system', content: systemPromptFor(conversation) }, ...history]
   }
 
   /** 本机 CLI Agent 使用纯对话记录，系统提示词由本地服务统一拼装。 */
@@ -200,6 +219,66 @@ export const useAgentStore = defineStore('agent', () => {
     if (abortController) {
       abortController.abort()
       abortController = null
+    }
+  }
+
+  /** 创作对话里生成成功的素材自动进入关联项目的时间轴。 */
+  function attachGenerationToProject(
+    conversation: AgentConversation,
+    message: AgentMessage,
+  ) {
+    if (conversation.mode !== 'create' || !conversation.projectId) return
+    const generation = message.generation
+    if (!generation || generation.status !== 'succeeded' || generation.attachedToProject) return
+    const projects = useEditProjectStore()
+    const url = generation.kind === 'image' ? generation.images?.[0] : generation.videoUrl
+    if (!url) return
+    const clip = projects.appendAsset(conversation.projectId, {
+      name: generation.prompt.slice(0, 32) || (generation.kind === 'image' ? '生成图片' : '生成视频'),
+      kind: generation.kind,
+      url,
+      thumbnail: generation.thumbnail,
+      duration: generation.kind === 'video' ? generation.duration : undefined,
+      source: 'chat',
+    })
+    if (clip) generation.attachedToProject = true
+  }
+
+  /** 模型输出的时间轴操作直接落到项目里，并把操作块从正文去掉。 */
+  function applyTimelineOpsFromReply(conversation: AgentConversation, message: AgentMessage) {
+    const ops = extractAgentTimelineOps(message.content)
+    if (!ops.length) return
+    if (conversation.mode === 'create' && conversation.projectId) {
+      const projects = useEditProjectStore()
+      projects.applyTimelineOps(conversation.projectId, ops)
+    }
+    message.content = stripAgentTimelineBlocks(message.content)
+  }
+
+  function attachProject(conversationId: string, projectId: string) {
+    const conversation = findConversation(conversationId)
+    if (!conversation) return
+    conversation.projectId = projectId
+    conversation.mode = 'create'
+    conversation.updatedAt = Date.now()
+    persistNow()
+  }
+
+  /** 本机 Agent 回复里带出的 /generated 链接自动入轨。 */
+  function attachLocalMediaToProject(conversation: AgentConversation, content: string) {
+    if (conversation.mode !== 'create' || !conversation.projectId) return
+    const projects = useEditProjectStore()
+    for (const media of extractMediaUrls(content)) {
+      if (projects.hasAssetUrl(conversation.projectId, media.url)) continue
+      const name =
+        media.url.split('/').pop()?.split('?')[0] ||
+        (media.kind === 'image' ? '生成图片' : media.kind === 'video' ? '生成视频' : '生成音频')
+      projects.appendAsset(conversation.projectId, {
+        name: name.slice(0, 40),
+        kind: media.kind,
+        url: media.url,
+        source: 'chat',
+      })
     }
   }
 
@@ -268,6 +347,7 @@ export const useAgentStore = defineStore('agent', () => {
         generation.progress = 100
         generation.status = 'succeeded'
       }
+      attachGenerationToProject(conversation, message)
     } catch (error: any) {
       generation.status = 'failed'
       generation.error = error?.message || '生成失败，请稍后重试。'
@@ -312,12 +392,17 @@ export const useAgentStore = defineStore('agent', () => {
     try {
       if (engine) {
         assistant.model = engine.name
+        const projects = useEditProjectStore()
+        const project = projects.getProject(conversation.projectId)
         const result = await streamLocalAgent({
           agentId: engine.id,
           messages: buildLocalContext(conversation),
           apiKey: apiStore.apiKey || '',
           apiBaseUrl: apiStore.apiBaseUrl || '',
           model: modelStore.selectedId,
+          mode: conversation.mode || 'chat',
+          automation: conversation.automation || 'default',
+          projectSummary: project ? projects.projectSummary(project) : '',
           custom:
             engine.id === CUSTOM_ENGINE_ID
               ? { name: localAgentStore.custom.name, command: localAgentStore.custom.command }
@@ -346,6 +431,8 @@ export const useAgentStore = defineStore('agent', () => {
                 }`
         } else {
           assistant.status = 'done'
+          applyTimelineOpsFromReply(conversation, assistant)
+          attachLocalMediaToProject(conversation, assistant.content)
         }
       } else {
         assistant.model = modelStore.selectedId
@@ -367,8 +454,10 @@ export const useAgentStore = defineStore('agent', () => {
 
         const raw = assistant.content
         const toolCalls = extractAgentToolCalls(raw)
-        const visible = stripAgentToolBlocks(raw)
-        assistant.content = visible
+        assistant.content = raw
+        applyTimelineOpsFromReply(conversation, assistant)
+        assistant.content = stripAgentControlBlocks(assistant.content)
+        const visible = assistant.content
 
         if (!visible && !toolCalls.length) {
           assistant.status = 'error'
@@ -415,13 +504,21 @@ export const useAgentStore = defineStore('agent', () => {
     if (pendingTool) void runGeneration(conversation, assistant, pendingTool)
   }
 
-  async function sendMessage(rawContent: string) {
+  async function sendMessage(rawContent: string, options: AgentSendOptions = {}) {
     const content = rawContent.trim()
     if (!content || streamingId.value) return
 
-    let conversation = activeConversation.value
+    let conversation = options.conversationId
+      ? findConversation(options.conversationId)
+      : activeConversation.value
     if (!conversation) conversation = createConversation(true)
     activeId.value = conversation.id
+    if (options.mode) conversation.mode = options.mode
+    if (options.automation) conversation.automation = options.automation
+    if (options.projectId) {
+      conversation.projectId = options.projectId
+      conversation.mode = 'create'
+    }
 
     const now = Date.now()
     const userMessage = reactive<AgentMessage>({
@@ -502,6 +599,7 @@ export const useAgentStore = defineStore('agent', () => {
     streamingId,
     authExpired,
     createConversation,
+    attachProject,
     selectConversation,
     deleteConversation,
     clearAll,

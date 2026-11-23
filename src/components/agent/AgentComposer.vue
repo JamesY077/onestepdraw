@@ -1,6 +1,49 @@
 <template>
   <div class="composer-wrap">
     <div class="composer" :class="{ 'is-focused': focused, 'is-streaming': disabled }">
+      <div class="composer-modes">
+        <div class="mode-switch" role="group" aria-label="对话模式">
+          <button
+            type="button"
+            :class="{ active: !chatMode.isCreate }"
+            :aria-pressed="!chatMode.isCreate"
+            @click="chatMode.setConversation('chat')"
+          >
+            普通对话
+          </button>
+          <button
+            type="button"
+            :class="{ active: chatMode.isCreate }"
+            :aria-pressed="chatMode.isCreate"
+            @click="chatMode.setConversation('create')"
+          >
+            创作对话
+          </button>
+        </div>
+
+        <div class="mode-switch" role="group" aria-label="自动模式">
+          <button
+            type="button"
+            :class="{ active: !chatMode.isAuto }"
+            :aria-pressed="!chatMode.isAuto"
+            @click="chatMode.setAutomation('default')"
+          >
+            默认模式
+          </button>
+          <button
+            type="button"
+            class="auto-switch"
+            :class="{ active: chatMode.isAuto }"
+            :aria-pressed="chatMode.isAuto"
+            @click="chatMode.setAutomation('auto')"
+          >
+            完全模式
+          </button>
+        </div>
+
+        <span class="mode-tip">{{ modeTip }}</span>
+      </div>
+
       <textarea
         ref="textareaRef"
         v-model="text"
@@ -215,6 +258,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { BUILTIN_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
+import { useChatModeStore } from '@/stores/chatModeStore'
 
 const props = withDefaults(defineProps<{ disabled?: boolean; placeholder?: string }>(), {
   disabled: false,
@@ -228,6 +272,7 @@ const emit = defineEmits<{
 const router = useRouter()
 const localAgentStore = useLocalAgentStore()
 const modelStore = useModelStore()
+const chatMode = useChatModeStore()
 const engineRef = ref<HTMLElement | null>(null)
 const engineMenuOpen = ref(false)
 const modelRef = ref<HTMLElement | null>(null)
@@ -239,8 +284,19 @@ const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const focused = ref(false)
 
 const placeholderText = computed(
-  () => props.placeholder || `给 ${localAgentStore.selectedLabel} 发消息…`,
+  () =>
+    props.placeholder ||
+    (chatMode.isCreate
+      ? '说一句视频需求，OneStep 会问清关键细节…'
+      : `给 ${localAgentStore.selectedLabel} 发消息…`),
 )
+
+const modeTip = computed(() => {
+  if (chatMode.isCreate && chatMode.isAuto) return '模型自行决策，直接产出并进入时间轴'
+  if (chatMode.isCreate) return '先问清需求，再进入剪辑台'
+  if (chatMode.isAuto) return '模型自行补全细节，不追问'
+  return '正常聊天与创作建议'
+})
 const engineTitle = computed(() =>
   localAgentStore.isLocalEngine
     ? `${localAgentStore.selectedLabel} · ${localAgentStore.selectedHint}`
@@ -387,6 +443,72 @@ defineExpose({ focus })
   box-shadow:
     0 1px 2px rgba(17, 17, 16, 0.03),
     0 10px 34px rgba(17, 17, 16, 0.07);
+}
+
+.composer-modes {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 9px 12px 0 12px;
+}
+
+.mode-switch {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border: 1px solid #ecece6;
+  border-radius: 8px;
+  background: #fafaf7;
+}
+
+.mode-switch button {
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #9a9a92;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1.5;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.mode-switch button:hover {
+  color: #4a4a44;
+}
+
+.mode-switch button.active {
+  background: #ffffff;
+  color: #1d1d1b;
+  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.07);
+}
+
+.mode-switch button.auto-switch.active {
+  background: #111110;
+  color: #fafaf7;
+  box-shadow: none;
+}
+
+.mode-tip {
+  min-width: 0;
+  overflow: hidden;
+  color: #b0b0a8;
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .mode-tip {
+    display: none;
+  }
+  .mode-switch button {
+    padding: 3px 7px;
+  }
 }
 
 .composer-input {

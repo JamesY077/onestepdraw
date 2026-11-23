@@ -11,6 +11,7 @@ import { useChatStore } from '@/stores/chatStore'
 import { imageModelModules, videoModelModules } from '@/models'
 import StudioHeader from '@/components/StudioHeader.vue'
 import StudioIsland from '@/components/StudioIsland.vue'
+import AddToProjectButton from '@/components/common/AddToProjectButton.vue'
 
 const skillStore = useSkillStore()
 const chatStore = useChatStore()
@@ -375,6 +376,19 @@ async function runTest() {
                   controls
                   preload="metadata"
                 />
+                <div v-if="msg.generateResult" class="test-media-actions">
+                  <AddToProjectButton
+                    :asset="{
+                      name: msg.generateResult.type === 'video' ? 'Skill 测试视频' : 'Skill 测试图片',
+                      kind: msg.generateResult.type,
+                      url: msg.generateResult.url,
+                      thumbnail: msg.generateResult.thumbnail,
+                      duration: msg.generateResult.duration,
+                      source: 'library',
+                    }"
+                    compact
+                  />
+                </div>
               </template>
             </div>
           </div>
@@ -848,6 +862,20 @@ async function runTest() {
   border: 1px solid rgba(17, 17, 16, 0.08);
   background: rgba(0, 0, 0, 0.24);
   object-fit: cover;
+}
+
+.test-media-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: -34px 10px 10px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.test-media-actions :deep(.add-to-project) {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(17, 17, 16, 0.12);
+  backdrop-filter: blur(8px);
 }
 
 /* ---------- 响应式 ---------- */

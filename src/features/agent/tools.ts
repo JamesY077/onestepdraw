@@ -22,7 +22,104 @@ export interface AgentToolCall {
   args: Record<string, unknown>
 }
 
+/** 对话式时间轴操作：模型只说「怎么改」，由本地直接落到项目里。 */
+export interface AgentTimelineOp {
+  op: 'move' | 'trim' | 'delete' | 'volume' | 'opacity'
+  clipId: string
+  start?: number
+  duration?: number
+  value?: number
+}
+
 export const AGENT_TOOL_NAMES: AgentToolName[] = ['generate_image', 'generate_video']
+
+const TIMELINE_FENCE = /```onestep-timeline[ \t]*\r?\n([\s\S]*?)```/g
+
+/** 从回复里提取时间轴操作块。 */
+export function extractAgentTimelineOps(content: string): AgentTimelineOp[] {
+  const ops: AgentTimelineOp[] = []
+  let match: RegExpExecArray | null
+  TIMELINE_FENCE.lastIndex = 0
+  while ((match = TIMELINE_FENCE.exec(content))) {
+    let parsed: any
+    try {
+      parsed = JSON.parse(match[1].trim())
+    } catch {
+      continue
+    }
+    const list = Array.isArray(parsed) ? parsed : parsed?.ops
+    if (!Array.isArray(list)) continue
+    for (const raw of list) {
+      if (!raw || typeof raw !== 'object') continue
+      const op = String(raw.op || '')
+      const clipId = String(raw.clipId || raw.id || '')
+      if (!clipId) continue
+      if (!['move', 'trim', 'delete', 'volume', 'opacity'].includes(op)) continue
+      ops.push({
+        op: op as AgentTimelineOp['op'],
+        clipId,
+        start: Number.isFinite(Number(raw.start)) ? Number(raw.start) : undefined,
+        duration: Number.isFinite(Number(raw.duration)) ? Number(raw.duration) : undefined,
+        value: Number.isFinite(Number(raw.value)) ? Number(raw.value) : undefined,
+      })
+    }
+  }
+  return ops
+}
+
+/** 去掉时间轴操作块，避免把 JSON 显示给用户。 */
+export function stripAgentTimelineBlocks(content: string): string {
+  return content
+    .replace(/```onestep-timeline[ \t]*\r?\n[\s\S]*?```/g, '')
+    .replace(/```onestep-timeline[\s\S]*$/, '')
+    .trim()
+}
+
+/** 展示用：同时去掉生成工具块与时间轴操作块。 */
+export function stripAgentControlBlocks(content: string): string {
+  return stripAgentTimelineBlocks(stripAgentToolBlocks(content))
+}
+
+const MEDIA_EXT: Record<string, 'image' | 'video' | 'audio'> = {
+  png: 'image',
+  jpg: 'image',
+  jpeg: 'image',
+  webp: 'image',
+  gif: 'image',
+  avif: 'image',
+  mp4: 'video',
+  webm: 'video',
+  mov: 'video',
+  m4v: 'video',
+  mp3: 'audio',
+  wav: 'audio',
+  m4a: 'audio',
+  aac: 'audio',
+  ogg: 'audio',
+}
+
+/** 本机 Agent 直接输出媒体链接时，抽出可入轨的素材。 */
+export function extractMediaUrls(content: string): Array<{
+  kind: 'image' | 'video' | 'audio'
+  url: string
+}> {
+  const found: Array<{ kind: 'image' | 'video' | 'audio'; url: string }> = []
+  const seen = new Set<string>()
+  const matcher = /(https?:\/\/[^\s)"'<>]+|\/generated\/[^\s)"'<>]+)/g
+  let match: RegExpExecArray | null
+  while ((match = matcher.exec(content))) {
+    const url = match[1].replace(/[.,;，。；]+$/, '')
+    if (seen.has(url)) continue
+    const clean = url.split('?')[0].split('#')[0]
+    const ext = clean.slice(clean.lastIndexOf('.') + 1).toLowerCase()
+    const kind = MEDIA_EXT[ext]
+    if (!kind) continue
+    seen.add(url)
+    found.push({ kind, url })
+  }
+  return found
+}
+
 
 /**
  * 去掉助手回复里的工具调用块。

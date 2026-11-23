@@ -95,6 +95,7 @@
                     <div class="tile-tools">
                       <button class="tile-btn" type="button" @click.stop="openLightbox(index)">查看</button>
                       <button class="tile-btn" type="button" @click.stop="downloadResult(result)">下载</button>
+                      <AddToProjectButton :asset="imageInboxAsset(result, index)" compact />
                       <button class="tile-btn" type="button" @click.stop="expandFromResult(result)">扩图</button>
                       <button class="tile-btn" type="button" @click.stop="regenerate(currentBatch)">重生成</button>
                       <button
@@ -420,6 +421,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import StudioHeader from '@/components/StudioHeader.vue'
 import StudioIsland from '@/components/StudioIsland.vue'
+import AddToProjectButton from '@/components/common/AddToProjectButton.vue'
 import ModelSelector from '@/components/ModelSelector.vue'
 import SkillPicker from '@/components/SkillPicker.vue'
 import ImageLightbox from '@/components/ImageLightbox.vue'
@@ -953,6 +955,16 @@ function selectBatch(id: string) {
 function openLightbox(index: number) {
   lightboxIndex.value = index
   lightboxOpen.value = true
+}
+
+function imageInboxAsset(result: GenerateResult, index: number) {
+  const base = (currentBatch.value?.prompt || '生成图片').replace(/\s+/g, ' ').trim().slice(0, 24) || '生成图片'
+  return {
+    name: index > 0 ? `${base} ${index + 1}` : base,
+    kind: 'image' as const,
+    url: result.url,
+    source: 'library' as const,
+  }
 }
 
 function downloadResult(result: GenerateResult) {
@@ -1851,6 +1863,21 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
+}
+
+.tile-tools :deep(.add-to-project) {
+  min-height: 26px;
+  padding: 0 9px;
+  border-color: rgba(17, 17, 16, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #1d1d1b;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.tile-tools :deep(.add-to-project svg) {
+  display: none;
 }
 
 .tile-btn {

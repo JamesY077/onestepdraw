@@ -36,6 +36,17 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    // 对话式剪辑台：一个项目 = 时间轴 + 素材库 + 一段创作对话。
+    path: '/edit/:id?',
+    name: 'EditStudio',
+    component: () => import('@/views/EditStudio.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/projects',
+    redirect: '/edit',
+  },
+  {
     path: '/video',
     name: 'VideoCreate',
     component: () => import('@/views/ChatCreate.vue'),

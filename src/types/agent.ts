@@ -25,6 +25,8 @@ export interface AgentGeneration {
   thumbnail?: string
   error?: string
   createdAt: number
+  /** 素材是否已自动加入创作对话的剪辑项目。 */
+  attachedToProject?: boolean
 }
 
 export interface AgentMessage {
@@ -43,12 +45,21 @@ export interface AgentMessage {
   generation?: AgentGeneration
 }
 
+/** 对话所在的工作模式：普通对话只聊；创作对话的结果进入剪辑项目。 */
+export type AgentConversationMode = 'chat' | 'create'
+/** 提问策略：默认分轮澄清；完全模式由模型自行决策并直接产出。 */
+export type AgentAutomationMode = 'default' | 'auto'
+
 export interface AgentConversation {
   id: string
   title: string
   createdAt: number
   updatedAt: number
   messages: AgentMessage[]
+  /** 创作对话关联的剪辑项目。 */
+  projectId?: string
+  mode?: AgentConversationMode
+  automation?: AgentAutomationMode
 }
 
 /** 发送给 /chat/completions 的消息结构。 */

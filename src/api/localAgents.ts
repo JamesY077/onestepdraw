@@ -52,6 +52,12 @@ export interface LocalAgentStreamOptions {
   apiBaseUrl?: string
   /** 当前选择的对话模型；dsh 会用它配置模型路由。 */
   model?: string
+  /** 当前对话模式：chat = 普通对话，create = 创作对话。 */
+  mode?: 'chat' | 'create'
+  /** default = 分轮提问，auto = 模型自行决策。 */
+  automation?: 'default' | 'auto'
+  /** 当前剪辑项目摘要，让 Agent 能做时间轴操作。 */
+  projectSummary?: string
   custom?: CustomAgentConfig
   signal?: AbortSignal
   onStart?: (agent: { id: string; name: string; vendor: string }) => void
@@ -114,6 +120,9 @@ export async function streamLocalAgent(options: LocalAgentStreamOptions): Promis
       apiKey: options.apiKey || '',
       apiBaseUrl: options.apiBaseUrl || '',
       model: options.model || '',
+      mode: options.mode || 'chat',
+      automation: options.automation || 'default',
+      projectSummary: options.projectSummary || '',
       custom: options.custom || null,
     }),
     signal: options.signal,

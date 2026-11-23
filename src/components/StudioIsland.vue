@@ -43,7 +43,12 @@
       @click="expanded = false; go(item)"
     >
       <span class="island-icon" aria-hidden="true">
-        <svg v-if="item.key === 'skill'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">
+        <svg v-if="item.key === 'project'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">
+          <rect x="3.2" y="5" width="17.6" height="14" rx="3" />
+          <path d="M3.6 9.2h16.8M8 5.2v4M14.2 5.2v4" />
+          <path d="M9.6 13.2h4.8M9.6 16h3" opacity="0.6" />
+        </svg>
+        <svg v-else-if="item.key === 'skill'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">
           <path d="M12 3.2 13.9 9l5.8 1.9-5.8 1.9L12 18.6l-1.9-5.8L4.3 10.9 10.1 9z" />
           <path d="M18.6 16.4v3M17.1 17.9h3" />
         </svg>
@@ -102,6 +107,7 @@ const route = useRoute()
 const expanded = ref(false)
 
 const items = [
+  { path: '/edit', key: 'project', label: '剪辑项目' },
   { path: '/skill', key: 'skill', label: 'Skill 创作' },
   { path: '/image', key: 'image', label: '图片生成' },
   { path: '/video', key: 'video', label: '视频生成' },

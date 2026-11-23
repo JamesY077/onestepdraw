@@ -228,6 +228,10 @@ async function handleAgentRun(req, res) {
   const apiKey = typeof body?.apiKey === 'string' ? body.apiKey.trim() : ''
   const apiBaseUrl = typeof body?.apiBaseUrl === 'string' ? body.apiBaseUrl.trim() : ''
   const model = typeof body?.model === 'string' ? body.model.trim().slice(0, 120) : ''
+  const mode = body?.mode === 'create' ? 'create' : 'chat'
+  const automation = body?.automation === 'auto' ? 'auto' : 'default'
+  const projectSummary =
+    typeof body?.projectSummary === 'string' ? body.projectSummary.slice(0, 6000) : ''
 
   if (!agentId) {
     sendJson(res, 400, { error: { message: '缺少 agentId。' } })
@@ -261,6 +265,9 @@ async function handleAgentRun(req, res) {
     rootDir,
     baseUrl,
     agentName: preset.name,
+    mode,
+    automation,
+    projectSummary,
   })
 
   res.writeHead(200, {
@@ -289,7 +296,7 @@ async function handleAgentRun(req, res) {
     rootDir,
     baseUrl,
     model,
-    apiKey: /^sk-/.test(apiKey) ? apiKey : '',
+    apiKey: apiKey.length >= 8 && !/\s/.test(apiKey) ? apiKey : '',
     apiBaseUrl,
     onDelta: (text) => send({ type: 'delta', text }),
     onLog: (text) => send({ type: 'log', text }),

@@ -76,7 +76,7 @@ import { computed, ref } from 'vue'
 import BrandMark from './BrandMark.vue'
 import MarkdownView from './MarkdownView.vue'
 import AgentGenerationCard from './AgentGenerationCard.vue'
-import { stripAgentToolBlocks } from '@/features/agent/tools'
+import { stripAgentControlBlocks } from '@/features/agent/tools'
 import type { AgentMessage } from '@/types/agent'
 
 const props = withDefaults(defineProps<{ message: AgentMessage; isStreaming: boolean; canRetry?: boolean }>(), {
@@ -86,7 +86,7 @@ defineEmits<{ (event: 'retry'): void; (event: 'generation-retry', id: string): v
 
 const copied = ref(false)
 
-const displayContent = computed(() => stripAgentToolBlocks(props.message.content))
+const displayContent = computed(() => stripAgentControlBlocks(props.message.content))
 
 const timeLabel = computed(() => {
   const date = new Date(props.message.createdAt)

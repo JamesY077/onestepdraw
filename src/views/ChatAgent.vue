@@ -29,6 +29,16 @@
         </div>
 
         <div class="header-actions">
+          <button
+            v-if="activeProjectId"
+            type="button"
+            class="mode-badge project-shortcut"
+            title="进入剪辑台"
+            @click="router.push(`/edit/${activeProjectId}`)"
+          >
+            剪辑台 ↗
+          </button>
+          <span class="mode-badge" :class="{ 'is-create': chatMode.isCreate }">{{ chatMode.conversationLabel }}</span>
           <span class="local-badge">本地</span>
           <button type="button" class="new-chat-icon" title="设置" aria-label="设置" @click="router.push('/settings')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -62,7 +72,11 @@
           </div>
           <h2>今天想做什么？</h2>
           <p class="welcome-copy">
-            OneStep 是你的本地 AI 创作助手。写东西、想点子、做分镜、推敲提示词，都可以从这里开始。
+            {{
+              chatMode.isCreate
+                ? '说一句视频需求，OneStep 会先问清关键细节，然后带你进入剪辑台继续用对话和时间轴完成这支片。'
+                : 'OneStep 是你的本地 AI 创作助手。写东西、想点子、做分镜、推敲提示词，都可以从这里开始。'
+            }}
           </p>
 
           <div class="suggestion-grid">
@@ -138,13 +152,19 @@ import { useAgentStore } from '@/stores/agentStore'
 import { useApiStore } from '@/stores/apiStore'
 import { useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
+import { useChatModeStore } from '@/stores/chatModeStore'
+import { useEditProjectStore } from '@/stores/editProjectStore'
 
 const store = useAgentStore()
 const apiStore = useApiStore()
 const localAgentStore = useLocalAgentStore()
 const modelStore = useModelStore()
+const chatMode = useChatModeStore()
+const projectStore = useEditProjectStore()
 const route = useRoute()
 const router = useRouter()
+
+const activeProjectId = computed(() => store.activeConversation?.projectId || '')
 
 const scrollRef = ref<HTMLElement | null>(null)
 const composerRef = ref<InstanceType<typeof AgentComposer> | null>(null)
@@ -266,11 +286,35 @@ function handleLogout() {
 
 async function handleSend(content: string) {
   stickToBottom.value = true
-  await store.sendMessage(content)
+  if (chatMode.isCreate) {
+    const conversation = store.activeConversation || store.createConversation(true)
+    const project =
+      projectStore.findProjectByConversation(conversation.id) ||
+      projectStore.createProject(projectTitle(content), conversation.id)
+    store.attachProject(conversation.id, project.id)
+    void store.sendMessage(content, {
+      conversationId: conversation.id,
+      mode: 'create',
+      automation: chatMode.automation,
+    })
+    router.push(`/edit/${project.id}`)
+    return
+  }
+
+  await store.sendMessage(content, {
+    conversationId: store.activeId || undefined,
+    mode: 'chat',
+    automation: chatMode.automation,
+  })
   syncRouteWithActive()
   await nextTick()
   scrollToBottom('smooth')
   composerRef.value?.focus()
+}
+
+function projectTitle(content: string): string {
+  const clean = content.replace(/\s+/g, ' ').trim()
+  return clean.slice(0, 18) || '未命名项目'
 }
 
 async function handleRetry() {
@@ -333,6 +377,16 @@ watch(
   () => store.activeConversation?.title,
   (title) => {
     document.title = title ? `${title} · OneStep` : 'OneStep'
+  },
+  { immediate: true },
+)
+
+// 打开已有会话时跟随它记录的模式，避免把创作对话误当成普通聊天继续发。
+watch(
+  () => [store.activeConversation?.mode, store.activeConversation?.automation] as const,
+  ([mode, automation]) => {
+    if (mode === 'create' || mode === 'chat') chatMode.setConversation(mode)
+    if (automation === 'auto' || automation === 'default') chatMode.setAutomation(automation)
   },
   { immediate: true },
 )
@@ -462,6 +516,35 @@ onBeforeUnmount(() => {
   color: #8c8c84;
   font-size: 10.5px;
   font-weight: 600;
+}
+
+.mode-badge {
+  padding: 3px 8px;
+  border: 1px solid #e6e6e0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #8c8c84;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mode-badge.is-create {
+  border-color: #d9d9cf;
+  background: #111110;
+  color: #fafaf7;
+}
+
+.project-shortcut {
+  cursor: pointer;
+  color: #5f5f57;
+}
+
+@media (max-width: 640px) {
+  .mode-badge {
+    display: none;
+  }
 }
 
 .new-chat-icon {

@@ -242,6 +242,7 @@
                 >
                   <template #actions>
                     <button class="mini-btn" type="button" @click="downloadResult">下载</button>
+                    <button class="mini-btn" type="button" @click="addResultToProject">加入项目</button>
                     <button class="mini-btn" type="button" @click="handleGenerate">重新生成</button>
                   </template>
                 </VoicePlayer>
@@ -304,6 +305,7 @@
                   <template #actions>
                     <button class="mini-btn" type="button" @click="reuseHistory(item)">复用</button>
                     <button class="mini-btn" type="button" @click="downloadHistory(item)">下载</button>
+                    <button class="mini-btn" type="button" @click="addHistoryToProject(item)">加入项目</button>
                     <button class="mini-btn" type="button" @click="removeHistory(item)">删除</button>
                   </template>
                 </VoicePlayer>
@@ -1485,6 +1487,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import StudioHeader from '@/components/StudioHeader.vue'
 import StudioIsland from '@/components/StudioIsland.vue'
 import VoicePlayer from '@/components/VoicePlayer.vue'
+import { useAssetInboxStore } from '@/stores/assetInboxStore'
 import { chatCompletion } from '@/api/aiping'
 import { cloneVoice, deleteClonedVoice, designVoice, fetchVoiceCatalog, synthesizeSpeech, uploadCloneAudio } from '@/api/voice'
 import {
@@ -1584,6 +1587,7 @@ const accent = 'var(--studio-accent-voice)'
 const model = VOICE_MODELS[0]
 const maxChars = model.capability.maxChars
 const settingsStore = useSettingsStore()
+const assetInbox = useAssetInboxStore()
 
 const speedRange = VOICE_PARAM_LIMITS.speed
 const pitchRange = VOICE_PARAM_LIMITS.pitch
@@ -2418,6 +2422,32 @@ function downloadResult() {
 
 function downloadHistory(item: VoiceHistoryItem & { blob: Blob }) {
   downloadBlob(item.blob, item.format)
+}
+
+/** 配音是 blob 地址，转成 data URL 才能跨刷新保存在项目里。 */
+function addAudioToProject(blob: Blob, text: string, durationMs: number) {
+  const reader = new FileReader()
+  reader.onload = () => {
+    const url = typeof reader.result === 'string' ? reader.result : ''
+    if (!url) return
+    assetInbox.open({
+      name: text.replace(/\s+/g, ' ').trim().slice(0, 24) || '生成配音',
+      kind: 'audio',
+      url,
+      duration: durationMs / 1000,
+      source: 'library',
+    })
+  }
+  reader.readAsDataURL(blob)
+}
+
+function addResultToProject() {
+  if (!result.value) return
+  addAudioToProject(result.value.blob, resultText.value, result.value.durationMs)
+}
+
+function addHistoryToProject(item: VoiceHistoryItem & { blob: Blob }) {
+  addAudioToProject(item.blob, item.text, item.durationMs)
 }
 
 /** 单条删除：只从本地音频库移除，不影响账号与音色。 */
