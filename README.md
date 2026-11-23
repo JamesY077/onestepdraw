@@ -92,12 +92,48 @@ API Key 只保存在当前浏览器会话中，不会写入项目文件或上传
 
 Agent 会先确认缺失的关键参数，然后调用本机模型。生成结果以卡片形式出现在消息下方，可点击查看原图 / 播放视频。视频生成会显示排队与渲染进度。
 
+视频走的是内置的 **grill-me 视频版**：先按决策树分 1–2 轮提问（每轮 2–4 个问题，每个问题都带推荐答案），你可以直接回「按推荐」，它会给出拍摄单，你回「生成」后才真正开始渲染。想跳过提问，就说「直接生成 / 你决定」。
+
 默认参数：
 
 | 类型 | 模型 | 默认参数 |
 | --- | --- | --- |
 | 图片 | Doubao-Seedream-5.0-lite | 16:9（可选 4:3 / 3:4 / 1:1 / 9:16） |
 | 视频 | MiniMax-H3 | 16:9 / 768P / 5 秒（4–15 秒，可选 2K） |
+
+### grill-me 视频版（项目内置）
+
+协议原文在 `skills/grill-me/SKILL.md`，同一份文件同时用于：
+
+- 内置 AIPing 对话的系统提示词（`src/features/agent/prompt.ts`）；
+- 本机 Agent 的任务提示词（`server/local/agents.mjs`）。
+
+`.claude/skills/grill-me` 与 `.opencode/skills/grill-me` 是指向它的软链，所以在这个仓库里工作的 Claude Code / OpenCode 也能直接加载。
+
+它约束的是「问什么、怎么问、什么时候停」：
+
+- 只问这一轮能定的问题，依赖其他答案的留到下一轮；
+- 每轮 2–4 问，最多 3 轮，每问必须给推荐答案；
+- 能自己推断的（镜头、光线、收尾）不问；
+- 提问结束先出拍摄单，确认后才生成；
+- 一次只生成一个连续镜头，多场景拆成多次生成。
+
+### 给全机其他 Agent 安装通用版
+
+通用版（不限视频，可拷问产品方向、写作、决策）已安装在 `~/.workbuddy/skills/grill-me/SKILL.md`，并以相对软链接入：
+
+```text
+~/.claude/skills/grill-me
+~/.codex/skills/grill-me
+~/.agents/skills/grill-me
+~/.config/opencode/skills/grill-me
+~/.qoder/skills/grill-me
+~/.gemini/skills/grill-me
+~/.dsh/skills/grill-me
+（以及 .grok / .trae / .trae-cn / .vibe / .kiro / .hermes / .rovodev / .continue / .augment）
+```
+
+更新时只改 `~/.workbuddy/skills/grill-me/SKILL.md`，所有 Agent 立即生效。触发方式是在对话里说「grill me」或「拷问我」；这个仓库里的 `grill-me` 会自动替换为视频版。
 
 ## 安装到你的 Agent
 
@@ -169,7 +205,7 @@ src/
   api/models.ts           # AIPing 对话模型列表与缓存
   api/localAgents.ts      # 本机 Agent 扫描与 SSE 调用
   components/agent/       # 对话页组件（侧栏、消息、输入框、Markdown、生成结果卡）
-  features/agent/prompt.ts# Agent 系统提示词（含工具调用协议）
+  features/agent/prompt.ts# Agent 系统提示词（含工具调用协议与 grill-me 视频澄清）
   features/agent/tools.ts # 工具块解析、默认参数与生成任务构建
   features/generate/      # 图片 / 视频参数构建与轮询
   stores/agentStore.ts    # 本地会话持久化、发送与生成执行
@@ -177,6 +213,7 @@ src/
   stores/modelStore.ts    # 对话模型选择与持久化
   views/ApiKeySetup.vue   # 登录页
   views/ChatAgent.vue     # 对话主页
+skills/grill-me/SKILL.md  # 视频版拷问协议，前端与本机 Agent 共用
 server/local/server.mjs   # 本地静态服务 + API 代理 + Agent 运行接口
 server/local/agents.mjs   # Agent 预设、PATH 扫描与进程流式输出
 scripts/onestep-generate.mjs # 供 Agent 调用的图片 / 视频生成脚本

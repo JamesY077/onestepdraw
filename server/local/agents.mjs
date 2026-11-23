@@ -316,6 +316,16 @@ export async function getInstalledAgent(id) {
   return { preset, command, source }
 }
 
+/** 读取项目内的视频澄清协议（与前端系统提示词共用同一份 Skill）。 */
+function readVideoInterviewProtocol(rootDir) {
+  try {
+    const raw = fs.readFileSync(path.join(rootDir, 'skills/grill-me/SKILL.md'), 'utf8')
+    return raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').trim()
+  } catch {
+    return ''
+  }
+}
+
 /** 把前端对话整理成一次性的 CLI 任务提示词。 */
 export function buildRunPrompt({ messages, rootDir, baseUrl, agentName }) {
   const history = (Array.isArray(messages) ? messages : [])
@@ -351,11 +361,16 @@ export function buildRunPrompt({ messages, rootDir, baseUrl, agentName }) {
     '脚本会把结果保存到 generated/，并输出 /generated/... 链接；请在最终回复里用 Markdown 图片或视频链接展示结果。',
     '',
     '工作原则：',
-    '- 用户要生成图片或视频时，先简短确认尺寸、比例、时长（用户已经说明就直接执行），然后必须真正运行脚本，不要在回复里假装已经生成。',
+    '- 视频任务必须先按下面的 grill-me 协议澄清需求：通常 1-2 轮，每轮 2-4 个问题，每个问题给推荐答案；用户说“按推荐 / 直接生成 / 你决定”时立刻用推荐值执行。',
+    '- 澄清完成后先输出拍摄单并等用户确认；用户确认或直接说“生成”后，必须真正运行脚本，不要在回复里假装已经生成。',
+    '- 图片任务只需补上画面内容和比例，不必走多轮拷问。',
     '- 生成任务可能耗时数分钟，请耐心等待脚本输出，不要中途放弃。',
     '- 能直接完成的任务就直接做，不要只给方案。',
     '- 只修改与当前任务相关的文件，不要执行删除类命令，不要提交 git。',
     '- 用中文回答，先说结果，再简要说明改了什么。',
+    '',
+    '## grill-me 视频创作协议',
+    readVideoInterviewProtocol(rootDir) || '（协议文件缺失，按上面的工作原则执行。）',
     '',
     '对话记录：',
     history || '（暂无）',
