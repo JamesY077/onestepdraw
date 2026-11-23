@@ -1,8 +1,20 @@
-# OneStep
+# 步帧 Stepframe
 
-一个本地运行的 AI 创作助手。登录后是一个 Codex 风格的对话界面，内嵌 **DeepSeek V4.1 Flash**（`DeepSeek-V4.1-Flash-1017`），模型能力仍然由 **AIPing** 提供。也可以把对话交给这台电脑上已经安装的 CLI Agent（Codex、OpenCode、Qoder、Claude Code、WorkBuddy、DSH 等）来执行。
+> 一句话，一步成帧。
+
+步帧是一个本地运行的 AI 创作助手。登录后是一个 Codex 风格的对话界面，内嵌 **DeepSeek V4.1 Flash**（`DeepSeek-V4.1-Flash-1017`），模型能力仍然由 **AIPing** 提供。也可以把对话交给这台电脑上已经安装的 CLI Agent（Codex、OpenCode、Qoder、Claude Code、WorkBuddy、DSH 等）来执行。
 
 > 这是一个从 `aiping-imagevideo` 派生出的新项目，主界面已从「创作工作台」收敛为「本地 AI Agent」。旧的图片 / 视频 / 配音 / 3D 页面作为隐藏路由保留，后续可以作为 Agent 工具接入。
+
+## 名字与图标
+
+「步帧」有两层意思：一步一帧，把一句话做成一支片；同时 stepped frame（步进帧）也是动画里的常用手法。英文名 **Stepframe** 由此而来。
+
+![步帧 Stepframe 图标](design/app-icon/app-icon.preview.png)
+
+三段立柱从低到高、等距上升，代表「一步一帧」；最高的一段用赤陶色 `#C2532F` 点亮，表示正在生成的那一帧。深色 `#101114` 底加纯白几何体，不用渐变、阴影和材质特效，保持科技感与极简。
+
+图标源文件在 `design/app-icon/`（SVG / PNG / 分层 SVG / 校验报告）；网页侧使用 `public/favicon.svg`、`public/icon-192.png`、`public/icon-512.png`、`public/apple-touch-icon.png` 与 `public/site.webmanifest`。
 
 ## 特性
 
@@ -204,10 +216,10 @@ Agent 会先确认缺失的关键参数，然后调用本机模型。生成结�
 
 ## 安装到你的 Agent
 
-OneStep 是纯本地项目，不需要云端托管，也不需要在任何平台注册应用。把下面这段指令交给 Claude Code、Cursor 或 Codex，它会自己完成克隆、安装与启动：
+步帧是纯本地项目，不需要云端托管，也不需要在任何平台注册应用。把下面这段指令交给 Claude Code、Cursor 或 Codex，它会自己完成克隆、安装与启动：
 
 ```text
-请帮我在这台电脑上安装并运行 OneStep：
+请帮我在这台电脑上安装并运行步帧：
 
 1. 克隆仓库：git clone https://github.com/JamesY077/onestepdraw.git ~/onestepdraw
 2. 进入目录后运行 npm install
@@ -221,7 +233,7 @@ OneStep 是纯本地项目，不需要云端托管，也不需要在任何平台
 
 ## 选择本机 Agent 来创作
 
-OneStep 启动后会自动检测本机已安装的 Agent，不需要额外配置。
+步帧启动后会自动检测本机已安装的 Agent，不需要额外配置。
 
 1. 用 `npm start` 启动后打开对话页；
 2. 点击输入框左下角的 Agent 图标（默认 `AIPing · DeepSeek`）；
@@ -243,7 +255,7 @@ OneStep 启动后会自动检测本机已安装的 Agent，不需要额外配置
 关于自定义命令：
 
 - 命令在项目根目录执行，权限与你本机终端一致；
-- 命令里可以用 `{prompt}` 占位，OneStep 会把对话整理成提示词填入；
+- 命令里可以用 `{prompt}` 占位，步帧会把对话整理成提示词填入；
 - 没有 `{prompt}` 时，提示词会追加到命令末尾；
 - 示例：`my-agent --cwd . --task "{prompt}"`。
 
@@ -256,7 +268,7 @@ node scripts/onestep-generate.mjs video --prompt "镜头描述" --ratio 16:9 --r
 
 脚本会把结果保存到 `generated/`，并打印 `/generated/...` 链接；对话里的 Markdown 图片与视频链接由本地服务直接托管。密钥只存在于 Agent 子进程环境中，不会写入文件。
 
-选择 DeepSeek Harness（`dsh`）时，本地服务会生成一份临时 dsh patch，把当前 AIPing 地址、密钥和所选模型接成 dsh 的 provider，因此桌面端安装的 dsh 也可以直接用 OneStep 的配置执行。
+选择 DeepSeek Harness（`dsh`）时，本地服务会生成一份临时 dsh patch，把当前 AIPing 地址、密钥和所选模型接成 dsh 的 provider，因此桌面端安装的 dsh 也可以直接用步帧的配置执行。
 
 ## 技术栈
 

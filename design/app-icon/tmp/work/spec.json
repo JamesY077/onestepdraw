@@ -1,0 +1,38 @@
+{
+  "name": "Stepframe",
+  "target_platforms": [
+    "Web"
+  ],
+  "brief": "步帧 Stepframe — 本地 AI 创作助手。用三段逐级抬升的圆角柱表示「一步一帧」的进度，最高的一段用赤陶色点亮，表示正在生成的那一帧；整体保持深色、扁平、无材质特效的科技极简风格。",
+  "semantic_review": {
+    "status": "exact-enough",
+    "identity_risk": "low",
+    "basis": "original geometric mark authored for this project; evolves the existing three-bar brand mark",
+    "route": "semantic-svg",
+    "notes": "Three ascending rounded capsules read as stepped frames; the tallest one carries the product accent color. Flat fills only — no bevel, glow, shadow, gradient or texture."
+  },
+  "fill": {
+    "solid": "#101114"
+  },
+  "layers": [
+    {
+      "name": "background",
+      "svg": "<rect width=\"1024\" height=\"1024\" fill=\"#101114\"/>",
+      "composer": {
+        "include": false
+      }
+    },
+    {
+      "name": "step 01",
+      "svg": "<rect x=\"257.6\" y=\"522\" width=\"124.8\" height=\"264\" rx=\"62.4\" fill=\"#FFFFFF\"/>"
+    },
+    {
+      "name": "step 02",
+      "svg": "<rect x=\"449.6\" y=\"378\" width=\"124.8\" height=\"408\" rx=\"62.4\" fill=\"#FFFFFF\"/>"
+    },
+    {
+      "name": "step 03 accent",
+      "svg": "<rect x=\"641.6\" y=\"234\" width=\"124.8\" height=\"552\" rx=\"62.4\" fill=\"#C2532F\"/>"
+    }
+  ]
+}

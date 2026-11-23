@@ -35,7 +35,7 @@
             </button>
           </div>
           <div class="nav-foot">
-            <span>OneStep</span>
+            <span>步帧</span>
             <span>v1.2.0</span>
           </div>
         </aside>
@@ -45,7 +45,7 @@
           <section id="account" class="panel">
             <div class="panel-head">
               <h2>账号与连接</h2>
-              <p>OneStep 通过 AIPing 调用模型。密钥只存放在当前浏览器会话中。</p>
+              <p>步帧通过 AIPing 调用模型。密钥只存放在当前浏览器会话中。</p>
             </div>
 
             <div class="detail-list">
@@ -119,7 +119,7 @@
               <div>
                 <h2>本机 Agent</h2>
                 <p>
-                  OneStep 启动后会自动扫描这台电脑上已安装的 CLI Agent。选中后，对话会交给它执行，
+                  步帧启动后会自动扫描这台电脑上已安装的 CLI Agent。选中后，对话会交给它执行，
                   可以直接读写项目、生成图片和视频。
                 </p>
               </div>
@@ -210,7 +210,7 @@
                     <p v-if="agent.installHint" class="field-hint">{{ agent.installHint }}</p>
                     <p v-if="agent.appPath" class="field-hint">
                       检测到桌面端 {{ agent.appPath.split('/').pop()?.replace('.app', '') }}，
-                      但桌面端没有提供命令行入口，OneStep 暂时无法调用它。
+                      但桌面端没有提供命令行入口，步帧暂时无法调用它。
                     </p>
                   </div>
                   <div class="install-actions">
@@ -279,7 +279,7 @@
             <ul class="agent-notes">
               <li>Agent 会在项目目录中运行，权限与你本机终端一致，请只选择自己信任的 Agent。</li>
               <li>扫描由本地服务完成；用静态托管或远程访问打开页面时，本机 Agent 不可用。</li>
-              <li>对话仍在 OneStep 里进行，记录只保存在这台设备。</li>
+              <li>对话仍在步帧里进行，记录只保存在这台设备。</li>
             </ul>
           </section>
 
@@ -420,8 +420,8 @@
           <!-- 安装到 Agent -->
           <section id="agent" class="panel">
             <div class="panel-head">
-              <h2>让 Agent 安装 OneStep</h2>
-              <p>OneStep 是纯本地项目，不依赖云端托管。把下面的指令交给你的 Agent，它会自己克隆仓库、安装依赖并启动。</p>
+              <h2>让 Agent 安装步帧</h2>
+              <p>步帧是纯本地项目，不依赖云端托管。把下面的指令交给你的 Agent，它会自己克隆仓库、安装依赖并启动。</p>
             </div>
 
             <div class="repo-bar">
@@ -619,7 +619,7 @@ const navGroups = [
     label: '安装与接入',
     items: [
       { id: 'agents', label: '本机 Agent' },
-      { id: 'agent', label: '让 Agent 安装 OneStep' },
+      { id: 'agent', label: '让 Agent 安装步帧' },
     ],
   },
 ]
@@ -653,7 +653,7 @@ function setupSectionObserver() {
 
 const repoUrl = 'https://github.com/JamesY077/onestepdraw'
 const repoUrlLabel = 'github.com/JamesY077/onestepdraw'
-const localRootDir = ref('<OneStep 项目目录>')
+const localRootDir = ref('<步帧项目目录>')
 
 type AgentTabKey = 'claude-code' | 'cursor' | 'codex' | 'local'
 const agentTab = ref<AgentTabKey>('claude-code')
@@ -662,7 +662,7 @@ const repoCopied = ref(false)
 
 const installPrompt = computed(() =>
   [
-    '请帮我在这台电脑上安装并运行 OneStep：',
+    '请帮我在这台电脑上安装并运行步帧：',
     '',
     `1. 克隆仓库：git clone ${repoUrl}.git ~/onestepdraw`,
     '2. 进入目录后运行 npm install',
@@ -675,7 +675,7 @@ const installPrompt = computed(() =>
 
 const localPrompt = computed(() =>
   [
-    'OneStep 已经安装在这台电脑上：',
+    '步帧已经安装在这台电脑上：',
     '',
     `项目目录：${localRootDir.value}`,
     '',

@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-# OneStep 本地启动脚本
+# 步帧本地启动脚本
 # 首次运行会自动准备 Node.js、安装依赖并构建前端，然后打开本地页面。
 
 set -e
@@ -16,7 +16,7 @@ pause_on_error() {
   local exit_code=$?
   if [ "$exit_code" -ne 0 ]; then
     echo
-    echo "OneStep 启动失败（退出码 $exit_code）。"
+    echo "步帧启动失败（退出码 $exit_code）。"
     echo "按回车关闭窗口。"
     read -r _
   fi
@@ -161,7 +161,7 @@ ensure_env_file() {
     cp ".env.example" ".env"
   else
     {
-      echo "VITE_APP_NAME=OneStep"
+      echo "VITE_APP_NAME=Stepframe"
       echo "VITE_APP_VERSION=1.0.0"
       echo "VITE_API_BASE_URL=/api/v1"
       echo "VITE_API_DOCS_URL=https://aiping.cn/docs"
@@ -188,7 +188,7 @@ install_dependencies() {
 
 build_if_needed() {
   if [ ! -f "dist/index.html" ]; then
-    echo "正在构建 OneStep…"
+    echo "正在构建步帧…"
     npm run build
     return
   fi
@@ -201,7 +201,7 @@ build_if_needed() {
   fi
 }
 
-echo "正在启动 OneStep…"
+echo "正在启动步帧…"
 ensure_node
 ensure_env_file
 install_dependencies
@@ -210,7 +210,7 @@ build_if_needed
 APP_PORT="${ONESTEP_PORT:-5500}"
 echo
 echo "本地地址：http://127.0.0.1:$APP_PORT"
-echo "关闭此窗口或按 Ctrl+C 即可停止 OneStep。"
+echo "关闭此窗口或按 Ctrl+C 即可停止步帧。"
 echo
 
 exec node server/local/server.mjs --port "$APP_PORT"

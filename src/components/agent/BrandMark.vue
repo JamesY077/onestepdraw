@@ -6,15 +6,26 @@
     viewBox="0 0 32 32"
     fill="none"
     role="img"
-    aria-label="OneStep"
+    aria-label="步帧 Stepframe"
   >
-    <rect width="32" height="32" rx="9" :fill="inverted ? '#ffffff' : '#111111'" />
-    <path
-      d="M9.4 22V17.2M15.8 22V12.8M22.2 22V8.8"
-      :stroke="inverted ? '#111111' : '#ffffff'"
-      stroke-width="2.6"
-      stroke-linecap="round"
+    <rect width="32" height="32" rx="8" :fill="inverted ? '#ffffff' : '#101114'" />
+    <rect
+      x="8.05"
+      y="16.31"
+      width="3.9"
+      height="8.25"
+      rx="1.95"
+      :fill="inverted ? '#101114' : '#ffffff'"
     />
+    <rect
+      x="14.05"
+      y="11.81"
+      width="3.9"
+      height="12.75"
+      rx="1.95"
+      :fill="inverted ? '#101114' : '#ffffff'"
+    />
+    <rect x="20.05" y="7.31" width="3.9" height="17.25" rx="1.95" fill="#C2532F" />
   </svg>
 </template>
 

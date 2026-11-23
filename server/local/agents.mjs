@@ -1,7 +1,7 @@
 /**
  * 本机 Agent 检测与调用。
  *
- * OneStep 自身不绑定某一家 Agent：启动后扫描 PATH，找出用户已经安装的
+ * 步帧自身不绑定某一家 Agent：启动后扫描 PATH，找出用户已经安装的
  * CLI Agent（Claude Code、Codex、OpenCode、Qoder、WorkBuddy、DSH 等），
  * 再以「项目目录 + 一段任务提示词」的方式拉起对应命令，把输出流回前端。
  */
@@ -388,13 +388,13 @@ export function buildRunPrompt({
         ]
 
   return [
-    `你是 ${agentName}，正在 OneStep 的对话区里工作。`,
+    `你是 ${agentName}，正在步帧的对话区里工作。`,
     '',
     `工作目录：${rootDir}`,
     `本地服务：${baseUrl}`,
     '',
     '你可以直接读取、修改工作目录里的文件，也可以运行命令。',
-    'OneStep 是一个本地 Vue 3 + Vite 项目，界面在 src/，本地服务在 server/local/，构建命令是 npm run build。',
+    '步帧（Stepframe）是一个本地 Vue 3 + Vite 项目，界面在 src/，本地服务在 server/local/，构建命令是 npm run build。',
     '',
     '生成能力（已注入 AIPING_API_KEY 与 AIPING_BASE_URL 环境变量，直接运行即可）：',
     '- 生成图片：node scripts/onestep-generate.mjs image --prompt "画面描述" --ratio 16:9',
@@ -546,7 +546,7 @@ function extractClaudeText(line, state) {
 
 /**
  * dsh 的 headless profile 默认不读取桌面端凭据，也不带自定义模型路由。
- * 这里生成一个临时 patch：把 OneStep 的 AIPing 地址、密钥环境变量和当前模型
+ * 这里生成一个临时 patch：把步帧的 AIPing 地址、密钥环境变量和当前模型
  * 接成 dsh 的 provider，让桌面端安装的 dsh 也能直接执行。
  */
 function buildDshPatch({ baseUrl, model }) {

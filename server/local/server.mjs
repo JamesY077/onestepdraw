@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * OneStep 本地运行服务。
+ * 步帧 Stepframe 本地运行服务。
  *
  * - 托管 `dist/` 中的前端产物，并为 SPA 路由回退到 index.html；
  * - 把 `/api` 反向代理到 AIPing 官方接口（支持 SSE 流式透传）；
@@ -38,6 +38,7 @@ const MIME_TYPES = {
   '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -562,7 +563,7 @@ function listen(port, remainingAttempts = 20) {
       listen(port + 1, remainingAttempts - 1)
       return
     }
-    console.error(`OneStep 本地服务启动失败：${error.message}`)
+    console.error(`步帧本地服务启动失败：${error.message}`)
     process.exit(1)
   })
 
@@ -573,7 +574,7 @@ function listen(port, remainingAttempts = 20) {
     const actualPort = typeof address === 'object' && address ? address.port : port
     const url = `http://${host}:${actualPort}`
     console.log('')
-    console.log('  OneStep · 本地 AI 创作助手')
+    console.log('  步帧 Stepframe · 本地 AI 创作助手')
     console.log(`  已启动：${url}`)
     if (actualPort !== startPort) {
       console.log(`  端口 ${startPort} 已被占用，已自动切换到 ${actualPort}`)
@@ -593,7 +594,7 @@ if (!fs.existsSync(distDir)) {
 listen(startPort)
 
 function shutdown() {
-  console.log('\n正在停止 OneStep 本地服务…')
+  console.log('\n正在停止步帧本地服务…')
   server.close(() => process.exit(0))
   setTimeout(() => process.exit(0), 1500).unref()
 }

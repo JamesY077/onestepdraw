@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * OneStep 资源生成 CLI —— 给本机 Agent 调用。
+ * 步帧资源生成 CLI —— 给本机 Agent 调用。
  *
  * 用法：
  *   node scripts/onestep-generate.mjs image --prompt "画面描述" [--ratio 16:9]
@@ -262,7 +262,7 @@ async function generateVideo(options) {
 
 async function main() {
   if (!API_KEY) {
-    fail('缺少 AIPING_API_KEY。请在 OneStep 页面登录后，由本地服务注入，或手动 export AIPING_API_KEY=sk-...')
+    fail('缺少 AIPING_API_KEY。请在步帧页面登录后，由本地服务注入，或手动 export AIPING_API_KEY=sk-...')
   }
 
   const { kind, options } = parseArgs(process.argv.slice(2))

@@ -3,7 +3,7 @@
     <header class="login-header">
       <div class="login-brand">
         <BrandMark :size="28" />
-        <span>OneStep</span>
+        <span>步帧</span>
       </div>
       <span class="local-pill">本地运行</span>
     </header>
@@ -14,8 +14,8 @@
           <BrandMark :size="42" />
         </div>
 
-        <h1 id="login-title">登录 OneStep</h1>
-        <p class="card-copy">连接 AIPing API Key，开始与 OneStep 对话。</p>
+        <h1 id="login-title">登录步帧</h1>
+        <p class="card-copy">连接 AIPing API Key，开始与步帧对话。</p>
 
         <form class="login-form" @submit.prevent="handleSubmit">
           <div class="field">
@@ -105,7 +105,7 @@
     </main>
 
     <footer class="login-footer">
-      <span>OneStep · Local AI Creative Agent</span>
+      <span>步帧 Stepframe · Local AI Creative Agent</span>
       <span class="footer-dot" aria-hidden="true">·</span>
       <span>DeepSeek-V4.1-Flash-1017</span>
     </footer>

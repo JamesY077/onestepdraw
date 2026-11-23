@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "OneStep — 本地化 AI 创作助手，基于 AIPing 与 DeepSeek V4.1 Flash",
+  "description": "步帧 Stepframe — 本地化 AI 创作助手，基于 AIPing 与 DeepSeek V4.1 Flash",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",

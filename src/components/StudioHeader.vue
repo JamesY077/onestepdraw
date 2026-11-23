@@ -1,9 +1,9 @@
 <template>
   <header class="studio-header" :style="{ '--studio-accent': accent }">
     <div class="studio-header-main">
-      <button class="studio-brand" type="button" aria-label="返回 OneStep 对话" @click="router.push('/chat')">
+      <button class="studio-brand" type="button" aria-label="返回步帧对话" @click="router.push('/chat')">
         <BrandMark :size="26" />
-        <span class="studio-brand-name">OneStep</span>
+        <span class="studio-brand-name">步帧</span>
       </button>
 
       <div class="studio-heading">

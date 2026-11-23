@@ -3,7 +3,7 @@
     <header class="sidebar-head">
       <div class="sidebar-brand">
         <BrandMark :size="26" />
-        <span class="brand-text">OneStep</span>
+        <span class="brand-text">步帧</span>
       </div>
       <button type="button" class="icon-button close-button" aria-label="收起侧栏" @click="$emit('close')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">

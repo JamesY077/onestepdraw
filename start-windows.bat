@@ -2,7 +2,7 @@
 setlocal
 cd /d "%~dp0"
 
-echo Starting OneStep...
+echo Starting Stepframe...
 where node >nul 2>nul
 if errorlevel 1 (
   echo Node.js v20.19+ or v22.12+ is required.
@@ -21,7 +21,7 @@ if not exist "node_modules" (
 )
 
 if not exist "dist\index.html" (
-  echo Building OneStep...
+  echo Building Stepframe...
   call npm run build
   if errorlevel 1 (
     pause
