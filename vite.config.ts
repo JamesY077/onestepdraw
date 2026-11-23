@@ -46,7 +46,7 @@ export default defineConfig({
     strictPort: true,
   },
   build: {
-    // /model3d 与 /motion 是懒加载路由，three.js + Spark 高斯渲染器让该 chunk 到 ~3.3MB
+    // /model3d 是懒加载路由，three.js + Spark 高斯渲染器让该 chunk 到 ~3.3MB
     //（gzip 后 ~1.1MB），只影响进入 3D 工作台的用户，不影响首屏；阈值按此上调。
     chunkSizeWarningLimit: 3600,
   },

@@ -122,6 +122,10 @@ export async function streamAgentChat(options: AgentStreamOptions): Promise<void
   // 部分网关即使请求 stream=true 也会直接返回 JSON，这里做兼容。
   if (contentType.includes('application/json') && response.body) {
     const payload = await response.json().catch(() => null)
+    if (payload?.code && payload?.msg && !payload?.choices) {
+      const status = Number(payload.code)
+      throw toAgentError(Number.isFinite(status) ? status : 500, String(payload.msg))
+    }
     const message = payload?.choices?.[0]?.message
     if (message?.reasoning_content) options.onReasoning?.(String(message.reasoning_content))
     const content = message?.content
