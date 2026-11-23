@@ -35,6 +35,20 @@ renderer.link = ({ href, title, text }) => {
   return `<a href="${safeHref}"${safeTitle} target="_blank" rel="noopener noreferrer">${text}</a>`
 }
 
+/** 把「← 推荐」包成不会断行的小徽标，避免移动端折成两行。代码块内保持原样。 */
+function decorateRecommendation(html: string): string {
+  return html
+    .split(/(<pre[\s\S]*?<\/pre>)/g)
+    .map((part, index) => {
+      if (index % 2 === 1) return part
+      return part.replace(
+        /(?:&larr;|←)\s*推荐/g,
+        '<span class="pick-recommend">推荐</span>',
+      )
+    })
+    .join('')
+}
+
 const html = computed(() => {
   if (!props.content) return ''
   try {
@@ -43,7 +57,7 @@ const html = computed(() => {
       gfm: true,
       breaks: true,
     }) as string
-    return DOMPurify.sanitize(raw, {
+    return DOMPurify.sanitize(decorateRecommendation(raw), {
       ADD_ATTR: ['target', 'rel'],
       FORBID_TAGS: ['style', 'iframe', 'form', 'input'],
       FORBID_ATTR: ['onerror', 'onload', 'onclick'],
@@ -150,6 +164,22 @@ async function handleClick(event: MouseEvent) {
 
 .markdown-body :deep(li::marker) {
   color: #8b8b85;
+}
+
+/* 「← 推荐」渲染成陶土色小徽标 */
+.markdown-body :deep(.pick-recommend) {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0.5px 7px;
+  border-radius: 999px;
+  background: #fbeee8;
+  color: #a8422b;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  vertical-align: 1px;
 }
 
 .markdown-body :deep(blockquote) {
