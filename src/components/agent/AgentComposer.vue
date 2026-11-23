@@ -293,13 +293,15 @@ const text = defineModel<string>({ default: '' })
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const focused = ref(false)
 
-const placeholderText = computed(
-  () =>
-    props.placeholder ||
-    (chatMode.isCreate
-      ? '说一句视频需求，OneStep 会问清关键细节…'
-      : `给 ${localAgentStore.selectedLabel} 发消息…`),
-)
+const placeholderText = computed(() => {
+  if (props.placeholder) return props.placeholder
+  if (chatMode.isCreate) {
+    return chatMode.isAuto
+      ? '直接说需求，模型会自己定下镜头与节奏…'
+      : '先说说你想拍什么，OneStep 会问清镜头与节奏…'
+  }
+  return `给 ${localAgentStore.selectedLabel} 发消息…`
+})
 
 const modeTip = computed(() => {
   if (chatMode.isCreate && chatMode.isAuto) return '模型自行决策，直接产出并进入时间轴'
@@ -939,98 +941,99 @@ defineExpose({ focus })
   }
 }
 
-/* ── 创作对话：输入框换成温暖的纸张色，和普通对话一眼区分 ── */
+/* ── 创作对话：暖白纸面 + 陶土色发送键，和普通对话一眼区分 ── */
 .composer.is-create {
-  border-color: #e8ddc9;
-  background: #fffdf8;
+  border-color: #e6dfd2;
+  background: #fffefb;
   box-shadow:
-    0 1px 2px rgba(120, 92, 44, 0.04),
-    0 10px 32px rgba(120, 92, 44, 0.07);
+    0 1px 2px rgba(120, 92, 44, 0.03),
+    0 14px 40px -18px rgba(120, 92, 44, 0.16);
 }
 
 .composer.is-create.is-focused {
-  border-color: #d3bd93;
+  border-color: #d9bfae;
   box-shadow:
-    0 1px 2px rgba(120, 92, 44, 0.05),
-    0 12px 36px rgba(120, 92, 44, 0.1);
+    0 1px 2px rgba(120, 92, 44, 0.04),
+    0 18px 46px -20px rgba(120, 92, 44, 0.2);
 }
 
 .composer.is-create .conversation-switch {
-  border-color: #ece0c9;
-  background: #f9f2e3;
+  border-color: #ece4d5;
+  background: #f8f4ea;
 }
 
 .composer.is-create .conversation-switch button {
-  color: #a08f6d;
+  color: #a1988a;
 }
 
 .composer.is-create .conversation-switch button:hover {
-  color: #5f4d2a;
+  color: #574c3b;
 }
 
 .composer.is-create .conversation-switch button.active {
-  background: #2b2318;
-  color: #fdf8ee;
+  background: #1c1915;
+  color: #fdf9f1;
   box-shadow: none;
 }
 
 .composer.is-create .mode-tip {
-  color: #b09d78;
+  color: #ada18c;
 }
 
 .composer.is-create .composer-input {
-  color: #241d13;
+  color: #221d16;
 }
 
 .composer.is-create .composer-input::placeholder {
-  color: #b3a284;
+  color: #b3a897;
 }
 
 .composer.is-create .engine-button {
-  color: #8d7c5d;
+  color: #8d8372;
 }
 
 .composer.is-create .engine-button:hover {
-  border-color: #efe4d1;
-  background: #fbf5e9;
-  color: #5f4d2b;
+  border-color: #efe7d8;
+  background: #faf5ea;
+  color: #564b39;
 }
 
 .composer.is-create .model-button {
-  color: #9c8a68;
+  color: #9b907c;
 }
 
 .composer.is-create .automation-switch {
-  border-color: #ece0c9;
-  background: #f9f2e3;
+  border-color: #ece4d5;
+  background: #f8f4ea;
 }
 
 .composer.is-create .automation-switch button {
-  color: #a5946f;
+  color: #a1988a;
 }
 
 .composer.is-create .automation-switch button.active {
-  background: #fffdf8;
-  color: #6d5829;
-  box-shadow: 0 1px 2px rgba(120, 92, 44, 0.12);
+  background: #fffefb;
+  color: #4d4435;
+  box-shadow: 0 1px 2px rgba(120, 92, 44, 0.1);
 }
 
 .composer.is-create .automation-switch button.auto-switch.active {
-  background: #9a6b25;
-  color: #fffaf0;
+  background: #1c1915;
+  color: #fdf9f1;
   box-shadow: none;
 }
 
 .composer.is-create .send-button {
-  background: #2b2318;
+  background: #b4472f;
+  color: #fff8f2;
 }
 
 .composer.is-create .send-button:hover:not(:disabled) {
-  background: #40331f;
+  background: #9c3a24;
 }
 
 .composer.is-create .send-button:disabled {
-  background: #f0e8d8;
-  color: #c3b393;
+  background: #f1e9db;
+  color: #b8a68d;
 }
 </style>

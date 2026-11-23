@@ -55,14 +55,16 @@
       </header>
 
       <div v-if="chatMode.isCreate" class="create-strip">
-        <span class="create-dot" aria-hidden="true" />
+        <span class="create-label">
+          <i class="create-dot" aria-hidden="true" />
+          创作模式
+        </span>
         <span class="create-steps">
-          <strong>创作对话</strong>
-          <span class="create-step">说需求</span>
-          <span class="create-arrow" aria-hidden="true">→</span>
-          <span class="create-step">答几轮问题</span>
-          <span class="create-arrow" aria-hidden="true">→</span>
-          <span class="create-step">进剪辑台</span>
+          <span class="create-step"><b>01</b>说需求</span>
+          <span class="create-sep" aria-hidden="true">/</span>
+          <span class="create-step"><b>02</b>答几轮问题</span>
+          <span class="create-sep" aria-hidden="true">/</span>
+          <span class="create-step"><b>03</b>进剪辑台</span>
         </span>
         <button
           v-if="activeProjectId"
@@ -90,25 +92,27 @@
           <div class="welcome-mark">
             <BrandMark :size="46" />
           </div>
+          <p v-if="chatMode.isCreate" class="welcome-eyebrow">Creative Mode</p>
           <h2>{{ welcomeTitle }}</h2>
           <p class="welcome-copy">
             {{
               chatMode.isCreate
-                ? '说一句视频需求，OneStep 会先问清关键细节，然后带你进入剪辑台继续用对话和时间轴完成这支片。'
+                ? '先说说你想拍什么。OneStep 会问清镜头、光线与节奏，再带你进剪辑台，把它慢慢剪成一支片。'
                 : 'OneStep 是你的本地 AI 创作助手。写东西、想点子、做分镜、推敲提示词，都可以从这里开始。'
             }}
           </p>
 
           <div class="suggestion-grid">
             <button
-              v-for="suggestion in suggestions"
+              v-for="(suggestion, index) in suggestions"
               :key="suggestion.title"
               type="button"
               class="suggestion-card"
               @click="applySuggestion(suggestion.prompt)"
             >
               <span class="suggestion-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <span v-if="chatMode.isCreate" class="suggestion-index">{{ String(index + 1).padStart(2, '0') }}</span>
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                   <path :d="suggestion.icon" />
                 </svg>
               </span>
@@ -914,183 +918,282 @@ onBeforeUnmount(() => {
   }
 }
 
-/* ── 创作对话：略暖的纸张底色，和普通对话的白区隔开 ── */
+/* ── 创作对话：纸白 + 暖光，衬线标题与编号，像一张拍摄单 ── */
 .chat-page.is-create {
-  background: #fbf8f1;
+  --create-ink: #1a1714;
+  --create-accent: #b4472f;
+  --create-line: #e9e3d7;
+  --create-serif: 'Songti SC', 'STSong', 'Noto Serif SC', Georgia, 'Times New Roman', serif;
+  background: #fbfaf6;
 }
 
+/* 两团很淡的光：右上暖橘、左下灰绿，避免整页死板的米色 */
 .is-create .chat-main {
-  background: transparent;
+  background:
+    radial-gradient(54% 46% at 84% 0%, rgba(191, 112, 66, 0.17) 0%, rgba(191, 112, 66, 0) 66%),
+    radial-gradient(46% 40% at 6% 100%, rgba(90, 100, 84, 0.1) 0%, rgba(90, 100, 84, 0) 70%),
+    #fbfaf6;
 }
 
 .is-create .chat-header {
-  border-bottom-color: #ece3d2;
-  background: rgba(253, 250, 243, 0.92);
+  border-bottom-color: rgba(211, 198, 177, 0.5);
+  background: rgba(251, 250, 246, 0.72);
 }
 
 .is-create .heading-sep {
-  color: #dccfb6;
+  color: #d8d0c2;
 }
 
 .is-create .heading-sub {
-  color: #a2916f;
+  color: #9a9284;
 }
 
 .is-create .mode-badge {
-  border-color: #e6dac2;
-  background: #fffdf7;
-  color: #8a7550;
+  border-color: #e5ded0;
+  background: rgba(255, 255, 255, 0.7);
+  color: #8b8477;
 }
 
 .is-create .mode-badge.is-create {
-  border-color: #2b2318;
-  background: #2b2318;
-  color: #fdf8ee;
+  border-color: rgba(180, 71, 47, 0.18);
+  background: #fdf1ec;
+  color: #9c3a24;
 }
 
 .is-create .project-shortcut {
-  border-color: #d8c8a8;
-  color: #7a6338;
+  border-color: #ded6c7;
+  background: rgba(255, 255, 255, 0.7);
+  color: #6c6355;
+}
+
+.is-create .project-shortcut:hover {
+  border-color: #cbbfa9;
+  color: #3f382d;
+}
+
+.is-create .new-chat-icon {
+  color: #8b8375;
 }
 
 .is-create .new-chat-icon:hover {
-  border-color: #ece3d2;
-  background: #fdfaf3;
+  border-color: #e5ded0;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .is-create .local-badge {
-  border-color: #e8dfcd;
-  background: #fdfaf3;
-  color: #9b8b6b;
+  border-color: #e7e0d2;
+  background: rgba(255, 255, 255, 0.65);
+  color: #9a9182;
 }
 
 .create-strip {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 16px;
   flex: none;
-  padding: 7px 20px;
-  border-bottom: 1px solid #efe6d4;
-  background: linear-gradient(90deg, #f8f0df 0%, #fdfaf3 58%, #fdfaf3 100%);
-  color: #7d6a45;
-  font-size: 11px;
+  padding: 8px 20px;
+  border-bottom: 1px solid rgba(211, 198, 177, 0.45);
+  background: rgba(255, 255, 255, 0.32);
+  color: #8b8374;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+}
+
+.create-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #4a4338;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
 }
 
 .create-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   flex: none;
   border-radius: 50%;
-  background: #c08a3e;
-  box-shadow: 0 0 0 3px rgba(192, 138, 62, 0.16);
+  background: var(--create-accent);
 }
 
 .create-steps {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 10px;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
 }
 
-.create-steps strong {
-  color: #5c4a26;
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.01em;
-}
-
 .create-step {
-  color: #99875f;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  color: #8b8374;
 }
 
-.create-arrow {
-  color: #cbb894;
+.create-step b {
+  color: var(--create-accent);
+  font-family: var(--create-serif);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.create-sep {
+  color: #d5cdbd;
 }
 
 .create-jump {
   margin-left: auto;
-  padding: 3px 9px;
-  border: 1px solid #ddcba7;
-  border-radius: 999px;
-  background: #fffdf7;
-  color: #6f5a2d;
+  padding: 0 0 2px;
+  border: 0;
+  border-bottom: 1px solid rgba(180, 71, 47, 0.32);
+  background: transparent;
+  color: #9c3a24;
   font-family: inherit;
   font-size: 10.5px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease;
+  transition: border-color 160ms ease, color 160ms ease;
 }
 
 .create-jump:hover {
-  border-color: #cbb387;
-  background: #fdf5e4;
+  border-color: #9c3a24;
+  color: #7f2c19;
 }
 
-.is-create .welcome h2 {
-  color: #211c14;
+.welcome-eyebrow {
+  margin: 0 0 9px;
+  color: var(--create-accent);
+  font-family: var(--font-family-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
 }
 
 .is-create .welcome-mark {
-  filter: drop-shadow(0 10px 24px rgba(150, 112, 48, 0.16));
+  margin-bottom: 18px;
+  filter: drop-shadow(0 12px 26px rgba(120, 74, 36, 0.18));
+}
+
+.is-create .welcome h2 {
+  color: var(--create-ink);
+  font-family: var(--create-serif);
+  font-size: clamp(29px, 3.6vw, 39px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.28;
 }
 
 .is-create .welcome-copy {
-  color: #8d7f63;
+  max-width: 470px;
+  color: #7d7668;
+}
+
+.is-create .suggestion-grid {
+  gap: 12px;
 }
 
 .is-create .suggestion-card {
-  border-color: #ece3d2;
-  background: #fffdf8;
+  padding: 16px 15px;
+  border-color: var(--create-line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(6px);
+  transition:
+    border-color 200ms ease,
+    background 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .is-create .suggestion-card:hover {
-  border-color: #dccdae;
+  border-color: #cdbfa9;
   background: #ffffff;
-  box-shadow: 0 8px 24px rgba(140, 106, 46, 0.09);
+  box-shadow: 0 20px 44px -26px rgba(74, 55, 30, 0.55);
+  transform: translateY(-2px);
 }
 
 .is-create .suggestion-icon {
-  border-color: #eee3cd;
-  background: #f7f0e1;
-  color: #96763c;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 28px;
+  height: 28px;
+  padding-top: 1px;
+  border: 0;
+  background: transparent;
+  color: var(--create-accent);
+}
+
+.suggestion-index {
+  color: var(--create-accent);
+  font-family: var(--create-serif);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.is-create .suggestion-title {
+  color: #241f19;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+.is-create .suggestion-desc {
+  color: #8f887b;
+  font-size: 11.5px;
 }
 
 .is-create .suggestion-arrow {
-  color: #ccb995;
+  color: #c9bda9;
+  font-size: 11px;
 }
 
 .is-create .suggestion-card:hover .suggestion-arrow {
-  color: #7d6330;
+  color: var(--create-accent);
+  transform: translate(1px, -1px);
 }
 
 .is-create .note-dot {
-  background: #c08a3e;
+  background: var(--create-accent);
 }
 
 .is-create .welcome-note {
-  color: #a4957a;
+  color: #99917f;
+  letter-spacing: 0.01em;
+}
+
+.is-create :deep(.user-bubble) {
+  background: #f5ece2;
 }
 
 .is-create .composer-area {
-  background: linear-gradient(180deg, rgba(251, 248, 241, 0) 0%, #fbf8f1 24%);
+  background: linear-gradient(180deg, rgba(251, 250, 246, 0) 0%, rgba(251, 250, 246, 0.9) 34%, #fbfaf6 62%);
 }
 
 .is-create .chat-scroll::-webkit-scrollbar-thumb {
-  background: #e3d8c3;
+  background: #ded5c5;
   background-clip: padding-box;
 }
 
 @media (max-width: 640px) {
   .create-strip {
-    padding: 6px 14px;
+    padding: 7px 14px;
   }
 
-  .create-step,
-  .create-arrow {
+  .create-steps,
+  .create-sep {
     display: none;
+  }
+
+  .is-create .welcome h2 {
+    font-size: 27px;
   }
 }
 </style>
