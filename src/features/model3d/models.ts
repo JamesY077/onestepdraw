@@ -54,30 +54,6 @@ export const MODEL3D_OPTIONS: Model3DOption[] = [
     tags: ['文生 3D', '单图 3D', '多视角', '高清纹理'],
     textureOptions: true,
   },
-  {
-    id: 'V2Fun 视频动捕 Pro',
-    displayName: 'V2Fun 视频动捕 Pro',
-    shortName: '动捕 Pro',
-    kind: 'motion',
-    badge: 'MOTION',
-    description: '多人物姿态追踪，输出可直接驱动三维角色的动作数据。',
-    price: '¥1.00 / 3 秒',
-    tags: ['多人追踪', 'BVH 输出', '高精度'],
-    textureOptions: false,
-    motionUnitSeconds: 3,
-  },
-  {
-    id: 'V2Fun 视频动捕 Turbo',
-    displayName: 'V2Fun 视频动捕 Turbo',
-    shortName: '动捕 Turbo',
-    kind: 'motion',
-    badge: 'TURBO',
-    description: '轻量快速的动作捕捉，适合短视频、虚拟人与行为分析。',
-    price: '¥0.10 / 3 秒',
-    tags: ['快速', 'BVH 输出', '低成本'],
-    textureOptions: false,
-    motionUnitSeconds: 3,
-  },
 ]
 
 export const DEFAULT_MODEL3D_ID = MODEL3D_OPTIONS[0].id

@@ -1,3 +1,6 @@
+> **说明**：本文件来自旧项目 `aiping-imagevideo`，仅作为旧版图片 / 视频工作台的历史部署参考。
+> OneStep 的本地安装与启动方式请看 [README.md](./README.md)。
+
 # Ubuntu 服务器部署说明
 
 本项目是 **Vite 前端静态站点 + Nginx 反向代理 API** 的架构。日常发版只涉及前端：构建 `dist/` 后推送到服务器即可。

@@ -4,10 +4,10 @@ import { clearApiSessionReady, getMillisecondsUntilNextChinaWeekStart, hasActive
 /** 登录态按周轮换：每周一 00:00（中国时区）清一次会话并要求重新登录。 */
 let weekRefreshTimer: number | null = null
 
-function redirectToLandingIfNeeded() {
-  const publicPaths = new Set(['/', '/home', '/setup', '/studio', '/image', '/video'])
+function redirectToLoginIfNeeded() {
+  const publicPaths = new Set(['/', '/login', '/setup'])
   if (!publicPaths.has(router.currentRoute.value.path)) {
-    router.replace('/')
+    router.replace('/login')
   }
 }
 
@@ -24,7 +24,7 @@ function scheduleNextWeekRefresh() {
   const delay = getMillisecondsUntilNextChinaWeekStart(new Date())
   weekRefreshTimer = window.setTimeout(() => {
     clearApiSessionReady()
-    window.location.replace('/')
+    window.location.replace('/login')
   }, delay)
 }
 
@@ -33,7 +33,7 @@ export function enforceApiSessionGuard() {
 
   if (wasExpired || !hasActiveApiSession()) {
     clearApiSessionReady()
-    redirectToLandingIfNeeded()
+    redirectToLoginIfNeeded()
   }
 
   if (hasActiveApiSession()) {

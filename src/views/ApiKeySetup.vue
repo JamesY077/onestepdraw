@@ -1,141 +1,170 @@
 <template>
-  <div class="setup-page">
-    <header class="setup-nav">
-      <button class="brand" type="button" @click="router.push('/')">
-        <img class="brand-mark" :src="assetUrl('/logo1.webp')" alt="" />
-        <span>ArtRealm</span>
-      </button>
-
-      <div class="nav-spacer" aria-hidden="true" />
-
-      <button class="nav-cta" type="button" @click="router.push('/')">Back home</button>
+  <div class="login-page">
+    <header class="login-header">
+      <div class="login-brand">
+        <BrandMark :size="28" />
+        <span>OneStep</span>
+      </div>
+      <span class="local-pill">本地运行</span>
     </header>
 
-    <main class="setup-shell">
-      <section class="setup-copy">
-        <p class="kicker">AI VISUAL CREATION SYSTEM</p>
-        <h1>Connect your creative engine.</h1>
-        <p class="copy">
-          填写 API Base URL 与 API Key，连接后即可进入 ArtRealm，开始生成图片与视频。
-        </p>
+    <main class="login-main">
+      <section class="login-card" aria-labelledby="login-title">
+        <div class="card-mark">
+          <BrandMark :size="42" />
+        </div>
 
-        <section class="setup-form-card" aria-label="API 登录表单">
-          <div class="input-group">
+        <h1 id="login-title">登录 OneStep</h1>
+        <p class="card-copy">连接 AIPing API Key，开始与 OneStep 对话。</p>
+
+        <form class="login-form" @submit.prevent="handleSubmit">
+          <div class="field">
+            <label for="api-key">API Key</label>
+            <div class="input-shell" :class="{ 'has-error': !!error && !apiBaseUrlInvalid }">
+              <input
+                id="api-key"
+                ref="apiKeyInputRef"
+                v-model="apiKey"
+                :type="showKey ? 'text' : 'password'"
+                class="text-input"
+                placeholder="sk-..."
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <button
+                type="button"
+                class="visibility-button"
+                :aria-label="showKey ? '隐藏 API Key' : '显示 API Key'"
+                @click="showKey = !showKey"
+              >
+                <svg v-if="!showKey" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z" />
+                  <circle cx="12" cy="12" r="2.7" />
+                </svg>
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 4l16 16M9.9 6.2A9.5 9.5 0 0 1 12 5.8c6 0 9.5 6.2 9.5 6.2a16 16 0 0 1-3.2 3.9M6.4 7.6A16 16 0 0 0 2.5 12S6 18.2 12 18.2c1 0 1.9-.2 2.8-.5" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="button" class="advanced-toggle" @click="showAdvanced = !showAdvanced">
+            <span>高级设置</span>
+            <svg
+              class="advanced-chevron"
+              :class="{ open: showAdvanced }"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          <div v-if="showAdvanced" class="advanced-panel">
             <label for="api-base-url">服务地址</label>
             <input
               id="api-base-url"
               v-model="apiBaseUrl"
-              class="text-input"
-              placeholder="https://api.openai.com/v1"
+              class="plain-input"
+              placeholder="https://aiping.cn/api/v1"
+              spellcheck="false"
             />
+            <p class="field-hint">默认使用 AIPing 官方接口，一般无需修改。</p>
           </div>
 
-          <div class="input-group compact">
-            <ApiKeyInput v-model="apiKey" />
-          </div>
+          <div v-if="error" class="error-banner" role="alert">{{ error }}</div>
 
-          <a
-            class="apikey-helper"
-            href="https://aiping.cn/user/apikey"
-            target="_blank"
-            rel="noopener"
-          >
-            快速获取AI Ping-APIKEY
-          </a>
-
-          <label class="consent-row">
-            <input type="checkbox" checked />
-            <span>我确认访问地址为 OpenAI baseURL 格式，并理解密钥仅保存在本地浏览器。</span>
-          </label>
-
-          <button class="submit-btn" :disabled="!apiBaseUrl.trim() || !apiKey.trim() || isLoading" @click="handleSubmit">
-            {{ isLoading ? '正在验证连通性...' : 'Connect and start creating' }}
+          <button type="submit" class="submit-button" :disabled="!apiKey.trim() || isLoading">
+            <span v-if="!isLoading">连接并开始</span>
+            <span v-else>正在验证连接…</span>
+            <svg v-if="!isLoading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+            <span v-else class="loading-dot" aria-hidden="true" />
           </button>
+        </form>
 
-          <div v-if="error" class="error-msg">{{ error }}</div>
-        </section>
+        <a class="key-helper" href="https://aiping.cn/user/apikey" target="_blank" rel="noopener noreferrer">
+          获取 AIPing API Key
+          <span aria-hidden="true">↗</span>
+        </a>
+
+        <p class="privacy-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
+            <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
+          </svg>
+          API Key 只保存在当前浏览器会话中，不会上传到第三方服务器。
+        </p>
       </section>
-
-      <section class="visual-stage" aria-hidden="true" />
     </main>
+
+    <footer class="login-footer">
+      <span>OneStep · Local AI Creative Agent</span>
+      <span class="footer-dot" aria-hidden="true">·</span>
+      <span>DeepSeek-V4.1-Flash-1017</span>
+    </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import ApiKeyInput from '@/components/ApiKeyInput.vue'
+import BrandMark from '@/components/agent/BrandMark.vue'
 import { useApiStore } from '@/stores/apiStore'
 import { AIPING_PUBLIC_API_BASE_URL, isOpenAiBaseUrlFormat } from '@/api/config'
-import { assetUrl } from '@/utils/assets'
 
 const router = useRouter()
 const route = useRoute()
 const apiStore = useApiStore()
+
 const apiKey = ref('')
 const apiBaseUrl = ref(AIPING_PUBLIC_API_BASE_URL)
+const showKey = ref(false)
+const showAdvanced = ref(false)
 const isLoading = ref(false)
 const error = ref('')
+const apiBaseUrlInvalid = ref(false)
+const apiKeyInputRef = ref<HTMLInputElement | null>(null)
 
-const LANDING_PENDING_PROMPT_KEY = 'artrealm_landing_pending_prompt'
+onMounted(() => {
+  if (route.query.expired) {
+    error.value = '登录已过期，请重新连接 API Key。'
+  }
+  apiKeyInputRef.value?.focus()
+})
 
-/**
- * 登录成功后要回到哪个创作页。
- * 支持两种写法：完整路径（/voice）与首页分区简写（skill / studio / voice）。
- */
 function resolveRedirectTarget(): string {
   const raw = typeof route.query.redirect === 'string' ? route.query.redirect.trim() : ''
-  if (!raw) return '/image'
-  if (raw.startsWith('/')) return raw
-  if (raw === 'skill') return '/skill'
-  if (raw === 'voice') return '/voice'
-  if (raw === 'model3d') return '/model3d'
-  // 兼容拆分前的旧分区简写。
-  if (raw === 'studio') return '/image'
-  return '/image'
-}
-
-function consumeLandingPendingPrompt(): { prompt: string; hasReference: boolean } | null {
-  const raw = sessionStorage.getItem(LANDING_PENDING_PROMPT_KEY)
-  if (!raw) return null
-  sessionStorage.removeItem(LANDING_PENDING_PROMPT_KEY)
-  try {
-    const parsed = JSON.parse(raw) as { prompt?: string; hasReference?: boolean }
-    const prompt = typeof parsed.prompt === 'string' ? parsed.prompt.trim() : ''
-    if (!prompt) return null
-    return { prompt, hasReference: !!parsed.hasReference }
-  } catch {
-    return null
-  }
+  if (!raw || !raw.startsWith('/')) return '/chat'
+  if (raw.startsWith('/login') || raw.startsWith('/setup')) return '/chat'
+  return raw
 }
 
 async function handleSubmit() {
-  if (!apiBaseUrl.value.trim() || !apiKey.value.trim()) return
+  if (!apiKey.value.trim() || isLoading.value) return
+
+  error.value = ''
+  apiBaseUrlInvalid.value = false
+
   if (!isOpenAiBaseUrlFormat(apiBaseUrl.value)) {
-    error.value = '服务地址格式不正确，请填写 OpenAI baseURL 格式，例如：https://api.openai.com/v1。'
+    apiBaseUrlInvalid.value = true
+    showAdvanced.value = true
+    error.value = '服务地址格式不正确，请填写以 /v1 结尾的接口地址。'
     return
   }
 
   isLoading.value = true
-  error.value = ''
   const ok = await apiStore.testAndSave(apiKey.value.trim(), apiBaseUrl.value.trim())
   isLoading.value = false
+
   if (ok) {
-    const pending = consumeLandingPendingPrompt()
-    if (pending) {
-      router.push({
-        path: '/image',
-        query: {
-          mode: 'simple',
-          type: 'image',
-          prompt: pending.prompt,
-          ...(pending.hasReference ? { reference: 'landing' } : {}),
-        },
-      })
-    } else {
-      // 首页分区入口会带上目标分区，登录后直接回到对应工作台。
-      router.push(resolveRedirectTarget())
-    }
+    router.replace(resolveRedirectTarget())
   } else {
     error.value = apiStore.connectionError || '连接失败，请检查 API Key 是否正确。'
   }
@@ -143,384 +172,375 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-.setup-page {
+.login-page {
   position: relative;
+  display: flex;
+  min-height: 100vh;
   min-height: 100dvh;
+  flex-direction: column;
   overflow: hidden;
-  padding: 24px;
-  color: rgba(255, 255, 255, 0.94);
   background:
-    url('https://artrealm-image-1314455608.cos.ap-beijing.myqcloud.com/site-assets/login-collage-bg.webp') center / cover no-repeat, #05060a;
-  isolation: isolate;
+    radial-gradient(900px 520px at 50% -12%, rgba(0, 0, 0, 0.045), transparent 62%),
+    linear-gradient(180deg, #fdfdfb 0%, #ffffff 46%);
+  color: #1d1d1b;
 }
 
-.setup-page::before {
+.login-page::before {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -2;
   pointer-events: none;
-  background:
-    radial-gradient(ellipse at 76% 54%, rgba(245, 129, 255, 0.16), transparent 0 30%),
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
-  background-size: auto, 92px 92px, 92px 92px;
-  mask-image: radial-gradient(circle at 58% 48%, #000 0 58%, transparent 92%);
+  background-image:
+    linear-gradient(rgba(17, 17, 16, 0.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 17, 16, 0.026) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at 50% 26%, #000 0 26%, transparent 78%);
 }
 
-.setup-page::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.58));
-}
-
-.setup-nav {
-  position: relative;
-  z-index: 3;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 20px;
-  width: min(100%, 1280px);
-  margin: 0 auto;
-  padding: 4px 0 26px;
-}
-
-.brand,
-.nav-cta,
-.submit-btn {
-  border: 0;
-  font: inherit;
-}
-
-.brand {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0;
-  background: transparent;
-  color: #fff;
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.05em;
-}
-
-.brand-mark {
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
-  object-fit: cover;
-}
-
-.nav-spacer {
-  width: 1px;
-  height: 1px;
-}
-
-.nav-cta {
-  justify-self: end;
-  min-height: 36px;
-  padding: 0 18px;
-  border: 1px solid var(--color-pale-glass-border);
-  border-radius: 999px;
-  background: var(--color-pale-glass-bg);
-  color: rgba(255, 255, 255, 0.94);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.nav-cta:hover {
-  background: var(--color-pale-glass-bg-hover);
-}
-
-.setup-shell {
+.login-header {
   position: relative;
   z-index: 2;
-  width: min(100%, 1280px);
-  min-height: calc(100dvh - 144px);
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: minmax(360px, 0.82fr) minmax(0, 1.18fr);
-  gap: clamp(28px, 5vw, 82px);
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 24px clamp(20px, 4vw, 40px);
 }
 
-.setup-copy {
-  align-self: center;
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #161614;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 
-.kicker {
+.local-pill {
+  padding: 4px 10px;
+  border: 1px solid #e7e7e1;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: #8e8e86;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.login-main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px 44px;
+}
+
+.login-card {
+  width: min(100%, 404px);
+  padding: 34px 32px 26px;
+  border: 1px solid #ecece6;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow:
+    0 1px 2px rgba(17, 17, 16, 0.03),
+    0 28px 70px rgba(17, 17, 16, 0.06);
+  backdrop-filter: blur(14px);
+}
+
+.card-mark {
+  display: flex;
+  justify-content: center;
   margin-bottom: 18px;
-  color: rgba(171, 214, 255, 0.68);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  filter: drop-shadow(0 6px 16px rgba(17, 17, 16, 0.1));
 }
 
-.setup-copy h1 {
-  max-width: 11ch;
-  color: #fff;
+.login-card h1 {
+  margin: 0;
+  color: #141412;
   font-family: var(--font-family-display);
-  font-size: clamp(42px, 5.4vw, 72px);
-  font-weight: 900;
-  line-height: 0.92;
-  letter-spacing: -0.08em;
+  font-size: 25px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  text-align: center;
 }
 
-.copy {
-  max-width: 520px;
-  margin-top: 18px;
-  color: rgba(235, 245, 255, 0.74);
-  font-size: 15px;
-  line-height: 1.7;
+.card-copy {
+  margin: 8px auto 26px;
+  max-width: 320px;
+  color: #8a8a82;
+  font-size: 12.8px;
+  line-height: 1.65;
+  text-align: center;
 }
 
-.setup-form-card {
-  width: min(100%, 460px);
-  margin-top: 24px;
+.login-form {
+  display: flex;
+  flex-direction: column;
 }
 
-.input-group {
-  margin-top: 14px;
-}
-
-.input-group.compact {
-  margin-top: 12px;
-}
-
-label {
+.field label,
+.advanced-panel label {
   display: block;
-  margin-bottom: 8px;
-  color: rgba(255, 255, 255, 0.70);
+  margin-bottom: 7px;
+  color: #55554e;
   font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.input-shell {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e3e3dc;
+  border-radius: 11px;
+  background: #ffffff;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.input-shell:focus-within {
+  border-color: #b9b9b1;
+  box-shadow: 0 0 0 3px rgba(17, 17, 16, 0.05);
+}
+
+.input-shell.has-error {
+  border-color: #e3bcbc;
 }
 
 .text-input {
   width: 100%;
   min-width: 0;
-  min-height: 46px;
-  padding: 0 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.92);
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
   outline: none;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px);
+  background: transparent;
+  color: #1d1d1b;
+  font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 13px;
+  letter-spacing: 0.01em;
 }
 
 .text-input::placeholder {
-  color: rgba(255, 255, 255, 0.38);
+  color: #b3b3ab;
+  font-family: inherit;
 }
 
-.text-input:focus {
-  border-color: rgba(171, 214, 255, 0.34);
-  box-shadow: 0 0 0 4px rgba(98, 139, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.10);
-}
-
-.consent-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-top: 14px;
-  color: rgba(255, 255, 255, 0.64);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0;
-  line-height: 1.45;
-  text-transform: none;
-}
-
-.consent-row input {
-  width: 16px;
-  height: 16px;
-  margin-top: 1px;
-  accent-color: #9c7dff;
-}
-
-.apikey-helper {
+.visibility-button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-right: 4px;
+  flex: none;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #a0a098;
+  cursor: pointer;
+}
+
+.visibility-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.visibility-button:hover {
+  background: #f5f5f1;
+  color: #5c5c54;
+}
+
+.advanced-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-top: 12px;
-  color: rgba(171, 214, 255, 0.88);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  transition: color var(--transition-base), transform var(--transition-base);
+  padding: 4px 1px;
+  border: 0;
+  background: transparent;
+  color: #91918a;
+  font-size: 11.5px;
+  cursor: pointer;
 }
 
-.apikey-helper::after {
-  content: '↗';
-  font-size: 12px;
-  line-height: 1;
+.advanced-toggle:hover {
+  color: #4f4f48;
 }
 
-.apikey-helper:hover {
+.advanced-chevron {
+  width: 13px;
+  height: 13px;
+  color: #a3a39b;
+  transition: transform 160ms ease;
+}
+
+.advanced-chevron.open {
+  transform: rotate(180deg);
+}
+
+.advanced-panel {
+  margin-top: 6px;
+  padding: 12px;
+  border: 1px solid #ecece6;
+  border-radius: 10px;
+  background: #fbfbf8;
+}
+
+.plain-input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 11px;
+  border: 1px solid #e5e5de;
+  border-radius: 8px;
+  outline: none;
+  background: #ffffff;
+  color: #262623;
+  font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.plain-input:focus {
+  border-color: #bdbdb5;
+}
+
+.field-hint {
+  margin-top: 7px;
+  color: #a2a29a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.error-banner {
+  margin-top: 13px;
+  padding: 9px 11px;
+  border: 1px solid #f0dede;
+  border-radius: 8px;
+  background: #fdf6f6;
+  color: #a04444;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.submit-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 18px;
+  border: 0;
+  border-radius: 11px;
+  background: #111111;
   color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, opacity 160ms ease, transform 160ms ease;
+}
+
+.submit-button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: #2a2a27;
   transform: translateY(-1px);
 }
 
-.submit-btn {
-  width: 100%;
-  min-height: 48px;
-  margin-top: 18px;
-  border: 1px solid var(--color-action-border);
-  border-radius: 14px;
-  background: var(--color-action-bg);
-  color: var(--color-action-text);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
-  font-size: 14px;
-  font-weight: 900;
-}
-
-.submit-btn:not(:disabled):hover {
-  background: var(--color-action-bg-hover);
-}
-
-.submit-btn:disabled {
+.submit-button:disabled {
+  background: #e9e9e4;
+  color: #a8a8a0;
   cursor: not-allowed;
-  opacity: 0.48;
 }
 
-.tips {
-  margin-top: 14px;
-  color: rgba(230, 240, 255, 0.56);
-  font-size: 12px;
-  line-height: 1.6;
+.loading-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: blink 900ms ease-in-out infinite;
 }
 
-.error-msg {
-  margin-top: 12px;
-  padding: 12px 14px;
-  border: 1px solid rgba(255, 94, 94, 0.22);
-  border-radius: 14px;
-  background: rgba(255, 94, 94, 0.12);
-  color: rgba(255, 190, 190, 0.96);
-  font-size: 13px;
-}
-
-.visual-stage {
-  position: relative;
-  min-height: 560px;
-}
-
-.metric-row {
-  position: absolute;
-  left: clamp(24px, 4vw, 58px);
-  bottom: 34px;
-  z-index: 2;
+.key-helper {
   display: flex;
-  align-items: flex-end;
-  gap: 18px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 16px;
+  color: #74746c;
+  font-size: 11.5px;
+  font-weight: 500;
+  text-decoration: none;
 }
 
-.metric-row div {
-  min-width: 142px;
-  padding: 16px 18px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(18px);
+.key-helper:hover {
+  color: #141412;
 }
 
-.metric-row strong,
-.metric-row span {
-  display: block;
+.privacy-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0ea;
+  color: #a3a39b;
+  font-size: 10.5px;
+  line-height: 1.55;
 }
 
-.metric-row strong {
-  color: #fff;
-  font-size: 30px;
-  font-weight: 800;
-  letter-spacing: -0.06em;
-}
-
-.metric-row span {
+.privacy-note svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
   margin-top: 2px;
-  color: rgba(255, 255, 255, 0.54);
-  font-size: 12px;
-  line-height: 1.2;
 }
 
-@media (max-width: 1023px) {
-  .setup-page {
-    overflow-y: auto;
-  }
+.login-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 20px 22px;
+  color: #b0b0a8;
+  font-size: 10.5px;
+}
 
-  .setup-nav {
-    grid-template-columns: 1fr auto;
-  }
+.footer-dot {
+  color: #d0d0c9;
+}
 
-  .setup-shell {
-    grid-template-columns: 1fr;
-    min-height: auto;
-    padding-bottom: 160px;
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 0.3;
   }
-
-  .visual-stage {
-    position: absolute;
-    inset: auto 0 0;
-    min-height: 420px;
-    opacity: 0.55;
-    pointer-events: none;
+  50% {
+    opacity: 1;
   }
 }
 
-@media (max-width: 767px) {
-  .setup-page {
-    padding: 16px;
+@media (max-width: 520px) {
+  .login-header {
+    padding: 18px 18px;
   }
 
-  .setup-nav {
-    grid-template-columns: 1fr auto;
-    padding-bottom: 28px;
+  .login-card {
+    padding: 28px 22px 22px;
+    border-radius: 16px;
   }
 
-  .nav-spacer {
-    display: none;
+  .login-main {
+    padding-top: 12px;
   }
 
-  .nav-cta {
-    min-height: 34px;
-    padding: 0 14px;
-  }
-
-  .setup-copy h1 {
-    font-size: clamp(38px, 13vw, 58px);
-  }
-
-  .copy {
-    font-size: 14px;
-  }
-
-  .setup-form-card {
-    width: 100%;
-  }
-
-  .setup-shell {
-    gap: 24px;
-  }
-
-  .metric-row {
-    position: relative;
-    left: auto;
-    bottom: auto;
-    margin-top: -128px;
+  .login-footer {
     flex-wrap: wrap;
-  }
-
-  .metric-row div {
-    flex: 1;
-    min-width: 130px;
   }
 }
 </style>

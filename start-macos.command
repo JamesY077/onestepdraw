@@ -1,5 +1,8 @@
 #!/bin/zsh
 
+# OneStep 本地启动脚本
+# 首次运行会自动准备 Node.js、安装依赖并构建前端，然后打开本地页面。
+
 set -e
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -13,8 +16,8 @@ pause_on_error() {
   local exit_code=$?
   if [ "$exit_code" -ne 0 ]; then
     echo
-    echo "Startup failed with exit code $exit_code."
-    echo "Press Enter to close this window."
+    echo "OneStep 启动失败（退出码 $exit_code）。"
+    echo "按回车关闭窗口。"
     read -r _
   fi
 }
@@ -46,18 +49,14 @@ node_version_ok() {
   return 1
 }
 
-current_node_ok() {
+current_runtime_ok() {
   if ! command -v node >/dev/null 2>&1; then
     return 1
   fi
-
-  local current_version
-  current_version="$(node -v 2>/dev/null || true)"
-  node_version_ok "$current_version"
-}
-
-current_runtime_ok() {
-  current_node_ok && command -v npm >/dev/null 2>&1
+  if ! command -v npm >/dev/null 2>&1; then
+    return 1
+  fi
+  node_version_ok "$(node -v 2>/dev/null || true)"
 }
 
 install_local_node() {
@@ -79,7 +78,7 @@ install_local_node() {
       node_arch="x64"
       ;;
     *)
-      echo "Unsupported macOS architecture: $machine_arch"
+      echo "暂不支持当前 macOS 架构：$machine_arch"
       exit 1
       ;;
   esac
@@ -89,7 +88,7 @@ install_local_node() {
   tarball="$CACHE_DIR/$node_dist.tar.gz"
   checksums="$CACHE_DIR/SHASUMS256-$NODE_VERSION.txt"
 
-  echo "Downloading Node.js v$NODE_VERSION for macOS $node_arch..."
+  echo "正在下载 Node.js v$NODE_VERSION（macOS $node_arch）…"
   mkdir -p "$CACHE_DIR"
   curl --fail --location --output "$tarball" "https://nodejs.org/dist/v$NODE_VERSION/$node_dist.tar.gz"
   curl --fail --location --output "$checksums" "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt"
@@ -98,7 +97,7 @@ install_local_node() {
   actual_hash="$(shasum -a 256 "$tarball" | awk '{ print $1 }')"
 
   if [ -z "$expected_hash" ] || [ "$expected_hash" != "$actual_hash" ]; then
-    echo "Node.js download checksum verification failed."
+    echo "Node.js 下载校验失败。"
     exit 1
   fi
 
@@ -132,25 +131,25 @@ ensure_node() {
     if [ -x "$node_dir/bin/node" ]; then
       export PATH="$node_dir/bin:$PATH"
       if current_runtime_ok; then
-        echo "Using project Node.js $(node -v)."
+        echo "使用项目内置 Node.js $(node -v)。"
         return
       fi
     fi
   fi
 
   if current_runtime_ok; then
-    echo "Using system Node.js $(node -v)."
+    echo "使用系统 Node.js $(node -v)。"
     return
   fi
 
   install_local_node
 
   if ! current_runtime_ok; then
-    echo "Node.js v20.19.0+ or v22.12.0+ with npm is required."
+    echo "需要 Node.js v20.19+ 或 v22.12+（包含 npm）。"
     exit 1
   fi
 
-  echo "Using project Node.js $(node -v)."
+  echo "使用项目内置 Node.js $(node -v)。"
 }
 
 ensure_env_file() {
@@ -162,23 +161,22 @@ ensure_env_file() {
     cp ".env.example" ".env"
   else
     {
-      echo "VITE_APP_NAME=AIDRAW"
+      echo "VITE_APP_NAME=OneStep"
       echo "VITE_APP_VERSION=1.0.0"
       echo "VITE_API_BASE_URL=/api/v1"
       echo "VITE_API_DOCS_URL=https://aiping.cn/docs"
     } > ".env"
   fi
 
-  echo "Created .env."
+  echo "已创建 .env。"
 }
 
 install_dependencies() {
-  if [ -d "node_modules" ]; then
-    echo "Dependencies already installed."
+  if [ -d "node_modules" ] && [ -f "node_modules/.package-lock.json" ]; then
     return
   fi
 
-  echo "Installing dependencies..."
+  echo "正在安装依赖…"
   if [ -f "package-lock.json" ]; then
     npm ci || npm install
   else
@@ -186,23 +184,31 @@ install_dependencies() {
   fi
 }
 
-find_available_port() {
-  local port="${AIDRAW_PORT:-5173}"
+build_if_needed() {
+  if [ ! -f "dist/index.html" ]; then
+    echo "正在构建 OneStep…"
+    npm run build
+    return
+  fi
 
-  while lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; do
-    echo "Port $port is in use, trying $((port + 1))..." >&2
-    port=$((port + 1))
-  done
-
-  printf '%s\n' "$port"
+  local newer
+  newer="$(find src public index.html package.json vite.config.ts -newer dist/index.html -print -quit 2>/dev/null || true)"
+  if [ -n "$newer" ]; then
+    echo "检测到源码更新，正在重新构建…"
+    npm run build
+  fi
 }
 
-echo "Starting AIDRAW..."
+echo "正在启动 OneStep…"
 ensure_node
 ensure_env_file
 install_dependencies
-APP_PORT="$(find_available_port)"
+build_if_needed
 
+APP_PORT="${ONESTEP_PORT:-5500}"
 echo
-echo "Opening http://localhost:$APP_PORT"
-npm run dev -- --host 0.0.0.0 --port "$APP_PORT" --strictPort --open
+echo "本地地址：http://127.0.0.1:$APP_PORT"
+echo "关闭此窗口或按 Ctrl+C 即可停止 OneStep。"
+echo
+
+exec node server/local/server.mjs --port "$APP_PORT"

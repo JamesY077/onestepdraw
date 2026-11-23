@@ -220,7 +220,7 @@ client.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && !(error.config as any)?.skipAuthRedirect) {
-      window.location.href = '/setup'
+      window.location.href = '/login'
     }
     return Promise.reject(error)
   }

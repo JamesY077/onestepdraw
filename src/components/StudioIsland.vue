@@ -3,15 +3,15 @@
     <button
       class="island-item island-home"
       type="button"
-      aria-label="返回首页"
-      @click="go({ path: '/' })"
+      aria-label="对话"
+      @click="go({ path: '/chat' })"
     >
       <span class="island-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-          <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z" stroke-linejoin="round" />
+          <path d="M4.5 5.8h15v10.4h-8.1L7 20.2v-4H4.5z" stroke-linejoin="round" />
         </svg>
       </span>
-      <span class="island-tip" aria-hidden="true">首页</span>
+      <span class="island-tip" aria-hidden="true">对话</span>
     </button>
 
     <span class="island-divider" aria-hidden="true" />
@@ -20,12 +20,11 @@
       v-for="item in items"
       :key="item.path"
       class="island-item"
-      :class="{ active: item.path === activePath, 'is-disabled': item.soon }"
+      :class="{ active: item.path === activePath }"
       :style="{ '--item-accent': item.accent, '--item-accent-soft': item.accentSoft }"
       type="button"
-      :aria-label="item.soon ? `${item.label}（即将上线）` : item.label"
+      :aria-label="item.label"
       :aria-current="item.path === activePath ? 'page' : undefined"
-      :aria-disabled="item.soon ? 'true' : undefined"
       @click="go(item)"
     >
       <span class="island-icon" aria-hidden="true">
@@ -46,18 +45,13 @@
           <path d="M12 2.9 20.1 7v10L12 21.1 3.9 17V7z" />
           <path d="M3.9 7 12 11.2 20.1 7M12 11.2v9.9" opacity="0.6" />
         </svg>
-        <svg v-else-if="item.key === 'motion'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">
-          <circle cx="13.6" cy="5" r="2.1" />
-          <path d="M12.6 8.4 10.4 13l-2.2 2.4M10.4 13l3.4 2.2.5 4.2M10.4 13l4.4-1.8" />
-          <path d="M5.4 4.6c-1.5 4.9-1.5 10.9 0 15.8" opacity="0.45" />
-        </svg>
         <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">
           <rect x="9" y="3.2" width="6" height="11" rx="3" />
           <path d="M5.6 11.4a6.4 6.4 0 0 0 12.8 0" />
           <path d="M12 17.8v3" />
         </svg>
       </span>
-      <span class="island-tip" aria-hidden="true">{{ item.soon ? `${item.label} · 即将上线` : item.label }}</span>
+      <span class="island-tip" aria-hidden="true">{{ item.label }}</span>
     </button>
   </nav>
 </template>
@@ -107,21 +101,11 @@ const items = [
     accent: '#38bdf8',
     accentSoft: 'rgba(56, 189, 248, 0.22)',
   },
-  {
-    path: '/motion',
-    key: 'motion',
-    label: '动作捕捉',
-    accent: '#38bdf8',
-    accentSoft: 'rgba(56, 189, 248, 0.22)',
-    // 上游动捕服务暂不可用，先禁用入口（保留路由，恢复后去掉 soon 即可）。
-    soon: true,
-  },
 ]
 
 const activePath = computed(() => items.find((item) => route.path.startsWith(item.path))?.path || '')
 
-function go(item: { path: string; soon?: boolean }) {
-  if (item.soon) return
+function go(item: { path: string }) {
   if (route.path !== item.path) router.push(item.path)
 }
 </script>
