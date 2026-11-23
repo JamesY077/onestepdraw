@@ -99,11 +99,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useEditProjectStore } from '@/stores/editProjectStore'
 
 withDefaults(defineProps<{ tone?: 'dark' | 'light' }>(), { tone: 'light' })
 
 const router = useRouter()
 const route = useRoute()
+const projectStore = useEditProjectStore()
 const expanded = ref(false)
 
 const items = [
@@ -115,10 +117,19 @@ const items = [
   { path: '/model3d', key: 'model3d', label: '3D 建模' },
 ]
 
+/** 剪辑项目直接进最近编辑的那个，不再落到没有 id 的 /edit 空状态。 */
+const projectPath = computed(() => {
+  const latest = projectStore.sortedProjects[0]
+  return latest ? `/edit/${latest.id}` : '/edit'
+})
+
 const activePath = computed(() => items.find((item) => route.path.startsWith(item.path))?.path || '')
 
-function go(item: { path: string }) {
-  if (route.path !== item.path) router.push(item.path)
+function go(item: { path: string; key?: string }) {
+  // 已经在某个项目里时，点「剪辑项目」保持当前项目，不被最近项目顶掉。
+  const target =
+    item.key === 'project' && !route.path.startsWith('/edit/') ? projectPath.value : item.path
+  if (route.path !== target) router.push(target)
 }
 </script>
 

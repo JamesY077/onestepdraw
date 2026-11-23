@@ -1434,28 +1434,37 @@ onBeforeUnmount(() => {
   touch-action: none;
 }
 
+/*
+ * 刻度只在标尺底部画短竖线，数字统一放在上方。
+ * 之前的整列竖线会直接穿过秒数文字，读起来像是被划掉了。
+ */
 .tl-tick {
   position: absolute;
-  top: 0;
   bottom: 0;
   left: 0;
   width: 1px;
-  background: #f0f0ea;
+  height: 4px;
+  background: #ebebe4;
   pointer-events: none;
 }
 
 .tl-tick.major {
-  background: #e4e4dd;
+  height: 8px;
+  background: #d9d9d0;
 }
 
 .tl-tick em {
   position: absolute;
-  top: 4px;
-  left: 4px;
-  color: #a8a8a0;
+  bottom: 9px;
+  left: 7px;
+  padding: 0 2px;
+  background: #fbfbf8;
+  color: #a2a29a;
   font-size: 9.5px;
   font-style: normal;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .tl-row {

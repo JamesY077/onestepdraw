@@ -232,7 +232,7 @@
       />
     </div>
 
-    <div v-else class="es-empty">
+    <div v-else-if="!autoOpeningProject" class="es-empty">
       <BrandMark :size="44" />
       <h1>还没有剪辑项目</h1>
       <p>新建一个项目，或在对话里用「创作对话」说一句视频需求，会自动创建项目并进入剪辑台。</p>
@@ -388,6 +388,26 @@ const SHORTCUT_GROUPS = [
 
 const projectId = computed(() => String(route.params.id || ''))
 const project = computed(() => projectStore.getProject(projectId.value))
+/**
+ * 悬浮岛「剪辑项目」和「在新标签页打开」都只会落到 /edit（没有 id）。
+ * 只要本地已经有项目，就直接打开最近编辑的那个，避免出现「明明有项目却说没有」。
+ */
+const autoOpeningProject = ref(false)
+function openLatestProject() {
+  if (project.value) {
+    autoOpeningProject.value = false
+    return
+  }
+  const latest = projectStore.sortedProjects[0]
+  // 已经在目标项目上（例如数据损坏）时就别再转，正常显示空状态。
+  if (!latest || projectId.value === latest.id) {
+    autoOpeningProject.value = false
+    return
+  }
+  autoOpeningProject.value = true
+  router.replace(`/edit/${latest.id}`)
+}
+openLatestProject()
 const conversationId = computed(() => project.value?.conversationId || '')
 const timelineDuration = computed(() => projectDuration(project.value))
 const canUndo = computed(() => {
@@ -1204,6 +1224,7 @@ watch(
       clearTimelineSelection()
     }
     if (id && project.value) {
+      autoOpeningProject.value = false
       const conversation = ensureConversation(project.value)
       if (!agentStore.activeId || agentStore.activeId !== conversation) {
         agentStore.selectConversation(conversation)
