@@ -38,7 +38,10 @@
           >
             剪辑台 ↗
           </button>
-          <span class="mode-badge" :class="{ 'is-create': chatMode.isCreate }">{{ chatMode.conversationLabel }}</span>
+          <span class="mode-badge" :class="{ 'is-create': chatMode.isCreate }">
+            <i v-if="chatMode.isCreate" class="badge-dot" aria-hidden="true" />
+            {{ chatMode.conversationLabel }}
+          </span>
           <span class="local-badge">本地</span>
           <button type="button" class="new-chat-icon" title="设置" aria-label="设置" @click="router.push('/settings')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -53,28 +56,6 @@
           </button>
         </div>
       </header>
-
-      <div v-if="chatMode.isCreate" class="create-strip">
-        <span class="create-label">
-          <i class="create-dot" aria-hidden="true" />
-          创作模式
-        </span>
-        <span class="create-steps">
-          <span class="create-step"><b>01</b>说需求</span>
-          <span class="create-sep" aria-hidden="true">/</span>
-          <span class="create-step"><b>02</b>答几轮问题</span>
-          <span class="create-sep" aria-hidden="true">/</span>
-          <span class="create-step"><b>03</b>进剪辑台</span>
-        </span>
-        <button
-          v-if="activeProjectId"
-          type="button"
-          class="create-jump"
-          @click="router.push(`/edit/${activeProjectId}`)"
-        >
-          打开项目 ↗
-        </button>
-      </div>
 
       <div v-if="store.authExpired" class="expired-banner" role="alert">
         AIPing 登录已过期，正在返回登录页…
@@ -101,6 +82,14 @@
                 : 'OneStep 是你的本地 AI 创作助手。写东西、想点子、做分镜、推敲提示词，都可以从这里开始。'
             }}
           </p>
+
+          <div v-if="chatMode.isCreate" class="create-flow" aria-label="创作流程">
+            <span class="flow-step"><b>01</b>说需求</span>
+            <i class="flow-sep" aria-hidden="true" />
+            <span class="flow-step"><b>02</b>答几轮问题</span>
+            <i class="flow-sep" aria-hidden="true" />
+            <span class="flow-step"><b>03</b>进剪辑台</span>
+          </div>
 
           <div class="suggestion-grid">
             <button
@@ -151,6 +140,10 @@
 
       <div class="composer-area">
         <div class="composer-inner">
+          <p v-if="chatMode.isCreate" class="composer-mode-note">
+            <i class="note-dot" aria-hidden="true" />
+            创作模式 · 生成结果会自动进入剪辑项目
+          </p>
           <AgentComposer
             ref="composerRef"
             v-model="draft"
@@ -918,154 +911,44 @@ onBeforeUnmount(() => {
   }
 }
 
-/* ── 创作对话：纸白 + 暖光，衬线标题与编号，像一张拍摄单 ── */
+/* ── 创作对话：保持纯白，只增加克制的模式提示 ── */
 .chat-page.is-create {
-  --create-ink: #1a1714;
   --create-accent: #b4472f;
-  --create-line: #e9e3d7;
   --create-serif: 'Songti SC', 'STSong', 'Noto Serif SC', Georgia, 'Times New Roman', serif;
-  background: #fbfaf6;
+  background: #ffffff;
 }
 
-/* 两团很淡的光：右上暖橘、左下灰绿，避免整页死板的米色 */
-.is-create .chat-main {
-  background:
-    radial-gradient(54% 46% at 84% 0%, rgba(191, 112, 66, 0.17) 0%, rgba(191, 112, 66, 0) 66%),
-    radial-gradient(46% 40% at 6% 100%, rgba(90, 100, 84, 0.1) 0%, rgba(90, 100, 84, 0) 70%),
-    #fbfaf6;
-}
-
-.is-create .chat-header {
-  border-bottom-color: rgba(211, 198, 177, 0.5);
-  background: rgba(251, 250, 246, 0.72);
-}
-
-.is-create .heading-sep {
-  color: #d8d0c2;
-}
-
-.is-create .heading-sub {
-  color: #9a9284;
-}
-
-.is-create .mode-badge {
-  border-color: #e5ded0;
-  background: rgba(255, 255, 255, 0.7);
-  color: #8b8477;
-}
-
+/* 顶栏徽标：墨色胶囊 + 一点陶土色，提醒当前处于创作模式 */
 .is-create .mode-badge.is-create {
-  border-color: rgba(180, 71, 47, 0.18);
-  background: #fdf1ec;
-  color: #9c3a24;
-}
-
-.is-create .project-shortcut {
-  border-color: #ded6c7;
-  background: rgba(255, 255, 255, 0.7);
-  color: #6c6355;
-}
-
-.is-create .project-shortcut:hover {
-  border-color: #cbbfa9;
-  color: #3f382d;
-}
-
-.is-create .new-chat-icon {
-  color: #8b8375;
-}
-
-.is-create .new-chat-icon:hover {
-  border-color: #e5ded0;
-  background: rgba(255, 255, 255, 0.8);
-}
-
-.is-create .local-badge {
-  border-color: #e7e0d2;
-  background: rgba(255, 255, 255, 0.65);
-  color: #9a9182;
-}
-
-.create-strip {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex: none;
-  padding: 8px 20px;
-  border-bottom: 1px solid rgba(211, 198, 177, 0.45);
-  background: rgba(255, 255, 255, 0.32);
-  color: #8b8374;
-  font-size: 10.5px;
-  letter-spacing: 0.02em;
-}
-
-.create-label {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  color: #4a4338;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  white-space: nowrap;
+  gap: 6px;
+  border-color: #141412;
+  background: #141412;
+  color: #fafaf7;
+  letter-spacing: 0.01em;
 }
 
-.create-dot {
+.badge-dot {
   width: 5px;
   height: 5px;
   flex: none;
   border-radius: 50%;
-  background: var(--create-accent);
+  background: #e08a63;
 }
 
-.create-steps {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
+.is-create .project-shortcut {
+  border-color: #e2ddd2;
+  background: #ffffff;
+  color: #5f5f57;
 }
 
-.create-step {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  color: #8b8374;
+.is-create .project-shortcut:hover {
+  border-color: #cfc7b8;
+  color: #1d1d1b;
 }
 
-.create-step b {
-  color: var(--create-accent);
-  font-family: var(--create-serif);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.create-sep {
-  color: #d5cdbd;
-}
-
-.create-jump {
-  margin-left: auto;
-  padding: 0 0 2px;
-  border: 0;
-  border-bottom: 1px solid rgba(180, 71, 47, 0.32);
-  background: transparent;
-  color: #9c3a24;
-  font-family: inherit;
-  font-size: 10.5px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: border-color 160ms ease, color 160ms ease;
-}
-
-.create-jump:hover {
-  border-color: #9c3a24;
-  color: #7f2c19;
-}
-
+/* 欢迎页：衬线标题 + 编号卡片，是模式提示而不是换底色 */
 .welcome-eyebrow {
   margin: 0 0 9px;
   color: var(--create-accent);
@@ -1076,13 +959,8 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
 }
 
-.is-create .welcome-mark {
-  margin-bottom: 18px;
-  filter: drop-shadow(0 12px 26px rgba(120, 74, 36, 0.18));
-}
-
 .is-create .welcome h2 {
-  color: var(--create-ink);
+  color: #171715;
   font-family: var(--create-serif);
   font-size: clamp(29px, 3.6vw, 39px);
   font-weight: 600;
@@ -1091,32 +969,42 @@ onBeforeUnmount(() => {
 }
 
 .is-create .welcome-copy {
-  max-width: 470px;
-  color: #7d7668;
+  margin-bottom: 20px;
+  color: #83837b;
 }
 
-.is-create .suggestion-grid {
-  gap: 12px;
-}
-
-.is-create .suggestion-card {
-  padding: 16px 15px;
-  border-color: var(--create-line);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(6px);
-  transition:
-    border-color 200ms ease,
-    background 200ms ease,
-    box-shadow 200ms ease,
-    transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.is-create .suggestion-card:hover {
-  border-color: #cdbfa9;
+.create-flow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 26px;
+  padding: 6px 13px;
+  border: 1px solid #ece7dc;
+  border-radius: 999px;
   background: #ffffff;
-  box-shadow: 0 20px 44px -26px rgba(74, 55, 30, 0.55);
-  transform: translateY(-2px);
+  color: #918876;
+  font-size: 10.5px;
+  letter-spacing: 0.01em;
+}
+
+.flow-step {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.flow-step b {
+  color: var(--create-accent);
+  font-family: var(--create-serif);
+  font-size: 9.5px;
+  font-weight: 600;
+}
+
+.flow-sep {
+  width: 1px;
+  height: 9px;
+  background: #e2dcd0;
 }
 
 .is-create .suggestion-icon {
@@ -1140,24 +1028,7 @@ onBeforeUnmount(() => {
 }
 
 .is-create .suggestion-title {
-  color: #241f19;
-  font-size: 13px;
-  letter-spacing: -0.01em;
-}
-
-.is-create .suggestion-desc {
-  color: #8f887b;
-  font-size: 11.5px;
-}
-
-.is-create .suggestion-arrow {
-  color: #c9bda9;
-  font-size: 11px;
-}
-
-.is-create .suggestion-card:hover .suggestion-arrow {
-  color: var(--create-accent);
-  transform: translate(1px, -1px);
+  color: #242421;
 }
 
 .is-create .note-dot {
@@ -1165,35 +1036,41 @@ onBeforeUnmount(() => {
 }
 
 .is-create .welcome-note {
-  color: #99917f;
+  color: #a4a49c;
+}
+
+/* 输入框上方的模式提示：不碰导航，只在创作模式下出现 */
+.composer-mode-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 7px 3px;
+  color: #9c9385;
+  font-size: 10.5px;
   letter-spacing: 0.01em;
 }
 
-.is-create :deep(.user-bubble) {
-  background: #f5ece2;
-}
-
-.is-create .composer-area {
-  background: linear-gradient(180deg, rgba(251, 250, 246, 0) 0%, rgba(251, 250, 246, 0.9) 34%, #fbfaf6 62%);
-}
-
-.is-create .chat-scroll::-webkit-scrollbar-thumb {
-  background: #ded5c5;
-  background-clip: padding-box;
+.composer-mode-note .note-dot {
+  width: 5px;
+  height: 5px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--create-accent);
 }
 
 @media (max-width: 640px) {
-  .create-strip {
-    padding: 7px 14px;
-  }
-
-  .create-steps,
-  .create-sep {
-    display: none;
-  }
-
   .is-create .welcome h2 {
     font-size: 27px;
+  }
+
+  .create-flow {
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+
+  .composer-mode-note {
+    font-size: 10px;
   }
 }
 </style>

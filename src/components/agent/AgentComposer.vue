@@ -17,6 +17,7 @@
             :aria-pressed="chatMode.isCreate"
             @click="chatMode.setConversation('create')"
           >
+            <i v-if="chatMode.isCreate" class="switch-dot" aria-hidden="true" />
             创作对话
           </button>
         </div>
@@ -475,6 +476,9 @@ defineExpose({ focus })
 }
 
 .mode-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 3px 8px;
   border: 0;
   border-radius: 6px;
@@ -487,6 +491,14 @@ defineExpose({ focus })
   white-space: nowrap;
   cursor: pointer;
   transition: background 140ms ease, color 140ms ease;
+}
+
+.switch-dot {
+  width: 4px;
+  height: 4px;
+  flex: none;
+  border-radius: 50%;
+  background: #c2603f;
 }
 
 .mode-switch button:hover {
@@ -941,85 +953,46 @@ defineExpose({ focus })
   }
 }
 
-/* ── 创作对话：暖白纸面 + 陶土色发送键，和普通对话一眼区分 ── */
+/* ── 创作对话：保持白色，只留陶土色发送键与更强的模式胶囊 ── */
 .composer.is-create {
-  border-color: #e6dfd2;
-  background: #fffefb;
-  box-shadow:
-    0 1px 2px rgba(120, 92, 44, 0.03),
-    0 14px 40px -18px rgba(120, 92, 44, 0.16);
+  border-color: #e8e4da;
+  background: #ffffff;
 }
 
 .composer.is-create.is-focused {
-  border-color: #d9bfae;
+  border-color: #cfc7b8;
   box-shadow:
-    0 1px 2px rgba(120, 92, 44, 0.04),
-    0 18px 46px -20px rgba(120, 92, 44, 0.2);
+    0 1px 2px rgba(17, 17, 16, 0.03),
+    0 10px 34px rgba(17, 17, 16, 0.07);
 }
 
 .composer.is-create .conversation-switch {
-  border-color: #ece4d5;
-  background: #f8f4ea;
-}
-
-.composer.is-create .conversation-switch button {
-  color: #a1988a;
-}
-
-.composer.is-create .conversation-switch button:hover {
-  color: #574c3b;
+  border-color: #e9e5dc;
+  background: #fbfaf7;
 }
 
 .composer.is-create .conversation-switch button.active {
-  background: #1c1915;
-  color: #fdf9f1;
+  background: #141412;
+  color: #fafaf7;
   box-shadow: none;
 }
 
+.composer.is-create .conversation-switch button.active .switch-dot {
+  background: #e08a63;
+}
+
 .composer.is-create .mode-tip {
-  color: #ada18c;
-}
-
-.composer.is-create .composer-input {
-  color: #221d16;
-}
-
-.composer.is-create .composer-input::placeholder {
-  color: #b3a897;
-}
-
-.composer.is-create .engine-button {
-  color: #8d8372;
-}
-
-.composer.is-create .engine-button:hover {
-  border-color: #efe7d8;
-  background: #faf5ea;
-  color: #564b39;
-}
-
-.composer.is-create .model-button {
-  color: #9b907c;
+  color: #a29a8c;
 }
 
 .composer.is-create .automation-switch {
-  border-color: #ece4d5;
-  background: #f8f4ea;
-}
-
-.composer.is-create .automation-switch button {
-  color: #a1988a;
-}
-
-.composer.is-create .automation-switch button.active {
-  background: #fffefb;
-  color: #4d4435;
-  box-shadow: 0 1px 2px rgba(120, 92, 44, 0.1);
+  border-color: #ecece6;
+  background: #fafaf7;
 }
 
 .composer.is-create .automation-switch button.auto-switch.active {
-  background: #1c1915;
-  color: #fdf9f1;
+  background: #141412;
+  color: #fafaf7;
   box-shadow: none;
 }
 
@@ -1033,7 +1006,7 @@ defineExpose({ focus })
 }
 
 .composer.is-create .send-button:disabled {
-  background: #f1e9db;
-  color: #b8a68d;
+  background: #f0e6e0;
+  color: #c0a89e;
 }
 </style>
