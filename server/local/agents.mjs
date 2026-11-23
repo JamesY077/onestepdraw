@@ -49,6 +49,8 @@ const PRESETS = [
       'never',
       '--sandbox',
       'workspace-write',
+      '-c',
+      'sandbox_workspace_write.network_access=true',
       '-C',
       rootDir,
       prompt,
@@ -59,6 +61,7 @@ const PRESETS = [
     name: 'OpenCode',
     vendor: 'OpenCode',
     commands: ['opencode'],
+    macApps: ['OpenCode'],
     description: '开源的终端编程 Agent，支持多模型与本地服务。',
     installCommand: 'npm install -g opencode-ai',
     installUrl: 'https://opencode.ai',
@@ -70,6 +73,7 @@ const PRESETS = [
     name: 'Qoder',
     vendor: 'Qoder',
     commands: ['qodercli', 'qoder', 'qcoder'],
+    macApps: ['Qoder CN', 'Qoder'],
     description: 'Qoder 命令行 Agent，支持仓库级理解与自动改代码。',
     installCommand: 'npm install -g @qoder-ai/qodercli',
     installUrl: 'https://qoder.com',
@@ -81,6 +85,7 @@ const PRESETS = [
     name: 'CodeBuddy / WorkBuddy CLI',
     vendor: '腾讯',
     commands: ['codebuddy', 'cbc', 'codebuddy-code'],
+    macApps: ['WorkBuddy'],
     description: '腾讯 CodeBuddy Code（WorkBuddy CLI），支持国内站点登录与主流模型。',
     installCommand: 'npm install -g @tencent-ai/codebuddy-code',
     installUrl: 'https://www.codebuddy.cn/docs/cli/installation',
@@ -92,17 +97,31 @@ const PRESETS = [
     name: 'DeepSeek Harness',
     vendor: 'DeepSeek',
     commands: ['dsh'],
-    description: 'DeepSeek 开源的 Agent 运行框架，headless 模式执行单次任务。',
+    macApps: ['DeepSeek Harness'],
+    appBinaries: [
+      'DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh',
+    ],
+    description: 'DeepSeek 开源的 Agent 运行框架，headless 模式执行单次任务。桌面端自带命令行入口。',
     installCommand: 'npm install -g @deepseek-ai/dsh',
     installUrl: 'https://github.com/deepseek-ai/deepseek-harness',
     output: 'plain',
-    args: (prompt) => ['--profile', 'headless', '--approval-policy', 'never', prompt],
+    args: (prompt, _rootDir, extra = {}) => [
+      '--profile',
+      'headless',
+      ...(extra.patchPath ? ['--patch', extra.patchPath] : []),
+      '--permission-mode',
+      'workspace-write',
+      '--approval-policy',
+      'never',
+      prompt,
+    ],
   },
   {
     id: 'cursor',
     name: 'Cursor CLI',
     vendor: 'Cursor',
     commands: ['cursor-agent', 'cursor'],
+    macApps: ['Cursor'],
     description: 'Cursor 的终端 Agent，读取本地项目并直接修改文件。',
     installCommand: 'curl https://cursor.com/install -fsS | bash',
     installUrl: 'https://cursor.com/cli',
@@ -182,6 +201,39 @@ function findCommand(commands) {
   return ''
 }
 
+/** macOS 上以 .app 形式安装的桌面端，命令行通常藏在应用包内部。 */
+const APP_DIRS = [path.join(os.homedir(), 'Applications'), '/Applications']
+
+function findAppBinary(relatives) {
+  if (process.platform !== 'darwin') return ''
+  for (const relative of relatives || []) {
+    for (const dir of APP_DIRS) {
+      const full = path.join(dir, relative)
+      try {
+        if (fs.statSync(full).isFile()) return full
+      } catch {
+        // 继续找下一个位置。
+      }
+    }
+  }
+  return ''
+}
+
+function findAppBundle(names) {
+  if (process.platform !== 'darwin') return ''
+  for (const name of names || []) {
+    for (const dir of APP_DIRS) {
+      const full = path.join(dir, `${name}.app`)
+      try {
+        if (fs.statSync(full).isDirectory()) return full
+      } catch {
+        // 继续找下一个位置。
+      }
+    }
+  }
+  return ''
+}
+
 function readVersion(command) {
   return new Promise((resolve) => {
     execFile(
@@ -205,13 +257,21 @@ let cache = { at: 0, agents: [] }
 const CACHE_MS = 30_000
 
 async function detectAgent(preset) {
-  const command = findCommand(preset.commands)
+  let command = findCommand(preset.commands)
+  let source = command ? 'path' : ''
+  if (!command) {
+    command = findAppBinary(preset.appBinaries)
+    if (command) source = 'app'
+  }
+  const appPath = findAppBundle(preset.macApps)
   if (!command) {
     return {
       ...publicPreset(preset),
       installed: false,
+      source: '',
       command: '',
       commandPath: '',
+      appPath,
       version: '',
     }
   }
@@ -219,14 +279,16 @@ async function detectAgent(preset) {
   return {
     ...publicPreset(preset),
     installed: true,
+    source,
     command,
     commandPath: command,
+    appPath,
     version,
   }
 }
 
 function publicPreset(preset) {
-  const { args, commands, output, ...rest } = preset
+  const { args, commands, output, appBinaries, macApps, ...rest } = preset
   return { ...rest, commands }
 }
 
@@ -244,9 +306,14 @@ export function getPreset(id) {
 export async function getInstalledAgent(id) {
   const preset = getPreset(id)
   if (!preset) return null
-  const command = findCommand(preset.commands)
+  let command = findCommand(preset.commands)
+  let source = command ? 'path' : ''
+  if (!command) {
+    command = findAppBinary(preset.appBinaries)
+    if (command) source = 'app'
+  }
   if (!command) return null
-  return { preset, command }
+  return { preset, command, source }
 }
 
 /** 把前端对话整理成一次性的 CLI 任务提示词。 */
@@ -418,6 +485,41 @@ function extractClaudeText(line, state) {
 }
 
 /**
+ * dsh 的 headless profile 默认不读取桌面端凭据，也不带自定义模型路由。
+ * 这里生成一个临时 patch：把 OneStep 的 AIPing 地址、密钥环境变量和当前模型
+ * 接成 dsh 的 provider，让桌面端安装的 dsh 也能直接执行。
+ */
+function buildDshPatch({ baseUrl, model }) {
+  const normalizedBase =
+    typeof baseUrl === 'string' && /^https?:\/\//.test(baseUrl.trim())
+      ? baseUrl.trim()
+      : 'https://aiping.cn/api/v1'
+  const modelId =
+    typeof model === 'string' && /^[A-Za-z0-9._:-]+$/.test(model.trim())
+      ? model.trim()
+      : 'DeepSeek-V4.1-Flash-1017'
+  return [
+    '- id: llm-pi-ai',
+    '  name: "@deepseek-ai/dsh-llm-pi-ai"',
+    '  config:',
+    '    providers:',
+    '      onestep:',
+    '        apiKeyEnv: AIPING_API_KEY',
+    '        api: openai-completions',
+    `        baseURL: ${JSON.stringify(normalizedBase)}`,
+    '        models:',
+    `          - id: ${JSON.stringify(modelId)}`,
+    `            name: ${JSON.stringify(modelId)}`,
+    '- id: agent-default-model',
+    '  name: "@deepseek-ai/dsh-agent-default-model"',
+    '  config:',
+    '    provider: onestep',
+    `    model: ${JSON.stringify(modelId)}`,
+    '',
+  ].join('\n')
+}
+
+/**
  * 拉起 Agent 进程并流式回调输出。
  * 返回 { child, done, stop }，done 在进程退出后 resolve。
  */
@@ -427,6 +529,7 @@ export function runAgent({
   prompt,
   rootDir,
   baseUrl,
+  model,
   apiKey,
   apiBaseUrl,
   onDelta,
@@ -443,7 +546,28 @@ export function runAgent({
   if (apiKey) env.AIPING_API_KEY = apiKey
   if (apiBaseUrl) env.AIPING_BASE_URL = apiBaseUrl
 
-  const child = spawn(command, preset.args(prompt, rootDir), {
+  let patchPath = ''
+  let cleanupPatch = () => {}
+  if (preset.id === 'dsh') {
+    try {
+      patchPath = path.join(os.tmpdir(), `onestep-dsh-${process.pid}-${Date.now()}.yml`)
+      fs.writeFileSync(patchPath, buildDshPatch({ baseUrl: apiBaseUrl, model }), {
+        mode: 0o600,
+      })
+      cleanupPatch = () => {
+        try {
+          fs.unlinkSync(patchPath)
+        } catch {
+          // 临时文件可能已被清理。
+        }
+        patchPath = ''
+      }
+    } catch {
+      patchPath = ''
+    }
+  }
+
+  const child = spawn(command, preset.args(prompt, rootDir, { patchPath }), {
     cwd: rootDir,
     env,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -506,10 +630,12 @@ export function runAgent({
 
   const done = new Promise((resolve) => {
     child.on('error', (error) => {
+      cleanupPatch()
       resolve({ exitCode: -1, error: error?.message || 'Agent 启动失败。' })
     })
     child.on('close', (code) => {
       if (state.buffer) handleLine(state.buffer)
+      cleanupPatch()
       resolve({
         exitCode: typeof code === 'number' ? code : -1,
         stderrTail: state.stderr.join('').slice(-2400).trim(),

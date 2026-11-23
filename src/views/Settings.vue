@@ -22,16 +22,18 @@
 
       <div class="settings-body">
         <aside class="settings-nav" aria-label="设置分区">
-          <span class="nav-label">分区</span>
-          <button
-            v-for="item in navItems"
-            :key="item.id"
-            type="button"
-            :class="['nav-item', { active: activeSection === item.id }]"
-            @click="scrollToSection(item.id)"
-          >
-            {{ item.label }}
-          </button>
+          <div v-for="group in navGroups" :key="group.label" class="nav-group">
+            <span class="nav-group-label">{{ group.label }}</span>
+            <button
+              v-for="item in group.items"
+              :key="item.id"
+              type="button"
+              :class="['nav-item', { active: activeSection === item.id }]"
+              @click="scrollToSection(item.id)"
+            >
+              {{ item.label }}
+            </button>
+          </div>
           <div class="nav-foot">
             <span>OneStep</span>
             <span>v1.2.0</span>
@@ -74,6 +76,41 @@
             </div>
 
             <p v-if="testStatus" :class="['notice', testStatusType]">{{ testStatus }}</p>
+          </section>
+
+          <!-- 关于 -->
+          <section id="about" class="panel">
+            <div class="panel-head">
+              <h2>关于与数据</h2>
+              <p>版本信息，以及清除本机数据的入口。</p>
+            </div>
+
+            <div class="detail-list">
+              <div class="detail-row">
+                <span class="detail-label">版本</span>
+                <span class="detail-value">v1.2.0</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">仓库</span>
+                <a class="detail-value text-link" :href="repoUrl" target="_blank" rel="noopener">
+                  {{ repoUrlLabel }}
+                </a>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">文档</span>
+                <a class="detail-value text-link" href="https://aiping.cn/docs" target="_blank" rel="noopener">
+                  aiping.cn/docs
+                </a>
+              </div>
+            </div>
+
+            <div class="danger-block">
+              <div>
+                <strong>退出登录并清除本地会话</strong>
+                <p>会移除当前浏览器中的 API 配置与对话记录，不影响已生成的文件。</p>
+              </div>
+              <button class="btn danger" type="button" @click="handleClear">清除并退出</button>
+            </div>
           </section>
 
           <!-- 本机 Agent -->
@@ -129,6 +166,7 @@
                   <strong>
                     {{ agent.name }}
                     <span class="engine-vendor">{{ agent.vendor }}</span>
+                    <span v-if="agent.source === 'app'" class="source-tag">桌面应用内置</span>
                   </strong>
                   <span class="engine-meta">{{ agent.version || '版本未知' }}</span>
                   <span v-if="agent.commandPath" class="engine-path mono">{{ agent.commandPath }}</span>
@@ -170,6 +208,10 @@
                     <strong>{{ agent.name }} <span class="engine-vendor">{{ agent.vendor }}</span></strong>
                     <code class="install-command">{{ agent.installCommand }}</code>
                     <p v-if="agent.installHint" class="field-hint">{{ agent.installHint }}</p>
+                    <p v-if="agent.appPath" class="field-hint">
+                      检测到桌面端 {{ agent.appPath.split('/').pop()?.replace('.app', '') }}，
+                      但桌面端没有提供命令行入口，OneStep 暂时无法调用它。
+                    </p>
                   </div>
                   <div class="install-actions">
                     <button class="btn tiny" type="button" @click="copyInstall(agent)">
@@ -189,46 +231,50 @@
               </div>
             </details>
 
-            <div class="panel-subhead">
-              <strong>自定义命令</strong>
-              <p>列表里没有的 Agent，可以用任意可执行命令接入。命令里的 <code>{prompt}</code> 会被替换成对话内容。</p>
-            </div>
+            <details class="advanced-block custom-block">
+              <summary>其他 Agent（自定义命令，高级）</summary>
+              <p class="field-hint">
+                如果上面的列表里没有你要的 Agent，而它又提供了命令行工具，可以在这里接入。
+                填一条能在终端直接运行的命令即可，不需要写脚本。
+              </p>
 
-            <div class="custom-agent-grid">
-              <div class="field">
-                <label for="custom-agent-name">显示名称</label>
-                <input
-                  id="custom-agent-name"
-                  v-model.trim="customName"
-                  class="text-input"
-                  placeholder="例如 WorkBuddy"
-                />
+              <div class="custom-agent-grid">
+                <div class="field">
+                  <label for="custom-agent-name">显示名称</label>
+                  <input
+                    id="custom-agent-name"
+                    v-model.trim="customName"
+                    class="text-input"
+                    placeholder="例如：我的 Agent"
+                  />
+                </div>
+                <div class="field">
+                  <label for="custom-agent-command">终端命令</label>
+                  <input
+                    id="custom-agent-command"
+                    v-model.trim="customCommand"
+                    class="text-input mono"
+                    placeholder='例如：my-agent --task "{prompt}"'
+                  />
+                </div>
               </div>
-              <div class="field">
-                <label for="custom-agent-command">命令模板</label>
-                <input
-                  id="custom-agent-command"
-                  v-model.trim="customCommand"
-                  class="text-input mono"
-                  placeholder='例如 workbuddy run --cwd . "{prompt}"'
-                />
+
+              <p class="field-hint">
+                命令里的 <code>{prompt}</code> 会替换成对话内容；不写时提示词会追加到末尾。
+                命令在项目根目录执行，权限与你本机终端一致。
+              </p>
+
+              <div class="panel-actions">
+                <button class="btn solid" type="button" :disabled="!customCommand.trim()" @click="saveCustomAgent">
+                  保存并使用
+                </button>
+                <button v-if="localAgentStore.custom.command" class="btn ghost" type="button" @click="removeCustomAgent">
+                  删除自定义命令
+                </button>
               </div>
-            </div>
 
-            <p class="field-hint">
-              不写 <code>{prompt}</code> 时，提示词会自动追加到命令末尾。命令在项目根目录执行。
-            </p>
-
-            <div class="panel-actions">
-              <button class="btn solid" type="button" :disabled="!customCommand.trim()" @click="saveCustomAgent">
-                保存并使用
-              </button>
-              <button v-if="localAgentStore.custom.command" class="btn ghost" type="button" @click="removeCustomAgent">
-                删除自定义命令
-              </button>
-            </div>
-
-            <p v-if="customStatus" class="notice success">{{ customStatus }}</p>
+              <p v-if="customStatus" class="notice success">{{ customStatus }}</p>
+            </details>
 
             <ul class="agent-notes">
               <li>Agent 会在项目目录中运行，权限与你本机终端一致，请只选择自己信任的 Agent。</li>
@@ -374,7 +420,7 @@
           <!-- 安装到 Agent -->
           <section id="agent" class="panel">
             <div class="panel-head">
-              <h2>安装到你的 Agent</h2>
+              <h2>让 Agent 安装 OneStep</h2>
               <p>OneStep 是纯本地项目，不依赖云端托管。把下面的指令交给你的 Agent，它会自己克隆仓库、安装依赖并启动。</p>
             </div>
 
@@ -417,41 +463,6 @@
               <li>项目只监听本机地址，数据与生成的素材都留在本机。</li>
               <li>若端口被占用，启动脚本会自动顺延，终端里会打印实际地址。</li>
             </ul>
-          </section>
-
-          <!-- 关于 -->
-          <section id="about" class="panel">
-            <div class="panel-head">
-              <h2>关于与数据</h2>
-              <p>版本信息，以及清除本机数据的入口。</p>
-            </div>
-
-            <div class="detail-list">
-              <div class="detail-row">
-                <span class="detail-label">版本</span>
-                <span class="detail-value">v1.2.0</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">仓库</span>
-                <a class="detail-value text-link" :href="repoUrl" target="_blank" rel="noopener">
-                  {{ repoUrlLabel }}
-                </a>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">文档</span>
-                <a class="detail-value text-link" href="https://aiping.cn/docs" target="_blank" rel="noopener">
-                  aiping.cn/docs
-                </a>
-              </div>
-            </div>
-
-            <div class="danger-block">
-              <div>
-                <strong>退出登录并清除本地会话</strong>
-                <p>会移除当前浏览器中的 API 配置与对话记录，不影响已生成的文件。</p>
-              </div>
-              <button class="btn danger" type="button" @click="handleClear">清除并退出</button>
-            </div>
           </section>
         </main>
       </div>
@@ -581,14 +592,30 @@ const maskedKeyText = computed(() => (apiStore.apiKey ? maskApiKey(apiStore.apiK
 
 /* ---------------------------------- 分区导航 ---------------------------------- */
 
-const navItems = [
-  { id: 'account', label: '账号与连接' },
-  { id: 'agents', label: '本机 Agent' },
-  { id: 'creation', label: '创作偏好' },
-  { id: 'skills', label: '默认 Skill' },
-  { id: 'agent', label: '安装到 Agent' },
-  { id: 'about', label: '关于与数据' },
+const navGroups = [
+  {
+    label: '全局设置',
+    items: [
+      { id: 'account', label: '账号与连接' },
+      { id: 'about', label: '关于与数据' },
+    ],
+  },
+  {
+    label: '图像视频创作',
+    items: [
+      { id: 'creation', label: '创作偏好' },
+      { id: 'skills', label: '默认 Skill' },
+    ],
+  },
+  {
+    label: '安装与接入',
+    items: [
+      { id: 'agents', label: '本机 Agent' },
+      { id: 'agent', label: '让 Agent 安装 OneStep' },
+    ],
+  },
 ]
+const navItems = navGroups.flatMap((group) => group.items)
 const activeSection = ref('account')
 let observer: IntersectionObserver | null = null
 
@@ -969,8 +996,18 @@ function resetTranslationModel() {
   gap: 2px;
 }
 
-.nav-label {
-  padding: 0 10px 8px;
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-group + .nav-group {
+  margin-top: 15px;
+}
+
+.nav-group-label {
+  padding: 0 10px 6px;
   color: #a4a49c;
   font-size: 10.5px;
   font-weight: 700;
@@ -1646,6 +1683,14 @@ label {
     display: none;
   }
 
+  .nav-group {
+    display: contents;
+  }
+
+  .nav-group-label {
+    display: none;
+  }
+
   .nav-item {
     flex: 0 0 auto;
     padding: 7px 12px;
@@ -1870,6 +1915,44 @@ label {
   color: #96968c;
   font-size: 9.5px;
   font-weight: 500;
+}
+
+.source-tag {
+  padding: 1px 6px;
+  border: 1px solid #dcebdf;
+  border-radius: 999px;
+  background: #f6fbf7;
+  color: #3f7d58;
+  font-size: 9.5px;
+  font-weight: 500;
+}
+
+.custom-block {
+  padding-bottom: 4px;
+}
+
+.custom-block > summary {
+  border-bottom: 0;
+}
+
+.custom-block[open] > summary {
+  border-bottom: 1px solid #eeeee8;
+}
+
+.custom-block .field-hint {
+  padding: 0 14px;
+}
+
+.custom-block .custom-agent-grid {
+  padding: 2px 14px 0;
+}
+
+.custom-block .panel-actions {
+  padding: 0 14px;
+}
+
+.custom-block .notice {
+  margin: 10px 14px 6px;
 }
 
 .engine-meta {

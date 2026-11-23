@@ -227,6 +227,7 @@ async function handleAgentRun(req, res) {
   const messages = Array.isArray(body?.messages) ? body.messages : []
   const apiKey = typeof body?.apiKey === 'string' ? body.apiKey.trim() : ''
   const apiBaseUrl = typeof body?.apiBaseUrl === 'string' ? body.apiBaseUrl.trim() : ''
+  const model = typeof body?.model === 'string' ? body.model.trim().slice(0, 120) : ''
 
   if (!agentId) {
     sendJson(res, 400, { error: { message: '缺少 agentId。' } })
@@ -287,6 +288,7 @@ async function handleAgentRun(req, res) {
     prompt,
     rootDir,
     baseUrl,
+    model,
     apiKey: /^sk-/.test(apiKey) ? apiKey : '',
     apiBaseUrl,
     onDelta: (text) => send({ type: 'delta', text }),

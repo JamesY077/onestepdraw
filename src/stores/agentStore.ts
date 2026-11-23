@@ -16,6 +16,7 @@ import { pollVideoStatus } from '@/features/generate/video'
 import { generateImage, generateVideo } from '@/api/aiping'
 import { CUSTOM_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useApiStore } from '@/stores/apiStore'
+import { useModelStore } from '@/stores/modelStore'
 
 const STORAGE_KEY = 'onestep_agent_conversations_v1'
 const MAX_CONVERSATIONS = 50
@@ -305,6 +306,7 @@ export const useAgentStore = defineStore('agent', () => {
 
     const localAgentStore = useLocalAgentStore()
     const apiStore = useApiStore()
+    const modelStore = useModelStore()
     const engine = localAgentStore.isLocalEngine ? localAgentStore.selectedAgent : null
 
     try {
@@ -315,6 +317,7 @@ export const useAgentStore = defineStore('agent', () => {
           messages: buildLocalContext(conversation),
           apiKey: apiStore.apiKey || '',
           apiBaseUrl: apiStore.apiBaseUrl || '',
+          model: modelStore.selectedId,
           custom:
             engine.id === CUSTOM_ENGINE_ID
               ? { name: localAgentStore.custom.name, command: localAgentStore.custom.command }
@@ -345,9 +348,10 @@ export const useAgentStore = defineStore('agent', () => {
           assistant.status = 'done'
         }
       } else {
+        assistant.model = modelStore.selectedId
         await streamAgentChat({
           messages: buildContext(conversation),
-          model: AGENT_MODEL_ID,
+          model: modelStore.selectedId,
           signal: controller.signal,
           onDelta: (text) => {
             assistant.content += text

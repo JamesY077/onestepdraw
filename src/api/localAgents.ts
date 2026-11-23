@@ -11,8 +11,12 @@ export interface LocalAgentPreset {
   installHint?: string
   experimental?: boolean
   installed: boolean
+  /** path = 来自 PATH；app = 来自桌面应用包内置的命令行。 */
+  source?: 'path' | 'app' | ''
   command: string
   commandPath: string
+  /** 检测到的桌面端应用路径（即使没有可用命令行也会返回）。 */
+  appPath?: string
   version: string
 }
 
@@ -46,6 +50,8 @@ export interface LocalAgentStreamOptions {
   messages: LocalAgentMessage[]
   apiKey?: string
   apiBaseUrl?: string
+  /** 当前选择的对话模型；dsh 会用它配置模型路由。 */
+  model?: string
   custom?: CustomAgentConfig
   signal?: AbortSignal
   onStart?: (agent: { id: string; name: string; vendor: string }) => void
@@ -107,6 +113,7 @@ export async function streamLocalAgent(options: LocalAgentStreamOptions): Promis
       messages: options.messages,
       apiKey: options.apiKey || '',
       apiBaseUrl: options.apiBaseUrl || '',
+      model: options.model || '',
       custom: options.custom || null,
     }),
     signal: options.signal,

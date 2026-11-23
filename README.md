@@ -18,8 +18,9 @@
 - **对话即创作**：在对话里描述需求，Agent 会先追问缺失的比例 / 时长 / 分辨率，再直接调用本项目的图片与视频模型生成结果。
   - 图片默认 `Seedream 5.0 Lite` + `16:9`；
   - 视频默认 `MiniMax H3` + `16:9` + `768P` + `5s`。
+- **对话模型可选**：选择内置 AIPing 时，输入框会同时出现模型选择器；从 AIPing 模型列表实时拉取对话模型，支持关键字搜索与切换，默认 `DeepSeek-V4.1-Flash-1017`。
 - **右侧悬浮导航**：对话、Skill、图片、视频、配音、3D、设置固定在页面右侧；移动端折叠为一个按钮。
-- **本机 Agent 自动检测**：启动后扫描 PATH 与常见安装目录，发现已安装的 Codex、OpenCode、Qoder、Claude Code、WorkBuddy、DSH 等 CLI；在对话输入框左下角直接切换，选中后由它来执行创作。
+- **本机 Agent 自动检测**：启动后扫描 PATH、常见安装目录，以及 macOS 桌面应用包内置的命令行入口（例如 `DeepSeek Harness.app` 自带的 `dsh`）；在对话输入框左下角直接切换，选中后由它来执行创作。
 - **Agent 一键安装**：设置页提供可复制的安装指令，让 Claude Code、Cursor、Codex 自行克隆仓库、安装依赖并启动，指令中不包含任何密钥。
 - **简约白色调**：无首页、无多余入口，整体为浅色界面。
 - **可恢复的登录态**：API Key 保存在 `sessionStorage`，浏览器会话结束时自动清除；登录周期按自然周轮换。
@@ -127,9 +128,10 @@ OneStep 启动后会自动检测本机已安装的 Agent，不需要额外配置
 设置页的「本机 Agent」分区还可以：
 
 - 手动重新扫描；
-- 查看每个 Agent 的版本与可执行文件路径；
+- 查看每个 Agent 的版本与可执行文件路径（来自桌面应用时会标注「桌面应用内置」）；
 - 查看未安装 Agent 的安装命令并一键复制；
-- 填写自定义命令，接入列表里没有的 Agent。
+- 对只提供桌面端、没有命令行入口的应用给出说明；
+- 在「其他 Agent（自定义命令，高级）」里接入列表之外的 CLI。
 
 扫描依赖本地服务，所以只有用 `npm start`（或单独运行 `node server/local/server.mjs`）打开页面时才可用；只用 `npm run dev` 的 Vite 开发服务器、或静态托管时，检测和调用不可用。
 
@@ -149,6 +151,8 @@ node scripts/onestep-generate.mjs video --prompt "镜头描述" --ratio 16:9 --r
 
 脚本会把结果保存到 `generated/`，并打印 `/generated/...` 链接；对话里的 Markdown 图片与视频链接由本地服务直接托管。密钥只存在于 Agent 子进程环境中，不会写入文件。
 
+选择 DeepSeek Harness（`dsh`）时，本地服务会生成一份临时 dsh patch，把当前 AIPing 地址、密钥和所选模型接成 dsh 的 provider，因此桌面端安装的 dsh 也可以直接用 OneStep 的配置执行。
+
 ## 技术栈
 
 - Vue 3 + TypeScript + Vite
@@ -162,6 +166,7 @@ node scripts/onestep-generate.mjs video --prompt "镜头描述" --ratio 16:9 --r
 ```
 src/
   api/agent.ts            # AIPing /chat/completions 流式对话
+  api/models.ts           # AIPing 对话模型列表与缓存
   api/localAgents.ts      # 本机 Agent 扫描与 SSE 调用
   components/agent/       # 对话页组件（侧栏、消息、输入框、Markdown、生成结果卡）
   features/agent/prompt.ts# Agent 系统提示词（含工具调用协议）
@@ -169,6 +174,7 @@ src/
   features/generate/      # 图片 / 视频参数构建与轮询
   stores/agentStore.ts    # 本地会话持久化、发送与生成执行
   stores/localAgentStore.ts # 本机 Agent 检测、选择与自定义命令
+  stores/modelStore.ts    # 对话模型选择与持久化
   views/ApiKeySetup.vue   # 登录页
   views/ChatAgent.vue     # 对话主页
 server/local/server.mjs   # 本地静态服务 + API 代理 + Agent 运行接口

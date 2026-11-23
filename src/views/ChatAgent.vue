@@ -25,7 +25,7 @@
         <div class="chat-heading">
           <h1>{{ headerTitle }}</h1>
           <span class="heading-sep" aria-hidden="true">/</span>
-          <span class="heading-sub">{{ localAgentStore.selectedLabel }}</span>
+          <span class="heading-sub">{{ headerEngine }}</span>
         </div>
 
         <div class="header-actions">
@@ -137,10 +137,12 @@ import StudioIsland from '@/components/StudioIsland.vue'
 import { useAgentStore } from '@/stores/agentStore'
 import { useApiStore } from '@/stores/apiStore'
 import { useLocalAgentStore } from '@/stores/localAgentStore'
+import { useModelStore } from '@/stores/modelStore'
 
 const store = useAgentStore()
 const apiStore = useApiStore()
 const localAgentStore = useLocalAgentStore()
+const modelStore = useModelStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -191,6 +193,9 @@ const suggestions = [
 
 const messages = computed(() => store.activeConversation?.messages || [])
 const headerTitle = computed(() => store.activeConversation?.title || '新对话')
+const headerEngine = computed(() =>
+  localAgentStore.isLocalEngine ? localAgentStore.selectedLabel : modelStore.selectedId,
+)
 
 const lastAssistantId = computed(() => {
   for (let index = messages.value.length - 1; index >= 0; index -= 1) {
@@ -349,6 +354,7 @@ function flushConversations() {
 
 onMounted(() => {
   localAgentStore.ensureScanned()
+  modelStore.ensureLoaded()
   const id = typeof route.params.id === 'string' ? route.params.id : ''
   if (id && store.conversations.some((conversation) => conversation.id === id)) {
     store.selectConversation(id)

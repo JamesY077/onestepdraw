@@ -15,81 +15,161 @@
       />
 
       <div class="composer-bottom">
-        <div ref="engineRef" class="engine-anchor">
-          <button
-            type="button"
-            class="engine-button"
-            :class="{ 'is-local': localAgentStore.isLocalEngine }"
-            :title="engineTitle"
-            :aria-expanded="engineMenuOpen"
-            aria-haspopup="listbox"
-            @click="toggleEngineMenu"
-          >
-            <span class="model-dot" aria-hidden="true" />
-            <span class="engine-label">{{ localAgentStore.selectedLabel }}</span>
-            <svg class="engine-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="m7 14 5-5 5 5" />
-            </svg>
-          </button>
-
-          <div v-if="engineMenuOpen" class="engine-menu" role="listbox" aria-label="选择执行创作的 Agent">
-            <div class="engine-menu-head">
-              <span>使用哪个 Agent</span>
-              <span class="engine-count">{{ localAgentStore.installedCount }} 个本机</span>
-            </div>
-
+        <div class="composer-pickers">
+          <div ref="engineRef" class="engine-anchor">
             <button
               type="button"
-              class="engine-option"
-              :class="{ active: localAgentStore.selectedId === BUILTIN_ENGINE_ID }"
-              role="option"
-              :aria-selected="localAgentStore.selectedId === BUILTIN_ENGINE_ID"
-              @click="chooseEngine(BUILTIN_ENGINE_ID)"
+              class="engine-button"
+              :class="{ 'is-local': localAgentStore.isLocalEngine }"
+              :title="engineTitle"
+              :aria-expanded="engineMenuOpen"
+              aria-haspopup="listbox"
+              @click="toggleEngineMenu"
             >
-              <span class="option-mark" aria-hidden="true" />
-              <span class="option-copy">
-                <strong>AIPing · DeepSeek</strong>
-                <small>内置模型，无需安装</small>
-              </span>
-              <span v-if="localAgentStore.selectedId === BUILTIN_ENGINE_ID" class="option-check">✓</span>
+              <span class="model-dot" aria-hidden="true" />
+              <span class="engine-label">{{ localAgentStore.selectedLabel }}</span>
+              <svg class="engine-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m7 14 5-5 5 5" />
+              </svg>
             </button>
 
-            <template v-if="localAgentStore.installedAgents.length">
-              <p class="engine-group-label">本机 Agent</p>
+            <div v-if="engineMenuOpen" class="engine-menu" role="listbox" aria-label="选择执行创作的 Agent">
+              <div class="engine-menu-head">
+                <span>使用哪个 Agent</span>
+                <span class="engine-count">{{ localAgentStore.installedCount }} 个本机</span>
+              </div>
+
               <button
-                v-for="agent in localAgentStore.installedAgents"
-                :key="agent.id"
                 type="button"
                 class="engine-option"
-                :class="{ active: localAgentStore.selectedId === agent.id }"
+                :class="{ active: localAgentStore.selectedId === BUILTIN_ENGINE_ID }"
                 role="option"
-                :aria-selected="localAgentStore.selectedId === agent.id"
-                @click="chooseEngine(agent.id)"
+                :aria-selected="localAgentStore.selectedId === BUILTIN_ENGINE_ID"
+                @click="chooseEngine(BUILTIN_ENGINE_ID)"
               >
-                <span class="option-mark local" aria-hidden="true" />
+                <span class="option-mark" aria-hidden="true" />
                 <span class="option-copy">
-                  <strong>{{ agent.name }}</strong>
-                  <small>{{ [agent.vendor, agent.version].filter(Boolean).join(' · ') }}</small>
+                  <strong>AIPing · DeepSeek</strong>
+                  <small>内置模型，无需安装</small>
                 </span>
-                <span v-if="localAgentStore.selectedId === agent.id" class="option-check">✓</span>
+                <span v-if="localAgentStore.selectedId === BUILTIN_ENGINE_ID" class="option-check">✓</span>
               </button>
-            </template>
 
-            <p v-else class="engine-empty">
-              {{
-                localAgentStore.isScanning
-                  ? '正在扫描本机 Agent…'
-                  : localAgentStore.status === 'error'
-                    ? '本地扫描不可用，请用 npm start 启动'
-                    : '还没有检测到已安装的 Agent'
-              }}
-            </p>
+              <template v-if="localAgentStore.installedAgents.length">
+                <p class="engine-group-label">本机 Agent</p>
+                <button
+                  v-for="agent in localAgentStore.installedAgents"
+                  :key="agent.id"
+                  type="button"
+                  class="engine-option"
+                  :class="{ active: localAgentStore.selectedId === agent.id }"
+                  role="option"
+                  :aria-selected="localAgentStore.selectedId === agent.id"
+                  @click="chooseEngine(agent.id)"
+                >
+                  <span class="option-mark local" aria-hidden="true" />
+                  <span class="option-copy">
+                    <strong>{{ agent.name }}</strong>
+                    <small>{{ [agent.vendor, agent.version].filter(Boolean).join(' · ') }}</small>
+                  </span>
+                  <span v-if="localAgentStore.selectedId === agent.id" class="option-check">✓</span>
+                </button>
+              </template>
 
-            <div class="engine-menu-foot">
-              <button type="button" class="engine-link" :disabled="localAgentStore.isScanning" @click="rescan">
-                {{ localAgentStore.isScanning ? '扫描中…' : '重新扫描' }}
-              </button>
-              <button type="button" class="engine-link" @click="openSettings">安装与管理</button>
+              <p v-else class="engine-empty">
+                {{
+                  localAgentStore.isScanning
+                    ? '正在扫描本机 Agent…'
+                    : localAgentStore.status === 'error'
+                      ? '本地扫描不可用，请用 npm start 启动'
+                      : '还没有检测到已安装的 Agent'
+                }}
+              </p>
+
+              <div class="engine-menu-foot">
+                <button type="button" class="engine-link" :disabled="localAgentStore.isScanning" @click="rescan">
+                  {{ localAgentStore.isScanning ? '扫描中…' : '重新扫描' }}
+                </button>
+                <button type="button" class="engine-link" @click="openSettings">安装与管理</button>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!localAgentStore.isLocalEngine" ref="modelRef" class="model-anchor">
+            <button
+              type="button"
+              class="engine-button model-button"
+              :title="`当前对话模型：${modelStore.selectedId}`"
+              :aria-expanded="modelMenuOpen"
+              aria-haspopup="listbox"
+              @click="toggleModelMenu"
+            >
+              <span class="engine-label">{{ modelStore.selectedId }}</span>
+              <svg class="engine-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m7 14 5-5 5 5" />
+              </svg>
+            </button>
+
+            <div v-if="modelMenuOpen" class="engine-menu model-menu" role="listbox" aria-label="选择 AIPing 模型">
+              <div class="model-search-row">
+                <svg class="model-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="6.5" />
+                  <path d="m16 16 4.5 4.5" />
+                </svg>
+                <input
+                  ref="modelSearchRef"
+                  v-model="modelQuery"
+                  class="model-search"
+                  type="text"
+                  placeholder="搜索模型…"
+                  autocomplete="off"
+                  spellcheck="false"
+                  @keydown.stop
+                />
+              </div>
+
+              <p v-if="modelStore.status === 'error'" class="engine-empty">
+                {{ modelStore.error }}
+                <button type="button" class="engine-link" @click="reloadModels">重试</button>
+              </p>
+              <p v-else-if="!modelStore.isLoaded" class="engine-empty">正在读取 AIPing 模型…</p>
+
+              <div v-else class="model-list">
+                <button
+                  v-for="model in filteredModels"
+                  :key="model.id"
+                  type="button"
+                  class="engine-option"
+                  :class="{ active: modelStore.selectedId === model.id }"
+                  role="option"
+                  :aria-selected="modelStore.selectedId === model.id"
+                  @click="chooseModel(model.id)"
+                >
+                  <span class="option-copy">
+                    <strong>{{ model.id }}</strong>
+                    <small>
+                      {{ model.kind === 'vision' ? '多模态' : '文本' }}
+                      <template v-if="model.context"> · 上下文 {{ formatContext(model.context) }}</template>
+                    </small>
+                  </span>
+                  <span v-if="modelStore.selectedId === model.id" class="option-check">✓</span>
+                </button>
+                <p v-if="!filteredModels.length" class="engine-empty">
+                  没有匹配「{{ modelQuery }}」的模型
+                </p>
+              </div>
+
+              <div class="engine-menu-foot">
+                <button
+                  type="button"
+                  class="engine-link"
+                  :disabled="modelStore.status === 'loading'"
+                  @click="reloadModels"
+                >
+                  {{ modelStore.status === 'loading' ? '刷新中…' : '刷新列表' }}
+                </button>
+                <span class="engine-count">{{ modelStore.models.length }} 个模型</span>
+              </div>
             </div>
           </div>
         </div>
@@ -134,6 +214,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { BUILTIN_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
+import { useModelStore } from '@/stores/modelStore'
 
 const props = withDefaults(defineProps<{ disabled?: boolean; placeholder?: string }>(), {
   disabled: false,
@@ -146,8 +227,13 @@ const emit = defineEmits<{
 
 const router = useRouter()
 const localAgentStore = useLocalAgentStore()
+const modelStore = useModelStore()
 const engineRef = ref<HTMLElement | null>(null)
 const engineMenuOpen = ref(false)
+const modelRef = ref<HTMLElement | null>(null)
+const modelMenuOpen = ref(false)
+const modelQuery = ref('')
+const modelSearchRef = ref<HTMLInputElement | null>(null)
 const text = defineModel<string>({ default: '' })
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const focused = ref(false)
@@ -161,10 +247,26 @@ const engineTitle = computed(() =>
     : 'AIPing · DeepSeek，内置模型',
 )
 
+const filteredModels = computed(() => {
+  const query = modelQuery.value.trim().toLowerCase()
+  if (!query) return modelStore.models
+  return modelStore.models.filter((model) => model.id.toLowerCase().includes(query))
+})
+
+function formatContext(value: number): string {
+  if (!value) return ''
+  if (value >= 1_000_000) return `${Number((value / 1_000_000).toFixed(2))}M`
+  if (value >= 1000) return `${Math.round(value / 1000)}K`
+  return String(value)
+}
+
 function toggleEngineMenu() {
   if (props.disabled) return
   engineMenuOpen.value = !engineMenuOpen.value
-  if (engineMenuOpen.value) localAgentStore.ensureScanned()
+  if (engineMenuOpen.value) {
+    modelMenuOpen.value = false
+    localAgentStore.ensureScanned()
+  }
 }
 
 function chooseEngine(id: string) {
@@ -173,27 +275,56 @@ function chooseEngine(id: string) {
   engineMenuOpen.value = false
 }
 
+function toggleModelMenu() {
+  if (props.disabled) return
+  modelMenuOpen.value = !modelMenuOpen.value
+  if (modelMenuOpen.value) {
+    engineMenuOpen.value = false
+    modelQuery.value = ''
+    modelStore.ensureLoaded()
+    nextTick(() => modelSearchRef.value?.focus())
+  }
+}
+
+function chooseModel(id: string) {
+  modelStore.select(id)
+  modelMenuOpen.value = false
+}
+
+function reloadModels() {
+  void modelStore.load(true)
+}
+
 function rescan() {
   void localAgentStore.scan(true)
 }
 
 function openSettings() {
   engineMenuOpen.value = false
+  modelMenuOpen.value = false
   router.push('/settings#agents')
 }
 
 function handleDocumentPointer(event: MouseEvent) {
-  if (!engineMenuOpen.value) return
-  if (engineRef.value?.contains(event.target as Node)) return
-  engineMenuOpen.value = false
+  const target = event.target as Node
+  if (engineMenuOpen.value && !engineRef.value?.contains(target)) {
+    engineMenuOpen.value = false
+  }
+  if (modelMenuOpen.value && !modelRef.value?.contains(target)) {
+    modelMenuOpen.value = false
+  }
 }
 
 function handleDocumentKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') engineMenuOpen.value = false
+  if (event.key === 'Escape') {
+    engineMenuOpen.value = false
+    modelMenuOpen.value = false
+  }
 }
 
 onMounted(() => {
   localAgentStore.ensureScanned()
+  modelStore.ensureLoaded()
   document.addEventListener('mousedown', handleDocumentPointer)
   document.addEventListener('keydown', handleDocumentKeydown)
 })
@@ -285,6 +416,84 @@ defineExpose({ focus })
   justify-content: space-between;
   gap: 12px;
   padding: 6px 10px 9px 14px;
+}
+
+.composer-pickers {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.model-anchor {
+  position: relative;
+  min-width: 0;
+}
+
+.model-button {
+  max-width: 190px;
+  color: #9a9a92;
+}
+
+.model-button .engine-label {
+  max-width: 168px;
+}
+
+.model-menu {
+  width: 336px;
+  max-height: min(64vh, 430px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.model-search-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  margin: 1px 2px 5px;
+  padding: 0 9px;
+  border: 1px solid #ecece6;
+  border-radius: 8px;
+  background: #fafaf7;
+}
+
+.model-search-icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: #b0b0a8;
+}
+
+.model-search {
+  width: 100%;
+  padding: 8px 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #2c2c28;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.model-search::placeholder {
+  color: #b3b3ab;
+}
+
+.model-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.model-menu .engine-menu-foot {
+  flex: none;
+}
+
+.model-menu .engine-empty {
+  margin: 4px 6px 8px;
 }
 
 .engine-anchor {
@@ -565,6 +774,22 @@ defineExpose({ focus })
   .composer-hint .hint-sep,
   .composer-hint span:last-child {
     display: none;
+  }
+
+  .engine-button {
+    max-width: 34vw;
+  }
+
+  .model-button {
+    max-width: 30vw;
+  }
+
+  .model-button .engine-label {
+    max-width: 26vw;
+  }
+
+  .model-menu {
+    width: min(86vw, 336px);
   }
 }
 </style>
