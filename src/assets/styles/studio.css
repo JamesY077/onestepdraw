@@ -32,7 +32,8 @@
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  padding-left: var(--studio-gutter);
+  /* 右侧悬浮岛通道 */
+  padding-right: var(--studio-gutter);
   color: var(--studio-text);
   background: #ffffff;
   isolation: isolate;
@@ -53,13 +54,13 @@
 
 @media (max-width: 900px) {
   .studio-page {
-    --studio-gutter: 68px;
+    --studio-gutter: 60px;
   }
 }
 
 @media (max-width: 640px) {
   .studio-page {
-    --studio-gutter: 62px;
+    --studio-gutter: 58px;
   }
 }
 

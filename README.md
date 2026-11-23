@@ -15,6 +15,11 @@
   - Markdown 渲染（标题、列表、表格、代码块与一键复制）；
   - 支持推理模型的「思考过程」折叠展示；
   - 对话自动保存在浏览器本地，不上传服务器。
+- **对话即创作**：在对话里描述需求，Agent 会先追问缺失的比例 / 时长 / 分辨率，再直接调用本项目的图片与视频模型生成结果。
+  - 图片默认 `Seedream 5.0 Lite` + `16:9`；
+  - 视频默认 `MiniMax H3` + `16:9` + `768P` + `5s`。
+- **右侧悬浮导航**：对话、Skill、图片、视频、配音、3D、设置固定在页面右侧；移动端折叠为一个按钮。
+- **MCP 接入**：内置零依赖 MCP Server，可让 Claude Code、Cursor、Codex、Claude Desktop 直接调用 OneStep 的图片 / 视频生成能力。
 - **简约白色调**：无首页、无多余入口，整体为浅色界面。
 - **可恢复的登录态**：API Key 保存在 `sessionStorage`，浏览器会话结束时自动清除；登录周期按自然周轮换。
 
@@ -73,6 +78,67 @@ npm run dev             # Vite 开发服务器，默认 http://127.0.0.1:5500
 
 API Key 只保存在当前浏览器会话中，不会写入项目文件或上传到第三方服务器。
 
+## 对话内生成
+
+在对话页直接说需求即可，例如：
+
+- 「帮我生成一张极简白色香水主视觉，16:9」
+- 「做一段 5 秒的视频：雨夜跑车，768P」
+
+Agent 会先确认缺失的关键参数，然后调用本机模型。生成结果以卡片形式出现在消息下方，可点击查看原图 / 播放视频。视频生成会显示排队与渲染进度。
+
+默认参数：
+
+| 类型 | 模型 | 默认参数 |
+| --- | --- | --- |
+| 图片 | Doubao-Seedream-5.0-lite | 16:9（可选 4:3 / 3:4 / 1:1 / 9:16） |
+| 视频 | MiniMax-H3 | 16:9 / 768P / 5 秒（4–15 秒，可选 2K） |
+
+## 接入外部 Agent（MCP）
+
+项目内置一个零依赖的 MCP Server，通过 stdio 暴露三个工具：
+
+- `generate_image`：文生图，返回图片 URL；
+- `generate_video`：创建视频任务，可等待完成或立即返回 `task_id`；
+- `check_video`：查询视频任务状态。
+
+设置页「Agent 接入」会根据当前账号生成可直接复制的配置。也可以手动运行：
+
+```bash
+AIPING_API_KEY=sk-xxxx node server/mcp/server.mjs
+```
+
+Claude Code：
+
+```bash
+claude mcp add onestep -e AIPING_API_KEY=sk-xxxx -- node "/绝对路径/onestepdraw/server/mcp/server.mjs"
+```
+
+Cursor / Claude Desktop（`mcpServers` 配置）：
+
+```json
+{
+  "mcpServers": {
+    "onestep": {
+      "command": "node",
+      "args": ["/绝对路径/onestepdraw/server/mcp/server.mjs"],
+      "env": { "AIPING_API_KEY": "sk-xxxx" }
+    }
+  }
+}
+```
+
+Codex（`~/.codex/config.toml`）：
+
+```toml
+[mcp_servers.onestep]
+command = "node"
+args = ["/绝对路径/onestepdraw/server/mcp/server.mjs"]
+env = { AIPING_API_KEY = "sk-xxxx" }
+```
+
+可选环境变量：`AIPING_BASE_URL`、`ONESTEP_IMAGE_MODEL`、`ONESTEP_VIDEO_MODEL`。
+
 ## 技术栈
 
 - Vue 3 + TypeScript + Vite
@@ -86,17 +152,20 @@ API Key 只保存在当前浏览器会话中，不会写入项目文件或上传
 ```
 src/
   api/agent.ts            # AIPing /chat/completions 流式对话
-  components/agent/       # 对话页组件（侧栏、消息、输入框、Markdown）
-  features/agent/prompt.ts# Agent 系统提示词
-  stores/agentStore.ts    # 本地会话持久化与发送逻辑
+  components/agent/       # 对话页组件（侧栏、消息、输入框、Markdown、生成结果卡）
+  features/agent/prompt.ts# Agent 系统提示词（含工具调用协议）
+  features/agent/tools.ts # 工具块解析、默认参数与生成任务构建
+  features/generate/      # 图片 / 视频参数构建与轮询
+  stores/agentStore.ts    # 本地会话持久化、发送与生成执行
   views/ApiKeySetup.vue   # 登录页
   views/ChatAgent.vue     # 对话主页
 server/local/server.mjs   # 本地静态服务 + API 代理
+server/mcp/server.mjs     # 零依赖 MCP Server（stdio）
 start-macos.command       # macOS 一键启动
 start-windows.bat         # Windows 一键启动
 ```
 
 ## 说明
 
-- 旧的 `/image`、`/video`、`/voice`、`/model3d`、`/skill`、`/settings` 路由仍可通过地址直接访问，但没有出现在主界面导航中。
+- `/image`、`/video`、`/voice`、`/model3d`、`/skill`、`/settings` 仍可通过右侧悬浮导航或地址直接访问。
 - 「动作捕捉 / 视频动捕」入口已移除。

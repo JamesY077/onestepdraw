@@ -1330,10 +1330,10 @@ onBeforeUnmount(() => {
   margin: 0 auto;
 }
 
-/* 视口不够宽时，为左侧固定悬浮岛（约 72px）让出空间，避免压住结果图。 */
+/* 视口不够宽时，为右侧固定悬浮岛（约 72px）让出空间，避免压住结果图。 */
 @media (min-width: 981px) and (max-width: 1760px) {
   .image-shell {
-    padding-left: 64px;
+    padding-right: 64px;
   }
 }
 
@@ -2544,8 +2544,7 @@ onBeforeUnmount(() => {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    /* 让出左侧悬浮岛（fixed, 约 52px）的位置，避免内容被图标压住 */
-    padding: 0 6px 4px 62px;
+    padding: 0 60px 4px 6px;
   }
 
   .pchip-action {

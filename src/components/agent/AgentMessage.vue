@@ -17,12 +17,18 @@
           <pre class="reasoning-text">{{ message.reasoning }}</pre>
         </details>
 
-        <MarkdownView v-if="message.content" :content="message.content" />
+        <MarkdownView v-if="displayContent" :content="displayContent" />
         <div v-if="isStreaming" class="streaming-indicator" aria-label="正在生成">
           <span class="streaming-dot" />
           <span class="streaming-dot" />
           <span class="streaming-dot" />
         </div>
+
+        <AgentGenerationCard
+          v-if="message.generation"
+          :generation="message.generation"
+          @retry="$emit('generation-retry', message.id)"
+        />
 
         <div v-if="message.status === 'error'" class="message-error">
           <span>{{ message.error || '生成失败，请重试。' }}</span>
@@ -30,7 +36,7 @@
         </div>
 
         <div v-else-if="message.status === 'stopped'" class="message-stopped">
-          <span>{{ message.content ? '已停止生成' : '已停止' }}</span>
+          <span>{{ displayContent ? '已停止生成' : '已停止' }}</span>
           <button v-if="canRetry" type="button" class="text-action" @click="$emit('retry')">继续生成</button>
         </div>
       </template>
@@ -38,11 +44,11 @@
       <footer class="message-meta">
         <span class="message-time">{{ timeLabel }}</span>
         <div class="message-actions">
-          <button v-if="message.content" type="button" class="text-action" @click="copyContent">
+          <button v-if="displayContent" type="button" class="text-action" @click="copyContent">
             {{ copied ? '已复制' : '复制' }}
           </button>
           <button
-            v-if="canRetry && message.role === 'assistant' && !isStreaming && message.content"
+            v-if="canRetry && message.role === 'assistant' && !isStreaming && displayContent"
             type="button"
             class="text-action"
             @click="$emit('retry')"
@@ -59,14 +65,18 @@
 import { computed, ref } from 'vue'
 import BrandMark from './BrandMark.vue'
 import MarkdownView from './MarkdownView.vue'
+import AgentGenerationCard from './AgentGenerationCard.vue'
+import { stripAgentToolBlocks } from '@/features/agent/tools'
 import type { AgentMessage } from '@/types/agent'
 
 const props = withDefaults(defineProps<{ message: AgentMessage; isStreaming: boolean; canRetry?: boolean }>(), {
   canRetry: false,
 })
-defineEmits<{ (event: 'retry'): void }>()
+defineEmits<{ (event: 'retry'): void; (event: 'generation-retry', id: string): void }>()
 
 const copied = ref(false)
+
+const displayContent = computed(() => stripAgentToolBlocks(props.message.content))
 
 const timeLabel = computed(() => {
   const date = new Date(props.message.createdAt)
@@ -75,7 +85,7 @@ const timeLabel = computed(() => {
 
 async function copyContent() {
   try {
-    await navigator.clipboard.writeText(props.message.content)
+    await navigator.clipboard.writeText(displayContent.value)
     copied.value = true
     window.setTimeout(() => {
       copied.value = false

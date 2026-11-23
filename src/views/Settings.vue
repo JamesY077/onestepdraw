@@ -209,6 +209,48 @@
         </div>
       </section>
 
+      <section class="card mcp-card">
+        <div class="section-head">
+          <span class="kicker">Agent 接入</span>
+          <h3>让外部 Agent 调用 OneStep</h3>
+        </div>
+        <p class="mcp-lead">
+          OneStep 自带一个本地 MCP Server。把下面的配置复制到 Claude Code、Cursor、Codex 或 Claude Desktop，
+          这些 Agent 就能直接调用 OneStep 的图片与视频生成能力。默认使用 Seedream 5.0 Lite 与 MiniMax H3。
+        </p>
+
+        <div class="mcp-tabs" role="tablist" aria-label="Agent 客户端">
+          <button
+            v-for="tab in mcpTabs"
+            :key="tab.key"
+            type="button"
+            role="tab"
+            class="mcp-tab"
+            :class="{ active: mcpTab === tab.key }"
+            :aria-selected="mcpTab === tab.key"
+            @click="mcpTab = tab.key"
+          >
+            {{ tab.label }}
+          </button>
+        </div>
+
+        <pre class="mcp-code">{{ activeMcpTab.snippet }}</pre>
+
+        <div class="mcp-actions">
+          <button class="ghost-btn" type="button" @click="copyMcpSnippet">
+            {{ mcpCopied ? '已复制' : '复制配置' }}
+          </button>
+          <span class="mcp-hint">{{ activeMcpTab.hint }}</span>
+        </div>
+
+        <div class="mcp-notes">
+          <p><strong>可用工具</strong>：generate_image、generate_video、check_video。</p>
+          <p><strong>默认参数</strong>：图片 16:9；视频 16:9、768P、5 秒。Agent 也可以指定比例、2K 分辨率与 4–15 秒时长。</p>
+          <p><strong>自定义接口</strong>：如需改服务地址，在配置的 env 中加入 <code>AIPING_BASE_URL</code>。</p>
+          <p class="mcp-key-hint">配置里的 API Key 来自当前登录账号，请勿把这段配置分享给他人。</p>
+        </div>
+      </section>
+
       <section class="card about-card">
         <div class="section-head">
           <span class="kicker">关于</span>
@@ -235,6 +277,8 @@
         <button class="danger-btn" @click="handleClear">清除并退出登录</button>
       </section>
     </main>
+
+    <StudioIsland />
 
     <div v-if="showEditConfig" class="modal-overlay" @click.self="showEditConfig = false">
       <div class="modal">
@@ -275,6 +319,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ApiKeyInput from '@/components/ApiKeyInput.vue'
+import StudioIsland from '@/components/StudioIsland.vue'
 import { useApiStore } from '@/stores/apiStore'
 import { useChatStore } from '@/stores/chatStore'
 import {
@@ -315,9 +360,107 @@ const defaultTranslationModel = DEFAULT_TRANSLATION_MODEL
 
 const maskedKeyText = computed(() => (apiStore.apiKey ? maskApiKey(apiStore.apiKey) : '未设置'))
 
+type McpTabKey = 'claude-code' | 'cursor' | 'codex' | 'claude-desktop'
+const mcpTab = ref<McpTabKey>('claude-code')
+const mcpCopied = ref(false)
+const mcpServerPath = ref('<OneStep 项目目录>/server/mcp/server.mjs')
+
+const mcpApiKey = computed(() => apiStore.apiKey || 'sk-你的AIPing密钥')
+
+const mcpTabs = computed<Array<{ key: McpTabKey; label: string; hint: string; snippet: string }>>(() => {
+  const serverPath = mcpServerPath.value
+  const key = mcpApiKey.value
+
+  return [
+    {
+      key: 'claude-code',
+      label: 'Claude Code',
+      hint: '在终端执行一次，之后可在任意目录使用。',
+      snippet: `claude mcp add onestep -e AIPING_API_KEY=${key} -- node "${serverPath}"`,
+    },
+    {
+      key: 'cursor',
+      label: 'Cursor',
+      hint: '写入项目根目录 .cursor/mcp.json，或在 Cursor 设置的 MCP 面板中添加。',
+      snippet: JSON.stringify(
+        {
+          mcpServers: {
+            onestep: {
+              command: 'node',
+              args: [serverPath],
+              env: { AIPING_API_KEY: key },
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    },
+    {
+      key: 'codex',
+      label: 'Codex',
+      hint: '写入 ~/.codex/config.toml，重启 Codex 后生效。',
+      snippet: [
+        '[mcp_servers.onestep]',
+        'command = "node"',
+        `args = [${JSON.stringify(serverPath)}]`,
+        `env = { AIPING_API_KEY = ${JSON.stringify(key)} }`,
+      ].join('\n'),
+    },
+    {
+      key: 'claude-desktop',
+      label: 'Claude Desktop',
+      hint: '写入 claude_desktop_config.json，重启 Claude Desktop 后生效。',
+      snippet: JSON.stringify(
+        {
+          mcpServers: {
+            onestep: {
+              command: 'node',
+              args: [serverPath],
+              env: { AIPING_API_KEY: key },
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    },
+  ]
+})
+
+const activeMcpTab = computed(
+  () => mcpTabs.value.find((tab) => tab.key === mcpTab.value) || mcpTabs.value[0],
+)
+
+async function copyMcpSnippet() {
+  try {
+    await navigator.clipboard.writeText(activeMcpTab.value.snippet)
+    mcpCopied.value = true
+    window.setTimeout(() => {
+      mcpCopied.value = false
+    }, 1600)
+  } catch {
+    // 剪贴板不可用时忽略，用户仍可手动选中复制。
+  }
+}
+
+async function loadLocalInfo() {
+  try {
+    const response = await fetch('/local/info', { cache: 'no-store' })
+    if (!response.ok) return
+    const data = await response.json()
+    if (typeof data?.mcpServer === 'string' && data.mcpServer) {
+      mcpServerPath.value = data.mcpServer
+    }
+  } catch {
+    // 静态托管环境下保留占位路径。
+  }
+}
+
 onMounted(() => {
   settingsStore.loadFromStorage()
   skillStore.loadFromStorage()
+  void loadLocalInfo()
 })
 
 function openEditConfig() {
@@ -434,6 +577,13 @@ function resetTranslationModel() {
   padding: 20px;
   color: rgba(29, 29, 27, 0.92);
   background: #ffffff;
+}
+
+/* 为右侧悬浮岛留出通道，避免遮住卡片操作区 */
+@media (min-width: 901px) {
+  .settings-page {
+    padding-right: 86px;
+  }
 }
 
 .settings-page::before {
@@ -1051,9 +1201,120 @@ label {
 }
 
 @media (max-width: 900px) {
+  .settings-page {
+    padding-right: 66px;
+  }
+
   .hero-card {
     grid-template-columns: 1fr;
     padding: 20px;
   }
+}
+
+/* ---------- MCP / Agent 接入 ---------- */
+
+.mcp-card {
+  grid-column: 1 / -1;
+}
+
+.mcp-lead {
+  max-width: 72ch;
+  margin: 0 0 16px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.mcp-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.mcp-tab {
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid #e8e8e2;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #6d6d65;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.mcp-tab:hover {
+  border-color: #d2d2ca;
+  color: #1d1d1b;
+}
+
+.mcp-tab.active {
+  border-color: #111111;
+  background: #111111;
+  color: #ffffff;
+}
+
+.mcp-code {
+  margin: 0;
+  padding: 16px 18px;
+  overflow-x: auto;
+  border: 1px solid #e8e8e2;
+  border-radius: 16px;
+  background: #fafaf8;
+  color: #2b2b27;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.mcp-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.mcp-hint {
+  color: #9a9a92;
+  font-size: 12px;
+}
+
+.mcp-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f0ea;
+}
+
+.mcp-notes p {
+  margin: 0;
+  color: #6d6d65;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.mcp-notes strong {
+  color: #2b2b27;
+  font-weight: 600;
+}
+
+.mcp-notes code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: #f2f2ee;
+  font-size: 11.5px;
+}
+
+.mcp-key-hint {
+  color: #a4a49c !important;
+  font-size: 11.5px !important;
 }
 </style>

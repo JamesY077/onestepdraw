@@ -5662,29 +5662,6 @@ async function handleRegenerate(message: Message) {
   }
 }
 
-/* 左侧悬浮岛胶囊预留通道 */
-.chat-page {
-  padding-left: 88px;
-}
-
-@media (max-width: 1100px) {
-  .chat-page {
-    padding-left: 76px;
-  }
-}
-
-@media (max-width: 980px) {
-  .chat-page {
-    padding-left: 68px;
-  }
-}
-
-@media (max-width: 640px) {
-  .chat-page {
-    padding-left: 62px;
-  }
-}
-
 /* =========================================================================
  * Studio 统一视觉 v2：与 Skill / 配音分区共用同一套背景与面板语言
  * ========================================================================= */
@@ -6989,7 +6966,7 @@ async function handleRegenerate(message: Message) {
 
 @media (min-width: 981px) and (max-width: 1760px) {
   .video-shell {
-    padding-left: 64px;
+    padding-right: 64px;
   }
 }
 
@@ -8049,7 +8026,7 @@ async function handleRegenerate(message: Message) {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 0 6px 4px 62px;
+    padding: 0 60px 4px 6px;
   }
 
   .pchip-action {

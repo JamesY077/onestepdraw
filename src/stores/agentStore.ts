@@ -3,6 +3,16 @@ import { defineStore } from 'pinia'
 import { AGENT_MODEL_ID, AgentApiError, streamAgentChat } from '@/api/agent'
 import type { AgentChatMessage, AgentConversation, AgentMessage } from '@/types/agent'
 import { DEFAULT_AGENT_SYSTEM_PROMPT } from '@/features/agent/prompt'
+import {
+  buildAgentGeneration,
+  describeAgentGeneration,
+  extractAgentToolCalls,
+  stripAgentToolBlocks,
+  type AgentToolCall,
+} from '@/features/agent/tools'
+import { buildImageParams, buildVideoParams } from '@/features/generate/buildParams'
+import { pollVideoStatus } from '@/features/generate/video'
+import { generateImage, generateVideo } from '@/api/aiping'
 
 const STORAGE_KEY = 'onestep_agent_conversations_v1'
 const MAX_CONVERSATIONS = 50
@@ -143,12 +153,18 @@ export const useAgentStore = defineStore('agent', () => {
 
   function buildContext(conversation: AgentConversation): AgentChatMessage[] {
     const history = conversation.messages
-      .filter((message) => message.status !== 'error' && message.content.trim())
+      .filter((message) => message.status !== 'error' && (message.content.trim() || message.generation))
       .slice(-MAX_CONTEXT_MESSAGES)
-      .map<AgentChatMessage>((message) => ({
-        role: message.role,
-        content: message.content,
-      }))
+      .map<AgentChatMessage>((message) => {
+        const note =
+          message.role === 'assistant' && message.generation
+            ? `\n\n[系统记录] 已调用${message.generation.kind === 'image' ? '图片' : '视频'}生成：${describeAgentGeneration(message.generation)}。`
+            : ''
+        return {
+          role: message.role,
+          content: `${message.content}${note}`.trim(),
+        }
+      })
 
     return [
       { role: 'system', content: DEFAULT_AGENT_SYSTEM_PROMPT },
@@ -163,11 +179,106 @@ export const useAgentStore = defineStore('agent', () => {
     }
   }
 
+  async function runGeneration(
+    conversation: AgentConversation,
+    message: AgentMessage,
+    call: AgentToolCall,
+  ) {
+    const built = buildAgentGeneration(call)
+    if (!built) return
+    // 保留 reactive 代理：直接改原始对象不会触发结果卡片更新。
+    const generation = reactive(built)
+    message.generation = generation
+    conversation.updatedAt = Date.now()
+    persistNow()
+
+    try {
+      if (generation.kind === 'image') {
+        const params = await buildImageParams(
+          generation.prompt,
+          generation.model,
+          null,
+          generation.aspectRatio,
+          'seedream-5-lite',
+        )
+        const response = await generateImage(params)
+        const images = (response.data || [])
+          .map((item) =>
+            item.url ? item.url : item.b64_json ? `data:image/png;base64,${item.b64_json}` : '',
+          )
+          .filter((url): url is string => !!url)
+        if (!images.length) throw new Error('图片生成成功，但没有返回可显示的图片。')
+        generation.images = images
+        generation.status = 'succeeded'
+      } else {
+        const params = await buildVideoParams(
+          generation.prompt,
+          generation.model,
+          null,
+          generation.aspectRatio,
+          generation.duration || 5,
+          'minimax-h3',
+          'off',
+          generation.resolution || '768P',
+          null,
+        )
+        const task = await generateVideo(params)
+        if (!task.id) throw new Error('视频任务创建成功但未返回任务 ID，请重试。')
+        const finalStatus = await pollVideoStatus(
+          task.id,
+          (progress) => {
+            generation.progress = progress
+          },
+          {
+            provider: task.provider || 'minimax-h3',
+            providerCreateEndpoint: (task as any).providerCreateEndpoint,
+            duration: generation.duration,
+            resolution: generation.resolution,
+            deadline: Date.now() + 60 * 60 * 1000,
+          },
+        )
+        const url = finalStatus.video_url || finalStatus.data?.find((item) => item.url)?.url
+        if (!url) throw new Error('视频任务已完成，但没有返回视频地址。')
+        generation.videoUrl = url
+        generation.thumbnail = finalStatus.data?.[0]?.thumbnail
+        generation.progress = 100
+        generation.status = 'succeeded'
+      }
+    } catch (error: any) {
+      generation.status = 'failed'
+      generation.error = error?.message || '生成失败，请稍后重试。'
+      if (error instanceof AgentApiError && error.kind === 'auth') authExpired.value = true
+    } finally {
+      conversation.updatedAt = Date.now()
+      persistNow()
+    }
+  }
+
+  function retryGeneration(messageId: string) {
+    const conversation = activeConversation.value
+    if (!conversation) return
+    const message = conversation.messages.find((item) => item.id === messageId)
+    const generation = message?.generation
+    if (!message || !generation || generation.status === 'running') return
+
+    const call: AgentToolCall = {
+      name: generation.kind === 'image' ? 'generate_image' : 'generate_video',
+      args: {
+        prompt: generation.prompt,
+        aspect_ratio: generation.aspectRatio,
+        resolution: generation.resolution,
+        duration: generation.duration,
+      },
+    }
+    void runGeneration(conversation, message, call)
+  }
+
   async function requestAssistant(conversation: AgentConversation, assistant: AgentMessage) {
     const controller = new AbortController()
     abortController = controller
     streamingId.value = assistant.id
     authExpired.value = false
+    let pendingTool: AgentToolCall | null = null
 
     try {
       await streamAgentChat({
@@ -186,11 +297,25 @@ export const useAgentStore = defineStore('agent', () => {
         },
       })
 
-      if (!assistant.content.trim()) {
+      const raw = assistant.content
+      const toolCalls = extractAgentToolCalls(raw)
+      const visible = stripAgentToolBlocks(raw)
+      assistant.content = visible
+
+      if (!visible && !toolCalls.length) {
         assistant.status = 'error'
         assistant.error = '模型没有返回内容，请重试。'
       } else {
         assistant.status = 'done'
+        if (toolCalls.length) {
+          const call = toolCalls[0]
+          if (buildAgentGeneration(call)) {
+            pendingTool = call
+          } else if (!visible) {
+            assistant.status = 'error'
+            assistant.error = '没有解析到可执行的生成参数，请补充画面内容后重试。'
+          }
+        }
       }
     } catch (error: any) {
       if (error?.name === 'AbortError' || controller.signal.aborted) {
@@ -213,6 +338,9 @@ export const useAgentStore = defineStore('agent', () => {
       conversation.updatedAt = Date.now()
       persistNow()
     }
+
+    // 文本流结束后再执行生成，避免长时间任务占住输入框。
+    if (pendingTool) void runGeneration(conversation, assistant, pendingTool)
   }
 
   async function sendMessage(rawContent: string) {
@@ -307,6 +435,7 @@ export const useAgentStore = defineStore('agent', () => {
     clearAll,
     sendMessage,
     regenerate,
+    retryGeneration,
     stopStreaming,
     renameConversation,
     flush,

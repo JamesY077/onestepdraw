@@ -4,6 +4,29 @@ export type AgentRole = 'user' | 'assistant'
 /** 单条消息状态：流式输出中 / 已完成 / 已停止 / 失败。 */
 export type AgentMessageStatus = 'streaming' | 'done' | 'stopped' | 'error'
 
+export type AgentGenerationKind = 'image' | 'video'
+export type AgentGenerationStatus = 'running' | 'succeeded' | 'failed'
+
+/** 对话 Agent 调用本机生成能力后附在消息上的结果卡片。 */
+export interface AgentGeneration {
+  id: string
+  kind: AgentGenerationKind
+  status: AgentGenerationStatus
+  prompt: string
+  model: string
+  modelLabel: string
+  aspectRatio: string
+  resolution?: string
+  duration?: number
+  /** 视频任务的轮询进度（0-100），上游不返回时为 undefined。 */
+  progress?: number
+  images?: string[]
+  videoUrl?: string
+  thumbnail?: string
+  error?: string
+  createdAt: number
+}
+
 export interface AgentMessage {
   id: string
   role: AgentRole
@@ -14,6 +37,8 @@ export interface AgentMessage {
   status: AgentMessageStatus
   error?: string
   model?: string
+  /** 本条回复触发的图片 / 视频生成任务。 */
+  generation?: AgentGeneration
 }
 
 export interface AgentConversation {

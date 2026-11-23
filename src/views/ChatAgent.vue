@@ -30,6 +30,12 @@
 
         <div class="header-actions">
           <span class="local-badge">本地</span>
+          <button type="button" class="new-chat-icon" title="设置" aria-label="设置" @click="router.push('/settings')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.11a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.11A1.7 1.7 0 0 0 4.67 8.9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.11A1.7 1.7 0 0 0 15.1 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v.11a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.11a1.7 1.7 0 0 0-1.49.86z" />
+            </svg>
+          </button>
           <button type="button" class="new-chat-icon" title="新对话" aria-label="新对话" @click="handleNew">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
               <path d="M12 5v14M5 12h14" />
@@ -87,6 +93,7 @@
             :is-streaming="message.status === 'streaming'"
             :can-retry="message.id === lastAssistantId"
             @retry="handleRetry"
+            @generation-retry="handleGenerationRetry"
           />
         </section>
       </div>
@@ -103,6 +110,8 @@
         </div>
       </div>
     </main>
+
+    <StudioIsland />
   </div>
 </template>
 
@@ -113,6 +122,7 @@ import AgentSidebar from '@/components/agent/AgentSidebar.vue'
 import AgentComposer from '@/components/agent/AgentComposer.vue'
 import AgentMessage from '@/components/agent/AgentMessage.vue'
 import BrandMark from '@/components/agent/BrandMark.vue'
+import StudioIsland from '@/components/StudioIsland.vue'
 import { useAgentStore } from '@/stores/agentStore'
 import { useApiStore } from '@/stores/apiStore'
 import { AGENT_MODEL_NAME } from '@/api/agent'
@@ -153,6 +163,18 @@ const suggestions = [
     prompt: '我想做一个个人项目，但还没想清楚。请用结构化提问帮我理清目标、受众、范围和下一步。',
     icon: 'M6 5.5h12v13H6zM9 9h6M9 12h6M9 15h3.5',
   },
+  {
+    title: '生成一张产品主视觉',
+    description: '直接出图，默认 16:9',
+    prompt: '帮我生成一张极简白色风格的香水产品主视觉，磨砂玻璃瓶身，柔光侧逆光，16:9。',
+    icon: 'M4 6.5h16v11H4zM7.5 10.2a1.3 1.3 0 1 0 0 .01M4.6 16.5l4.3-4 3.2 2.8 2.5-2.2 4.8 3.6',
+  },
+  {
+    title: '生成一段 5 秒短片',
+    description: '直接出视频，默认 768P',
+    prompt: '帮我生成一段 5 秒的视频：雨夜霓虹灯下的复古跑车缓缓驶过，镜头低角度跟拍，16:9，768P。',
+    icon: 'M4 6.5h16v11H4zM10.2 10 14 12l-3.8 2z',
+  },
 ]
 
 const messages = computed(() => store.activeConversation?.messages || [])
@@ -169,6 +191,17 @@ function scrollToBottom(behavior: ScrollBehavior = 'auto') {
   const element = scrollRef.value
   if (!element) return
   element.scrollTo({ top: element.scrollHeight, behavior })
+}
+
+/** 有消息时贴底，没有消息时回到顶部，避免欢迎页被 6 个快捷卡片顶到下方。 */
+function resetScroll(behavior: ScrollBehavior = 'auto') {
+  const element = scrollRef.value
+  if (!element) return
+  if (messages.value.length) {
+    element.scrollTo({ top: element.scrollHeight, behavior })
+  } else {
+    element.scrollTo({ top: 0, behavior })
+  }
 }
 
 function handleScroll() {
@@ -197,13 +230,13 @@ function handleSelect(id: string) {
   store.selectConversation(id)
   sidebarOpen.value = false
   syncRouteWithActive()
-  nextTick(() => scrollToBottom('auto'))
+  nextTick(() => resetScroll('auto'))
 }
 
 function handleDelete(id: string) {
   store.deleteConversation(id)
   syncRouteWithActive()
-  nextTick(() => scrollToBottom('auto'))
+  nextTick(() => resetScroll('auto'))
 }
 
 function handleLogout() {
@@ -230,6 +263,10 @@ async function handleRetry() {
   scrollToBottom('smooth')
 }
 
+function handleGenerationRetry(messageId: string) {
+  store.retryGeneration(messageId)
+}
+
 function applySuggestion(prompt: string) {
   draft.value = prompt
   nextTick(() => composerRef.value?.focus())
@@ -239,7 +276,7 @@ watch(
   () => store.activeId,
   () => {
     syncRouteWithActive()
-    nextTick(() => scrollToBottom('auto'))
+    nextTick(() => resetScroll('auto'))
   },
 )
 
@@ -260,7 +297,7 @@ watch(
   },
   () => {
     if (!stickToBottom.value) return
-    nextTick(() => scrollToBottom('auto'))
+    nextTick(() => resetScroll('auto'))
   },
 )
 
@@ -305,7 +342,7 @@ onMounted(() => {
   } else if (store.activeId) {
     router.replace(`/chat/${store.activeId}`)
   }
-  nextTick(() => scrollToBottom('auto'))
+  nextTick(() => resetScroll('auto'))
   window.addEventListener('keydown', handleGlobalKeydown)
   window.addEventListener('beforeunload', flushConversations)
 })
@@ -337,6 +374,13 @@ onBeforeUnmount(() => {
   min-width: 0;
   flex-direction: column;
   background: #ffffff;
+}
+
+/* 桌面端为右侧悬浮岛留出通道 */
+@media (min-width: 901px) {
+  .chat-main {
+    padding-right: 76px;
+  }
 }
 
 .chat-header {
@@ -662,8 +706,13 @@ onBeforeUnmount(() => {
   }
 
   .message-list {
-    padding: 26px 16px 32px;
+    padding: 26px 66px 32px 16px;
     gap: 24px;
+  }
+
+  .welcome {
+    padding-right: 66px;
+    padding-left: 20px;
   }
 
   .composer-area {
