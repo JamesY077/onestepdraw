@@ -28,11 +28,7 @@ function makeId(prefix: string): string {
 }
 
 function defaultTracks(): EditTrack[] {
-  return [
-    { id: makeId('trk'), kind: 'video', name: '画面 V1', clips: [] },
-    { id: makeId('trk'), kind: 'overlay', name: '叠加 O1', clips: [] },
-    { id: makeId('trk'), kind: 'audio', name: '音频 A1', clips: [], muted: false },
-  ]
+  return [{ id: makeId('trk'), kind: 'video', name: '轨道 1', clips: [] }]
 }
 
 function isProject(value: any): value is EditProject {
@@ -59,12 +55,18 @@ function normalizeProject(value: EditProject): EditProject {
           duration: Math.max(MIN_CLIP_SECONDS, Number(clip.duration) || DEFAULT_DURATION),
         })),
     }))
+  // 轨道按需存在：空轨道（尤其是旧的「叠加 O1」）在加载时直接收起来。
+  const kept = tracks.filter((track) => track.clips.length > 0)
+  const list = kept.length ? kept : defaultTracks()
+  list.forEach((track, index) => {
+    track.name = `轨道 ${index + 1}`
+  })
   return {
     ...value,
     fps: Number(value.fps) || 30,
     aspectRatio: value.aspectRatio || '16:9',
     resolution: value.resolution === '2K' ? '2K' : '768P',
-    tracks: tracks.length ? tracks : defaultTracks(),
+    tracks: list,
     assets: value.assets.filter((asset) => asset && typeof asset.url === 'string'),
   }
 }
@@ -278,24 +280,84 @@ export const useEditProjectStore = defineStore('editProject', () => {
     persist()
   }
 
-  function ensureTrack(project: EditProject, kind: EditTrackKind): EditTrack {
-    const existing = project.tracks.find((track) => track.kind === kind)
-    if (existing) return existing
+  function nextTrackName(project: EditProject): string {
+    let max = 0
+    for (const track of project.tracks) {
+      const match = /^轨道 (\d+)$/.exec(track.name)
+      if (match) max = Math.max(max, Number(match[1]))
+    }
+    return `轨道 ${max + 1}`
+  }
+
+  function kindFitsTrack(assetKind: ProjectAssetKind, track: EditTrack): boolean {
+    return assetKind === 'audio' ? track.kind === 'audio' : track.kind !== 'audio'
+  }
+
+  /** 轨道顺序变了以后按从上到下重新编号，避免出现「轨道 3」在「轨道 2」上面。 */
+  function renumberTracks(project: EditProject) {
+    project.tracks.forEach((track, index) => {
+      track.name = `轨道 ${index + 1}`
+    })
+  }
+
+  function insertTrack(project: EditProject, track: EditTrack) {
+    if (track.kind === 'audio') {
+      project.tracks.push(track)
+    } else {
+      // 画面轨道保持在音频轨道上方。
+      const audioIndex = project.tracks.findIndex((item) => item.kind === 'audio')
+      if (audioIndex < 0) project.tracks.push(track)
+      else project.tracks.splice(audioIndex, 0, track)
+    }
+    renumberTracks(project)
+  }
+
+  /** 同类轨道里找一条这段时间空着的；都占了就新开一条。 */
+  function ensureTrackFor(
+    project: EditProject,
+    kind: EditTrackKind,
+    at: number,
+    duration: number,
+  ): EditTrack {
+    const end = at + duration
+    const free = project.tracks.find(
+      (track) =>
+        track.kind === kind &&
+        track.clips.every(
+          (clip) => end <= clip.start + 0.001 || at >= clip.start + clip.duration - 0.001,
+        ),
+    )
+    if (free) return free
     const track: EditTrack = {
       id: makeId('trk'),
       kind,
-      name: kind === 'audio' ? '音频 A1' : kind === 'overlay' ? '叠加 O1' : '画面 V1',
+      name: nextTrackName(project),
       clips: [],
+      ...(kind === 'audio' ? { muted: false } : {}),
     }
-    project.tracks.push(track)
+    insertTrack(project, track)
     return track
+  }
+
+  /** 这段时间在轨道上是否空着（允许首尾相接）。 */
+  function trackFreeAt(track: EditTrack, at: number, end: number): boolean {
+    return track.clips.every(
+      (clip) => end <= clip.start + 0.001 || at >= clip.start + clip.duration - 0.001,
+    )
+  }
+
+  function kindTail(project: EditProject, assetKind: ProjectAssetKind): number {
+    return project.tracks.reduce(
+      (end, track) => (kindFitsTrack(assetKind, track) ? Math.max(end, trackEnd(track)) : end),
+      0,
+    )
   }
 
   /** 把素材加入项目素材库，并追加到对应轨道末尾。 */
   function appendAsset(
     projectId: string,
     input: Omit<ProjectAsset, 'id' | 'createdAt'> & { id?: string; createdAt?: number },
-    options: { at?: number; trackKind?: EditTrackKind; duration?: number } = {},
+    options: { at?: number; trackId?: string; duration?: number } = {},
   ): TimelineClip | null {
     const project = getProject(projectId)
     if (!project) return null
@@ -311,13 +373,22 @@ export const useEditProjectStore = defineStore('editProject', () => {
     }
     if (!existing) project.assets.unshift(asset)
 
-    const trackKind = options.trackKind || trackKindForAsset(asset.kind)
-    const track = ensureTrack(project, trackKind)
-    const start = Math.max(0, options.at ?? trackEnd(track))
     const duration = Math.min(
       MAX_PROJECT_SECONDS,
       Math.max(MIN_CLIP_SECONDS, options.duration || asset.duration || defaultClipSeconds(asset.kind)),
     )
+    const picked = options.trackId
+      ? project.tracks.find((track) => track.id === options.trackId)
+      : undefined
+    const fits = picked && kindFitsTrack(asset.kind, picked) ? picked : undefined
+    const start = Math.max(
+      0,
+      options.at ?? (fits ? trackEnd(fits) : kindTail(project, asset.kind)),
+    )
+    // 拖到已占用的位置上时自动换一条空轨道，避免两段叠在一起。
+    const target =
+      fits && trackFreeAt(fits, start, start + duration) ? fits : undefined
+    const track = target || ensureTrackFor(project, trackKindForAsset(asset.kind), start, duration)
     const clip: TimelineClip = {
       id: makeId('clip'),
       assetId: asset.id,
@@ -356,11 +427,11 @@ export const useEditProjectStore = defineStore('editProject', () => {
     return asset
   }
 
-  function addAssetToTrack(projectId: string, assetId: string, trackKind?: EditTrackKind): TimelineClip | null {
+  function addAssetToTrack(projectId: string, assetId: string, trackId?: string): TimelineClip | null {
     const project = getProject(projectId)
     const asset = project?.assets.find((item) => item.id === assetId)
     if (!project || !asset) return null
-    return appendAsset(projectId, asset, { trackKind })
+    return appendAsset(projectId, asset, { trackId })
   }
 
   function findClip(project: EditProject, clipId: string): { track: EditTrack; clip: TimelineClip } | null {
@@ -395,6 +466,13 @@ export const useEditProjectStore = defineStore('editProject', () => {
     touch(project)
   }
 
+  /** 删空的自动轨道顺手收掉；一条都不剩时留一条空轨道好继续加素材。 */
+  function pruneEmptyTracks(project: EditProject) {
+    const kept = project.tracks.filter((track) => track.clips.length > 0)
+    project.tracks = kept.length ? kept : defaultTracks()
+    renumberTracks(project)
+  }
+
   function removeClip(projectId: string, clipId: string) {
     const project = getProject(projectId)
     if (!project) return
@@ -403,6 +481,7 @@ export const useEditProjectStore = defineStore('editProject', () => {
       if (index >= 0) {
         recordHistory(project)
         track.clips.splice(index, 1)
+        pruneEmptyTracks(project)
         touch(project)
         return
       }
@@ -530,7 +609,10 @@ export const useEditProjectStore = defineStore('editProject', () => {
       }
       skipped += 1
     }
-    if (applied) touch(project)
+    if (applied) {
+      pruneEmptyTracks(project)
+      touch(project)
+    }
     return { applied, skipped }
   }
 

@@ -50,7 +50,11 @@
               aria-haspopup="listbox"
               @click="toggleEngineMenu"
             >
-              <span class="model-dot" aria-hidden="true" />
+              <AgentMark
+                :id="localAgentStore.isLocalEngine ? localAgentStore.selectedId : BUILTIN_ENGINE_ID"
+                :name="localAgentStore.selectedLabel"
+                :size="20"
+              />
               <span class="engine-label">{{ localAgentStore.selectedLabel }}</span>
               <svg class="engine-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="m7 14 5-5 5 5" />
@@ -71,7 +75,7 @@
                 :aria-selected="localAgentStore.selectedId === BUILTIN_ENGINE_ID"
                 @click="chooseEngine(BUILTIN_ENGINE_ID)"
               >
-                <span class="option-mark" aria-hidden="true" />
+                <AgentMark :id="BUILTIN_ENGINE_ID" name="AIPing" :size="26" />
                 <span class="option-copy">
                   <strong>AIPing · DeepSeek</strong>
                   <small>内置模型，无需安装</small>
@@ -91,7 +95,7 @@
                   :aria-selected="localAgentStore.selectedId === agent.id"
                   @click="chooseEngine(agent.id)"
                 >
-                  <span class="option-mark local" aria-hidden="true" />
+                  <AgentMark :id="agent.id" :name="agent.name" :size="26" />
                   <span class="option-copy">
                     <strong>{{ agent.name }}</strong>
                     <small>{{ [agent.vendor, agent.version].filter(Boolean).join(' · ') }}</small>
@@ -259,6 +263,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import AgentMark from '@/components/agent/AgentMark.vue'
 import { BUILTIN_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
@@ -682,20 +687,6 @@ defineExpose({ focus })
   color: #b4b4ac;
 }
 
-.model-dot {
-  width: 6px;
-  height: 6px;
-  flex: none;
-  border-radius: 50%;
-  background: #5aa77a;
-  box-shadow: 0 0 0 2.5px rgba(90, 167, 122, 0.13);
-}
-
-.engine-button.is-local .model-dot {
-  background: #4f86c6;
-  box-shadow: 0 0 0 2.5px rgba(79, 134, 198, 0.14);
-}
-
 .engine-menu {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -766,18 +757,6 @@ defineExpose({ focus })
 
 .engine-option.active {
   background: #f3f3ee;
-}
-
-.option-mark {
-  width: 7px;
-  height: 7px;
-  flex: none;
-  border-radius: 50%;
-  background: #5aa77a;
-}
-
-.option-mark.local {
-  background: #4f86c6;
 }
 
 .option-copy {
@@ -929,7 +908,7 @@ defineExpose({ focus })
   }
 
   .engine-button {
-    max-width: 34vw;
+    max-width: 38vw;
   }
 
   .model-button {

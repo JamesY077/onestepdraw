@@ -142,72 +142,13 @@
 
       <main ref="mainRef" class="es-main">
         <section class="es-preview">
-          <div class="preview-toolbar">
-            <button type="button" class="play-button" :title="playing ? '暂停' : '播放'" @click="togglePlay">
-              <svg v-if="!playing" viewBox="0 0 24 24" fill="currentColor"><path d="M9 6.2v11.6l9.8-5.8z" /></svg>
-              <svg v-else viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="6" width="3.4" height="12" rx="1" /><rect x="13.6" y="6" width="3.4" height="12" rx="1" /></svg>
-            </button>
-            <button type="button" class="tool-button" title="回到开头" @click="seek(0)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 5v14M18 6l-8 6 8 6z" />
-              </svg>
-            </button>
-            <span class="toolbar-time">{{ clock }} / {{ formatClock(timelineDuration) }}</span>
-            <span class="tool-button-sep" />
-            <button
-              type="button"
-              class="tool-button"
-              :disabled="!selectedClipId"
-              title="在播放头处分割（⌘B）"
-              @click="splitAtPlayhead"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3v18" />
-                <path d="M7 7.5 12 12l-5 4.5zM17 7.5 12 12l5 4.5z" />
-              </svg>
-              分割
-            </button>
-            <button
-              type="button"
-              class="tool-button"
-              :disabled="!selectedClipId"
-              title="复制片段（⌘D）"
-              @click="duplicateSelected"
-            >
-              复制
-            </button>
-            <button
-              type="button"
-              class="tool-button"
-              :disabled="!canUndo"
-              title="撤销（⌘Z）"
-              @click="undo"
-            >
-              撤销
-            </button>
-            <button
-              type="button"
-              class="tool-button"
-              :disabled="!canRedo"
-              title="重做（⇧⌘Z）"
-              @click="redo"
-            >
-              重做
-            </button>
-            <span class="toolbar-spacer" />
-            <button
-              v-if="selectedClipId"
-              type="button"
-              class="tool-button danger"
-              title="删除选中片段"
-              @click="removeSelectedClip"
-            >
-              删除片段
-            </button>
-          </div>
-
           <div class="preview-stage">
-            <StudioPreview :project="project" :playing="playing" />
+            <StudioPreview
+              :project="project"
+              :playing="playing"
+              @toggle-play="togglePlay"
+              @seek="seek"
+            />
           </div>
         </section>
 
@@ -219,13 +160,19 @@
           :project="project"
           :selected-clip-id="selectedClipId"
           :playing="playing"
-          hint="Ctrl+滚轮缩放 · 拖动吸附"
+          :can-undo="canUndo"
+          :can-redo="canRedo"
           @seek="seek"
           @select="selectedClipId = $event"
           @move-clip="moveClip"
           @trim-clip="trimClip"
           @toggle-mute="toggleMute"
           @add-asset="handleAddAsset"
+          @split="splitAtPlayhead"
+          @duplicate="duplicateSelected"
+          @remove="removeSelectedClip"
+          @undo="undo"
+          @redo="redo"
           @fit="fitTimeline"
         />
       </div>
@@ -292,7 +239,6 @@ import { exportProjectVideo } from '@/features/edit/exportVideo'
 import {
   MAX_PROJECT_SECONDS,
   PROJECT_ASPECT_RATIOS,
-  type EditTrackKind,
   type ProjectAsset,
 } from '@/types/edit'
 
@@ -497,11 +443,11 @@ function toggleMute(trackId: string) {
   projectStore.setTrackMuted(project.value.id, trackId, !track.muted)
 }
 
-function handleAddAsset(payload: { assetId: string; at: number; trackKind: EditTrackKind }) {
+function handleAddAsset(payload: { assetId: string; at: number; trackId: string }) {
   if (!project.value) return
   const asset = project.value.assets.find((item) => item.id === payload.assetId)
   if (!asset) return
-  projectStore.appendAsset(project.value.id, asset, { at: payload.at, trackKind: payload.trackKind })
+  projectStore.appendAsset(project.value.id, asset, { at: payload.at, trackId: payload.trackId })
 }
 
 function addAssetToEnd(assetId: string) {
@@ -730,13 +676,6 @@ function exportProject() {
   link.click()
   window.setTimeout(() => URL.revokeObjectURL(link.href), 1000)
   showToast('工程已导出为 JSON')
-}
-
-function formatClock(seconds: number): string {
-  const value = Math.max(0, seconds)
-  const minutes = Math.floor(value / 60)
-  const rest = value % 60
-  return `${String(minutes).padStart(2, '0')}:${rest.toFixed(1).padStart(4, '0')}`
 }
 
 function relativeTime(timestamp: number): string {
@@ -1280,103 +1219,6 @@ onBeforeUnmount(() => {
   background: #f7f7f3;
 }
 
-.preview-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex: none;
-  padding-bottom: 8px;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.preview-toolbar::-webkit-scrollbar {
-  display: none;
-}
-
-.play-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 1px solid #e0e0d8;
-  border-radius: 50%;
-  background: #ffffff;
-  color: #111110;
-  cursor: pointer;
-}
-
-.play-button svg {
-  width: 15px;
-  height: 15px;
-}
-
-.tool-button {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  height: 26px;
-  padding: 0 8px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: #8c8c84;
-  font-family: inherit;
-  font-size: 10.5px;
-  cursor: pointer;
-}
-
-.tool-button svg {
-  width: 13px;
-  height: 13px;
-}
-
-.tool-button:hover {
-  border-color: #e0e0d8;
-  background: #ffffff;
-  color: #111110;
-}
-
-.tool-button.danger {
-  color: #c0503f;
-}
-
-.tool-button:disabled {
-  opacity: 0.38;
-  cursor: default;
-}
-
-.tool-button:disabled:hover {
-  border-color: transparent;
-  background: transparent;
-  color: #8c8c84;
-}
-
-.tool-button-sep {
-  width: 1px;
-  height: 15px;
-  margin: 0 2px;
-  background: #e6e6df;
-}
-
-.toolbar-time {
-  flex: none;
-  white-space: nowrap;
-  margin-left: 4px;
-  color: #8c8c84;
-  font-size: 10.5px;
-  font-variant-numeric: tabular-nums;
-}
-
-.toolbar-spacer {
-  flex: 1;
-}
-
 .preview-stage {
   flex: 1;
   min-height: 0;
@@ -1671,20 +1513,8 @@ onBeforeUnmount(() => {
   .top-action {
     padding: 5px 8px;
   }
-  .preview-toolbar {
-    flex-wrap: wrap;
-    row-gap: 4px;
-    overflow: visible;
-  }
-  .toolbar-time,
-  .tool-button-sep {
-    display: none;
-  }
-  .toolbar-spacer {
-    display: none;
-  }
-  .preview-toolbar .tool-button.danger {
-    margin-left: auto;
+  .es-preview {
+    padding: 8px 10px 6px;
   }
 }
 </style>

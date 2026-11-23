@@ -50,7 +50,23 @@
     </div>
 
     <footer class="stage-bar">
-      <span class="stage-time">{{ timeText }}</span>
+      <div class="stage-transport">
+        <button
+          type="button"
+          class="stage-play"
+          :title="playing ? '暂停（空格）' : '播放（空格）'"
+          @click="$emit('toggle-play')"
+        >
+          <svg v-if="!playing" viewBox="0 0 24 24" fill="currentColor"><path d="M9 6.2v11.6l9.8-5.8z" /></svg>
+          <svg v-else viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="6" width="3.4" height="12" rx="1" /><rect x="13.6" y="6" width="3.4" height="12" rx="1" /></svg>
+        </button>
+        <button type="button" class="stage-skip" title="回到开头" @click="$emit('seek', 0)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 5v14M18 6l-8 6 8 6z" />
+          </svg>
+        </button>
+        <span class="stage-time">{{ timeText }}</span>
+      </div>
       <span class="stage-meta">{{ project.aspectRatio }} · {{ project.resolution }} · {{ project.fps }}fps</span>
     </footer>
   </div>
@@ -72,6 +88,11 @@ import { projectDuration } from '@/stores/editProjectStore'
 import { playhead } from '@/features/edit/playhead'
 
 const props = defineProps<{ project: EditProject; playing: boolean }>()
+
+defineEmits<{
+  (event: 'toggle-play'): void
+  (event: 'seek', time: number): void
+}>()
 
 const videoRefs = new Map<string, HTMLVideoElement>()
 const audioRefs = new Map<string, HTMLAudioElement>()
@@ -336,17 +357,77 @@ function formatTime(seconds: number): string {
 
 .stage-bar {
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 7px 2px 0;
+  padding: 8px 4px 2px;
   color: #9a9a92;
   font-size: 10.5px;
   font-variant-numeric: tabular-nums;
 }
 
+.stage-transport {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.stage-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #e5e3db;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1d1d1b;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.stage-play svg {
+  width: 13px;
+  height: 13px;
+}
+
+.stage-play:hover {
+  border-color: #111110;
+  box-shadow: 0 3px 10px -6px rgba(17, 17, 16, 0.5);
+}
+
+.stage-skip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #8c8c84;
+  cursor: pointer;
+}
+
+.stage-skip svg {
+  width: 14px;
+  height: 14px;
+}
+
+.stage-skip:hover {
+  border-color: #e7e7e1;
+  background: #ffffff;
+  color: #111110;
+}
+
 .stage-time {
-  color: #5d5d56;
+  color: #4d4d46;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.01em;
 }
 </style>

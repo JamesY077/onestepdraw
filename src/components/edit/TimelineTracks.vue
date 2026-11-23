@@ -3,14 +3,80 @@
     <header class="tl-head">
       <div class="tl-title">
         <strong>时间轴</strong>
-        <span>{{ clipCount }} 个片段 · {{ formatTime(duration) }}</span>
-        <span v-if="hint" class="tl-hint">{{ hint }}</span>
+        <span class="tl-meta">{{ clipCount }} 个片段 · {{ formatTime(duration) }}</span>
       </div>
-      <div class="tl-tools">
-        <button type="button" class="tl-tool" title="缩小（Ctrl+滚轮）" @click="zoomStep(-1)">−</button>
-        <span class="tl-zoom">{{ Math.round(pxPerSec) }}px/s</span>
-        <button type="button" class="tl-tool" title="放大（Ctrl+滚轮）" @click="zoomStep(1)">＋</button>
-        <button type="button" class="tl-tool wide" @click="$emit('fit')">适配</button>
+      <div class="tl-actions">
+        <button
+          type="button"
+          class="tl-action"
+          :disabled="!selectedClipId"
+          title="在播放头处分割（⌘B）"
+          @click="$emit('split')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v18" />
+            <path d="M7 7.5 12 12l-5 4.5zM17 7.5 12 12l5 4.5z" />
+          </svg>
+          <span class="tl-action-label">分割</span>
+        </button>
+        <button
+          type="button"
+          class="tl-action"
+          :disabled="!selectedClipId"
+          title="复制片段（⌘D）"
+          @click="$emit('duplicate')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="11" height="11" rx="2.4" />
+            <path d="M15.5 6.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h.5" />
+          </svg>
+          <span class="tl-action-label">复制</span>
+        </button>
+        <button
+          type="button"
+          class="tl-action danger"
+          :disabled="!selectedClipId"
+          title="删除选中片段（Delete）"
+          @click="$emit('remove')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7" />
+            <path d="M6.8 7l.8 11.2A1.8 1.8 0 0 0 9.4 20h5.2a1.8 1.8 0 0 0 1.8-1.8L17.2 7" />
+          </svg>
+          <span class="tl-action-label">删除</span>
+        </button>
+        <span class="tl-divider" />
+        <button
+          type="button"
+          class="tl-icon"
+          :disabled="!canUndo"
+          title="撤销（⌘Z）"
+          @click="$emit('undo')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8.5 7.5 4.8 11l3.7 3.5" />
+            <path d="M4.8 11h9.4a4.3 4.3 0 0 1 0 8.6h-2.4" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="tl-icon"
+          :disabled="!canRedo"
+          title="重做（⇧⌘Z）"
+          @click="$emit('redo')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15.5 7.5 3.7 3.5-3.7 3.5" />
+            <path d="M19.2 11H9.8a4.3 4.3 0 0 0 0 8.6h2.4" />
+          </svg>
+        </button>
+        <span class="tl-divider" />
+        <div class="tl-zoomgroup">
+          <button type="button" class="tl-zoomstep" title="缩小（Ctrl+滚轮）" @click="zoomStep(-1)">−</button>
+          <span class="tl-zoom">{{ Math.round(pxPerSec) }}px/s</span>
+          <button type="button" class="tl-zoomstep" title="放大（Ctrl+滚轮）" @click="zoomStep(1)">＋</button>
+        </div>
+        <button type="button" class="tl-fit" @click="$emit('fit')">适配</button>
       </div>
     </header>
 
@@ -145,7 +211,6 @@ import {
   MIN_CLIP_SECONDS,
   type EditProject,
   type EditTrack,
-  type EditTrackKind,
   type TimelineClip,
 } from '@/types/edit'
 import { projectDuration } from '@/stores/editProjectStore'
@@ -157,7 +222,8 @@ const props = defineProps<{
   selectedClipId: string
   pxPerSec: number
   playing: boolean
-  hint?: string
+  canUndo: boolean
+  canRedo: boolean
 }>()
 
 const emit = defineEmits<{
@@ -166,7 +232,12 @@ const emit = defineEmits<{
   (event: 'move-clip', payload: { clipId: string; start: number }): void
   (event: 'trim-clip', payload: { clipId: string; start: number; duration: number }): void
   (event: 'toggle-mute', trackId: string): void
-  (event: 'add-asset', payload: { assetId: string; at: number; trackKind: EditTrackKind }): void
+  (event: 'add-asset', payload: { assetId: string; at: number; trackId: string }): void
+  (event: 'split'): void
+  (event: 'duplicate'): void
+  (event: 'remove'): void
+  (event: 'undo'): void
+  (event: 'redo'): void
   (event: 'fit'): void
   (event: 'update:pxPerSec', value: number): void
 }>()
@@ -208,7 +279,18 @@ let pendingSeek = 0
 let resizeObserver: ResizeObserver | null = null
 
 const duration = computed(() => projectDuration(props.project))
-const totalWidth = computed(() => Math.max(600, (Math.max(duration.value, 12) + 6) * props.pxPerSec))
+
+/**
+ * 时间轴至少要铺满视口：否则缩小后内容会停在项目时长处，
+ * 右侧留一大片空白，看起来像「后面的片段没渲染」。
+ */
+const spanSeconds = computed(() => {
+  const fill = viewWidth.value > 0 ? viewWidth.value / props.pxPerSec : 0
+  return Math.max(duration.value + 6, fill + 3, 12)
+})
+const totalWidth = computed(() =>
+  Math.max(viewWidth.value, Math.ceil(spanSeconds.value * props.pxPerSec)),
+)
 const clipCount = computed(() =>
   props.project.tracks.reduce((count, track) => count + track.clips.length, 0),
 )
@@ -224,7 +306,7 @@ const labelStep = computed(() => {
 const ticks = computed(() => {
   const step = labelStep.value / 4
   const from = Math.max(0, Math.floor(windowStart.value / step) * step)
-  const to = Math.min(Math.max(duration.value, 12) + 8, windowEnd.value + step)
+  const to = Math.min(spanSeconds.value, windowEnd.value + step)
   const list: number[] = []
   for (let value = from; value <= to; value += step) {
     list.push(Math.round(value * 100) / 100)
@@ -239,9 +321,11 @@ function isMajor(tick: number): boolean {
 function tickLabel(tick: number): string {
   const total = Math.max(0, tick)
   const minutes = Math.floor(total / 60)
-  const seconds = total % 60
-  const text = Number.isInteger(seconds) ? String(seconds).padStart(2, '0') : seconds.toFixed(1)
-  return minutes > 0 ? `${minutes}:${text.padStart(4, '0')}` : `${text}s`
+  const seconds = total - minutes * 60
+  const text = Number.isInteger(seconds)
+    ? String(seconds).padStart(2, '0')
+    : seconds.toFixed(1).padStart(minutes > 0 ? 4 : 3, '0')
+  return minutes > 0 ? `${minutes}:${text}` : `${text}s`
 }
 
 function setClipRef(id: string, el: unknown) {
@@ -523,7 +607,7 @@ function handleDrop(event: DragEvent, trackId: string) {
   const track = props.project.tracks.find((item) => item.id === trackId)
   if (!track) return
   const at = Math.round(timeFromClientX(event.clientX) * 10) / 10
-  emit('add-asset', { assetId, at, trackKind: track.kind })
+  emit('add-asset', { assetId, at, trackId: track.id })
 }
 
 function formatTime(seconds: number): string {
@@ -568,78 +652,177 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px 12px;
+  gap: 14px;
+  height: 42px;
+  flex: none;
+  padding: 0 12px;
   border-bottom: 1px solid #f0f0ea;
+  background: #fbfbf8;
 }
 
 .tl-title {
   display: flex;
-  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 7px;
   min-width: 0;
   white-space: nowrap;
-  align-items: baseline;
-  gap: 8px;
-  min-width: 0;
-  color: #9a9a92;
-  font-size: 10.5px;
 }
 
 .tl-title strong {
   color: #2a2a26;
   font-size: 11.5px;
   font-weight: 650;
+  letter-spacing: 0.01em;
 }
 
-.tl-hint {
+.tl-meta {
   overflow: hidden;
+  color: #a3a39b;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
   text-overflow: ellipsis;
-  overflow: hidden;
-  max-width: 220px;
-  color: #b0b0a8;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.tl-tools {
+.tl-actions {
   display: flex;
   flex: none;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
-.tl-tool {
+.tl-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #6b6b63;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 550;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tl-action svg {
+  width: 13px;
+  height: 13px;
+  color: #8c8c84;
+}
+
+.tl-action:hover:not(:disabled) {
+  border-color: #e6e6df;
+  background: #ffffff;
+  color: #111110;
+}
+
+.tl-action.danger:hover:not(:disabled) {
+  border-color: #f0d9d4;
+  background: #fdf7f5;
+  color: #b4472f;
+}
+
+.tl-action.danger:hover:not(:disabled) svg {
+  color: #b4472f;
+}
+
+.tl-action:disabled {
+  opacity: 0.34;
+  cursor: default;
+}
+
+.tl-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 5px;
-  border: 1px solid #e7e7e1;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
   border-radius: 6px;
+  background: transparent;
+  color: #6b6b63;
+  cursor: pointer;
+}
+
+.tl-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.tl-icon:hover:not(:disabled) {
+  border-color: #e6e6df;
   background: #ffffff;
+  color: #111110;
+}
+
+.tl-icon:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.tl-divider {
+  width: 1px;
+  height: 15px;
+  margin: 0 4px;
+  background: #ecece6;
+}
+
+.tl-zoomgroup {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  border: 1px solid #e7e7e1;
+  border-radius: 7px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.tl-zoomstep {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #6b6b63;
   font-family: inherit;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1;
   cursor: pointer;
 }
 
-.tl-tool.wide {
-  font-size: 10.5px;
-}
-
-.tl-tool:hover {
-  border-color: #cfcfc7;
+.tl-zoomstep:hover {
+  background: #f4f4ee;
   color: #111110;
 }
 
 .tl-zoom {
   min-width: 46px;
-  color: #a3a39b;
+  color: #8c8c84;
   font-size: 10px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+.tl-fit {
+  height: 26px;
+  margin-left: 2px;
+  padding: 0 9px;
+  border: 1px solid #e7e7e1;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #6b6b63;
+  font-family: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.tl-fit:hover {
+  border-color: #cfcfc7;
+  color: #111110;
 }
 
 .tl-body {
@@ -899,9 +1082,23 @@ onBeforeUnmount(() => {
   pointer-events: auto;
   cursor: ew-resize;
 }
-@media (max-width: 620px) {
-  .tl-hint {
+@media (max-width: 700px) {
+  .tl-action-label,
+  .tl-meta {
     display: none;
+  }
+  .tl-head {
+    gap: 8px;
+    padding: 0 8px;
+  }
+  .tl-actions {
+    gap: 0;
+  }
+  .tl-action {
+    padding: 0 6px;
+  }
+  .tl-divider {
+    margin: 0 2px;
   }
   .tl-scroll {
     touch-action: pan-x;
