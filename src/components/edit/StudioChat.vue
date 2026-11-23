@@ -108,6 +108,37 @@
             <span class="sc-selection-time">{{ clip.duration.toFixed(1) }}s</span>
           </span>
         </div>
+
+        <button
+          v-if="previewText"
+          type="button"
+          class="sc-preview-toggle"
+          :aria-expanded="previewOpen"
+          @click="previewOpen = !previewOpen"
+        >
+          <svg viewBox="0 0 12 12" aria-hidden="true" :class="{ open: previewOpen }">
+            <path d="M4.5 2.5 8 6l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          {{ previewOpen ? '收起这次发送的内容' : `预览这次发给 AI 的内容 · ${previewClips.length} 段` }}
+        </button>
+        <div v-if="previewOpen" class="sc-preview">
+          <ul class="sc-preview-list">
+            <li v-for="clip in previewClips" :key="clip.id">
+              <span class="sc-preview-name">{{ clip.name }}</span>
+              <span class="sc-preview-time">{{ clip.start.toFixed(1) }}s → {{ (clip.start + clip.duration).toFixed(1) }}s</span>
+              <span class="sc-preview-note" :class="{ 'is-empty': !clip.note }">
+                {{ clip.note || '未写意见，AI 会自行判断' }}
+              </span>
+            </li>
+          </ul>
+          <p v-if="draft.trim()" class="sc-preview-draft">
+            <span>补充要求</span>{{ draft.trim() }}
+          </p>
+          <details class="sc-preview-raw">
+            <summary>原始提示词</summary>
+            <pre>{{ previewText }}</pre>
+          </details>
+        </div>
       </div>
       <AgentComposer
         ref="composerRef"
@@ -131,6 +162,7 @@ import { useAgentStore } from '@/stores/agentStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
+import { describeClipContext } from '@/features/agent/clipContext'
 import type { AgentClipRef, ComposerSubmit } from '@/types/agent'
 
 interface PendingClipBatch {
@@ -211,6 +243,30 @@ const composerPlaceholder = computed(() => {
   return '描述要改的地方，或继续生成…'
 })
 
+/** 和 send() 用同一份规则算出真正要发的片段，保证预览和实际请求一致。 */
+function resolveSendClips(): { clips: AgentClipRef[]; queued: boolean; directNote: string } {
+  const queued = queuedClips.value.length > 0
+  const directNote = queued ? '' : props.clipNote.trim()
+  const clips = outgoingClips.value.map((clip) => ({
+    ...clip,
+    note: clip.note || directNote || undefined,
+  }))
+  return { clips, queued, directNote }
+}
+
+const previewOpen = ref(false)
+
+const previewClips = computed(() => resolveSendClips().clips)
+
+/** 发送前可以核对：模型这一轮会收到哪些片段、每段改什么。 */
+const previewText = computed(() => {
+  const { clips } = resolveSendClips()
+  const parts = [draft.value.trim()]
+  const clipBlock = describeClipContext(clips)
+  if (clipBlock) parts.push(clipBlock)
+  return parts.filter(Boolean).join('\n\n')
+})
+
 function scrollToBottom() {
   const element = scrollRef.value
   if (!element) return
@@ -224,12 +280,7 @@ watch(
 
 function send(payload: ComposerSubmit) {
   const text = payload.content.trim()
-  const queued = queuedClips.value.length > 0
-  const directNote = queued ? '' : props.clipNote.trim()
-  const clips = outgoingClips.value.map((clip) => ({
-    ...clip,
-    note: clip.note || directNote || undefined,
-  }))
+  const { clips, queued, directNote } = resolveSendClips()
   if (
     (!text && !payload.attachments.length && !payload.templates?.length && !clips.length) ||
     agentStore.isStreaming
@@ -247,6 +298,7 @@ function send(payload: ComposerSubmit) {
     templates: payload.templates,
     clips: clips.length ? clips : undefined,
   })
+  previewOpen.value = false
   if (queued) emit('consume-pending')
   else if (directNote) emit('clear-note')
 }
@@ -679,6 +731,135 @@ defineExpose({ focusComposer })
   color: #b0a8a0;
   font-size: 8.5px;
   font-variant-numeric: tabular-nums;
+}
+
+.sc-preview-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #a3867a;
+  font-family: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.sc-preview-toggle:hover {
+  color: #8f3d26;
+}
+
+.sc-preview-toggle svg {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  transition: transform 140ms ease;
+}
+
+.sc-preview-toggle svg.open {
+  transform: rotate(90deg);
+}
+
+.sc-preview {
+  margin-top: 4px;
+  padding: 6px 7px;
+  border: 1px solid #f0e5df;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.sc-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sc-preview-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+  font-size: 9.5px;
+  line-height: 1.5;
+}
+
+.sc-preview-name {
+  flex: none;
+  max-width: 42%;
+  overflow: hidden;
+  color: #3d2b23;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-preview-time {
+  flex: none;
+  color: #b0a8a0;
+  font-size: 8.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sc-preview-note {
+  flex: 1;
+  min-width: 0;
+  color: #9c4a30;
+  overflow-wrap: anywhere;
+}
+
+.sc-preview-note.is-empty {
+  color: #b3a49b;
+  font-style: italic;
+}
+
+.sc-preview-draft {
+  margin: 5px 0 0;
+  color: #4a3b33;
+  font-size: 9.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.sc-preview-draft span {
+  margin-right: 4px;
+  color: #a3867a;
+  font-size: 8.5px;
+}
+
+.sc-preview-raw {
+  margin-top: 4px;
+}
+
+.sc-preview-raw summary {
+  color: #a3867a;
+  font-size: 8.5px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sc-preview-raw summary:hover {
+  color: #8f3d26;
+}
+
+.sc-preview-raw pre {
+  max-height: 148px;
+  margin: 4px 0 0;
+  padding: 5px 6px;
+  overflow: auto;
+  border-radius: 5px;
+  background: #fbf7f4;
+  color: #7b6a61;
+  font-family: inherit;
+  font-size: 8.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  scrollbar-width: thin;
 }
 
 .sc-composer :deep(.composer-input) {
