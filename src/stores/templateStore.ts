@@ -126,7 +126,8 @@ export const useTemplateStore = defineStore('template', () => {
       name: template.name,
       category: template.category,
       guide: template.guide,
-      images: template.poster ? [template.poster] : [],
+      // 没有参考静帧时不把「文字参考」占位图当成视觉依据。
+      images: template.still ? [template.poster] : [],
       source: 'builtin',
     })
   }

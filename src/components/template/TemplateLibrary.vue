@@ -7,7 +7,7 @@
             <div class="tpl-heading">
               <span class="tpl-kicker">Template Library</span>
               <h2>模板库</h2>
-              <p>选一组视觉参考，或带一个蒸馏 Skill 进对话与生成页。</p>
+              <p>选一个风格参考，或带一个蒸馏 Skill 进对话与生成页。</p>
             </div>
             <button type="button" class="tpl-close" aria-label="关闭模板库" @click="close">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
@@ -58,7 +58,7 @@
               <input
                 v-model="query"
                 type="search"
-                placeholder="搜索风格、分类或示例片名…"
+                placeholder="搜索风格、编号或分类，例如 水墨 / B3…"
                 autocomplete="off"
                 spellcheck="false"
               />
@@ -71,6 +71,7 @@
                 @click="category = 'all'"
               >
                 全部
+                <span class="tpl-count">{{ BUILTIN_TEMPLATES.length }}</span>
               </button>
               <button
                 v-for="item in TEMPLATE_CATEGORIES"
@@ -80,6 +81,7 @@
                 @click="category = item.label"
               >
                 {{ item.label }}
+                <span class="tpl-count">{{ categoryCounts[item.label] || 0 }}</span>
               </button>
             </div>
 
@@ -98,6 +100,7 @@
                 <span class="tpl-poster">
                   <img :src="item.poster" :alt="`${item.name}参考图`" loading="lazy" />
                   <span class="tpl-poster-tag">{{ item.category }}</span>
+                  <span v-if="!item.still" class="tpl-poster-still">文字参考</span>
                   <span v-if="templateStore.isApplied(item.id)" class="tpl-poster-state">已应用</span>
                 </span>
                 <span class="tpl-card-copy">
@@ -113,8 +116,8 @@
 
             <p v-else class="tpl-credit">
               风格素材来自
-              <a href="https://github.com/lemomo-ai/lemo-opuscar" target="_blank" rel="noreferrer">lemo-opuscar</a>
-              · LemoLab（海报 CC BY 4.0 / 说明 CC BY-NC 4.0）
+              <a href="https://github.com/XiaoyeCodes/code-animation-prompts" target="_blank" rel="noreferrer">code-animation-prompts</a>
+              （{{ BUILTIN_TEMPLATES.length }} 种 · 原素材整理 俯仰观照 · 免费分享，请勿转售）
             </p>
           </div>
 
@@ -308,12 +311,20 @@ const selection = reactive<{ kind: 'builtin' | 'custom'; id: string }>({
   id: '',
 })
 
+const categoryCounts = computed(() => {
+  const counts: Record<string, number> = {}
+  for (const item of BUILTIN_TEMPLATES) {
+    counts[item.category] = (counts[item.category] || 0) + 1
+  }
+  return counts
+})
+
 const filteredTemplates = computed(() => {
   const text = query.value.trim().toLowerCase()
   return BUILTIN_TEMPLATES.filter((item) => {
     if (category.value !== 'all' && item.category !== category.value) return false
     if (!text) return true
-    return [item.name, item.nameEn, item.category, item.categoryEn, item.demo, item.id]
+    return [item.name, item.code, item.category, item.categoryEn, item.demo, item.id]
       .join(' ')
       .toLowerCase()
       .includes(text)
@@ -677,6 +688,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
 }
 
 .tpl-categories button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   flex: none;
   padding: 4px 9px;
   border: 1px solid #ecece6;
@@ -697,6 +711,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
   border-color: #111110;
   background: #111110;
   color: #ffffff;
+}
+
+.tpl-categories .tpl-count {
+  background: transparent;
+  padding: 0;
+  font-size: 9px;
+  color: #b0b0a8;
+}
+
+.tpl-categories button.active .tpl-count {
+  color: rgba(255, 255, 255, 0.62);
 }
 
 .tpl-grid {
@@ -738,7 +763,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
   position: relative;
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
   background: #f3f3ed;
 }
@@ -777,6 +802,21 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
   color: #ffffff;
   font-size: 8.5px;
   font-weight: 600;
+}
+
+/* 没有参考静帧时明确标出来，避免把占位图当成真实截图。 */
+.tpl-poster-still {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  padding: 2px 6px;
+  border: 1px solid rgba(17, 17, 16, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #6b6b63;
+  font-size: 8.5px;
+  font-weight: 550;
+  backdrop-filter: blur(4px);
 }
 
 .tpl-card-copy {
