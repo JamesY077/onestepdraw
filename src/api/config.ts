@@ -242,6 +242,11 @@ export function clearApiSessionReady(): void {
   sessionStorage.removeItem(API_SESSION_READY_STORAGE_KEY)
 }
 
+export function clearApiAuth(): void {
+  clearStoredAuthData()
+  clearApiSessionReady()
+}
+
 export function hasActiveApiSession(): boolean {
   const auth = parseStoredApiAuth()
   if (!auth?.apiKey || !auth.apiBaseUrl) return false

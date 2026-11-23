@@ -1,9 +1,9 @@
 <template>
   <header class="studio-header" :style="{ '--studio-accent': accent }">
     <div class="studio-header-main">
-      <button class="studio-brand" type="button" aria-label="返回 ArtRealm 首页" @click="router.push('/')">
-        <img class="studio-brand-logo" :src="assetUrl('/logo1.webp')" alt="" />
-        <span class="studio-brand-name">ArtRealm</span>
+      <button class="studio-brand" type="button" aria-label="返回 OneStep 对话" @click="router.push('/chat')">
+        <BrandMark :size="26" />
+        <span class="studio-brand-name">OneStep</span>
       </button>
 
       <div class="studio-heading">
@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { assetUrl } from '@/utils/assets'
+import BrandMark from '@/components/agent/BrandMark.vue'
 
 withDefaults(
   defineProps<{
@@ -39,7 +39,7 @@ withDefaults(
     subtitle?: string
     accent?: string
   }>(),
-  { accent: '#8b7dff', subtitle: '' },
+  { accent: '#111111', subtitle: '' },
 )
 
 const router = useRouter()
@@ -68,10 +68,10 @@ const router = useRouter()
   gap: 6px;
   max-width: min(100%, 720px);
   padding: 4px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid #ecece7;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.028);
-  color: rgba(255, 255, 255, 0.44);
+  background: #fafaf8;
+  color: #9a9a92;
   font-size: 11px;
   line-height: 1.6;
   letter-spacing: 0.01em;
@@ -88,12 +88,12 @@ const router = useRouter()
 .studio-brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 12px 6px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 9px;
+  padding: 5px 12px 5px 5px;
+  border: 1px solid #e8e8e2;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #fff;
+  background: #ffffff;
+  color: #1d1d1b;
   font: inherit;
   cursor: pointer;
   transition:
@@ -102,8 +102,8 @@ const router = useRouter()
 }
 
 .studio-brand:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: #fafaf8;
+  border-color: #d2d2ca;
 }
 
 .studio-brand-logo {
@@ -134,13 +134,13 @@ const router = useRouter()
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;
-  color: #fff;
+  color: #111110;
 }
 
 .studio-heading-sub {
   margin-top: 2px;
   font-size: 12.5px;
-  color: var(--studio-text-hint);
+  color: #9a9a92;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -160,10 +160,10 @@ const router = useRouter()
   gap: 6px;
   min-height: 36px;
   padding: 0 15px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid #e8e8e2;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.76);
+  background: #ffffff;
+  color: #4a4a44;
   font: inherit;
   font-size: 12.5px;
   font-weight: 600;
@@ -175,9 +175,9 @@ const router = useRouter()
 }
 
 .studio-action:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  background: #f5f5f1;
+  border-color: #d2d2ca;
+  color: #111110;
 }
 
 @media (max-width: 1080px) {
@@ -214,7 +214,7 @@ const router = useRouter()
   }
 
   .studio-brand {
-    padding: 5px;
+    padding: 4px;
   }
 
   .studio-action {

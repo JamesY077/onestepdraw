@@ -117,7 +117,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   display: flex;
   flex-direction: column;
   padding: 18px 18px 0;
-  background: rgba(6, 7, 10, 0.94);
+  background: #ffffff;
   backdrop-filter: blur(18px);
 }
 
@@ -130,7 +130,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .lightbox-counter {
-  color: rgba(255, 255, 255, 0.86);
+  color: #1d1d1b;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
@@ -138,7 +138,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 .lightbox-model {
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.4);
+  color: #9a9a92;
   font-size: 11.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -148,17 +148,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   margin-left: auto;
   width: 32px;
   height: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid #e8e8e2;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.8);
+  background: #ffffff;
+  color: #4a4a44;
   font-size: 13px;
   cursor: pointer;
 }
 
 .lightbox-close:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
+  background: #f5f5f1;
+  color: #111110;
 }
 
 .lightbox-stage {
@@ -175,7 +175,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   max-height: 100%;
   border-radius: 10px;
   object-fit: contain;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 18px 50px rgba(17, 17, 16, 0.14);
 }
 
 .lightbox-nav {
@@ -185,10 +185,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   place-items: center;
   width: 44px;
   height: 44px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid #e8e8e2;
   border-radius: 50%;
-  background: rgba(16, 18, 24, 0.8);
-  color: rgba(255, 255, 255, 0.8);
+  background: #ffffff;
+  color: #4a4a44;
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
@@ -196,8 +196,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .lightbox-nav:hover {
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
+  background: #f5f5f1;
+  color: #111110;
 }
 
 .lightbox-prev {
@@ -214,22 +214,22 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   gap: 14px;
   flex: 0 0 auto;
   padding: 12px 4px 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid #ecece7;
 }
 
 .lightbox-meta {
   display: flex;
   gap: 10px;
-  color: rgba(255, 255, 255, 0.42);
+  color: #9a9a92;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 
 .lightbox-note {
   padding: 0 8px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid #e8e8e2;
   border-radius: 999px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #66665f;
   font-size: 10px;
   line-height: 18px;
 }
@@ -244,10 +244,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .lb-btn {
   min-height: 32px;
   padding: 0 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid #e8e8e2;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.82);
+  background: #ffffff;
+  color: #4a4a44;
   font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
@@ -255,26 +255,26 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .lb-btn:hover {
-  border-color: rgba(217, 205, 184, 0.36);
-  background: rgba(217, 205, 184, 0.14);
-  color: #fff;
+  border-color: #d2d2ca;
+  background: #f5f5f1;
+  color: #111110;
 }
 
 .lb-btn-primary {
   border-color: transparent;
-  background: linear-gradient(135deg, #f4efe6, #d8cbb4);
-  color: #16130f;
+  background: #111111;
+  color: #ffffff;
 }
 
 .lb-btn-primary:hover {
-  background: linear-gradient(135deg, #fbf7f0, #e7dcc9);
-  color: #16130f;
+  background: #2a2a27;
+  color: #ffffff;
 }
 
 .lb-btn-layers {
-  border-color: rgba(246, 196, 83, 0.4);
-  background: rgba(246, 196, 83, 0.14);
-  color: #f6e3b0;
+  border-color: #efe4c6;
+  background: #fdf9ee;
+  color: #8a6d1f;
 }
 
 @media (max-width: 720px) {

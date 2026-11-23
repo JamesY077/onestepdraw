@@ -41,10 +41,10 @@ const emit = defineEmits<{ 'update:page': [page: number] }>()
   width: 22px;
   height: 22px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid #e8e8e2;
   border-radius: 7px;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(226, 240, 252, 0.72);
+  background: #ffffff;
+  color: #66665f;
   cursor: pointer;
   transition:
     border-color 160ms ease,
@@ -58,9 +58,9 @@ const emit = defineEmits<{ 'update:page': [page: number] }>()
 }
 
 .pager-btn:hover:not(:disabled) {
-  border-color: rgba(125, 211, 252, 0.42);
-  background: rgba(56, 189, 248, 0.12);
-  color: #dff3ff;
+  border-color: #c9c9c1;
+  background: #f5f5f1;
+  color: #111110;
 }
 
 .pager-btn:disabled {
@@ -72,7 +72,7 @@ const emit = defineEmits<{ 'update:page': [page: number] }>()
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: rgba(226, 240, 252, 0.5);
+  color: #9a9a92;
   font-variant-numeric: tabular-nums;
 }
 </style>

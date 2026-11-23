@@ -179,22 +179,8 @@ async function handleSubmit() {
   min-height: 100dvh;
   flex-direction: column;
   overflow: hidden;
-  background:
-    radial-gradient(900px 520px at 50% -12%, rgba(0, 0, 0, 0.045), transparent 62%),
-    linear-gradient(180deg, #fdfdfb 0%, #ffffff 46%);
+  background: #ffffff;
   color: #1d1d1b;
-}
-
-.login-page::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(17, 17, 16, 0.026) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(17, 17, 16, 0.026) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse at 50% 26%, #000 0 26%, transparent 78%);
 }
 
 .login-header {
@@ -243,11 +229,10 @@ async function handleSubmit() {
   padding: 34px 32px 26px;
   border: 1px solid #ecece6;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.86);
+  background: #ffffff;
   box-shadow:
     0 1px 2px rgba(17, 17, 16, 0.03),
-    0 28px 70px rgba(17, 17, 16, 0.06);
-  backdrop-filter: blur(14px);
+    0 18px 50px rgba(17, 17, 16, 0.05);
 }
 
 .card-mark {

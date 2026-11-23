@@ -432,23 +432,12 @@ function resetTranslationModel() {
 .settings-page {
   min-height: 100dvh;
   padding: 20px;
-  color: rgba(255, 255, 255, 0.92);
-  background:
-    radial-gradient(circle at 16% 0%, rgba(91, 141, 255, 0.16), transparent 28%),
-    radial-gradient(circle at 84% 72%, rgba(255, 138, 76, 0.11), transparent 24%),
-    linear-gradient(180deg, #070707 0%, #0b0b0e 52%, #111114 100%);
+  color: rgba(29, 29, 27, 0.92);
+  background: #ffffff;
 }
 
 .settings-page::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.052) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.048) 1px, transparent 1px);
-  background-size: 72px 72px;
-  mask-image: radial-gradient(circle at 50% 40%, #000 0 34%, transparent 78%);
+  display: none;
 }
 
 .topbar-inner,
@@ -470,9 +459,8 @@ function resetTranslationModel() {
   padding: 20px 24px;
   border: 1px solid var(--color-border);
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.075);
-  box-shadow: var(--color-shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.10);
-  backdrop-filter: blur(28px) saturate(145%);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.04);
 }
 
 .title-block {
@@ -509,11 +497,10 @@ h1 {
 
 .hero-card,
 .card {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--color-border);
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.075);
-  box-shadow: var(--color-shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.10);
-  backdrop-filter: blur(28px) saturate(145%);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.04);
 }
 
 .hero-card {
@@ -523,9 +510,7 @@ h1 {
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   gap: 18px;
   align-items: end;
-  background:
-    radial-gradient(circle at 15% 0%, rgba(255, 255, 255, 0.14), transparent 0 38%),
-    rgba(255, 255, 255, 0.075);
+  background: #fafaf8;
 }
 
 .hero-card h2 {
@@ -556,9 +541,9 @@ h1 {
 
 .info-list {
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid #e8e8e2;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.055);
+  background: #ffffff;
 }
 
 .row,
@@ -574,7 +559,7 @@ h1 {
 }
 
 .row + .row {
-  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  border-top: 1px solid #ecece7;
 }
 
 .row-service-url {
@@ -604,10 +589,10 @@ h1 {
   display: block;
   width: 100%;
   padding: 14px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(17, 17, 16, 0.10);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--color-text-secondary);
+  background: #fafaf8;
+  color: #4a4a44;
   font-size: 13px;
   line-height: 1.6;
   word-break: break-all;
@@ -629,7 +614,7 @@ h1 {
 }
 
 .status.unknown {
-  background: rgba(148, 163, 184, 0.14);
+  background: #f5f5f1;
   color: var(--color-text-secondary);
 }
 
@@ -650,7 +635,7 @@ h1 {
 
 .ghost-btn {
   border: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(17, 17, 16, 0.08);
   color: var(--color-text);
 }
 
@@ -658,7 +643,7 @@ h1 {
   border: 1px solid var(--color-action-border);
   background: var(--color-action-bg);
   color: var(--color-action-text);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 8px 18px rgba(17, 17, 16, 0.16);
 }
 
 .danger-btn {
@@ -679,7 +664,7 @@ h1 {
 }
 
 .danger-btn:hover {
-  background: rgba(255, 112, 112, 0.22);
+  background: #f3c9c6;
 }
 
 .btn-row {
@@ -723,7 +708,7 @@ label {
   width: 100%;
   border: 1px solid var(--color-border);
   border-radius: 18px;
-  background: rgba(8, 8, 10, 0.78);
+  background: #ffffff;
   color: var(--color-text);
   transition:
     border-color var(--transition-base),
@@ -751,9 +736,9 @@ label {
 .text-input:focus,
 .text-area:focus {
   outline: none;
-  border-color: rgba(255, 255, 255, 0.24);
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06);
-  background: rgba(8, 8, 10, 0.92);
+  border-color: rgba(29, 29, 27, 0.24);
+  box-shadow: 0 0 0 4px rgba(17, 17, 16, 0.06);
+  background: #ffffff;
 }
 
 .helper-link {
@@ -785,9 +770,9 @@ label {
   justify-content: space-between;
   gap: 18px;
   padding: 14px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(17, 17, 16, 0.1);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(17, 17, 16, 0.04);
 }
 
 .skill-toggle-text {
@@ -797,27 +782,27 @@ label {
 }
 
 .skill-toggle-text strong {
-  color: rgba(255, 255, 255, 0.94);
+  color: rgba(29, 29, 27, 0.94);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
 .skill-toggle-text small {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(29, 29, 27, 0.5);
   font-size: 12px;
   line-height: 1.55;
 }
 
 .skill-source-link {
   justify-self: start;
-  color: rgba(255, 178, 122, 0.85);
+  color: #66665f;
   font-size: 10.5px;
   text-decoration: none;
 }
 
 .skill-source-link:hover {
-  color: #ffb27a;
+  color: #111110;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -828,16 +813,16 @@ label {
   width: 46px;
   height: 27px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(17, 17, 16, 0.16);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(17, 17, 16, 0.14);
   cursor: pointer;
   transition: background 0.25s ease, border-color 0.25s ease;
 }
 
 .toggle-switch.on {
   border-color: transparent;
-  background: linear-gradient(90deg, #ec5a00, #ff8a4c);
+  background: #111111;
 }
 
 .toggle-knob {
@@ -848,7 +833,7 @@ label {
   height: 19px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 1px 3px rgba(17, 17, 16, 0.18);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -871,17 +856,16 @@ label {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(0, 0, 0, 0.58);
-  backdrop-filter: blur(10px);
+  background: rgba(17, 17, 16, 0.28);
+  backdrop-filter: blur(6px);
 }
 
 .modal {
   padding: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--color-border);
   border-radius: 28px;
-  background: rgba(17, 17, 20, 0.94);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.46);
-  backdrop-filter: blur(28px) saturate(145%);
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(17, 17, 16, 0.16);
 }
 
 .modal h3 {
@@ -1008,9 +992,9 @@ label {
   gap: 16px;
   padding: 14px 16px;
   margin-bottom: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(17, 17, 16, 0.10);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(17, 17, 16, 0.05);
 }
 
 .setting-toggle-text {
@@ -1036,9 +1020,9 @@ label {
 
 .advanced-block {
   margin-top: 12px;
-  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border: 1px dashed rgba(17, 17, 16, 0.14);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(17, 17, 16, 0.025);
 }
 
 .advanced-block > summary {
@@ -1055,7 +1039,7 @@ label {
 }
 
 .advanced-block[open] > summary {
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
+  border-bottom: 1px dashed rgba(17, 17, 16, 0.12);
 }
 
 .advanced-block .input-group {

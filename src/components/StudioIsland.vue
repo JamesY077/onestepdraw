@@ -21,7 +21,6 @@
       :key="item.path"
       class="island-item"
       :class="{ active: item.path === activePath }"
-      :style="{ '--item-accent': item.accent, '--item-accent-soft': item.accentSoft }"
       type="button"
       :aria-label="item.label"
       :aria-current="item.path === activePath ? 'page' : undefined"
@@ -60,47 +59,17 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-withDefaults(defineProps<{ tone?: 'dark' | 'light' }>(), { tone: 'dark' })
+withDefaults(defineProps<{ tone?: 'dark' | 'light' }>(), { tone: 'light' })
 
 const router = useRouter()
 const route = useRoute()
 
 const items = [
-  {
-    path: '/skill',
-    key: 'skill',
-    label: 'Skill 创作',
-    accent: '#a78bfa',
-    accentSoft: 'rgba(167, 139, 250, 0.22)',
-  },
-  {
-    path: '/image',
-    key: 'image',
-    label: '图片生成',
-    accent: '#d9cdb8',
-    accentSoft: 'rgba(217, 205, 184, 0.20)',
-  },
-  {
-    path: '/video',
-    key: 'video',
-    label: '视频生成',
-    accent: '#8fb6ff',
-    accentSoft: 'rgba(143, 182, 255, 0.20)',
-  },
-  {
-    path: '/voice',
-    key: 'voice',
-    label: '配音创作',
-    accent: '#fb923c',
-    accentSoft: 'rgba(251, 146, 60, 0.22)',
-  },
-  {
-    path: '/model3d',
-    key: 'model3d',
-    label: '3D 建模',
-    accent: '#38bdf8',
-    accentSoft: 'rgba(56, 189, 248, 0.22)',
-  },
+  { path: '/skill', key: 'skill', label: 'Skill 创作' },
+  { path: '/image', key: 'image', label: '图片生成' },
+  { path: '/video', key: 'video', label: '视频生成' },
+  { path: '/voice', key: 'voice', label: '配音创作' },
+  { path: '/model3d', key: 'model3d', label: '3D 建模' },
 ]
 
 const activePath = computed(() => items.find((item) => route.path.startsWith(item.path))?.path || '')
@@ -130,27 +99,10 @@ function go(item: { path: string }) {
   transform: translateY(-50%);
   /* 不能裁剪：气泡要溢出到胶囊右侧 */
   overflow: visible;
+  border: 1px solid #e8e8e2;
   border-radius: 28px;
-}
-
-/* 深色页面上的胶囊 */
-.studio-island.tone-dark {
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(10, 12, 20, 0.74);
-  box-shadow:
-    0 26px 64px rgba(0, 0, 0, 0.48),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(22px) saturate(150%);
-}
-
-/* 浅色页面（Skill 创作）上的胶囊 */
-.studio-island.tone-light {
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow:
-    0 22px 54px rgba(15, 23, 42, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(22px) saturate(150%);
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(17, 17, 16, 0.06);
 }
 
 .island-item {
@@ -164,43 +116,14 @@ function go(item: { path: string }) {
   border: 0;
   border-radius: 50%;
   background: transparent;
+  color: #8a8a82;
   cursor: pointer;
-  transition: background 180ms ease;
+  transition: background 180ms ease, color 180ms ease;
 }
 
-.tone-dark .island-item {
-  color: rgba(226, 232, 246, 0.66);
-}
-
-.tone-light .island-item {
-  color: rgba(51, 65, 85, 0.76);
-}
-
-.tone-dark .island-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.96);
-}
-
-.tone-light .island-item:hover {
-  background: rgba(15, 23, 42, 0.06);
-  color: rgba(15, 23, 42, 0.94);
-}
-
-/* 尚未开放的分区：保留图标但整体变灰，不可点击 */
-.island-item.is-disabled {
-  cursor: not-allowed;
-}
-
-.tone-dark .island-item.is-disabled,
-.tone-dark .island-item.is-disabled:hover {
-  background: transparent;
-  color: rgba(226, 232, 246, 0.2);
-}
-
-.tone-light .island-item.is-disabled,
-.tone-light .island-item.is-disabled:hover {
-  background: transparent;
-  color: rgba(51, 65, 85, 0.24);
+.island-item:hover {
+  background: #f5f5f1;
+  color: #111110;
 }
 
 .island-icon {
@@ -210,10 +133,7 @@ function go(item: { path: string }) {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  transition:
-    background 180ms ease,
-    color 180ms ease,
-    box-shadow 220ms ease;
+  transition: background 180ms ease, color 180ms ease;
 }
 
 .island-icon svg {
@@ -223,33 +143,19 @@ function go(item: { path: string }) {
 
 /* 当前所在分区 */
 .island-item.active .island-icon {
-  background: var(--item-accent-soft);
-  color: var(--item-accent);
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--item-accent) 44%, transparent),
-    0 0 22px -6px var(--item-accent);
+  background: #111111;
+  color: #ffffff;
 }
 
-.tone-dark .island-item.active {
-  color: #fff;
-}
-
-.tone-light .island-item.active {
-  color: rgba(15, 23, 42, 0.96);
+.island-item.active {
+  color: #111110;
 }
 
 .island-divider {
   width: 22px;
   height: 1px;
   margin: 5px 0;
-}
-
-.tone-dark .island-divider {
-  background: rgba(255, 255, 255, 0.13);
-}
-
-.tone-light .island-divider {
-  background: rgba(15, 23, 42, 0.13);
+  background: #ecece7;
 }
 
 /* 悬停时在右侧弹出的单项气泡 */
@@ -259,7 +165,11 @@ function go(item: { path: string }) {
   top: 50%;
   z-index: 1;
   padding: 6px 12px;
+  border: 1px solid #e8e8e2;
   border-radius: 999px;
+  background: #ffffff;
+  color: #1d1d1b;
+  box-shadow: 0 8px 20px rgba(17, 17, 16, 0.08);
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.2;
@@ -270,44 +180,6 @@ function go(item: { path: string }) {
   transition:
     opacity 150ms ease,
     transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.tone-dark .island-tip {
-  color: #fff;
-  background: rgba(16, 18, 28, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
-}
-
-.tone-light .island-tip {
-  color: rgba(15, 23, 42, 0.96);
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
-}
-
-/* 气泡左侧的小尖角 */
-.island-tip::before {
-  content: '';
-  position: absolute;
-  left: -3px;
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  border-radius: 1px;
-  transform: translateY(-50%) rotate(45deg);
-}
-
-.tone-dark .island-tip::before {
-  background: rgba(16, 18, 28, 0.94);
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.tone-light .island-tip::before {
-  background: rgba(255, 255, 255, 0.96);
-  border-left: 1px solid rgba(15, 23, 42, 0.10);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.10);
 }
 
 .island-item:hover .island-tip,

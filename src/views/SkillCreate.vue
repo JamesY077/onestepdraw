@@ -160,7 +160,7 @@ async function runTest() {
       kicker="Skill Studio"
       title="创作 Skill"
       subtitle="一句话生成标准化 Skill 文档，可编辑、可应用到生成、可下载复用"
-      :accent="'#a78bfa'"
+      :accent="'#111111'"
     >
       <template #actions>
         <span class="studio-chip model-chip">
@@ -430,9 +430,9 @@ async function runTest() {
 .template-chip {
   flex: 0 0 auto;
   padding: 7px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(17, 17, 16, 0.09);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(17, 17, 16, 0.04);
   color: var(--studio-text-soft);
   font: inherit;
   font-size: 12.5px;
@@ -450,7 +450,7 @@ async function runTest() {
   transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--studio-accent) 45%, transparent);
   background: color-mix(in srgb, var(--studio-accent) 14%, transparent);
-  color: #fff;
+  color: #1d1d1b;
 }
 
 /* ---------- 工作台 ---------- */
@@ -506,7 +506,7 @@ async function runTest() {
 .chat-empty h3 {
   font-size: 15px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(29, 29, 27, 0.92);
 }
 
 .chat-empty p {
@@ -528,9 +528,9 @@ async function runTest() {
   flex-direction: column;
   gap: 2px;
   padding: 9px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(17, 17, 16, 0.035);
   text-align: left;
   font: inherit;
   cursor: pointer;
@@ -547,7 +547,7 @@ async function runTest() {
 .quick-card-title {
   font-size: 12.5px;
   font-weight: 650;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(29, 29, 27, 0.88);
 }
 
 .quick-card-desc {
@@ -590,14 +590,14 @@ async function runTest() {
 }
 
 .msg.user .msg-content {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08));
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.94);
+  background: linear-gradient(135deg, rgba(17, 17, 16, 0.14), rgba(17, 17, 16, 0.08));
+  border: 1px solid rgba(17, 17, 16, 0.12);
+  color: rgba(29, 29, 27, 0.94);
 }
 
 .msg.assistant .msg-content {
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(17, 17, 16, 0.07);
+  background: rgba(17, 17, 16, 0.04);
   color: var(--studio-text-soft);
 }
 
@@ -639,7 +639,7 @@ async function runTest() {
 .composer {
   flex: 0 0 auto;
   padding: 12px 14px 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid rgba(17, 17, 16, 0.07);
 }
 
 .composer-input {
@@ -682,9 +682,9 @@ async function runTest() {
   display: inline-flex;
   gap: 2px;
   padding: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(17, 17, 16, 0.04);
 }
 
 .doc-tab {
@@ -703,12 +703,12 @@ async function runTest() {
 }
 
 .doc-tab:hover {
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(29, 29, 27, 0.82);
 }
 
 .doc-tab.active {
-  background: color-mix(in srgb, var(--studio-accent) 20%, transparent);
-  color: #fff;
+  background: #111111;
+  color: #ffffff;
 }
 
 .doc-toolbar {
@@ -717,7 +717,7 @@ async function runTest() {
   justify-content: space-between;
   gap: 12px;
   padding: 10px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(17, 17, 16, 0.06);
 }
 
 .doc-meta {
@@ -733,12 +733,12 @@ async function runTest() {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(17, 17, 16, 0.22);
 }
 
 .doc-meta-dot.ready {
-  background: #4ade80;
-  box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+  background: #1f7a56;
+  box-shadow: 0 0 6px rgba(31, 122, 86, 0.4);
 }
 
 .doc-actions {
@@ -778,7 +778,7 @@ async function runTest() {
   flex-direction: column;
   gap: 10px;
   padding: 14px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(17, 17, 16, 0.06);
 }
 
 .test-type {
@@ -786,9 +786,9 @@ async function runTest() {
   align-self: flex-start;
   gap: 2px;
   padding: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(17, 17, 16, 0.04);
 }
 
 .test-type-btn {
@@ -807,8 +807,8 @@ async function runTest() {
 }
 
 .test-type-btn.active {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: rgba(17, 17, 16, 0.12);
+  color: #1d1d1b;
 }
 
 .test-input-row {
@@ -845,7 +845,7 @@ async function runTest() {
 .test-media {
   width: 100%;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   background: rgba(0, 0, 0, 0.24);
   object-fit: cover;
 }

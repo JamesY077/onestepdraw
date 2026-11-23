@@ -46,11 +46,10 @@ label {
   width: 100%;
   min-height: 46px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 14px;
-  background: rgba(8, 8, 10, 0.78);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px);
+  background: #ffffff;
+  box-shadow: none;
 }
 
 input {
@@ -60,17 +59,17 @@ input {
   padding: 0 16px;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(29, 29, 27, 0.92);
   outline: none;
 }
 
 .input-wrapper:focus-within {
-  border-color: rgba(171, 214, 255, 0.34);
-  box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.10);
+  border-color: #b9b9b1;
+  box-shadow: 0 0 0 3px rgba(17, 17, 16, 0.06);
 }
 
 input::placeholder {
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(29, 29, 27, 0.38);
 }
 
 .toggle-visibility {
@@ -79,15 +78,15 @@ input::placeholder {
   min-height: 44px;
   padding: 0 14px;
   border: 0;
-  border-left: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.72);
+  border-left: 1px solid rgba(17, 17, 16, 0.10);
+  background: rgba(17, 17, 16, 0.08);
+  color: rgba(29, 29, 27, 0.72);
   font-size: 13px;
   font-weight: 600;
 }
 
 .toggle-visibility:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.92);
+  background: rgba(17, 17, 16, 0.12);
+  color: rgba(29, 29, 27, 0.92);
 }
 </style>

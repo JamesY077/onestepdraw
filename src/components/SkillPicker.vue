@@ -252,9 +252,9 @@ async function handleSkillFileChange(e: Event) {
   /* 横向 chip 列表不能把父级 grid 列撑宽 */
   contain: inline-size;
   padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid #e8e8e2;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.028);
+  background: #fafaf8;
 }
 
 .skill-picker-head {
@@ -269,29 +269,29 @@ async function handleSkillFileChange(e: Event) {
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.66);
+  color: #4a4a44;
 }
 
 .skill-picker-meta {
   font-size: 10.5px;
-  color: rgba(255, 255, 255, 0.38);
+  color: #9a9a92;
 }
 
 .skill-picker-clear {
   margin-left: auto;
   padding: 2px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid #e0e0d9;
   border-radius: 999px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.55);
+  background: #ffffff;
+  color: #66665f;
   font-size: 10px;
   cursor: pointer;
   transition: color 0.2s ease, border-color 0.2s ease;
 }
 
 .skill-picker-clear:hover {
-  border-color: rgba(255, 154, 92, 0.5);
-  color: #ffb27a;
+  border-color: #c9c9c1;
+  color: #111110;
 }
 
 .skill-picker-rail {
@@ -303,7 +303,7 @@ async function handleSkillFileChange(e: Event) {
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  scrollbar-color: #dcdcd5 transparent;
 }
 
 .skill-picker-rail::-webkit-scrollbar {
@@ -312,7 +312,7 @@ async function handleSkillFileChange(e: Event) {
 
 .skill-picker-rail::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
+  background: #dcdcd5;
 }
 
 .skill-picker-rail::-webkit-scrollbar-track {
@@ -336,8 +336,8 @@ async function handleSkillFileChange(e: Event) {
   height: 78px;
   border-radius: 11px;
   object-fit: cover;
-  filter: saturate(0.86) brightness(0.74);
-  outline: 1px solid rgba(255, 255, 255, 0.1);
+  filter: none;
+  outline: 1px solid #ecece7;
   outline-offset: -1px;
   transition:
     filter 0.3s ease,
@@ -346,13 +346,13 @@ async function handleSkillFileChange(e: Event) {
 }
 
 .skill-chip:hover .skill-chip-thumb {
-  filter: saturate(1) brightness(0.9);
+  filter: none;
   transform: translateY(-2px);
 }
 
 .skill-chip.active .skill-chip-thumb {
-  filter: saturate(1) brightness(1);
-  outline: 2px solid rgba(247, 247, 242, 0.92);
+  filter: none;
+  outline: 2px solid #111111;
   outline-offset: -2px;
 }
 
@@ -360,7 +360,7 @@ async function handleSkillFileChange(e: Event) {
   display: block;
   margin-top: 5px;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.5);
+  color: #66665f;
   font-size: 10.5px;
   font-weight: 600;
   line-height: 1.3;
@@ -371,7 +371,8 @@ async function handleSkillFileChange(e: Event) {
 }
 
 .skill-chip.active .skill-chip-name {
-  color: #fff;
+  color: #111110;
+  font-weight: 700;
 }
 
 .skill-chip-check {
@@ -383,11 +384,11 @@ async function handleSkillFileChange(e: Event) {
   width: 17px;
   height: 17px;
   border-radius: 50%;
-  background: #f7f7f2;
-  color: #08080a;
+  background: #111111;
+  color: #ffffff;
   font-size: 10px;
   font-weight: 800;
-  box-shadow: 0 0 0 1.5px rgba(8, 8, 10, 0.3);
+  box-shadow: 0 0 0 1.5px rgba(17, 17, 16, 0.12);
   opacity: 0;
   transform: scale(0.6);
   transition:
@@ -416,10 +417,8 @@ async function handleSkillFileChange(e: Event) {
 .skill-chip-placeholder {
   display: grid;
   place-items: center;
-  background:
-    linear-gradient(145deg, rgba(255, 154, 92, 0.24), rgba(255, 255, 255, 0.04)),
-    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.16), transparent 60%);
-  color: rgba(255, 255, 255, 0.82);
+  background: #f0f0ec;
+  color: #66665f;
   font-size: 20px;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -439,10 +438,10 @@ async function handleSkillFileChange(e: Event) {
   width: 18px;
   height: 18px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid #e0e0d9;
   border-radius: 50%;
-  background: rgba(8, 8, 10, 0.72);
-  color: rgba(255, 255, 255, 0.86);
+  background: #ffffff;
+  color: #1d1d1b;
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
@@ -450,9 +449,9 @@ async function handleSkillFileChange(e: Event) {
 }
 
 .skill-chip-remove:hover {
-  border-color: rgba(255, 154, 92, 0.72);
-  background: rgba(169, 61, 24, 0.86);
-  color: #fff;
+  border-color: #f0d3d0;
+  background: #fdf4f3;
+  color: #b4342c;
 }
 
 /* 上传入口：与 sample skill 同尺寸的虚线卡。 */
@@ -466,15 +465,15 @@ async function handleSkillFileChange(e: Event) {
   align-items: center;
   justify-content: center;
   gap: 3px;
-  border: 1px dashed rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.62);
+  border: 1px dashed #d2d2ca;
+  background: #ffffff;
+  color: #9a9a92;
 }
 
 .skill-chip-add:hover .skill-add-thumb {
-  border-color: rgba(255, 154, 92, 0.62);
-  background: rgba(255, 154, 92, 0.08);
-  color: #ffb27a;
+  border-color: #b9b9b1;
+  background: #f5f5f1;
+  color: #111110;
   filter: none;
 }
 
@@ -484,9 +483,9 @@ async function handleSkillFileChange(e: Event) {
 
 .skill-chip-add.is-full .skill-add-thumb {
   border-style: solid;
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.02);
-  color: rgba(255, 255, 255, 0.3);
+  border-color: #ecece7;
+  background: #fafaf8;
+  color: #c4c4bc;
 }
 
 .skill-add-plus {
@@ -523,20 +522,20 @@ async function handleSkillFileChange(e: Event) {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.34);
+  color: #9a9a92;
 }
 
 .skill-default-tag {
   padding: 2px 7px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.54);
+  background: #f0f0ec;
+  color: #66665f;
   font-size: 9.5px;
   white-space: nowrap;
 }
 
 .skill-defaults-off {
-  color: #ffb27a;
+  color: #8a6d1f;
   font-size: 10px;
 }
 
@@ -544,7 +543,7 @@ async function handleSkillFileChange(e: Event) {
   padding: 0;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.45);
+  color: #9a9a92;
   font-size: 10px;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -552,12 +551,12 @@ async function handleSkillFileChange(e: Event) {
 }
 
 .skill-settings-link:hover {
-  color: #fff;
+  color: #111110;
 }
 
 .skill-upload-count {
   margin-left: auto;
-  color: rgba(255, 255, 255, 0.36);
+  color: #9a9a92;
   font-size: 10px;
   white-space: nowrap;
 }

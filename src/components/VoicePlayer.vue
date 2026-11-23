@@ -226,33 +226,22 @@ onBeforeUnmount(() => {
   gap: 13px;
   min-width: 0;
   padding: 10px 14px 10px 11px;
-  border: 1px solid rgba(255, 255, 255, 0.075);
+  border: 1px solid #e8e8e2;
   border-radius: 17px;
   overflow: hidden;
-  background:
-    radial-gradient(150px 90px at 4% 50%, rgba(251, 146, 60, 0.1), transparent 72%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.016));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.065),
-    0 14px 34px rgba(0, 0, 0, 0.17);
+  background: #fafaf8;
   isolation: isolate;
-  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  transition: border-color var(--transition-base), background var(--transition-base);
 }
 
 .voice-player:hover {
-  border-color: rgba(255, 255, 255, 0.11);
+  border-color: #d2d2ca;
 }
 
 .voice-player.is-compact {
   gap: 9px;
   padding: 8px 11px 8px 9px;
   border-radius: 13px;
-  background:
-    radial-gradient(110px 70px at 4% 50%, rgba(251, 146, 60, 0.075), transparent 72%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.012));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 8px 20px rgba(0, 0, 0, 0.13);
 }
 
 .player-toggle {
@@ -266,14 +255,11 @@ onBeforeUnmount(() => {
   height: 38px;
   border: 0;
   border-radius: 50%;
-  background: linear-gradient(145deg, #ffe7cf 0%, #ffc38f 30%, #fb923c 72%, #f97316 100%);
-  color: #221007;
+  background: #111111;
+  color: #ffffff;
   cursor: pointer;
-  box-shadow:
-    0 8px 20px rgba(251, 146, 60, 0.26),
-    inset 0 1px 0 rgba(255, 255, 255, 0.65),
-    inset 0 -2px 5px rgba(124, 45, 0, 0.16);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  box-shadow: 0 4px 12px rgba(17, 17, 16, 0.16);
+  transition: transform 0.18s ease, background 0.18s ease;
 }
 
 .is-compact .player-toggle {
@@ -293,11 +279,7 @@ onBeforeUnmount(() => {
 
 .player-toggle:hover:not(:disabled) {
   transform: translateY(-1px) scale(1.03);
-  filter: brightness(1.04);
-  box-shadow:
-    0 10px 24px rgba(251, 146, 60, 0.33),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    inset 0 -2px 5px rgba(124, 45, 0, 0.16);
+  background: #2a2a27;
 }
 
 .player-toggle:active:not(:disabled) {
@@ -305,7 +287,7 @@ onBeforeUnmount(() => {
 }
 
 .player-toggle:focus-visible {
-  outline: 2px solid rgba(255, 214, 173, 0.78);
+  outline: 2px solid rgba(17, 17, 16, 0.36);
   outline-offset: 3px;
 }
 
@@ -319,7 +301,7 @@ onBeforeUnmount(() => {
   content: '';
   position: absolute;
   inset: -5px;
-  border: 1px solid rgba(251, 146, 60, 0.38);
+  border: 1px solid rgba(17, 17, 16, 0.22);
   border-radius: 50%;
   opacity: 0;
   pointer-events: none;
@@ -349,7 +331,7 @@ onBeforeUnmount(() => {
 }
 
 .player-track:focus-visible {
-  outline: 2px solid rgba(251, 146, 60, 0.48);
+  outline: 2px solid rgba(17, 17, 16, 0.32);
   outline-offset: 4px;
   border-radius: 8px;
 }
@@ -366,8 +348,8 @@ onBeforeUnmount(() => {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.09) 12%,
-    rgba(255, 255, 255, 0.09) 88%,
+    rgba(17, 17, 16, 0.1) 12%,
+    rgba(17, 17, 16, 0.1) 88%,
     transparent
   );
   pointer-events: none;
@@ -379,7 +361,7 @@ onBeforeUnmount(() => {
   flex: 1 1 0;
   min-width: 0;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.09) 100%);
+  background: linear-gradient(180deg, rgba(17, 17, 16, 0.24) 0%, rgba(17, 17, 16, 0.1) 100%);
   transition:
     height 0.32s cubic-bezier(0.22, 1, 0.36, 1),
     background var(--transition-base),
@@ -387,12 +369,11 @@ onBeforeUnmount(() => {
 }
 
 .player-track:hover .player-bar:not(.is-played) {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.16) 100%);
+  background: linear-gradient(180deg, rgba(17, 17, 16, 0.4) 0%, rgba(17, 17, 16, 0.16) 100%);
 }
 
 .player-bar.is-played {
-  background: linear-gradient(180deg, #fff4e8 0%, #ffc78f 40%, #fb923c 100%);
-  box-shadow: 0 0 5px rgba(251, 146, 60, 0.2);
+  background: linear-gradient(180deg, #3a3a36 0%, #1d1d1b 100%);
 }
 
 /* 播放头 */
@@ -404,8 +385,7 @@ onBeforeUnmount(() => {
   width: 2px;
   margin-left: -1px;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(255, 242, 228, 0.98), rgba(251, 146, 60, 0.45));
-  box-shadow: 0 0 10px rgba(251, 146, 60, 0.55);
+  background: #111111;
   pointer-events: none;
   transition: left 0.12s linear;
 }
@@ -418,8 +398,7 @@ onBeforeUnmount(() => {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #ffe1c3;
-  box-shadow: 0 0 8px rgba(251, 146, 60, 0.8);
+  background: #111111;
   transform: translateX(-50%);
 }
 
@@ -429,10 +408,10 @@ onBeforeUnmount(() => {
   align-items: baseline;
   gap: 3px;
   padding: 4px 7px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid #e8e8e2;
   border-radius: 999px;
-  background: rgba(8, 8, 12, 0.25);
-  color: rgba(255, 255, 255, 0.9);
+  background: #ffffff;
+  color: #1d1d1b;
   font-size: 11px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -443,7 +422,7 @@ onBeforeUnmount(() => {
 
 .player-time em {
   margin-left: 0;
-  color: rgba(255, 255, 255, 0.32);
+  color: #9a9a92;
   font-style: normal;
   font-weight: 500;
 }

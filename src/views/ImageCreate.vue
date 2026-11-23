@@ -7,7 +7,7 @@
         kicker="Image Studio"
         title="图片生成"
         subtitle="写好一句提示词，挑一种风格，一次出一组可以横向比较的画面"
-        accent="#d9cdb8"
+        accent="#111111"
       >
         <template #actions>
           <button class="header-action" type="button" @click="openHistory">
@@ -1311,23 +1311,12 @@ onBeforeUnmount(() => {
   height: 100dvh;
   padding: 0 10px 10px;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 8% -6%, rgba(217, 205, 184, 0.10), transparent 34%),
-    radial-gradient(circle at 92% 8%, rgba(96, 123, 255, 0.08), transparent 30%),
-    #07080b;
-  color: #fff;
+  background: #ffffff;
+  color: #1d1d1b;
 }
 
 .image-page::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.026) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.026) 1px, transparent 1px);
-  background-size: 76px 76px;
-  mask-image: radial-gradient(circle at 50% 22%, #000 0 28%, transparent 76%);
+  display: none;
 }
 
 .image-shell {
@@ -1356,10 +1345,10 @@ onBeforeUnmount(() => {
   gap: 6px;
   min-height: 36px;
   padding: 0 15px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(17, 17, 16, 0.10);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.76);
+  background: rgba(17, 17, 16, 0.045);
+  color: rgba(29, 29, 27, 0.76);
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -1367,9 +1356,9 @@ onBeforeUnmount(() => {
 }
 
 .header-action:hover {
-  border-color: rgba(217, 205, 184, 0.32);
-  background: rgba(217, 205, 184, 0.10);
-  color: #fff;
+  border-color: rgba(17, 17, 16, 0.32);
+  background: rgba(17, 17, 16, 0.10);
+  color: #1d1d1b;
 }
 
 .header-action-count {
@@ -1379,8 +1368,8 @@ onBeforeUnmount(() => {
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: rgba(217, 205, 184, 0.22);
-  color: #f4efe6;
+  background: rgba(17, 17, 16, 0.22);
+  color: #1d1d1b;
   font-size: 10.5px;
   font-variant-numeric: tabular-nums;
 }
@@ -1412,19 +1401,19 @@ onBeforeUnmount(() => {
   gap: 10px;
   flex: 0 0 auto;
   padding: 12px 14px 11px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(17, 17, 16, 0.09);
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(22, 23, 28, 0.92), rgba(13, 14, 18, 0.92));
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.04);
   transition: border-color 0.24s ease;
 }
 
 .prompt-card:focus-within {
-  border-color: rgba(217, 205, 184, 0.28);
+  border-color: rgba(17, 17, 16, 0.28);
 }
 
 .prompt-card.is-expand {
-  border-color: rgba(246, 196, 83, 0.24);
+  border-color: rgba(17, 17, 16, 0.24);
 }
 
 .prompt-field {
@@ -1441,7 +1430,7 @@ onBeforeUnmount(() => {
   padding: 11px 2px;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.94);
+  color: rgba(29, 29, 27, 0.94);
   font: inherit;
   font-size: 14px;
   line-height: 1.55;
@@ -1450,7 +1439,7 @@ onBeforeUnmount(() => {
 }
 
 .prompt-input::placeholder {
-  color: rgba(255, 255, 255, 0.32);
+  color: rgba(29, 29, 27, 0.32);
 }
 
 .prompt-buttons {
@@ -1464,10 +1453,10 @@ onBeforeUnmount(() => {
 .ghost-pill {
   min-height: 32px;
   padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.72);
+  background: rgba(17, 17, 16, 0.05);
+  color: rgba(29, 29, 27, 0.72);
   font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
@@ -1475,9 +1464,9 @@ onBeforeUnmount(() => {
 }
 
 .ghost-pill:hover:not(:disabled) {
-  border-color: rgba(217, 205, 184, 0.34);
-  background: rgba(217, 205, 184, 0.12);
-  color: #fff;
+  border-color: rgba(17, 17, 16, 0.34);
+  background: rgba(17, 17, 16, 0.12);
+  color: #1d1d1b;
 }
 
 .ghost-pill:disabled {
@@ -1493,19 +1482,19 @@ onBeforeUnmount(() => {
   padding: 0 20px;
   border: 0;
   border-radius: 999px;
-  background: linear-gradient(135deg, #f6f1e7, #d8cbb4);
-  color: #17140f;
+  background: #111111;
+  color: #ffffff;
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.01em;
   cursor: pointer;
-  box-shadow: 0 12px 26px rgba(180, 158, 120, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 18px rgba(17, 17, 16, 0.16);
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .generate-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 16px 32px rgba(180, 158, 120, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.68);
+  box-shadow: 0 12px 24px rgba(17, 17, 16, 0.2);
 }
 
 .generate-btn:disabled {
@@ -1515,7 +1504,7 @@ onBeforeUnmount(() => {
 }
 
 .generate-kbd {
-  color: rgba(23, 20, 15, 0.42);
+  color: rgba(255, 255, 255, 0.62);
   font-size: 10px;
   font-weight: 600;
 }
@@ -1523,8 +1512,8 @@ onBeforeUnmount(() => {
 .generate-spinner {
   width: 12px;
   height: 12px;
-  border: 2px solid rgba(23, 20, 15, 0.24);
-  border-top-color: #17140f;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
 }
@@ -1550,10 +1539,10 @@ onBeforeUnmount(() => {
   min-height: 24px;
   padding: 0 10px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.58);
+  background: rgba(17, 17, 16, 0.045);
+  color: rgba(29, 29, 27, 0.58);
   font-size: 10.5px;
   font-weight: 600;
   white-space: nowrap;
@@ -1561,20 +1550,20 @@ onBeforeUnmount(() => {
 }
 
 .pchip-model {
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(29, 29, 27, 0.82);
 }
 
 .pchip-accent {
-  border-color: rgba(217, 205, 184, 0.28);
-  background: rgba(217, 205, 184, 0.12);
-  color: #f2ece1;
+  border-color: rgba(17, 17, 16, 0.28);
+  background: rgba(17, 17, 16, 0.12);
+  color: #1d1d1b;
 }
 
 .pchip-action {
   display: none;
   margin-left: auto;
-  border-color: rgba(217, 205, 184, 0.3);
-  color: #f2ece1;
+  border-color: rgba(17, 17, 16, 0.3);
+  color: #1d1d1b;
   cursor: pointer;
 }
 
@@ -1590,7 +1579,7 @@ onBeforeUnmount(() => {
   padding: 2px 8px 8px 2px;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(217, 205, 184, 0.3) rgba(255, 255, 255, 0.04);
+  scrollbar-color: rgba(17, 17, 16, 0.3) rgba(17, 17, 16, 0.04);
   overscroll-behavior: contain;
 }
 
@@ -1600,18 +1589,18 @@ onBeforeUnmount(() => {
 
 .gallery-area::-webkit-scrollbar-track {
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(17, 17, 16, 0.04);
 }
 
 .gallery-area::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
-  background: rgba(217, 205, 184, 0.34);
+  background: rgba(17, 17, 16, 0.34);
   background-clip: padding-box;
 }
 
 .gallery-area::-webkit-scrollbar-thumb:hover {
-  background: rgba(217, 205, 184, 0.58);
+  background: rgba(17, 17, 16, 0.58);
   background-clip: padding-box;
 }
 
@@ -1631,10 +1620,10 @@ onBeforeUnmount(() => {
   place-items: center;
   width: 54px;
   height: 54px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(17, 17, 16, 0.1);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(217, 205, 184, 0.78);
+  background: rgba(17, 17, 16, 0.04);
+  color: rgba(17, 17, 16, 0.78);
 }
 
 .empty-mark svg {
@@ -1644,7 +1633,7 @@ onBeforeUnmount(() => {
 
 .gallery-empty h2 {
   margin: 0;
-  color: rgba(255, 255, 255, 0.94);
+  color: rgba(29, 29, 27, 0.94);
   font-size: clamp(20px, 2vw, 26px);
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -1653,7 +1642,7 @@ onBeforeUnmount(() => {
 .gallery-empty p {
   max-width: 520px;
   margin: 0;
-  color: rgba(255, 255, 255, 0.44);
+  color: rgba(29, 29, 27, 0.44);
   font-size: 12.5px;
   line-height: 1.7;
 }
@@ -1671,9 +1660,9 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 4px;
   padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(17, 17, 16, 0.03);
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -1681,19 +1670,19 @@ onBeforeUnmount(() => {
 }
 
 .starter:hover {
-  border-color: rgba(217, 205, 184, 0.3);
-  background: rgba(217, 205, 184, 0.08);
+  border-color: rgba(17, 17, 16, 0.3);
+  background: rgba(17, 17, 16, 0.08);
   transform: translateY(-1px);
 }
 
 .starter-title {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(29, 29, 27, 0.9);
   font-size: 12.5px;
   font-weight: 650;
 }
 
 .starter-desc {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(29, 29, 27, 0.4);
   font-size: 10.5px;
   line-height: 1.5;
 }
@@ -1719,7 +1708,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(29, 29, 27, 0.9);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -1728,7 +1717,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.36);
+  color: rgba(29, 29, 27, 0.36);
   font-size: 10.5px;
   font-variant-numeric: tabular-nums;
 }
@@ -1750,18 +1739,18 @@ onBeforeUnmount(() => {
 }
 
 .batch-warning {
-  border: 1px solid rgba(246, 196, 83, 0.24);
-  background: rgba(246, 196, 83, 0.08);
-  color: #f3dfae;
+  border: 1px solid #efe4c6;
+  background: #fdf9ee;
+  color: #8a6d1f;
 }
 
 .batch-error {
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1px solid rgba(248, 113, 113, 0.26);
-  background: rgba(248, 113, 113, 0.08);
-  color: #ffc9c9;
+  border: 1px solid #f0d3d0;
+  background: #fdf4f3;
+  color: #b4342c;
 }
 
 .batch-error p {
@@ -1784,16 +1773,16 @@ onBeforeUnmount(() => {
   position: relative;
   margin: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 16px;
   aspect-ratio: var(--tile-ratio, 1 / 1);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(17, 17, 16, 0.03);
   cursor: zoom-in;
   transition: border-color 0.22s ease, transform 0.22s ease;
 }
 
 .tile:hover {
-  border-color: rgba(217, 205, 184, 0.34);
+  border-color: rgba(17, 17, 16, 0.34);
   transform: translateY(-2px);
 }
 
@@ -1814,8 +1803,9 @@ onBeforeUnmount(() => {
   height: 20px;
   padding: 0 5px;
   border-radius: 999px;
-  background: rgba(8, 8, 10, 0.6);
-  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.92);
+  color: #1d1d1b;
+  box-shadow: 0 1px 4px rgba(17, 17, 16, 0.12);
   font-size: 10px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -1830,10 +1820,10 @@ onBeforeUnmount(() => {
   height: 20px;
   display: inline-flex;
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 999px;
-  background: rgba(8, 8, 10, 0.62);
-  color: rgba(255, 255, 255, 0.66);
+  background: rgba(255, 255, 255, 0.92);
+  color: #4a4a44;
   font-size: 9.5px;
   font-weight: 600;
   white-space: nowrap;
@@ -1847,7 +1837,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   padding: 26px 10px 10px;
-  background: linear-gradient(180deg, transparent, rgba(6, 7, 10, 0.86));
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.94));
   opacity: 0;
   transition: opacity 0.22s ease;
 }
@@ -1866,10 +1856,10 @@ onBeforeUnmount(() => {
 .tile-btn {
   min-height: 26px;
   padding: 0 9px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 999px;
-  background: rgba(16, 18, 24, 0.72);
-  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.92);
+  color: #1d1d1b;
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
@@ -1878,19 +1868,19 @@ onBeforeUnmount(() => {
 }
 
 .tile-btn:hover {
-  border-color: rgba(217, 205, 184, 0.4);
-  background: rgba(217, 205, 184, 0.2);
-  color: #fff;
+  border-color: rgba(17, 17, 16, 0.16);
+  background: #f5f5f1;
+  color: #111110;
 }
 
 .tile-btn-layer {
-  border-color: rgba(246, 196, 83, 0.4);
-  color: #f6e3b0;
+  border-color: rgba(17, 17, 16, 0.4);
+  color: #111110;
 }
 
 .tile-size {
   margin-left: auto;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(29, 29, 27, 0.42);
   font-size: 9.5px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -1903,7 +1893,7 @@ onBeforeUnmount(() => {
 }
 
 .tile-pending:hover {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(29, 29, 27, 0.08);
   transform: none;
 }
 
@@ -1912,9 +1902,9 @@ onBeforeUnmount(() => {
   inset: 0;
   background: linear-gradient(
     110deg,
-    rgba(255, 255, 255, 0.02) 20%,
-    rgba(255, 255, 255, 0.07) 42%,
-    rgba(255, 255, 255, 0.02) 64%
+    rgba(17, 17, 16, 0.02) 20%,
+    rgba(17, 17, 16, 0.07) 42%,
+    rgba(17, 17, 16, 0.02) 64%
   );
   background-size: 220% 100%;
   animation: shimmer 1.5s linear infinite;
@@ -1931,7 +1921,7 @@ onBeforeUnmount(() => {
 
 .tile-pending-text {
   position: relative;
-  color: rgba(255, 255, 255, 0.34);
+  color: rgba(29, 29, 27, 0.34);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
@@ -1943,10 +1933,10 @@ onBeforeUnmount(() => {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(20, 21, 26, 0.92), rgba(12, 13, 17, 0.94));
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.04);
 }
 
 .rail-head {
@@ -1955,11 +1945,11 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   flex: 0 0 auto;
   padding: 14px 16px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(17, 17, 16, 0.06);
 }
 
 .rail-title {
-  color: rgba(255, 255, 255, 0.86);
+  color: rgba(29, 29, 27, 0.86);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -1970,10 +1960,10 @@ onBeforeUnmount(() => {
   display: none;
   width: 26px;
   height: 26px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 50%;
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(29, 29, 27, 0.6);
   font-size: 11px;
   cursor: pointer;
 }
@@ -1988,7 +1978,7 @@ onBeforeUnmount(() => {
   overflow-y: auto;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(217, 205, 184, 0.36) rgba(255, 255, 255, 0.05);
+  scrollbar-color: rgba(17, 17, 16, 0.36) rgba(17, 17, 16, 0.05);
   overscroll-behavior: contain;
 }
 
@@ -2003,18 +1993,18 @@ onBeforeUnmount(() => {
 
 .rail-scroll::-webkit-scrollbar-track {
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(17, 17, 16, 0.045);
 }
 
 .rail-scroll::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
-  background: rgba(217, 205, 184, 0.4);
+  background: rgba(17, 17, 16, 0.4);
   background-clip: padding-box;
 }
 
 .rail-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(217, 205, 184, 0.62);
+  background: rgba(17, 17, 16, 0.62);
   background-clip: padding-box;
 }
 
@@ -2023,13 +2013,13 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 9px;
   padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(17, 17, 16, 0.07);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.028);
+  background: rgba(17, 17, 16, 0.028);
 }
 
 .rail-label {
-  color: rgba(255, 255, 255, 0.46);
+  color: rgba(29, 29, 27, 0.46);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -2038,13 +2028,13 @@ onBeforeUnmount(() => {
 
 .rail-hint {
   margin: 0;
-  color: rgba(255, 255, 255, 0.36);
+  color: rgba(29, 29, 27, 0.36);
   font-size: 10.5px;
   line-height: 1.6;
 }
 
 .rail-hint.is-guide {
-  color: #ffb27a;
+  color: #8a6d1f;
 }
 
 /* 扩图缺少原图时，用柔和高亮把视线引到上传卡，而不是弹错误框。 */
@@ -2054,13 +2044,13 @@ onBeforeUnmount(() => {
 }
 
 .upload-card.is-highlighted {
-  background: rgba(255, 154, 92, 0.06);
-  box-shadow: 0 0 0 1px rgba(255, 154, 92, 0.5), 0 0 18px rgba(255, 154, 92, 0.16);
+  background: rgba(17, 17, 16, 0.06);
+  box-shadow: 0 0 0 1px rgba(17, 17, 16, 0.5), 0 0 18px rgba(17, 17, 16, 0.16);
 }
 
 .upload-card.is-highlighted .upload-drop {
-  border-color: rgba(255, 154, 92, 0.66);
-  background: rgba(255, 154, 92, 0.08);
+  border-color: rgba(17, 17, 16, 0.66);
+  background: rgba(17, 17, 16, 0.08);
 }
 
 .chip-row {
@@ -2072,10 +2062,10 @@ onBeforeUnmount(() => {
 .chip {
   min-height: 30px;
   padding: 0 13px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(17, 17, 16, 0.1);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.66);
+  background: rgba(17, 17, 16, 0.04);
+  color: rgba(29, 29, 27, 0.66);
   font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
@@ -2083,14 +2073,14 @@ onBeforeUnmount(() => {
 }
 
 .chip:hover:not(:disabled) {
-  border-color: rgba(217, 205, 184, 0.3);
-  color: #fff;
+  border-color: rgba(17, 17, 16, 0.3);
+  color: #1d1d1b;
 }
 
 .chip.active {
   border-color: transparent;
-  background: linear-gradient(135deg, #f6f1e7, #d8cbb4);
-  color: #17140f;
+  background: #111111;
+  color: #ffffff;
 }
 
 .chip:disabled {
@@ -2115,24 +2105,24 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   padding: 9px 4px 7px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(17, 17, 16, 0.09);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.5);
+  background: rgba(17, 17, 16, 0.03);
+  color: rgba(29, 29, 27, 0.5);
   font-size: 10px;
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
 .ratio-chip:hover {
-  border-color: rgba(217, 205, 184, 0.3);
-  color: #fff;
+  border-color: rgba(17, 17, 16, 0.3);
+  color: #1d1d1b;
 }
 
 .ratio-chip.active {
-  border-color: rgba(217, 205, 184, 0.6);
-  background: rgba(217, 205, 184, 0.14);
-  color: #f4efe6;
+  border-color: transparent;
+  background: #111111;
+  color: #ffffff;
 }
 
 .ratio-box {
@@ -2160,17 +2150,17 @@ onBeforeUnmount(() => {
   min-height: 96px;
   padding: 10px;
   overflow: hidden;
-  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border: 1px dashed rgba(17, 17, 16, 0.16);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.02);
-  color: rgba(255, 255, 255, 0.5);
+  background: rgba(17, 17, 16, 0.02);
+  color: rgba(29, 29, 27, 0.5);
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .upload-drop:hover {
-  border-color: rgba(217, 205, 184, 0.42);
-  background: rgba(217, 205, 184, 0.06);
+  border-color: rgba(17, 17, 16, 0.42);
+  background: rgba(17, 17, 16, 0.06);
 }
 
 .upload-drop img {
@@ -2200,7 +2190,7 @@ onBeforeUnmount(() => {
 }
 
 .upload-hint {
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(29, 29, 27, 0.28);
   font-size: 9.5px;
 }
 
@@ -2213,7 +2203,7 @@ onBeforeUnmount(() => {
 }
 
 .upload-count {
-  color: rgba(217, 205, 184, 0.72);
+  color: rgba(17, 17, 16, 0.72);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
@@ -2245,15 +2235,15 @@ onBeforeUnmount(() => {
   aspect-ratio: 1;
   padding: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(17, 17, 16, 0.1);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(17, 17, 16, 0.03);
   cursor: pointer;
   transition: border-color 0.2s ease;
 }
 
 .upload-thumb-btn:hover {
-  border-color: rgba(217, 205, 184, 0.5);
+  border-color: rgba(17, 17, 16, 0.5);
 }
 
 .upload-thumb-btn img {
@@ -2269,8 +2259,8 @@ onBeforeUnmount(() => {
   left: 4px;
   padding: 1px 5px;
   border-radius: 999px;
-  background: rgba(8, 9, 13, 0.72);
-  color: rgba(244, 239, 230, 0.92);
+  background: rgba(255, 255, 255, 0.92);
+  color: #1d1d1b;
   font-size: 9px;
   line-height: 1.5;
   backdrop-filter: blur(4px);
@@ -2287,8 +2277,8 @@ onBeforeUnmount(() => {
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: rgba(8, 9, 13, 0.74);
-  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.92);
+  color: #1d1d1b;
   font-size: 13px;
   line-height: 1;
   cursor: pointer;
@@ -2296,8 +2286,8 @@ onBeforeUnmount(() => {
 }
 
 .upload-thumb-remove:hover {
-  background: rgba(255, 154, 92, 0.9);
-  color: #17140f;
+  background: #111111;
+  color: #ffffff;
 }
 
 .upload-thumb-add {
@@ -2306,10 +2296,10 @@ onBeforeUnmount(() => {
   width: 100%;
   aspect-ratio: 1;
   padding: 0;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border: 1px dashed rgba(17, 17, 16, 0.18);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
-  color: rgba(255, 255, 255, 0.45);
+  background: rgba(17, 17, 16, 0.02);
+  color: rgba(29, 29, 27, 0.45);
   font-size: 18px;
   font-weight: 300;
   cursor: pointer;
@@ -2317,9 +2307,9 @@ onBeforeUnmount(() => {
 }
 
 .upload-thumb-add:hover {
-  border-color: rgba(217, 205, 184, 0.5);
-  background: rgba(217, 205, 184, 0.06);
-  color: #fff;
+  border-color: rgba(17, 17, 16, 0.5);
+  background: rgba(17, 17, 16, 0.06);
+  color: #1d1d1b;
 }
 
 .rail-text-btn {
@@ -2327,7 +2317,7 @@ onBeforeUnmount(() => {
   padding: 0;
   border: 0;
   background: transparent;
-  color: rgba(217, 205, 184, 0.8);
+  color: rgba(17, 17, 16, 0.8);
   font-size: 10.5px;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -2345,16 +2335,16 @@ onBeforeUnmount(() => {
   width: 40px;
   height: 23px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(17, 17, 16, 0.16);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(17, 17, 16, 0.14);
   cursor: pointer;
   transition: background 0.22s ease;
 }
 
 .mini-switch.on {
   border-color: transparent;
-  background: linear-gradient(90deg, #ec5a00, #ff8a4c);
+  background: #111111;
 }
 
 .mini-knob {
@@ -2381,7 +2371,7 @@ onBeforeUnmount(() => {
   z-index: 110;
   display: flex;
   justify-content: flex-end;
-  background: rgba(4, 5, 8, 0.62);
+  background: rgba(17, 17, 16, 0.28);
   backdrop-filter: blur(6px);
 }
 
@@ -2390,8 +2380,8 @@ onBeforeUnmount(() => {
   flex-direction: column;
   width: min(100%, 400px);
   padding: 18px 16px;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  background: #0b0c10;
+  border-left: 1px solid rgba(17, 17, 16, 0.08);
+  background: #ffffff;
   animation: slide-in 0.26s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -2408,11 +2398,11 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   flex: 0 0 auto;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(17, 17, 16, 0.07);
 }
 
 .history-kicker {
-  color: rgba(255, 255, 255, 0.34);
+  color: rgba(29, 29, 27, 0.34);
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -2421,7 +2411,7 @@ onBeforeUnmount(() => {
 
 .history-head h3 {
   margin: 3px 0 0;
-  color: #fff;
+  color: #1d1d1b;
   font-size: 17px;
   font-weight: 700;
 }
@@ -2429,17 +2419,17 @@ onBeforeUnmount(() => {
 .history-close {
   width: 28px;
   height: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 50%;
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(29, 29, 27, 0.6);
   font-size: 11px;
   cursor: pointer;
 }
 
 .history-empty {
   margin: 22px 2px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(29, 29, 27, 0.4);
   font-size: 12px;
   line-height: 1.7;
 }
@@ -2462,9 +2452,9 @@ onBeforeUnmount(() => {
   gap: 10px;
   width: 100%;
   padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(17, 17, 16, 0.07);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(17, 17, 16, 0.025);
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -2472,13 +2462,13 @@ onBeforeUnmount(() => {
 }
 
 .history-item-btn:hover {
-  border-color: rgba(217, 205, 184, 0.3);
-  background: rgba(217, 205, 184, 0.07);
+  border-color: rgba(17, 17, 16, 0.3);
+  background: rgba(17, 17, 16, 0.07);
 }
 
 .history-item.active .history-item-btn {
-  border-color: rgba(217, 205, 184, 0.44);
-  background: rgba(217, 205, 184, 0.1);
+  border-color: rgba(17, 17, 16, 0.44);
+  background: rgba(17, 17, 16, 0.1);
 }
 
 .history-thumb {
@@ -2489,7 +2479,7 @@ onBeforeUnmount(() => {
   height: 52px;
   overflow: hidden;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(17, 17, 16, 0.05);
 }
 
 .history-thumb img {
@@ -2499,7 +2489,7 @@ onBeforeUnmount(() => {
 }
 
 .history-thumb-empty {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(29, 29, 27, 0.4);
   font-size: 13px;
 }
 
@@ -2515,13 +2505,13 @@ onBeforeUnmount(() => {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(29, 29, 27, 0.82);
   font-size: 11.5px;
   line-height: 1.45;
 }
 
 .history-meta {
-  color: rgba(255, 255, 255, 0.34);
+  color: rgba(29, 29, 27, 0.34);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
@@ -2593,7 +2583,7 @@ onBeforeUnmount(() => {
     inset: 0;
     z-index: 111;
     display: block;
-    background: rgba(4, 5, 8, 0.55);
+    background: rgba(17, 17, 16, 0.28);
     backdrop-filter: blur(4px);
   }
 

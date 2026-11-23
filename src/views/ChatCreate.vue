@@ -1,12 +1,12 @@
 <template>
-  <div class="video-page" :style="{ height: appHeight, '--app-height': appHeight, '--studio-accent': '#8fb6ff' }">
+  <div class="video-page" :style="{ height: appHeight, '--app-height': appHeight, '--studio-accent': '#111111' }">
     <StudioIsland v-show="!paramsOpen" />
     <div class="video-shell">
       <StudioHeader
         kicker="Video Studio"
         title="视频生成"
         subtitle="写好一句镜头描述，选好时长与比例，一次生成一组可以横向比较的视频"
-        accent="#8fb6ff"
+        accent="#111111"
       >
         <template #actions>
           <button class="header-action" type="button" @click="openHistory">
@@ -2884,7 +2884,7 @@ async function handleRegenerate(message: Message) {
   line-height: 1;
   font-family: "Georgia", "Times New Roman", serif;
   font-style: italic;
-  background: linear-gradient(135deg, #24262d 0%, #343842 58%, #0a84ff 135%);
+  background: #111111;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -2919,9 +2919,9 @@ async function handleRegenerate(message: Message) {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: #fff;
+  color: #1d1d1b;
   background: var(--color-theme-gradient);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 8px 18px rgba(17, 17, 16, 0.08);
 }
 
 .mode-intro-desc {
@@ -2947,13 +2947,13 @@ async function handleRegenerate(message: Message) {
   cursor: pointer;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: #f8fafc;
-  background: #24262d;
+  color: #1d1d1b;
+  background: #f5f5f1;
   transition: background var(--transition-base);
 }
 
 .canvas-entry-btn:hover {
-  background: #2c2c2e;
+  background: #f5f5f1;
 }
 
 .canvas-entry-text {
@@ -2971,8 +2971,8 @@ async function handleRegenerate(message: Message) {
   font-weight: 800;
   letter-spacing: 0.06em;
   line-height: 1.2;
-  color: rgba(255, 255, 255, 0.86);
-  background: rgba(255, 255, 255, 0.16);
+  color: rgba(29, 29, 27, 0.86);
+  background: rgba(17, 17, 16, 0.16);
 }
 
 
@@ -3036,7 +3036,7 @@ async function handleRegenerate(message: Message) {
 }
 
 .chat-stage {
-  border-bottom-color: rgba(255, 255, 255, 0.78);
+  border-bottom-color: rgba(29, 29, 27, 0.78);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(250, 251, 253, 0.74)),
     radial-gradient(circle at 50% 0%, rgba(10, 132, 255, 0.06), transparent 36%);
@@ -3092,7 +3092,7 @@ async function handleRegenerate(message: Message) {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border-top-color: rgba(255, 255, 255, 0.76);
+  border-top-color: rgba(29, 29, 27, 0.76);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.88)),
     radial-gradient(circle at 12% 0%, rgba(10, 132, 255, 0.08), transparent 35%);
@@ -3157,8 +3157,8 @@ async function handleRegenerate(message: Message) {
 
 .summary-chip-strong {
   border-color: transparent;
-  color: #fff;
-  background: #24262d;
+  color: #1d1d1b;
+  background: #f5f5f1;
 }
 
 .summary-chip.attention {
@@ -3184,7 +3184,7 @@ async function handleRegenerate(message: Message) {
   justify-content: center;
   padding: 0 12px;
   border-radius: 999px;
-  color: rgba(255, 255, 255, 0.96);
+  color: rgba(29, 29, 27, 0.96);
   font-size: 11px;
   font-weight: 800;
   background: var(--color-theme-gradient);
@@ -3351,8 +3351,8 @@ async function handleRegenerate(message: Message) {
 
 .switch-btn.active {
   background: var(--color-theme-gradient);
-  color: #fff;
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.16);
+  color: #1d1d1b;
+  box-shadow: 0 12px 26px rgba(17, 17, 16, 0.08);
 }
 
 .ratio-selector {
@@ -3369,10 +3369,10 @@ async function handleRegenerate(message: Message) {
 .ratio-selector:focus-within,
 .duration-selector:focus-within,
 .media-switch:focus-within {
-  border-color: rgba(255, 255, 255, 0.30);
+  border-color: rgba(29, 29, 27, 0.30);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.10),
-    0 0 0 3px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(17, 17, 16, 0.10),
+    0 0 0 3px rgba(17, 17, 16, 0.06),
     0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
@@ -3549,7 +3549,7 @@ async function handleRegenerate(message: Message) {
 .upload-mini-row.has-file .upload-icon-btn {
   background: rgba(52, 211, 153, 0.14);
   border-color: rgba(52, 211, 153, 0.4);
-  color: rgba(52, 211, 153, 0.95);
+  color: #1f7a56;
 }
 
 .upload-thumb {
@@ -3596,7 +3596,7 @@ async function handleRegenerate(message: Message) {
 .subject-reference-card .text-btn:hover {
   border-color: rgba(248, 113, 113, 0.52);
   background: rgba(248, 113, 113, 0.16);
-  color: #fca5a5;
+  color: #b4342c;
 }
 
 /* 上传后的「图像编辑」入口：全局图片模型把整张参考图当作底图。 */
@@ -3604,10 +3604,10 @@ async function handleRegenerate(message: Message) {
   flex: 0 0 auto;
   min-height: 26px;
   padding: 0 11px;
-  border: 1px solid rgba(246, 196, 83, 0.42);
+  border: 1px solid rgba(17, 17, 16, 0.42);
   border-radius: 999px;
-  background: rgba(246, 196, 83, 0.12);
-  color: rgba(246, 196, 83, 0.95);
+  background: rgba(17, 17, 16, 0.12);
+  color: rgba(17, 17, 16, 0.95);
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
@@ -3617,8 +3617,8 @@ async function handleRegenerate(message: Message) {
 }
 
 .image-edit-btn:hover {
-  border-color: rgba(246, 196, 83, 0.7);
-  background: rgba(246, 196, 83, 0.2);
+  border-color: rgba(17, 17, 16, 0.7);
+  background: rgba(17, 17, 16, 0.2);
 }
 
 .image-edit-btn::before {
@@ -3637,7 +3637,7 @@ async function handleRegenerate(message: Message) {
 .image-edit-entry-hint {
   font-size: 11px;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(29, 29, 27, 0.45);
 }
 
 .image-edit-entry-note {
@@ -3753,7 +3753,7 @@ async function handleRegenerate(message: Message) {
   border: 0;
   border-radius: 14px;
   background: var(--color-theme-gradient);
-  color: #fff;
+  color: #1d1d1b;
   font-weight: 700;
   cursor: pointer;
 }
@@ -3765,7 +3765,7 @@ async function handleRegenerate(message: Message) {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(17, 17, 16, 0.18);
 }
 
 .subject-reference-copy {
@@ -3911,8 +3911,9 @@ async function handleRegenerate(message: Message) {
   border-radius: 6px;
   font-size: 9px;
   font-weight: 800;
-  color: #fff;
-  background: rgba(15, 23, 42, 0.72);
+  color: #1d1d1b;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 3px rgba(17, 17, 16, 0.1);
 }
 
 .multimodal-thumb-remove {
@@ -3929,8 +3930,8 @@ async function handleRegenerate(message: Message) {
   cursor: pointer;
   font-size: 12px;
   line-height: 1;
-  color: #fff;
-  background: rgba(15, 23, 42, 0.6);
+  color: #1d1d1b;
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .multimodal-add-btn {
@@ -3939,10 +3940,10 @@ async function handleRegenerate(message: Message) {
   justify-content: center;
   width: 52px;
   height: 52px;
-  border: 1px dashed rgba(255, 255, 255, 0.30);
+  border: 1px dashed #d2d2ca;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.90);
+  background: #fafaf8;
+  color: rgba(29, 29, 27, 0.90);
   font-size: 18px;
   font-weight: 600;
   line-height: 1;
@@ -3951,9 +3952,9 @@ async function handleRegenerate(message: Message) {
 }
 
 .multimodal-add-btn:hover {
-  border-color: rgba(255, 255, 255, 0.48);
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  border-color: rgba(29, 29, 27, 0.48);
+  background: rgba(17, 17, 16, 0.12);
+  color: #1d1d1b;
 }
 
 /* @ 引用菜单 */
@@ -3998,8 +3999,8 @@ async function handleRegenerate(message: Message) {
   border-radius: 6px;
   font-size: 10px;
   font-weight: 800;
-  color: #fff;
-  background: linear-gradient(135deg, #3b82f6 0%, #7c5cff 100%);
+  color: #1d1d1b;
+  background: #111111;
 }
 
 .mention-item-name {
@@ -4040,14 +4041,14 @@ async function handleRegenerate(message: Message) {
 }
 
 .upload-btn {
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.10);
-  color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(17, 17, 16, 0.22);
+  background: rgba(17, 17, 16, 0.10);
+  color: rgba(29, 29, 27, 0.92);
 }
 
 .upload-btn:hover {
-  border-color: rgba(255, 255, 255, 0.38);
-  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(29, 29, 27, 0.38);
+  background: rgba(17, 17, 16, 0.16);
 }
 
 .icon-btn:hover,
@@ -4144,7 +4145,7 @@ async function handleRegenerate(message: Message) {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: #fff;
+  color: #1d1d1b;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.16);
 }
 
@@ -4158,17 +4159,17 @@ async function handleRegenerate(message: Message) {
 
 /* 图片：紫色系 */
 .referenced-chip-image {
-  background: linear-gradient(135deg, #24262d, #4b5563);
+  background: #111111;
 }
 
 /* 视频：橙红色系 */
 .referenced-chip-video {
-  background: linear-gradient(135deg, #24262d, #0a84ff);
+  background: #111111;
 }
 
 /* 音频：青绿色系 */
 .referenced-chip-audio {
-  background: linear-gradient(135deg, #24262d, #22c1dc);
+  background: #111111;
 }
 
 .composer-actions {
@@ -4201,7 +4202,7 @@ async function handleRegenerate(message: Message) {
 }
 
 .skill-upload-btn-inline.active {
-  color: #fff;
+  color: #1d1d1b;
   border-color: transparent;
   background: var(--color-theme-gradient);
 }
@@ -4256,7 +4257,7 @@ async function handleRegenerate(message: Message) {
 
 .send-btn.ready {
   background: var(--color-theme-gradient);
-  color: rgba(255, 255, 255, 0.98);
+  color: rgba(29, 29, 27, 0.98);
   box-shadow: 0 16px 30px rgba(15, 23, 42, 0.20), 0 0 0 1px rgba(255, 255, 255, 0.42) inset;
 }
 
@@ -4419,30 +4420,26 @@ async function handleRegenerate(message: Message) {
 }
 .chat-page {
   padding: 14px;
-  color: rgba(255, 255, 255, 0.92);
-  background:
-    radial-gradient(circle at 48% 4%, rgba(255, 255, 255, 0.11), transparent 0 24%),
-    radial-gradient(circle at 12% 24%, rgba(91, 141, 255, 0.16), transparent 0 28%),
-    radial-gradient(circle at 88% 78%, rgba(255, 138, 76, 0.10), transparent 0 22%),
-    linear-gradient(180deg, #070707 0%, #0b0b0e 52%, #111114 100%);
-  --surface-glass: rgba(255, 255, 255, 0.075);
-  --surface-glass-strong: rgba(255, 255, 255, 0.11);
-  --surface-line: rgba(255, 255, 255, 0.11);
-  --surface-shadow: 0 24px 100px rgba(0, 0, 0, 0.42);
-  --surface-shadow-soft: 0 14px 44px rgba(0, 0, 0, 0.24);
+  color: rgba(29, 29, 27, 0.92);
+  background: #ffffff;
+  --surface-glass: #ffffff;
+  --surface-glass-strong: #ffffff;
+  --surface-line: #e8e8e2;
+  --surface-shadow: 0 8px 28px rgba(17, 17, 16, 0.06);
+  --surface-shadow-soft: 0 4px 18px rgba(17, 17, 16, 0.05);
 }
 
 .chat-page::before {
   background:
-    linear-gradient(rgba(255, 255, 255, 0.052) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.048) 1px, transparent 1px);
+    linear-gradient(rgba(17, 17, 16, 0.052) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 17, 16, 0.048) 1px, transparent 1px);
   background-size: 72px 72px;
   opacity: 1;
   mask-image: radial-gradient(circle at 50% 40%, #000 0 34%, transparent 78%);
 }
 
 .chat-page::after {
-  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.48));
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.94));
   opacity: 1;
   mask-image: none;
 }
@@ -4456,9 +4453,9 @@ async function handleRegenerate(message: Message) {
 
 .session-sidebar {
   padding: 16px;
-  border-color: rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.065);
-  box-shadow: var(--surface-shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  border-color: rgba(29, 29, 27, 0.11);
+  background: rgba(17, 17, 16, 0.065);
+  box-shadow: var(--surface-shadow-soft), inset 0 1px 0 rgba(17, 17, 16, 0.09);
   backdrop-filter: blur(28px) saturate(145%);
 }
 
@@ -4475,7 +4472,7 @@ async function handleRegenerate(message: Message) {
   font-style: normal;
   font-weight: 700;
   letter-spacing: -0.05em;
-  color: #f7f7f2;
+  color: #1d1d1b;
   background: none;
 }
 
@@ -4484,38 +4481,38 @@ async function handleRegenerate(message: Message) {
   height: 34px;
   border-radius: 12px;
   object-fit: cover;
-  box-shadow: 0 0 32px rgba(255, 255, 255, 0.22);
+  box-shadow: 0 0 32px rgba(17, 17, 16, 0.22);
 }
 
 .mode-intro-card {
   margin-top: 14px;
   padding: 14px;
-  border-color: rgba(255, 255, 255, 0.11);
+  border-color: rgba(29, 29, 27, 0.11);
   background:
-    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.14), transparent 0 42%),
-    rgba(255, 255, 255, 0.075);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+    radial-gradient(circle at 18% 0%, rgba(17, 17, 16, 0.14), transparent 0 42%),
+    rgba(17, 17, 16, 0.075);
+  box-shadow: inset 0 1px 0 rgba(17, 17, 16, 0.10);
 }
 
 .mode-intro-badge,
 .canvas-entry-new {
   background: rgba(255, 255, 255, 0.92);
-  color: #08080a;
-  box-shadow: 0 12px 34px rgba(255, 255, 255, 0.10);
+  color: #ffffff;
+  box-shadow: 0 12px 34px rgba(17, 17, 16, 0.10);
 }
 
 .mode-intro-desc,
 .empty-copy {
-  color: rgba(255, 255, 255, 0.54);
+  color: rgba(29, 29, 27, 0.54);
 }
 
 .workspace-main {
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(17, 17, 16, 0.10);
   border-radius: 34px;
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.105), transparent 0 28%),
-    rgba(255, 255, 255, 0.052);
-  box-shadow: var(--surface-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    radial-gradient(circle at 50% 0%, rgba(17, 17, 16, 0.105), transparent 0 28%),
+    rgba(17, 17, 16, 0.052);
+  box-shadow: var(--surface-shadow), inset 0 1px 0 rgba(17, 17, 16, 0.08);
   overflow: hidden;
   backdrop-filter: blur(24px) saturate(140%);
 }
@@ -4538,14 +4535,14 @@ async function handleRegenerate(message: Message) {
 }
 
 .empty-kicker {
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(29, 29, 27, 0.45);
   letter-spacing: 0.18em;
 }
 
 .empty-state h1 {
   max-width: 11ch;
   margin: 14px auto 0;
-  color: #f7f7f2;
+  color: #1d1d1b;
   font-family: var(--font-family-display);
   font-size: clamp(52px, 8vw, 104px);
   font-weight: 600;
@@ -4564,28 +4561,28 @@ async function handleRegenerate(message: Message) {
 }
 
 .composer-console {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.075);
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.11);
+  background: rgba(17, 17, 16, 0.075);
+  box-shadow: 0 24px 90px rgba(17, 17, 16, 0.08), inset 0 1px 0 rgba(17, 17, 16, 0.11);
   backdrop-filter: blur(28px) saturate(145%);
 }
 
 .composer-summary {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(29, 29, 27, 0.78);
   background: transparent;
 }
 
 .summary-kicker,
 .meta-pill-label {
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(29, 29, 27, 0.42);
 }
 
 .summary-chip,
 .meta-pill {
-  border-color: rgba(255, 255, 255, 0.10);
-  background: rgba(255, 255, 255, 0.075);
-  color: rgba(255, 255, 255, 0.72);
+  border-color: rgba(29, 29, 27, 0.10);
+  background: rgba(17, 17, 16, 0.075);
+  color: rgba(29, 29, 27, 0.72);
 }
 
 .summary-chip-strong,
@@ -4594,14 +4591,14 @@ async function handleRegenerate(message: Message) {
 .ratio-current-btn,
 .send-btn.ready,
 .canvas-entry-btn {
-  background: #f7f7f2;
-  color: #08080a;
+  background: #1d1d1b;
+  color: #ffffff;
   border-color: transparent;
 }
 
 .composer-control-panel {
-  border-top-color: rgba(255, 255, 255, 0.10);
-  background: rgba(0, 0, 0, 0.18);
+  border-top-color: rgba(29, 29, 27, 0.10);
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .switch-btn,
@@ -4613,34 +4610,34 @@ async function handleRegenerate(message: Message) {
 .multimodal-panel,
 .skill-control-row,
 .ratio-dropdown {
-  border-color: rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.76);
+  border-color: rgba(29, 29, 27, 0.11);
+  background: rgba(17, 17, 16, 0.07);
+  color: rgba(29, 29, 27, 0.76);
 }
 
 .switch-btn:not(.active):hover,
 .upload-mini-row:hover,
 .upload-card-row:hover {
-  background: rgba(255, 255, 255, 0.11);
-  color: #fff;
+  background: rgba(17, 17, 16, 0.11);
+  color: #1d1d1b;
 }
 
 .input-shell {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 24px;
-  background: rgba(6, 6, 8, 0.78);
-  box-shadow: inset 0 1px 18px rgba(0, 0, 0, 0.44);
+  background: #ffffff;
+  box-shadow: inset 0 1px 6px rgba(17, 17, 16, 0.05);
 }
 
 .input-shell textarea {
-  color: #fff;
+  color: #1d1d1b;
 }
 
 .input-shell textarea::placeholder,
 .upload-hint,
 .pill-filename,
 .summary-toggle {
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(29, 29, 27, 0.42);
 }
 
 .icon-btn,
@@ -4648,9 +4645,9 @@ async function handleRegenerate(message: Message) {
 .text-btn,
 .sidebar-secondary-btn,
 .skill-upload-btn-inline {
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(17, 17, 16, 0.11);
+  background: rgba(17, 17, 16, 0.08);
+  color: rgba(29, 29, 27, 0.76);
 }
 
 .icon-btn:hover,
@@ -4658,12 +4655,12 @@ async function handleRegenerate(message: Message) {
 .text-btn:hover,
 .sidebar-secondary-btn:hover,
 .skill-upload-btn-inline:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
+  background: rgba(17, 17, 16, 0.14);
+  color: #1d1d1b;
 }
 
 .send-btn.ready {
-  box-shadow: 0 16px 36px rgba(255, 255, 255, 0.10);
+  box-shadow: 0 16px 36px rgba(17, 17, 16, 0.10);
 }
 
 .sidebar-footer {
@@ -4672,71 +4669,71 @@ async function handleRegenerate(message: Message) {
 
 :deep(.message .avatar-icon),
 :deep(.message .bubble) {
-  border-color: rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border-color: rgba(29, 29, 27, 0.11);
+  background: rgba(17, 17, 16, 0.08);
+  color: rgba(29, 29, 27, 0.9);
+  box-shadow: 0 14px 44px rgba(17, 17, 16, 0.08), inset 0 1px 0 rgba(17, 17, 16, 0.08);
   backdrop-filter: blur(20px) saturate(135%);
 }
 
 :deep(.result-card) {
-  border-color: rgba(217, 205, 184, 0.14);
-  background: linear-gradient(180deg, rgba(20, 18, 15, 0.92), rgba(10, 9, 8, 0.88));
-  color: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border-color: rgba(17, 17, 16, 0.14);
+  background: #ffffff;
+  color: rgba(29, 29, 27, 0.9);
+  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.04);
   backdrop-filter: blur(20px) saturate(135%);
 }
 
 :deep(.message.user .bubble) {
-  border-color: rgba(217, 205, 184, 0.26);
-  background: linear-gradient(135deg, rgba(82, 69, 51, 0.82), rgba(34, 30, 24, 0.90));
-  color: #f7f2e9;
+  border-color: rgba(17, 17, 16, 0.26);
+  background: #f5f5f1;
+  color: #1d1d1b;
 }
 
 :deep(.content p),
 :deep(.result-title),
 :deep(.meta-pair dd) {
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(29, 29, 27, 0.88);
 }
 
 :deep(.message.user .content p),
 :deep(.message.user .time) {
-  color: rgba(255, 255, 255, 0.94);
+  color: rgba(29, 29, 27, 0.94);
 }
 
 :deep(.message.system .bubble) {
-  background: rgba(255, 255, 255, 0.075);
+  background: rgba(17, 17, 16, 0.075);
 }
 
 :deep(.meta-pair),
 :deep(.provider-pill) {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.76);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  background: rgba(17, 17, 16, 0.08);
+  color: rgba(29, 29, 27, 0.76);
+  box-shadow: inset 0 0 0 1px rgba(17, 17, 16, 0.08);
 }
 
 :deep(.media-frame) {
   background:
-    radial-gradient(circle at 50% 20%, rgba(217, 205, 184, 0.12), transparent 55%),
-    rgba(12, 11, 9, 0.72);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    radial-gradient(circle at 50% 20%, rgba(17, 17, 16, 0.12), transparent 55%),
+    #f5f5f1;
+  box-shadow: inset 0 0 0 1px rgba(17, 17, 16, 0.08);
 }
 
 :deep(.meta-pair dt),
 :deep(.time) {
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(29, 29, 27, 0.42);
 }
 
 .chat-stage {
-  border-color: rgba(255, 255, 255, 0.10);
+  border-color: rgba(29, 29, 27, 0.10);
   background: transparent;
   box-shadow: none;
 }
 
 .empty-state {
-  border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.07);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border-color: rgba(29, 29, 27, 0.12);
+  background: rgba(17, 17, 16, 0.07);
+  box-shadow: inset 0 1px 0 rgba(17, 17, 16, 0.08);
 }
 
 .composer-dock {
@@ -4746,8 +4743,8 @@ async function handleRegenerate(message: Message) {
 }
 
 .composer-summary {
-  border-color: rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.075);
+  border-color: rgba(29, 29, 27, 0.11);
+  background: rgba(17, 17, 16, 0.075);
 }
 
 .media-switch,
@@ -4755,9 +4752,9 @@ async function handleRegenerate(message: Message) {
 .ratio-selector,
 .model-slot,
 .duration-selector {
-  border-color: rgba(255, 255, 255, 0.26);
-  background: rgba(255, 255, 255, 0.07);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border-color: rgba(29, 29, 27, 0.26);
+  background: rgba(17, 17, 16, 0.07);
+  box-shadow: inset 0 1px 0 rgba(17, 17, 16, 0.08);
 }
 
 .ratio-selector {
@@ -4765,38 +4762,38 @@ async function handleRegenerate(message: Message) {
 }
 
 .motion-control-option {
-  border-color: rgba(255, 255, 255, 0.26);
-  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(29, 29, 27, 0.26);
+  background: rgba(17, 17, 16, 0.07);
 }
 
 .motion-control-option-label,
 .motion-control-note,
 .multimodal-note,
 .upload-label {
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(29, 29, 27, 0.82);
 }
 
 .motion-control-note small,
 .multimodal-note small,
 .upload-hint {
-  color: rgba(255, 255, 255, 0.46);
+  color: rgba(29, 29, 27, 0.46);
 }
 
 .motion-control-select,
 .duration-select {
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(29, 29, 27, 0.88);
 }
 
 .ratio-caret,
 .duration-caret {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(29, 29, 27, 0.5);
 }
 
 .summary-toggle {
-  color: rgba(255, 255, 255, 0.88);
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  color: rgba(29, 29, 27, 0.88);
+  background: rgba(17, 17, 16, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.16);
+  box-shadow: inset 0 1px 0 rgba(17, 17, 16, 0.10);
   backdrop-filter: blur(18px) saturate(140%);
 }
 
@@ -4804,7 +4801,7 @@ async function handleRegenerate(message: Message) {
   background: var(--color-action-bg);
   color: var(--color-action-text);
   border-color: var(--color-action-border);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  box-shadow: 0 8px 18px rgba(17, 17, 16, 0.14);
 }
 
 .send-btn.ready .send-gradient-icon {
@@ -4812,47 +4809,47 @@ async function handleRegenerate(message: Message) {
 }
 
 .input-shell:focus-within {
-  border-color: rgba(255, 255, 255, 0.30);
-  background: rgba(6, 6, 8, 0.88);
-  box-shadow: inset 0 1px 18px rgba(0, 0, 0, 0.44), 0 0 0 3px rgba(255, 255, 255, 0.08);
+  border-color: rgba(29, 29, 27, 0.30);
+  background: #ffffff;
+  box-shadow: inset 0 1px 6px rgba(17, 17, 16, 0.05), 0 0 0 3px rgba(17, 17, 16, 0.06);
 }
 
 :deep(.model-selector select) {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.88);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(17, 17, 16, 0.08);
+  color: rgba(29, 29, 27, 0.88);
+  border-color: rgba(29, 29, 27, 0.12);
 }
 
 :deep(.model-selector .select-icon) {
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(29, 29, 27, 0.58);
 }
 
 .ratio-current-btn {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.86);
+  background: rgba(17, 17, 16, 0.08);
+  color: rgba(29, 29, 27, 0.86);
 }
 
 .ratio-dropdown-item {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(29, 29, 27, 0.78);
 }
 
 .ratio-dropdown-item.active {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: rgba(17, 17, 16, 0.12);
+  color: #1d1d1b;
 }
 
 .ratio-current-box,
 .ratio-option-box {
   border-color: transparent;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(17, 17, 16, 0.08);
 }
 
 .media-switch:focus-within,
 .video-mode-switch:focus-within,
 .model-slot:focus-within,
 .duration-selector:focus-within {
-  border-color: rgba(255, 255, 255, 0.34);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 0 0 3px rgba(255, 255, 255, 0.06);
+  border-color: rgba(29, 29, 27, 0.34);
+  box-shadow: inset 0 1px 0 rgba(17, 17, 16, 0.10), 0 0 0 3px rgba(17, 17, 16, 0.06);
 }
 
 .ratio-selector.open,
@@ -4873,13 +4870,13 @@ async function handleRegenerate(message: Message) {
 
 .skill-upload-btn-inline {
   background: transparent;
-  border-color: rgba(255, 255, 255, 0.26);
-  color: rgba(255, 255, 255, 0.78);
+  border-color: rgba(29, 29, 27, 0.26);
+  color: rgba(29, 29, 27, 0.78);
 }
 
 .skill-upload-btn-inline:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: rgba(17, 17, 16, 0.08);
+  color: #1d1d1b;
 }
 
 .skill-upload-btn-inline.active {
@@ -4911,21 +4908,21 @@ async function handleRegenerate(message: Message) {
 }
 
 .composer-summary {
-  background: #17191f;
+  background: #fafaf8;
   border-color: transparent;
   box-shadow: none;
 }
 
 .composer-control-panel {
-  background: #111318;
+  background: #ffffff;
   border-color: transparent;
   box-shadow: none;
 }
 
 .composer-console {
-  background: #15171c;
+  background: #ffffff;
   border-color: transparent;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+  box-shadow: 0 12px 32px rgba(17, 17, 16, 0.08);
 }
 
 .meta-pill,
@@ -4941,30 +4938,30 @@ async function handleRegenerate(message: Message) {
 .motion-control-option,
 .subject-reference-card,
 .multimodal-panel {
-  background: #1c1f26;
+  background: #fafaf8;
   border-color: transparent;
   box-shadow: none;
 }
 
 .ratio-dropdown {
-  background: #15171c;
+  background: #ffffff;
   border-color: transparent;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+  box-shadow: 0 12px 32px rgba(17, 17, 16, 0.1);
 }
 
 .input-shell {
-  background: #0d0f13;
+  background: #ffffff;
   border-color: transparent;
 }
 
 .input-shell:focus-within {
-  background: #0d0f13;
+  background: #ffffff;
 }
 
 .summary-toggle {
-  background: #262a33;
+  background: #ecece7;
   border-color: transparent;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(29, 29, 27, 0.88);
   backdrop-filter: none;
 }
 
@@ -5057,9 +5054,9 @@ async function handleRegenerate(message: Message) {
 
 .chat-stage {
   min-height: 0;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(17, 17, 16, 0.10);
   border-radius: 24px;
-  background: #111318;
+  background: #ffffff;
 }
 
 .composer-dock {
@@ -5119,10 +5116,10 @@ async function handleRegenerate(message: Message) {
   min-height: 54px;
   padding: 8px 12px;
   gap: 10px;
-  background: #0a0a0c;
-  border: 1px solid #22242b;
+  background: #ffffff;
+  border: 1px solid #e8e8e2;
   border-radius: 16px;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.04);
 }
 
 .top-nav .brand-title {
@@ -5150,9 +5147,9 @@ async function handleRegenerate(message: Message) {
   font-weight: 700;
   letter-spacing: 0;
   gap: 6px;
-  background: #1c1f26;
-  color: #e6e8ef;
-  border: 1px solid #2a2e37;
+  background: #fafaf8;
+  color: #1d1d1b;
+  border: 1px solid #e8e8e2;
 }
 
 .top-nav-actions .canvas-entry-new {
@@ -5177,10 +5174,10 @@ async function handleRegenerate(message: Message) {
   min-height: 0;
   padding: 0;
   overflow: hidden;
-  background: #15171c;
-  border: 1px solid #22252d;
+  background: #ffffff;
+  border: 1px solid #e8e8e2;
   border-radius: 22px;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.30);
+  box-shadow: 0 12px 32px rgba(17, 17, 16, 0.08);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
@@ -5243,16 +5240,16 @@ async function handleRegenerate(message: Message) {
   gap: 12px;
   margin-top: 0;
   padding: 14px;
-  border: 1px solid #2a2f3a;
+  border: 1px solid #e8e8e2;
   border-radius: 20px;
-  background: linear-gradient(180deg, #11151c 0%, #0d1016 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 18px 44px rgba(0, 0, 0, 0.22);
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+  box-shadow: inset 0 1px 0 rgba(17, 17, 16, 0.05), 0 18px 44px rgba(17, 17, 16, 0.08);
 }
 
 .input-shell:focus-within {
-  border-color: rgba(255, 255, 255, 0.34);
-  background: linear-gradient(180deg, #121822 0%, #0d1118 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 0 3px rgba(255, 255, 255, 0.06), 0 18px 44px rgba(0, 0, 0, 0.26);
+  border-color: rgba(29, 29, 27, 0.34);
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+  box-shadow: inset 0 1px 0 rgba(17, 17, 16, 0.06), 0 0 0 3px rgba(17, 17, 16, 0.06), 0 18px 44px rgba(17, 17, 16, 0.08);
 }
 
 .composer-actions {
@@ -5263,7 +5260,7 @@ async function handleRegenerate(message: Message) {
   gap: 8px;
   align-self: stretch;
   padding: 12px 0 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(17, 17, 16, 0.08);
 }
 
 .meta-pill-label,
@@ -5273,47 +5270,47 @@ async function handleRegenerate(message: Message) {
 .multimodal-note,
 .multimodal-note strong,
 .referenced-mentions-label {
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(29, 29, 27, 0.88);
 }
 
 .upload-hint,
 .motion-control-note small,
 .multimodal-note small,
 .input-shell textarea::placeholder {
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(29, 29, 27, 0.58);
 }
 
 .multimodal-group,
 .mention-menu {
-  background: #151923;
-  border-color: #2b3342;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 14px 32px rgba(0, 0, 0, 0.22);
+  background: #fafaf8;
+  border-color: #e8e8e2;
+  box-shadow: inset 0 1px 0 rgba(17, 17, 16, 0.05), 0 14px 32px rgba(17, 17, 16, 0.08);
 }
 
 .multimodal-group-title,
 .mention-item-name {
-  color: rgba(255, 255, 255, 0.86);
+  color: rgba(29, 29, 27, 0.86);
 }
 
 .multimodal-group-count {
-  color: rgba(255, 255, 255, 0.54);
+  color: rgba(29, 29, 27, 0.54);
 }
 
 .multimodal-add-btn {
-  border-color: rgba(255, 255, 255, 0.32);
-  background: rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.90);
+  border-color: rgba(29, 29, 27, 0.32);
+  background: rgba(17, 17, 16, 0.07);
+  color: rgba(29, 29, 27, 0.90);
 }
 
 .multimodal-add-btn:hover {
-  border-color: rgba(255, 255, 255, 0.48);
-  background: rgba(255, 255, 255, 0.13);
-  color: #fff;
+  border-color: rgba(29, 29, 27, 0.48);
+  background: rgba(17, 17, 16, 0.13);
+  color: #1d1d1b;
 }
 
 .mention-item:hover,
 .mention-item.active {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(17, 17, 16, 0.12);
 }
 
 .switch-btn,
@@ -5321,11 +5318,11 @@ async function handleRegenerate(message: Message) {
 .reference-input,
 .motion-control-select,
 .duration-select {
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(29, 29, 27, 0.92);
 }
 
 .switch-btn:not(.active) {
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(29, 29, 27, 0.72);
 }
 
 .switch-btn.active,
@@ -5344,8 +5341,8 @@ async function handleRegenerate(message: Message) {
   height: 28px;
   padding: 0 10px;
   gap: 8px;
-  background: #1c1f26;
-  color: rgba(255, 255, 255, 0.92);
+  background: #fafaf8;
+  color: rgba(29, 29, 27, 0.92);
 }
 
 .ratio-chip {
@@ -5360,14 +5357,14 @@ async function handleRegenerate(message: Message) {
   flex: 0 0 auto;
   font-size: 10px;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(29, 29, 27, 0.5);
 }
 
 .motion-control-select {
   border: 0;
   background: transparent;
   padding: 0 4px;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(29, 29, 27, 0.92);
 }
 
 .duration-select {
@@ -5375,7 +5372,7 @@ async function handleRegenerate(message: Message) {
   background: transparent;
   min-width: 0;
   padding: 0 20px 0 4px;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(29, 29, 27, 0.92);
 }
 
 .duration-selector {
@@ -5385,20 +5382,20 @@ async function handleRegenerate(message: Message) {
 }
 
 .reference-input {
-  border-color: rgba(255, 255, 255, 0.26);
+  border-color: rgba(29, 29, 27, 0.26);
 }
 
 .icon-btn,
 .polish-btn,
 .text-btn {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(29, 29, 27, 0.9);
 }
 
 .icon-btn,
 .polish-btn {
-  background: #1a1f29;
-  border: 1px solid #2b3342;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: #f5f5f1;
+  border: 1px solid #e8e8e2;
+  box-shadow: inset 0 1px 0 rgba(17, 17, 16, 0.06);
 }
 
 .icon-btn {
@@ -5411,23 +5408,23 @@ async function handleRegenerate(message: Message) {
   min-height: 38px;
   padding: 0 14px;
   border-radius: 13px;
-  color: #dbe6ff;
+  color: #111110;
 }
 
 .icon-btn:hover,
 .polish-btn:not(:disabled):hover {
-  background: #242b38;
-  border-color: rgba(255, 255, 255, 0.40);
+  background: #f0f0ec;
+  border-color: rgba(29, 29, 27, 0.40);
 }
 
 .send-btn.ready {
   background: var(--color-action-bg);
   color: var(--color-action-text);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  box-shadow: 0 12px 28px rgba(17, 17, 16, 0.08), inset 0 1px 0 rgba(17, 17, 16, 0.10);
 }
 
 .input-shell textarea {
-  color: #fff;
+  color: #1d1d1b;
   font-size: 15px;
   min-height: 0;
   max-height: none;
@@ -5693,23 +5690,15 @@ async function handleRegenerate(message: Message) {
  * ========================================================================= */
 
 .chat-page {
-  --surface-glass: rgba(255, 255, 255, 0.045);
-  --surface-glass-strong: rgba(255, 255, 255, 0.07);
-  --surface-line: rgba(255, 255, 255, 0.085);
-  --surface-shadow-soft: 0 26px 70px rgba(0, 0, 0, 0.38);
-  background:
-    radial-gradient(1200px 620px at 14% -8%, rgba(122, 92, 255, 0.18), transparent 62%),
-    radial-gradient(900px 520px at 92% 2%, rgba(217, 205, 184, 0.10), transparent 58%),
-    radial-gradient(900px 620px at 62% 108%, rgba(251, 146, 60, 0.07), transparent 60%),
-    linear-gradient(180deg, #07070b 0%, #08080d 46%, #0b0b12 100%);
+  --surface-glass: #ffffff;
+  --surface-glass-strong: #ffffff;
+  --surface-line: #e8e8e2;
+  --surface-shadow-soft: 0 4px 18px rgba(17, 17, 16, 0.05);
+  background: #ffffff;
 }
 
 .chat-page::before {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
-  background-size: 76px 76px;
-  mask-image: radial-gradient(circle at 50% 26%, #000 0 30%, transparent 76%);
+  display: none;
 }
 
 .workspace-shell,
@@ -5739,10 +5728,10 @@ async function handleRegenerate(message: Message) {
   width: 46px;
   height: 46px;
   margin-bottom: 14px;
-  border: 1px solid rgba(217, 205, 184, 0.32);
+  border: 1px solid rgba(17, 17, 16, 0.32);
   border-radius: 16px;
-  background: rgba(217, 205, 184, 0.14);
-  color: #f2ece1;
+  background: rgba(17, 17, 16, 0.14);
+  color: #1d1d1b;
 }
 
 .empty-badge svg {
@@ -5751,7 +5740,7 @@ async function handleRegenerate(message: Message) {
 }
 
 .empty-state .empty-kicker {
-  color: rgba(242, 236, 225, 0.82);
+  color: #66665f;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -5765,7 +5754,7 @@ async function handleRegenerate(message: Message) {
   font-weight: 700;
   line-height: 1.12;
   letter-spacing: -0.035em;
-  color: rgba(255, 255, 255, 0.96);
+  color: rgba(29, 29, 27, 0.96);
 }
 
 .empty-copy {
@@ -5773,7 +5762,7 @@ async function handleRegenerate(message: Message) {
   margin: 14px auto 0;
   font-size: 13.5px;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(29, 29, 27, 0.55);
 }
 
 .quick-starts {
@@ -5795,7 +5784,7 @@ async function handleRegenerate(message: Message) {
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(29, 29, 27, 0.38);
 }
 
 .quick-start-block .quick-starts {
@@ -5807,9 +5796,9 @@ async function handleRegenerate(message: Message) {
   flex-direction: column;
   gap: 6px;
   padding: 14px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(17, 17, 16, 0.035);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -5822,8 +5811,8 @@ async function handleRegenerate(message: Message) {
 
 .quick-start:hover {
   transform: translateY(-1px);
-  border-color: rgba(217, 205, 184, 0.38);
-  background: rgba(217, 205, 184, 0.08);
+  border-color: rgba(17, 17, 16, 0.38);
+  background: rgba(17, 17, 16, 0.08);
 }
 
 .quick-start-head {
@@ -5836,20 +5825,20 @@ async function handleRegenerate(message: Message) {
 .quick-start-title {
   font-size: 13px;
   font-weight: 650;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(29, 29, 27, 0.9);
 }
 
 .quick-start-head svg {
   flex: 0 0 auto;
   width: 14px;
   height: 14px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(29, 29, 27, 0.35);
 }
 
 .quick-start-desc {
   font-size: 11.5px;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(29, 29, 27, 0.45);
 }
 
 @media (max-width: 780px) {
@@ -5861,17 +5850,17 @@ async function handleRegenerate(message: Message) {
 /* ---------- 参数台 ---------- */
 
 .composer-console {
-  border-color: rgba(255, 255, 255, 0.10);
+  border-color: rgba(29, 29, 27, 0.10);
   border-radius: 26px;
-  background: rgba(255, 255, 255, 0.055);
+  background: rgba(17, 17, 16, 0.055);
   box-shadow:
-    0 26px 70px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    0 26px 70px rgba(17, 17, 16, 0.08),
+    inset 0 1px 0 rgba(17, 17, 16, 0.07);
 }
 
 .send-btn.ready {
-  background: linear-gradient(135deg, #f2ece1 0%, #d9cdb8 100%);
-  color: #1a1611;
+  background: #111111;
+  color: #ffffff;
 }
 
 /* =========================================================================
@@ -5886,8 +5875,8 @@ async function handleRegenerate(message: Message) {
   gap: 12px;
   min-height: 54px;
   padding-right: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.005));
+  border-bottom: 1px solid rgba(17, 17, 16, 0.07);
+  background: linear-gradient(180deg, rgba(17, 17, 16, 0.04), rgba(17, 17, 16, 0.005));
 }
 
 .composer-tabs {
@@ -5906,7 +5895,7 @@ async function handleRegenerate(message: Message) {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(29, 29, 27, 0.5);
   font-size: 12px;
   font-weight: 600;
   line-height: 1;
@@ -5916,13 +5905,13 @@ async function handleRegenerate(message: Message) {
 }
 
 .composer-tab:hover {
-  color: rgba(255, 255, 255, 0.86);
-  background: rgba(255, 255, 255, 0.04);
+  color: rgba(29, 29, 27, 0.86);
+  background: rgba(17, 17, 16, 0.04);
 }
 
 .composer-tab.is-active {
-  color: #fff;
-  background: rgba(217, 205, 184, 0.08);
+  color: #1d1d1b;
+  background: rgba(17, 17, 16, 0.08);
 }
 
 .composer-tab.is-active::after {
@@ -5933,7 +5922,7 @@ async function handleRegenerate(message: Message) {
   left: 12px;
   height: 2px;
   border-radius: 2px 2px 0 0;
-  background: linear-gradient(90deg, #f2ece1, #d9cdb8);
+  background: #111111;
 }
 
 .composer-bar-model {
@@ -5945,10 +5934,10 @@ async function handleRegenerate(message: Message) {
   max-width: 46%;
   padding: 5px 10px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.68);
+  background: rgba(17, 17, 16, 0.045);
+  color: rgba(29, 29, 27, 0.68);
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
@@ -5960,15 +5949,15 @@ async function handleRegenerate(message: Message) {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #d9cdb8;
-  box-shadow: 0 0 0 3px rgba(217, 205, 184, 0.14);
+  background: #111111;
+  box-shadow: 0 0 0 3px rgba(17, 17, 16, 0.14);
 }
 
 .composer-bar-extra {
   padding-left: 7px;
   margin-left: 1px;
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.5);
+  border-left: 1px solid rgba(17, 17, 16, 0.12);
+  color: rgba(29, 29, 27, 0.5);
 }
 
 .composer-section-head {
@@ -5980,7 +5969,7 @@ async function handleRegenerate(message: Message) {
 }
 
 .composer-section-title {
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(29, 29, 27, 0.42);
   font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -5996,10 +5985,10 @@ async function handleRegenerate(message: Message) {
 
 .composer-section-chip {
   padding: 2px 7px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(17, 17, 16, 0.07);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.5);
+  background: rgba(17, 17, 16, 0.045);
+  color: rgba(29, 29, 27, 0.5);
   font-size: 10px;
   font-weight: 600;
   white-space: nowrap;
@@ -6008,7 +5997,7 @@ async function handleRegenerate(message: Message) {
 .composer-section-chip.attention {
   border-color: rgba(251, 191, 36, 0.32);
   background: rgba(251, 191, 36, 0.12);
-  color: #fcd34d;
+  color: #8a6d1f;
 }
 
 .composer-tab-static {
@@ -6016,8 +6005,8 @@ async function handleRegenerate(message: Message) {
 }
 
 .composer-tab-static:hover {
-  color: #fff;
-  background: rgba(217, 205, 184, 0.08);
+  color: #1d1d1b;
+  background: rgba(17, 17, 16, 0.08);
 }
 
 @media (max-width: 980px) {
@@ -6058,12 +6047,12 @@ async function handleRegenerate(message: Message) {
     min-height: 0;
     padding: 0;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(17, 17, 16, 0.09);
     border-radius: 26px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(17, 17, 16, 0.05);
     box-shadow:
-      0 26px 70px rgba(0, 0, 0, 0.42),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      0 26px 70px rgba(17, 17, 16, 0.08),
+      inset 0 1px 0 rgba(17, 17, 16, 0.06);
   }
 
   .composer-bar {
@@ -6150,9 +6139,9 @@ async function handleRegenerate(message: Message) {
     min-width: 0;
     min-height: 78px;
     padding: 11px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(17, 17, 16, 0.12);
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.085);
+    background: rgba(17, 17, 16, 0.085);
   }
 
   .meta-pill-model,
@@ -6162,7 +6151,7 @@ async function handleRegenerate(message: Message) {
 
   .meta-pill .meta-pill-label {
     flex: 0 0 auto;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(29, 29, 27, 0.6);
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.04em;
@@ -6185,9 +6174,9 @@ async function handleRegenerate(message: Message) {
     align-items: center;
     height: 36px;
     padding: 0 10px;
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(17, 17, 16, 0.09);
     border-radius: 12px;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(17, 17, 16, 0.08);
   }
 
   .meta-pill .model-slot select,
@@ -6195,7 +6184,7 @@ async function handleRegenerate(message: Message) {
     width: 100%;
     border: 0;
     background: transparent;
-    color: #fff;
+    color: #1d1d1b;
     font-size: 12.5px;
     font-weight: 600;
   }
@@ -6211,7 +6200,7 @@ async function handleRegenerate(message: Message) {
   }
 
   .meta-pill .duration-select:disabled {
-    color: rgba(255, 255, 255, 0.62);
+    color: rgba(29, 29, 27, 0.62);
     cursor: not-allowed;
   }
 
@@ -6221,19 +6210,19 @@ async function handleRegenerate(message: Message) {
   }
 
   .meta-pill .duration-select option {
-    background: #1b1e26;
-    color: #fff;
+    background: #f5f5f1;
+    color: #1d1d1b;
   }
 
   .meta-pill .duration-caret {
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(29, 29, 27, 0.55);
     font-size: 11px;
   }
 
   .meta-pill .ratio-current-btn {
     border: 0;
     background: transparent;
-    color: #fff;
+    color: #1d1d1b;
     font-size: 12.5px;
     font-weight: 600;
   }
@@ -6245,9 +6234,9 @@ async function handleRegenerate(message: Message) {
     height: 36px;
     gap: 3px;
     padding: 2px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(17, 17, 16, 0.08);
     border-radius: 12px;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(17, 17, 16, 0.08);
   }
 
   /* 视频模型最多有 5~6 个生成方式，400px 参数栏里单行会换行并溢出；
@@ -6274,20 +6263,20 @@ async function handleRegenerate(message: Message) {
     border: 0;
     border-radius: 9px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.78);
+    color: rgba(29, 29, 27, 0.78);
     font-size: 12px;
     font-weight: 600;
   }
 
   .meta-pill .switch-btn:not(.active):hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
+    background: rgba(17, 17, 16, 0.08);
+    color: #1d1d1b;
   }
 
   .meta-pill .switch-btn.active {
-    background: linear-gradient(135deg, #f7f7f2 0%, #d9dce3 100%);
-    color: #08080a;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    background: #f5f5f1;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(17, 17, 16, 0.08);
   }
 
   .meta-pill .switch-btn:disabled {
@@ -6318,9 +6307,9 @@ async function handleRegenerate(message: Message) {
     min-height: 0;
     margin: 10px 14px 14px;
     padding: 12px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.13);
+    border: 1px solid rgba(17, 17, 16, 0.13);
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(17, 17, 16, 0.07);
     box-shadow: none;
   }
 
@@ -6334,9 +6323,9 @@ async function handleRegenerate(message: Message) {
   }
 
   .input-shell:focus-within {
-    border-color: rgba(217, 205, 184, 0.45);
-    background: rgba(255, 255, 255, 0.06);
-    box-shadow: 0 0 0 3px rgba(217, 205, 184, 0.12);
+    border-color: rgba(17, 17, 16, 0.45);
+    background: rgba(17, 17, 16, 0.06);
+    box-shadow: 0 0 0 3px rgba(17, 17, 16, 0.12);
   }
 
   .composer-actions {
@@ -6370,9 +6359,9 @@ async function handleRegenerate(message: Message) {
   min-width: 0;
   min-height: 64px;
   padding: 10px 12px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border: 1px dashed rgba(17, 17, 16, 0.18);
   border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.022));
+  background: linear-gradient(180deg, rgba(17, 17, 16, 0.05), rgba(17, 17, 16, 0.022));
   transition: border-color 0.16s ease, background 0.16s ease;
 }
 
@@ -6382,15 +6371,15 @@ async function handleRegenerate(message: Message) {
 
 .upload-mini-row:hover,
 .upload-card-row:hover {
-  border-color: rgba(217, 205, 184, 0.45);
-  background: linear-gradient(180deg, rgba(217, 205, 184, 0.1), rgba(255, 255, 255, 0.02));
+  border-color: rgba(17, 17, 16, 0.45);
+  background: linear-gradient(180deg, rgba(17, 17, 16, 0.1), rgba(17, 17, 16, 0.02));
 }
 
 .upload-mini-row.has-file,
 .upload-card-row.has-file {
   border-style: solid;
   border-color: rgba(52, 211, 153, 0.42);
-  background: linear-gradient(180deg, rgba(52, 211, 153, 0.1), rgba(255, 255, 255, 0.02));
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.1), rgba(17, 17, 16, 0.02));
 }
 
 .upload-mini-row .upload-icon-btn {
@@ -6398,25 +6387,25 @@ async function handleRegenerate(message: Message) {
   width: 44px;
   height: 44px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(17, 17, 16, 0.16);
   border-radius: 13px;
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
+  background: rgba(17, 17, 16, 0.07);
+  color: #1d1d1b;
   font-size: 20px;
   font-weight: 400;
   line-height: 1;
 }
 
 .upload-mini-row:hover .upload-icon-btn {
-  border-color: rgba(217, 205, 184, 0.5);
-  background: rgba(217, 205, 184, 0.16);
-  color: #f2ece1;
+  border-color: rgba(17, 17, 16, 0.5);
+  background: rgba(17, 17, 16, 0.16);
+  color: #1d1d1b;
 }
 
 .upload-mini-row.has-file .upload-icon-btn {
   border-color: rgba(52, 211, 153, 0.45);
   background: rgba(52, 211, 153, 0.16);
-  color: #6ee7b7;
+  color: #1f7a56;
 }
 
 .upload-mini-row .upload-copy {
@@ -6429,7 +6418,7 @@ async function handleRegenerate(message: Message) {
 }
 
 .upload-mini-row .upload-label {
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(29, 29, 27, 0.92);
   font-size: 12.5px;
   font-weight: 700;
   line-height: 1.2;
@@ -6438,7 +6427,7 @@ async function handleRegenerate(message: Message) {
 .upload-mini-row .upload-hint {
   display: -webkit-box;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(29, 29, 27, 0.45);
   font-size: 10.5px;
   line-height: 1.5;
   white-space: normal;
@@ -6451,9 +6440,9 @@ async function handleRegenerate(message: Message) {
   flex: 0 0 auto;
   width: 44px;
   height: 44px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(17, 17, 16, 0.14);
   border-radius: 11px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(17, 17, 16, 0.05);
   object-fit: cover;
 }
 
@@ -6470,8 +6459,8 @@ async function handleRegenerate(message: Message) {
   padding: 3px 8px;
   overflow: hidden;
   border-radius: 7px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.6);
+  background: rgba(17, 17, 16, 0.06);
+  color: rgba(29, 29, 27, 0.6);
   font-size: 10.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -6484,7 +6473,7 @@ async function handleRegenerate(message: Message) {
   border: 1px solid rgba(248, 113, 113, 0.32);
   border-radius: 8px;
   background: rgba(248, 113, 113, 0.1);
-  color: #fca5a5;
+  color: #b4342c;
   font-size: 11px;
   font-weight: 600;
 }
@@ -6496,7 +6485,7 @@ async function handleRegenerate(message: Message) {
 .upload-mini-row .text-btn:hover {
   border-color: rgba(248, 113, 113, 0.55);
   background: rgba(248, 113, 113, 0.18);
-  color: #fecaca;
+  color: #8f3a33;
 }
 
 /* 两张以上素材卡时上下排列，避免窄栏里挤成一团 */
@@ -6510,43 +6499,43 @@ async function handleRegenerate(message: Message) {
   width: 100%;
   min-height: 48px;
   padding: 0 14px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border: 1px dashed rgba(17, 17, 16, 0.18);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  color: #fff;
+  background: rgba(17, 17, 16, 0.03);
+  color: #1d1d1b;
   font-size: 12px;
 }
 
 .reference-input::placeholder {
-  color: rgba(255, 255, 255, 0.32);
+  color: rgba(29, 29, 27, 0.32);
 }
 
 .reference-input:focus {
   outline: none;
   border-style: solid;
-  border-color: rgba(217, 205, 184, 0.5);
-  box-shadow: 0 0 0 3px rgba(217, 205, 184, 0.12);
+  border-color: rgba(17, 17, 16, 0.5);
+  box-shadow: 0 0 0 3px rgba(17, 17, 16, 0.12);
 }
 
 /* 素材 / 动作控制容器与卡片保持同一套圆角与底色 */
 .multimodal-panel,
 .motion-control-panel,
 .subject-reference-card {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(17, 17, 16, 0.1);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(17, 17, 16, 0.035);
 }
 
 .motion-control-note,
 .multimodal-note {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(29, 29, 27, 0.78);
   font-size: 11.5px;
   line-height: 1.5;
 }
 
 .motion-control-note small,
 .multimodal-note small {
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(29, 29, 27, 0.45);
   font-size: 10.5px;
 }
 
@@ -6566,7 +6555,7 @@ async function handleRegenerate(message: Message) {
   flex: 0 0 auto;
   margin: auto 0 0;
   padding-top: 14px;
-  color: rgba(255, 255, 255, 0.26);
+  color: rgba(29, 29, 27, 0.26);
   font-size: 10.5px;
   line-height: 1.6;
 }
@@ -6580,44 +6569,44 @@ async function handleRegenerate(message: Message) {
 
 .multimodal-group {
   padding: 10px;
-  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border: 1px dashed rgba(17, 17, 16, 0.16);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(17, 17, 16, 0.03);
 }
 
 .multimodal-group-title {
-  color: rgba(255, 255, 255, 0.86);
+  color: rgba(29, 29, 27, 0.86);
   font-size: 11px;
   font-weight: 600;
 }
 
 .multimodal-group-count {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(29, 29, 27, 0.5);
   font-size: 10px;
 }
 
 .multimodal-add-btn {
   width: 52px;
   height: 52px;
-  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border: 1px dashed rgba(17, 17, 16, 0.22);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background: rgba(17, 17, 16, 0.05);
+  color: #1d1d1b;
   font-size: 20px;
   font-weight: 400;
   line-height: 1;
 }
 
 .multimodal-add-btn:hover {
-  border-color: rgba(217, 205, 184, 0.5);
-  background: rgba(217, 205, 184, 0.14);
-  color: #f2ece1;
+  border-color: rgba(17, 17, 16, 0.5);
+  background: rgba(17, 17, 16, 0.14);
+  color: #1d1d1b;
 }
 
 /* 参数区滚动条：常驻细条，提示还有内容 */
 .composer-control-panel {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  scrollbar-color: rgba(29, 29, 27, 0.16) transparent;
 }
 
 .composer-control-panel::-webkit-scrollbar {
@@ -6626,7 +6615,7 @@ async function handleRegenerate(message: Message) {
 
 .composer-control-panel::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(17, 17, 16, 0.16);
 }
 
 .composer-control-panel::-webkit-scrollbar-track {
@@ -6636,7 +6625,7 @@ async function handleRegenerate(message: Message) {
 /* 输入框左下角的操作提示 */
 .composer-hint {
   margin-right: auto;
-  color: rgba(255, 255, 255, 0.32);
+  color: rgba(29, 29, 27, 0.32);
   font-size: 10.5px;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -6645,7 +6634,7 @@ async function handleRegenerate(message: Message) {
 /* 对话面板头：与配音 / Skill 页的 studio-panel-head 对齐 */
 .chat-stage-head {
   flex: 0 0 auto;
-  background: linear-gradient(90deg, rgba(217, 205, 184, 0.07), rgba(217, 205, 184, 0) 62%);
+  background: linear-gradient(90deg, rgba(17, 17, 16, 0.07), rgba(17, 17, 16, 0) 62%);
 }
 
 /* 稍窄的桌面端给对话区再让 40px，参数栏仍保持可读宽度 */
@@ -6705,8 +6694,8 @@ async function handleRegenerate(message: Message) {
 
 /* 扩图模式：上传区用暖色强调，和普通参考图区分 */
 .upload-card-row.is-expand-upload {
-  border-color: rgba(217, 205, 184, 0.34);
-  background: linear-gradient(180deg, rgba(217, 205, 184, 0.09), rgba(255, 255, 255, 0.02));
+  border-color: rgba(17, 17, 16, 0.34);
+  background: linear-gradient(180deg, rgba(17, 17, 16, 0.09), rgba(17, 17, 16, 0.02));
 }
 
 .upload-card-row.is-expand-upload.has-file {
@@ -6714,13 +6703,13 @@ async function handleRegenerate(message: Message) {
 }
 
 .expand-mode-note {
-  color: rgba(242, 236, 225, 0.72);
+  color: #66665f;
 }
 
 .expand-ratio-warning {
   border-color: rgba(248, 113, 113, 0.26);
   background: rgba(248, 113, 113, 0.1);
-  color: rgba(254, 202, 202, 0.92);
+  color: #b4342c;
 }
 
 /* 结果图快捷扩图弹窗 */
@@ -6732,7 +6721,7 @@ async function handleRegenerate(message: Message) {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(7, 6, 5, 0.72);
+  background: rgba(17, 17, 16, 0.28);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
@@ -6742,13 +6731,11 @@ async function handleRegenerate(message: Message) {
   max-height: min(720px, calc(100dvh - 40px));
   overflow: auto;
   padding: 20px;
-  border: 1px solid rgba(217, 205, 184, 0.24);
+  border: 1px solid #e8e8e2;
   border-radius: 22px;
-  background:
-    radial-gradient(circle at 90% 0%, rgba(217, 205, 184, 0.12), transparent 36%),
-    linear-gradient(180deg, #1b1813 0%, #0e0c09 100%);
-  color: #f4efe6;
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  color: #1d1d1b;
+  box-shadow: 0 24px 70px rgba(17, 17, 16, 0.16);
   animation: expand-modal-in 0.22s ease-out;
 }
 
@@ -6773,7 +6760,7 @@ async function handleRegenerate(message: Message) {
 .expand-modal-kicker {
   display: block;
   margin-bottom: 4px;
-  color: rgba(217, 205, 184, 0.62);
+  color: rgba(17, 17, 16, 0.62);
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -6781,7 +6768,7 @@ async function handleRegenerate(message: Message) {
 
 .expand-modal-head h3 {
   margin: 0;
-  color: #f7f2e9;
+  color: #1d1d1b;
   font-size: 21px;
   font-weight: 720;
   letter-spacing: 0.01em;
@@ -6793,28 +6780,28 @@ async function handleRegenerate(message: Message) {
   justify-content: center;
   width: 30px;
   height: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.72);
+  background: rgba(17, 17, 16, 0.05);
+  color: rgba(29, 29, 27, 0.72);
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
 }
 
 .expand-modal-close:hover {
-  border-color: rgba(217, 205, 184, 0.34);
-  background: rgba(217, 205, 184, 0.12);
-  color: #fff;
+  border-color: rgba(17, 17, 16, 0.34);
+  background: rgba(17, 17, 16, 0.12);
+  color: #1d1d1b;
 }
 
 .expand-modal-preview {
   position: relative;
   margin-top: 14px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(17, 17, 16, 0.1);
   border-radius: 14px;
-  background: rgba(0, 0, 0, 0.32);
+  background: rgba(17, 17, 16, 0.08);
   aspect-ratio: 16 / 8;
 }
 
@@ -6830,10 +6817,10 @@ async function handleRegenerate(message: Message) {
   right: 8px;
   bottom: 8px;
   padding: 4px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 999px;
-  background: rgba(12, 11, 9, 0.74);
-  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.92);
+  color: rgba(29, 29, 27, 0.82);
   font-size: 9.5px;
   font-weight: 600;
   backdrop-filter: blur(10px);
@@ -6841,7 +6828,7 @@ async function handleRegenerate(message: Message) {
 
 .expand-modal-copy {
   margin: 12px 0 14px;
-  color: rgba(244, 239, 230, 0.6);
+  color: #66665f;
   font-size: 11.5px;
   line-height: 1.6;
 }
@@ -6861,17 +6848,17 @@ async function handleRegenerate(message: Message) {
   gap: 5px;
   min-height: 88px;
   padding: 9px 6px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.11);
+  border: 1px solid rgba(17, 17, 16, 0.11);
   border-radius: 13px;
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.86);
+  background: rgba(17, 17, 16, 0.045);
+  color: rgba(29, 29, 27, 0.86);
   cursor: pointer;
   transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
 }
 
 .expand-ratio-btn:hover:not(:disabled) {
-  border-color: rgba(217, 205, 184, 0.42);
-  background: rgba(217, 205, 184, 0.13);
+  border-color: rgba(17, 17, 16, 0.42);
+  background: rgba(17, 17, 16, 0.13);
   transform: translateY(-2px);
 }
 
@@ -6894,7 +6881,7 @@ async function handleRegenerate(message: Message) {
 }
 
 .expand-ratio-size {
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(29, 29, 27, 0.38);
   font-size: 8.5px;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -6906,8 +6893,8 @@ async function handleRegenerate(message: Message) {
   right: 5px;
   padding: 2px 5px;
   border-radius: 999px;
-  background: rgba(217, 205, 184, 0.16);
-  color: rgba(242, 236, 225, 0.8);
+  background: rgba(255, 255, 255, 0.92);
+  color: #1d1d1b;
   font-size: 7.5px;
   font-weight: 700;
   line-height: 1.2;
@@ -6920,11 +6907,11 @@ async function handleRegenerate(message: Message) {
   gap: 12px;
   margin-top: 16px;
   padding-top: 13px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(17, 17, 16, 0.08);
 }
 
 .expand-modal-hint {
-  color: rgba(255, 255, 255, 0.36);
+  color: rgba(29, 29, 27, 0.36);
   font-size: 10px;
   line-height: 1.45;
 }
@@ -6933,19 +6920,19 @@ async function handleRegenerate(message: Message) {
   flex: 0 0 auto;
   min-height: 32px;
   padding: 0 16px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(17, 17, 16, 0.14);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.78);
+  background: rgba(17, 17, 16, 0.06);
+  color: rgba(29, 29, 27, 0.78);
   font-size: 11px;
   font-weight: 650;
   cursor: pointer;
 }
 
 .expand-modal-cancel:hover {
-  border-color: rgba(217, 205, 184, 0.32);
-  background: rgba(217, 205, 184, 0.1);
-  color: #fff;
+  border-color: rgba(17, 17, 16, 0.32);
+  background: rgba(17, 17, 16, 0.1);
+  color: #1d1d1b;
 }
 
 @media (max-width: 560px) {
@@ -6981,23 +6968,12 @@ async function handleRegenerate(message: Message) {
   height: 100dvh;
   padding: 0 10px 10px;
   overflow: hidden;
-  color: #fff;
-  background:
-    radial-gradient(circle at 8% -6%, rgba(143, 182, 255, 0.12), transparent 34%),
-    radial-gradient(circle at 92% 8%, rgba(217, 205, 184, 0.08), transparent 30%),
-    #07080b;
+  background: #ffffff;
+  color: #1d1d1b;
 }
 
 .video-page::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.026) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.026) 1px, transparent 1px);
-  background-size: 76px 76px;
-  mask-image: radial-gradient(circle at 50% 22%, #000 0 28%, transparent 76%);
+  display: none;
 }
 
 .video-shell {
@@ -7025,10 +7001,10 @@ async function handleRegenerate(message: Message) {
   gap: 6px;
   min-height: 36px;
   padding: 0 15px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(17, 17, 16, 0.10);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.76);
+  background: rgba(17, 17, 16, 0.045);
+  color: rgba(29, 29, 27, 0.76);
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -7036,9 +7012,9 @@ async function handleRegenerate(message: Message) {
 }
 
 .header-action:hover {
-  border-color: rgba(143, 182, 255, 0.36);
-  background: rgba(143, 182, 255, 0.12);
-  color: #fff;
+  border-color: rgba(17, 17, 16, 0.07);
+  background: rgba(17, 17, 16, 0.12);
+  color: #1d1d1b;
 }
 
 .header-action-count {
@@ -7048,8 +7024,8 @@ async function handleRegenerate(message: Message) {
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: rgba(143, 182, 255, 0.22);
-  color: #e8f0ff;
+  background: rgba(17, 17, 16, 0.07);
+  color: #111110;
   font-size: 10.5px;
   font-variant-numeric: tabular-nums;
 }
@@ -7085,7 +7061,7 @@ async function handleRegenerate(message: Message) {
   padding: 2px 8px 8px 2px;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(143, 182, 255, 0.3) rgba(255, 255, 255, 0.04);
+  scrollbar-color: rgba(17, 17, 16, 0.07) rgba(17, 17, 16, 0.04);
   overscroll-behavior: contain;
 }
 
@@ -7095,13 +7071,13 @@ async function handleRegenerate(message: Message) {
 
 .gallery-area::-webkit-scrollbar-track {
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(17, 17, 16, 0.04);
 }
 
 .gallery-area::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
-  background: rgba(143, 182, 255, 0.34);
+  background: rgba(17, 17, 16, 0.07);
   background-clip: padding-box;
 }
 
@@ -7121,10 +7097,10 @@ async function handleRegenerate(message: Message) {
   place-items: center;
   width: 54px;
   height: 54px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(17, 17, 16, 0.1);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(143, 182, 255, 0.82);
+  background: rgba(17, 17, 16, 0.04);
+  color: rgba(17, 17, 16, 0.07);
 }
 
 .empty-mark svg {
@@ -7134,7 +7110,7 @@ async function handleRegenerate(message: Message) {
 
 .gallery-empty h2 {
   margin: 0;
-  color: rgba(255, 255, 255, 0.94);
+  color: rgba(29, 29, 27, 0.94);
   font-size: clamp(20px, 2vw, 26px);
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -7143,7 +7119,7 @@ async function handleRegenerate(message: Message) {
 .gallery-empty p {
   max-width: 520px;
   margin: 0;
-  color: rgba(255, 255, 255, 0.44);
+  color: rgba(29, 29, 27, 0.44);
   font-size: 12.5px;
   line-height: 1.7;
 }
@@ -7161,9 +7137,9 @@ async function handleRegenerate(message: Message) {
   flex-direction: column;
   gap: 4px;
   padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(17, 17, 16, 0.03);
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -7171,19 +7147,19 @@ async function handleRegenerate(message: Message) {
 }
 
 .starter:hover {
-  border-color: rgba(143, 182, 255, 0.34);
-  background: rgba(143, 182, 255, 0.09);
+  border-color: rgba(17, 17, 16, 0.07);
+  background: rgba(17, 17, 16, 0.09);
   transform: translateY(-1px);
 }
 
 .starter-title {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(29, 29, 27, 0.9);
   font-size: 12.5px;
   font-weight: 650;
 }
 
 .starter-desc {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(29, 29, 27, 0.4);
   font-size: 10.5px;
   line-height: 1.5;
 }
@@ -7209,7 +7185,7 @@ async function handleRegenerate(message: Message) {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(29, 29, 27, 0.9);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -7218,7 +7194,7 @@ async function handleRegenerate(message: Message) {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.36);
+  color: rgba(29, 29, 27, 0.36);
   font-size: 10.5px;
   font-variant-numeric: tabular-nums;
 }
@@ -7240,18 +7216,18 @@ async function handleRegenerate(message: Message) {
 }
 
 .batch-warning {
-  border: 1px solid rgba(246, 196, 83, 0.24);
-  background: rgba(246, 196, 83, 0.08);
-  color: #f3dfae;
+  border: 1px solid #efe4c6;
+  background: #fdf9ee;
+  color: #8a6d1f;
 }
 
 .batch-error {
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1px solid rgba(248, 113, 113, 0.26);
-  background: rgba(248, 113, 113, 0.08);
-  color: #ffc9c9;
+  border: 1px solid #f0d3d0;
+  background: #fdf4f3;
+  color: #b4342c;
 }
 
 .batch-error p {
@@ -7276,16 +7252,16 @@ async function handleRegenerate(message: Message) {
   position: relative;
   margin: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 16px;
   aspect-ratio: 16 / 9;
-  background: #0b0c10;
+  background: #ffffff;
   cursor: pointer;
   transition: border-color 0.22s ease, transform 0.22s ease;
 }
 
 .video-tile:hover {
-  border-color: rgba(143, 182, 255, 0.4);
+  border-color: rgba(17, 17, 16, 0.07);
   transform: translateY(-2px);
 }
 
@@ -7294,7 +7270,7 @@ async function handleRegenerate(message: Message) {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #05060a;
+  background: #f5f5f1;
 }
 
 .tile-play {
@@ -7305,17 +7281,17 @@ async function handleRegenerate(message: Message) {
   place-items: center;
   width: 46px;
   height: 46px;
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  border: 1px solid rgba(17, 17, 16, 0.24);
   border-radius: 50%;
-  background: rgba(8, 10, 16, 0.55);
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
+  color: rgba(29, 29, 27, 0.9);
   transform: translate(-50%, -50%);
   backdrop-filter: blur(10px);
   transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .video-tile:hover .tile-play {
-  background: rgba(143, 182, 255, 0.35);
+  background: rgba(17, 17, 16, 0.07);
   transform: translate(-50%, -50%) scale(1.06);
 }
 
@@ -7335,8 +7311,8 @@ async function handleRegenerate(message: Message) {
   height: 20px;
   padding: 0 5px;
   border-radius: 999px;
-  background: rgba(8, 8, 10, 0.6);
-  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.92);
+  color: rgba(29, 29, 27, 0.8);
   font-size: 10px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -7350,7 +7326,7 @@ async function handleRegenerate(message: Message) {
   align-items: center;
   gap: 8px;
   padding: 26px 10px 10px;
-  background: linear-gradient(180deg, transparent, rgba(6, 7, 10, 0.86));
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.94));
   opacity: 0;
   transition: opacity 0.22s ease;
 }
@@ -7369,10 +7345,10 @@ async function handleRegenerate(message: Message) {
 .tile-btn {
   min-height: 26px;
   padding: 0 9px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(17, 17, 16, 0.16);
   border-radius: 999px;
-  background: rgba(16, 18, 24, 0.72);
-  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.94);
+  color: rgba(29, 29, 27, 0.82);
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
@@ -7381,15 +7357,15 @@ async function handleRegenerate(message: Message) {
 }
 
 .tile-btn:hover {
-  border-color: rgba(143, 182, 255, 0.45);
-  background: rgba(143, 182, 255, 0.22);
-  color: #fff;
+  border-color: rgba(17, 17, 16, 0.07);
+  background: rgba(17, 17, 16, 0.07);
+  color: #1d1d1b;
 }
 
 .tile-size {
   margin-left: auto;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(29, 29, 27, 0.42);
   font-size: 9.5px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -7403,7 +7379,7 @@ async function handleRegenerate(message: Message) {
 }
 
 .tile-pending:hover {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(29, 29, 27, 0.08);
   transform: none;
 }
 
@@ -7412,9 +7388,9 @@ async function handleRegenerate(message: Message) {
   inset: 0;
   background: linear-gradient(
     110deg,
-    rgba(255, 255, 255, 0.02) 20%,
-    rgba(255, 255, 255, 0.07) 42%,
-    rgba(255, 255, 255, 0.02) 64%
+    rgba(17, 17, 16, 0.02) 20%,
+    rgba(17, 17, 16, 0.07) 42%,
+    rgba(17, 17, 16, 0.02) 64%
   );
   background-size: 220% 100%;
   animation: video-shimmer 1.5s linear infinite;
@@ -7431,7 +7407,7 @@ async function handleRegenerate(message: Message) {
 
 .tile-pending-text {
   position: relative;
-  color: rgba(255, 255, 255, 0.34);
+  color: rgba(29, 29, 27, 0.34);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
@@ -7444,15 +7420,15 @@ async function handleRegenerate(message: Message) {
   gap: 10px;
   flex: 0 0 auto;
   padding: 12px 14px 11px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(17, 17, 16, 0.09);
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(22, 23, 28, 0.92), rgba(13, 14, 18, 0.92));
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.04);
   transition: border-color 0.24s ease;
 }
 
 .prompt-card:focus-within {
-  border-color: rgba(143, 182, 255, 0.32);
+  border-color: rgba(17, 17, 16, 0.07);
 }
 
 .prompt-field {
@@ -7469,7 +7445,7 @@ async function handleRegenerate(message: Message) {
   padding: 11px 2px;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.94);
+  color: rgba(29, 29, 27, 0.94);
   font: inherit;
   font-size: 14px;
   line-height: 1.55;
@@ -7478,7 +7454,7 @@ async function handleRegenerate(message: Message) {
 }
 
 .prompt-input::placeholder {
-  color: rgba(255, 255, 255, 0.32);
+  color: rgba(29, 29, 27, 0.32);
 }
 
 .prompt-buttons {
@@ -7492,10 +7468,10 @@ async function handleRegenerate(message: Message) {
 .ghost-pill {
   min-height: 32px;
   padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.72);
+  background: rgba(17, 17, 16, 0.05);
+  color: rgba(29, 29, 27, 0.72);
   font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
@@ -7503,9 +7479,9 @@ async function handleRegenerate(message: Message) {
 }
 
 .ghost-pill:hover:not(:disabled) {
-  border-color: rgba(143, 182, 255, 0.36);
-  background: rgba(143, 182, 255, 0.14);
-  color: #fff;
+  border-color: rgba(17, 17, 16, 0.07);
+  background: rgba(17, 17, 16, 0.14);
+  color: #1d1d1b;
 }
 
 .ghost-pill:disabled {
@@ -7521,8 +7497,8 @@ async function handleRegenerate(message: Message) {
   padding: 0 20px;
   border: 0;
   border-radius: 999px;
-  background: linear-gradient(135deg, #eaf1ff, #b9ccf0);
-  color: #0f1626;
+  background: #111111;
+  color: #ffffff;
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.01em;
@@ -7552,7 +7528,7 @@ async function handleRegenerate(message: Message) {
   width: 12px;
   height: 12px;
   border: 2px solid rgba(15, 22, 38, 0.24);
-  border-top-color: #0f1626;
+  border-top-color: #ffffff;
   border-radius: 50%;
   animation: video-spin 0.9s linear infinite;
 }
@@ -7578,10 +7554,10 @@ async function handleRegenerate(message: Message) {
   min-height: 24px;
   padding: 0 10px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.58);
+  background: rgba(17, 17, 16, 0.045);
+  color: rgba(29, 29, 27, 0.58);
   font-size: 10.5px;
   font-weight: 600;
   white-space: nowrap;
@@ -7589,20 +7565,20 @@ async function handleRegenerate(message: Message) {
 }
 
 .pchip-model {
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(29, 29, 27, 0.82);
 }
 
 .pchip-warn {
-  border-color: rgba(246, 196, 83, 0.3);
-  background: rgba(246, 196, 83, 0.1);
-  color: #f3dfae;
+  border-color: #efe4c6;
+  background: #fdf9ee;
+  color: #8a6d1f;
 }
 
 .pchip-action {
   display: none;
   margin-left: auto;
-  border-color: rgba(143, 182, 255, 0.34);
-  color: #e8f0ff;
+  border-color: rgba(17, 17, 16, 0.07);
+  color: #111110;
   cursor: pointer;
 }
 
@@ -7613,10 +7589,10 @@ async function handleRegenerate(message: Message) {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(20, 21, 26, 0.92), rgba(12, 13, 17, 0.94));
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.04);
 }
 
 .rail-head {
@@ -7625,11 +7601,11 @@ async function handleRegenerate(message: Message) {
   justify-content: space-between;
   flex: 0 0 auto;
   padding: 14px 16px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(17, 17, 16, 0.06);
 }
 
 .rail-title {
-  color: rgba(255, 255, 255, 0.86);
+  color: rgba(29, 29, 27, 0.86);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -7640,10 +7616,10 @@ async function handleRegenerate(message: Message) {
   display: none;
   width: 26px;
   height: 26px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 50%;
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(29, 29, 27, 0.6);
   font-size: 11px;
   cursor: pointer;
 }
@@ -7658,7 +7634,7 @@ async function handleRegenerate(message: Message) {
   overflow-y: auto;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(143, 182, 255, 0.36) rgba(255, 255, 255, 0.05);
+  scrollbar-color: rgba(17, 17, 16, 0.07) rgba(17, 17, 16, 0.05);
   overscroll-behavior: contain;
 }
 
@@ -7672,13 +7648,13 @@ async function handleRegenerate(message: Message) {
 
 .rail-scroll::-webkit-scrollbar-track {
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(17, 17, 16, 0.045);
 }
 
 .rail-scroll::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
-  background: rgba(143, 182, 255, 0.4);
+  background: rgba(17, 17, 16, 0.07);
   background-clip: padding-box;
 }
 
@@ -7687,13 +7663,13 @@ async function handleRegenerate(message: Message) {
   flex-direction: column;
   gap: 9px;
   padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(17, 17, 16, 0.07);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.028);
+  background: rgba(17, 17, 16, 0.028);
 }
 
 .rail-label {
-  color: rgba(255, 255, 255, 0.46);
+  color: rgba(29, 29, 27, 0.46);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -7702,7 +7678,7 @@ async function handleRegenerate(message: Message) {
 
 .rail-hint {
   margin: 0;
-  color: rgba(255, 255, 255, 0.36);
+  color: rgba(29, 29, 27, 0.36);
   font-size: 10.5px;
   line-height: 1.6;
 }
@@ -7724,10 +7700,10 @@ async function handleRegenerate(message: Message) {
 .chip {
   min-height: 30px;
   padding: 0 13px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(17, 17, 16, 0.1);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.66);
+  background: rgba(17, 17, 16, 0.04);
+  color: rgba(29, 29, 27, 0.66);
   font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
@@ -7735,14 +7711,14 @@ async function handleRegenerate(message: Message) {
 }
 
 .chip:hover:not(:disabled) {
-  border-color: rgba(143, 182, 255, 0.34);
-  color: #fff;
+  border-color: rgba(17, 17, 16, 0.07);
+  color: #1d1d1b;
 }
 
 .chip.active {
   border-color: transparent;
-  background: linear-gradient(135deg, #eaf1ff, #b9ccf0);
-  color: #0f1626;
+  background: #111111;
+  color: #ffffff;
 }
 
 .chip:disabled {
@@ -7767,24 +7743,24 @@ async function handleRegenerate(message: Message) {
   align-items: center;
   gap: 6px;
   padding: 9px 4px 7px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(17, 17, 16, 0.09);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.5);
+  background: rgba(17, 17, 16, 0.03);
+  color: rgba(29, 29, 27, 0.5);
   font-size: 10px;
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
 .ratio-chip:hover:not(:disabled) {
-  border-color: rgba(143, 182, 255, 0.34);
-  color: #fff;
+  border-color: rgba(17, 17, 16, 0.07);
+  color: #1d1d1b;
 }
 
 .ratio-chip.active {
-  border-color: rgba(143, 182, 255, 0.6);
-  background: rgba(143, 182, 255, 0.16);
-  color: #edf3ff;
+  border-color: transparent;
+  background: #111111;
+  color: #ffffff;
 }
 
 .ratio-chip:disabled {
@@ -7827,7 +7803,7 @@ async function handleRegenerate(message: Message) {
   z-index: 110;
   display: flex;
   justify-content: flex-end;
-  background: rgba(4, 5, 8, 0.62);
+  background: rgba(17, 17, 16, 0.28);
   backdrop-filter: blur(6px);
 }
 
@@ -7836,8 +7812,8 @@ async function handleRegenerate(message: Message) {
   flex-direction: column;
   width: min(100%, 400px);
   padding: 18px 16px;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  background: #0b0c10;
+  border-left: 1px solid rgba(17, 17, 16, 0.08);
+  background: #ffffff;
   animation: video-slide-in 0.26s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -7854,11 +7830,11 @@ async function handleRegenerate(message: Message) {
   justify-content: space-between;
   flex: 0 0 auto;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(17, 17, 16, 0.07);
 }
 
 .history-kicker {
-  color: rgba(255, 255, 255, 0.34);
+  color: rgba(29, 29, 27, 0.34);
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -7867,7 +7843,7 @@ async function handleRegenerate(message: Message) {
 
 .history-head h3 {
   margin: 3px 0 0;
-  color: #fff;
+  color: #1d1d1b;
   font-size: 17px;
   font-weight: 700;
 }
@@ -7875,17 +7851,17 @@ async function handleRegenerate(message: Message) {
 .history-close {
   width: 28px;
   height: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 50%;
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(29, 29, 27, 0.6);
   font-size: 11px;
   cursor: pointer;
 }
 
 .history-empty {
   margin: 22px 2px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(29, 29, 27, 0.4);
   font-size: 12px;
   line-height: 1.7;
 }
@@ -7908,9 +7884,9 @@ async function handleRegenerate(message: Message) {
   gap: 10px;
   width: 100%;
   padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(17, 17, 16, 0.07);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(17, 17, 16, 0.025);
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -7918,13 +7894,13 @@ async function handleRegenerate(message: Message) {
 }
 
 .history-item-btn:hover {
-  border-color: rgba(143, 182, 255, 0.34);
-  background: rgba(143, 182, 255, 0.08);
+  border-color: rgba(17, 17, 16, 0.07);
+  background: rgba(17, 17, 16, 0.08);
 }
 
 .history-item.active .history-item-btn {
-  border-color: rgba(143, 182, 255, 0.48);
-  background: rgba(143, 182, 255, 0.12);
+  border-color: rgba(17, 17, 16, 0.07);
+  background: rgba(17, 17, 16, 0.12);
 }
 
 .history-thumb {
@@ -7935,7 +7911,7 @@ async function handleRegenerate(message: Message) {
   height: 52px;
   overflow: hidden;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(17, 17, 16, 0.05);
 }
 
 .history-thumb img {
@@ -7945,7 +7921,7 @@ async function handleRegenerate(message: Message) {
 }
 
 .history-thumb-empty {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(29, 29, 27, 0.4);
   font-size: 13px;
 }
 
@@ -7961,13 +7937,13 @@ async function handleRegenerate(message: Message) {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(29, 29, 27, 0.82);
   font-size: 11.5px;
   line-height: 1.45;
 }
 
 .history-meta {
-  color: rgba(255, 255, 255, 0.34);
+  color: rgba(29, 29, 27, 0.34);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
@@ -7981,7 +7957,7 @@ async function handleRegenerate(message: Message) {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(3, 4, 8, 0.78);
+  background: rgba(17, 17, 16, 0.28);
   backdrop-filter: blur(10px);
 }
 
@@ -7991,10 +7967,10 @@ async function handleRegenerate(message: Message) {
   gap: 12px;
   width: min(100%, 920px);
   padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(17, 17, 16, 0.1);
   border-radius: 22px;
-  background: #0d0e13;
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+  background: #ffffff;
+  box-shadow: 0 30px 90px rgba(17, 17, 16, 0.08);
 }
 
 .video-preview-head {
@@ -8004,7 +7980,7 @@ async function handleRegenerate(message: Message) {
 }
 
 .video-preview-kicker {
-  color: rgba(255, 255, 255, 0.34);
+  color: rgba(29, 29, 27, 0.34);
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -8013,7 +7989,7 @@ async function handleRegenerate(message: Message) {
 
 .video-preview-head h3 {
   margin: 3px 0 0;
-  color: #fff;
+  color: #1d1d1b;
   font-size: 18px;
   font-weight: 700;
 }
@@ -8021,10 +7997,10 @@ async function handleRegenerate(message: Message) {
 .video-preview-close {
   width: 30px;
   height: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 50%;
   background: transparent;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(29, 29, 27, 0.62);
   font-size: 12px;
   cursor: pointer;
 }
@@ -8033,7 +8009,7 @@ async function handleRegenerate(message: Message) {
   width: 100%;
   max-height: min(64vh, 620px);
   border-radius: 14px;
-  background: #05060a;
+  background: #f5f5f1;
 }
 
 .video-preview-foot {
@@ -8041,7 +8017,7 @@ async function handleRegenerate(message: Message) {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(29, 29, 27, 0.5);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
@@ -8107,7 +8083,7 @@ async function handleRegenerate(message: Message) {
     inset: 0;
     z-index: 111;
     display: block;
-    background: rgba(4, 5, 8, 0.55);
+    background: rgba(17, 17, 16, 0.28);
     backdrop-filter: blur(4px);
   }
 

@@ -251,9 +251,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background:
-    radial-gradient(900px 460px at 50% 0%, rgba(217, 205, 184, 0.12), transparent 72%),
-    rgba(6, 6, 10, 0.78);
+  background: rgba(17, 17, 16, 0.28);
   backdrop-filter: blur(18px) saturate(125%);
   -webkit-backdrop-filter: blur(18px) saturate(125%);
 }
@@ -264,15 +262,10 @@ onBeforeUnmount(() => {
   width: min(940px, 100%);
   max-height: min(86vh, 820px);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid #e8e8e2;
   border-radius: 28px;
-  background:
-    radial-gradient(620px 260px at 0% 0%, rgba(217, 205, 184, 0.13), transparent 66%),
-    radial-gradient(520px 260px at 100% 100%, rgba(251, 146, 60, 0.07), transparent 70%),
-    linear-gradient(160deg, #17161a 0%, #101013 100%);
-  box-shadow:
-    0 42px 110px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(17, 17, 16, 0.16);
 }
 
 .audio-picker-head {
@@ -281,7 +274,7 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 20px;
   padding: 26px 28px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(17, 17, 16, 0.07);
 }
 
 .audio-picker-heading {
@@ -290,7 +283,7 @@ onBeforeUnmount(() => {
 
 .audio-picker-kicker {
   display: block;
-  color: rgba(217, 205, 184, 0.62);
+  color: rgba(17, 17, 16, 0.62);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -298,7 +291,7 @@ onBeforeUnmount(() => {
 
 .audio-picker-heading h3 {
   margin: 7px 0 6px;
-  color: #f7f2e9;
+  color: #111110;
   font-family: 'Noto Serif SC', 'Songti SC', serif;
   font-size: clamp(22px, 3vw, 28px);
   font-weight: 600;
@@ -307,7 +300,7 @@ onBeforeUnmount(() => {
 
 .audio-picker-heading p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(29, 29, 27, 0.5);
   font-size: 12.5px;
   line-height: 1.7;
 }
@@ -319,10 +312,10 @@ onBeforeUnmount(() => {
   justify-content: center;
   width: 36px;
   height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(17, 17, 16, 0.1);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.65);
+  background: rgba(17, 17, 16, 0.045);
+  color: rgba(29, 29, 27, 0.65);
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
@@ -330,9 +323,9 @@ onBeforeUnmount(() => {
 }
 
 .audio-picker-close:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  border-color: rgba(29, 29, 27, 0.22);
+  background: rgba(17, 17, 16, 0.08);
+  color: #1d1d1b;
 }
 
 .audio-picker-body {
@@ -346,10 +339,10 @@ onBeforeUnmount(() => {
 
 .audio-source {
   min-width: 0;
-  border: 1px solid rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(17, 17, 16, 0.075);
   border-radius: 22px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018));
+    linear-gradient(180deg, rgba(17, 17, 16, 0.045), rgba(17, 17, 16, 0.018));
 }
 
 .audio-source-library {
@@ -381,10 +374,10 @@ onBeforeUnmount(() => {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid rgba(217, 205, 184, 0.2);
+  border: 1px solid rgba(17, 17, 16, 0.2);
   border-radius: 11px;
-  background: rgba(217, 205, 184, 0.08);
-  color: #d9cdb8;
+  background: rgba(17, 17, 16, 0.08);
+  color: #66665f;
 }
 
 .audio-source-icon svg {
@@ -394,7 +387,7 @@ onBeforeUnmount(() => {
 
 .audio-source-title strong {
   display: block;
-  color: #f4eee4;
+  color: #1d1d1b;
   font-size: 14px;
   font-weight: 600;
 }
@@ -402,7 +395,7 @@ onBeforeUnmount(() => {
 .audio-source-title span {
   display: block;
   margin-top: 3px;
-  color: rgba(255, 255, 255, 0.36);
+  color: rgba(29, 29, 27, 0.36);
   font-size: 11px;
 }
 
@@ -415,9 +408,9 @@ onBeforeUnmount(() => {
 
 .audio-source-count {
   padding: 4px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(17, 17, 16, 0.08);
   border-radius: 999px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(29, 29, 27, 0.45);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
@@ -425,13 +418,13 @@ onBeforeUnmount(() => {
 .audio-source-refresh {
   border: 0;
   background: transparent;
-  color: rgba(217, 205, 184, 0.72);
+  color: rgba(17, 17, 16, 0.72);
   font-size: 11px;
   cursor: pointer;
 }
 
 .audio-source-refresh:hover:not(:disabled) {
-  color: #f3ebdf;
+  color: #1d1d1b;
 }
 
 .audio-source-refresh:disabled {
@@ -441,7 +434,7 @@ onBeforeUnmount(() => {
 
 .audio-source-desc {
   margin: 12px 0 14px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(29, 29, 27, 0.4);
   font-size: 11.5px;
   line-height: 1.65;
 }
@@ -455,9 +448,9 @@ onBeforeUnmount(() => {
   justify-content: center;
   min-height: 220px;
   padding: 24px;
-  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border: 1px dashed rgba(17, 17, 16, 0.1);
   border-radius: 16px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(29, 29, 27, 0.45);
   font-size: 12px;
   text-align: center;
 }
@@ -468,15 +461,15 @@ onBeforeUnmount(() => {
 }
 
 .audio-library-state.is-error {
-  color: #fca5a5;
+  color: #b4342c;
 }
 
 .state-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #d9cdb8;
-  box-shadow: 0 0 0 0 rgba(217, 205, 184, 0.5);
+  background: #111111;
+  box-shadow: 0 0 0 0 rgba(17, 17, 16, 0.28);
   animation: audio-state-pulse 1.4s ease-out infinite;
 }
 
@@ -487,15 +480,15 @@ onBeforeUnmount(() => {
   width: 54px;
   height: 54px;
   margin-bottom: 13px;
-  border: 1px solid rgba(217, 205, 184, 0.18);
+  border: 1px solid rgba(17, 17, 16, 0.18);
   border-radius: 50%;
-  background: rgba(217, 205, 184, 0.06);
-  color: #d9cdb8;
+  background: rgba(17, 17, 16, 0.06);
+  color: #66665f;
   font-size: 24px;
 }
 
 .audio-library-empty strong {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(29, 29, 27, 0.78);
   font-size: 13px;
   font-weight: 600;
 }
@@ -508,10 +501,10 @@ onBeforeUnmount(() => {
 
 .audio-library-empty button {
   padding: 8px 14px;
-  border: 1px solid rgba(217, 205, 184, 0.24);
+  border: 1px solid rgba(17, 17, 16, 0.24);
   border-radius: 999px;
-  background: rgba(217, 205, 184, 0.08);
-  color: #e7dccb;
+  background: rgba(17, 17, 16, 0.08);
+  color: #66665f;
   font-size: 11px;
   cursor: pointer;
 }
@@ -527,7 +520,7 @@ onBeforeUnmount(() => {
   overflow-y: auto;
   list-style: none;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+  scrollbar-color: rgba(29, 29, 27, 0.14) transparent;
 }
 
 .audio-library-item {
@@ -535,23 +528,23 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 8px;
   padding: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(17, 17, 16, 0.07);
   border-radius: 15px;
   background:
-    radial-gradient(150px 70px at 2% 0%, rgba(217, 205, 184, 0.055), transparent 74%),
-    rgba(255, 255, 255, 0.018);
+    radial-gradient(150px 70px at 2% 0%, rgba(17, 17, 16, 0.055), transparent 74%),
+    rgba(17, 17, 16, 0.018);
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .audio-library-item:hover {
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: rgba(29, 29, 27, 0.14);
   background:
-    radial-gradient(150px 70px at 2% 0%, rgba(217, 205, 184, 0.08), transparent 74%),
-    rgba(255, 255, 255, 0.028);
+    radial-gradient(150px 70px at 2% 0%, rgba(17, 17, 16, 0.08), transparent 74%),
+    rgba(17, 17, 16, 0.028);
 }
 
 .audio-library-item.is-selected {
-  border-color: rgba(217, 205, 184, 0.22);
+  border-color: rgba(17, 17, 16, 0.22);
   opacity: 0.72;
 }
 
@@ -572,7 +565,7 @@ onBeforeUnmount(() => {
 
 .audio-library-meta strong {
   overflow: hidden;
-  color: #f1e9dc;
+  color: #1d1d1b;
   font-size: 12.5px;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -580,7 +573,7 @@ onBeforeUnmount(() => {
 }
 
 .audio-library-meta span {
-  color: rgba(255, 255, 255, 0.34);
+  color: rgba(29, 29, 27, 0.34);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
@@ -588,24 +581,24 @@ onBeforeUnmount(() => {
 .audio-library-add {
   flex: 0 0 auto;
   padding: 5px 11px;
-  border: 1px solid rgba(217, 205, 184, 0.22);
+  border: 1px solid rgba(17, 17, 16, 0.22);
   border-radius: 999px;
-  background: rgba(217, 205, 184, 0.08);
-  color: #e7dccb;
+  background: rgba(17, 17, 16, 0.08);
+  color: #66665f;
   font-size: 10.5px;
   cursor: pointer;
   transition: border-color 0.18s ease, background 0.18s ease;
 }
 
 .audio-library-add:hover:not(:disabled) {
-  border-color: rgba(217, 205, 184, 0.46);
-  background: rgba(217, 205, 184, 0.16);
+  border-color: rgba(17, 17, 16, 0.46);
+  background: rgba(17, 17, 16, 0.16);
 }
 
 .audio-library-add:disabled {
-  border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.035);
-  color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(29, 29, 27, 0.08);
+  background: rgba(17, 17, 16, 0.035);
+  color: rgba(29, 29, 27, 0.3);
   cursor: default;
 }
 
@@ -613,7 +606,7 @@ onBeforeUnmount(() => {
   display: -webkit-box;
   margin: 0;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.56);
+  color: rgba(29, 29, 27, 0.56);
   font-size: 11.5px;
   line-height: 1.65;
   -webkit-box-orient: vertical;
@@ -635,10 +628,10 @@ onBeforeUnmount(() => {
 
 .audio-library-chips span {
   padding: 3px 7px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(17, 17, 16, 0.06);
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.14);
-  color: rgba(255, 255, 255, 0.34);
+  background: #f0f0ec;
+  color: rgba(29, 29, 27, 0.34);
   font-size: 9.5px;
   font-variant-numeric: tabular-nums;
 }
@@ -651,7 +644,7 @@ onBeforeUnmount(() => {
   padding: 4px 6px;
   border: 0;
   background: transparent;
-  color: rgba(217, 205, 184, 0.7);
+  color: rgba(17, 17, 16, 0.7);
   font-size: 10px;
   cursor: pointer;
 }
@@ -662,7 +655,7 @@ onBeforeUnmount(() => {
 }
 
 .audio-library-preview:hover {
-  color: #f6eee1;
+  color: #1d1d1b;
 }
 
 .audio-library-item :deep(.voice-player) {
@@ -676,8 +669,8 @@ onBeforeUnmount(() => {
   justify-content: center;
   padding: 22px;
   background:
-    radial-gradient(220px 130px at 50% 0%, rgba(251, 146, 60, 0.09), transparent 74%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.042), rgba(255, 255, 255, 0.014));
+    radial-gradient(220px 130px at 50% 0%, rgba(17, 17, 16, 0.09), transparent 74%),
+    linear-gradient(180deg, rgba(17, 17, 16, 0.042), rgba(17, 17, 16, 0.014));
 }
 
 .upload-source-icon {
@@ -687,10 +680,10 @@ onBeforeUnmount(() => {
   width: 52px;
   height: 52px;
   margin-bottom: 17px;
-  border: 1px solid rgba(251, 146, 60, 0.2);
+  border: 1px solid rgba(17, 17, 16, 0.2);
   border-radius: 17px;
-  background: rgba(251, 146, 60, 0.08);
-  color: #fdba74;
+  background: rgba(17, 17, 16, 0.08);
+  color: #66665f;
 }
 
 .upload-source-icon svg {
@@ -699,7 +692,7 @@ onBeforeUnmount(() => {
 }
 
 .audio-source-kicker {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(29, 29, 27, 0.3);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -707,7 +700,7 @@ onBeforeUnmount(() => {
 
 .audio-source-upload strong {
   margin-top: 6px;
-  color: #f4eee4;
+  color: #1d1d1b;
   font-family: 'Noto Serif SC', 'Songti SC', serif;
   font-size: 19px;
   font-weight: 600;
@@ -715,7 +708,7 @@ onBeforeUnmount(() => {
 
 .audio-source-upload p {
   margin: 10px 0 18px;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(29, 29, 27, 0.42);
   font-size: 11.5px;
   line-height: 1.75;
 }
@@ -723,10 +716,10 @@ onBeforeUnmount(() => {
 .upload-source-action {
   width: 100%;
   padding: 11px 14px;
-  border: 1px solid rgba(251, 146, 60, 0.32);
+  border: 1px solid rgba(17, 17, 16, 0.32);
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(251, 146, 60, 0.18), rgba(251, 146, 60, 0.08));
-  color: #ffd7ad;
+  background: linear-gradient(135deg, rgba(17, 17, 16, 0.18), rgba(17, 17, 16, 0.08));
+  color: #111110;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -734,15 +727,15 @@ onBeforeUnmount(() => {
 }
 
 .upload-source-action:hover {
-  border-color: rgba(251, 146, 60, 0.54);
-  background: linear-gradient(135deg, rgba(251, 146, 60, 0.27), rgba(251, 146, 60, 0.12));
+  border-color: rgba(17, 17, 16, 0.54);
+  background: linear-gradient(135deg, rgba(17, 17, 16, 0.27), rgba(17, 17, 16, 0.12));
   transform: translateY(-1px);
 }
 
 .upload-source-hint {
   align-self: center;
   margin-top: 10px;
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(29, 29, 27, 0.28);
   font-size: 9.5px;
 }
 
@@ -752,13 +745,13 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 28px 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.32);
+  border-top: 1px solid rgba(17, 17, 16, 0.06);
+  color: rgba(29, 29, 27, 0.32);
   font-size: 10px;
 }
 
 .audio-picker-foot-note {
-  color: rgba(255, 255, 255, 0.22);
+  color: rgba(29, 29, 27, 0.22);
 }
 
 .audio-picker-fade-enter-active,
@@ -784,10 +777,10 @@ onBeforeUnmount(() => {
 
 @keyframes audio-state-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(217, 205, 184, 0.34);
+    box-shadow: 0 0 0 0 rgba(17, 17, 16, 0.34);
   }
   100% {
-    box-shadow: 0 0 0 8px rgba(217, 205, 184, 0);
+    box-shadow: 0 0 0 8px rgba(17, 17, 16, 0);
   }
 }
 

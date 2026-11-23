@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getApiBaseUrl, getApiKey, normalizeApiBaseUrl } from './config'
+import { clearApiAuth, getApiBaseUrl, getApiKey, normalizeApiBaseUrl } from './config'
 import type {
   ModelsResponse,
   ChatCompletionRequest,
@@ -220,6 +220,7 @@ client.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && !(error.config as any)?.skipAuthRedirect) {
+      clearApiAuth()
       window.location.href = '/login'
     }
     return Promise.reject(error)

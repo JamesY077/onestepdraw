@@ -696,7 +696,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(4, 4, 5, 0.72);
+  background: rgba(17, 17, 16, 0.28);
   backdrop-filter: blur(10px);
 }
 
@@ -706,11 +706,11 @@ onBeforeUnmount(() => {
   width: min(1280px, 100%);
   height: min(860px, 100%);
   overflow: hidden;
-  border: 1px solid rgba(217, 205, 184, 0.18);
+  border: 1px solid #e8e8e2;
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(22, 20, 17, 0.98), rgba(11, 10, 9, 0.98));
-  color: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  background: #ffffff;
+  color: rgba(29, 29, 27, 0.9);
+  box-shadow: 0 24px 70px rgba(17, 17, 16, 0.16);
 }
 
 .editor-head {
@@ -718,7 +718,7 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   gap: 16px;
   padding: 18px 22px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(17, 17, 16, 0.08);
 }
 
 .head-text h2 {
@@ -732,22 +732,22 @@ onBeforeUnmount(() => {
   max-width: 760px;
   font-size: 12px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(29, 29, 27, 0.55);
 }
 
 .close-btn {
   margin-left: auto;
   width: 32px;
   height: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.7);
+  background: rgba(17, 17, 16, 0.04);
+  color: rgba(29, 29, 27, 0.7);
   cursor: pointer;
 }
 
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(17, 17, 16, 0.1);
 }
 
 .editor-body {
@@ -764,9 +764,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(217, 205, 184, 0.09), transparent 60%),
-    rgba(8, 8, 8, 0.55);
+  background: #f5f5f1;
 }
 
 .stage-badge {
@@ -776,13 +774,13 @@ onBeforeUnmount(() => {
   z-index: 3;
   padding: 5px 12px;
   border-radius: 999px;
-  background: rgba(246, 196, 83, 0.92);
-  color: #241a06;
+  background: #111111;
+  color: #ffffff;
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
   transform: translateX(-50%);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 6px 16px rgba(17, 17, 16, 0.12);
 }
 
 /* 画布容器必须与图片尺寸完全一致，否则 bbox 百分比定位会和图片错位。 */
@@ -795,7 +793,7 @@ onBeforeUnmount(() => {
   max-width: 100%;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 12px 32px rgba(17, 17, 16, 0.12);
   touch-action: none;
 }
 
@@ -819,7 +817,7 @@ onBeforeUnmount(() => {
 
 .bbox.background {
   cursor: default;
-  border-color: rgba(255, 255, 255, 0.38);
+  border-color: rgba(29, 29, 27, 0.38);
   border-style: dashed;
   background: transparent;
 }
@@ -875,7 +873,7 @@ onBeforeUnmount(() => {
 .bbox-label em {
   padding: 0 4px;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.18);
+  background: rgba(17, 17, 16, 0.08);
   font-style: normal;
 }
 
@@ -903,7 +901,7 @@ onBeforeUnmount(() => {
   width: 360px;
   flex: 0 0 360px;
   min-height: 0;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid rgba(17, 17, 16, 0.08);
   overflow: hidden;
 }
 
@@ -916,7 +914,7 @@ onBeforeUnmount(() => {
 
 .panel-block {
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(17, 17, 16, 0.06);
 }
 
 .panel-head {
@@ -931,33 +929,33 @@ onBeforeUnmount(() => {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(29, 29, 27, 0.78);
 }
 
 .hint-text {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(29, 29, 27, 0.42);
 }
 
 .panel-hint {
   margin: 8px 0 0;
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(29, 29, 27, 0.38);
   font-size: 11px;
   line-height: 1.5;
 }
 
 .ghost-btn {
   padding: 5px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(17, 17, 16, 0.14);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.75);
+  background: rgba(17, 17, 16, 0.05);
+  color: rgba(29, 29, 27, 0.75);
   font-size: 12px;
   cursor: pointer;
 }
 
 .ghost-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(17, 17, 16, 0.1);
 }
 
 .file-input {
@@ -971,9 +969,9 @@ onBeforeUnmount(() => {
 }
 
 .asset-add-btn {
-  border-color: rgba(246, 196, 83, 0.38);
-  background: rgba(246, 196, 83, 0.10);
-  color: rgba(246, 196, 83, 0.92);
+  border-color: rgba(17, 17, 16, 0.38);
+  background: rgba(17, 17, 16, 0.10);
+  color: rgba(17, 17, 16, 0.92);
 }
 
 .asset-add-btn::before {
@@ -983,7 +981,7 @@ onBeforeUnmount(() => {
 }
 
 .asset-add-btn:hover {
-  background: rgba(246, 196, 83, 0.18);
+  background: rgba(17, 17, 16, 0.18);
 }
 
 .asset-add-btn:disabled {
@@ -1004,21 +1002,21 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 9px;
   padding: 7px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(17, 17, 16, 0.07);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(17, 17, 16, 0.03);
   color: inherit;
   text-align: left;
   cursor: pointer;
 }
 
 .layer-row:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(17, 17, 16, 0.07);
 }
 
 .layer-row.active {
-  border-color: rgba(246, 196, 83, 0.55);
-  background: rgba(246, 196, 83, 0.1);
+  border-color: rgba(17, 17, 16, 0.55);
+  background: rgba(17, 17, 16, 0.1);
 }
 
 .layer-index {
@@ -1043,19 +1041,19 @@ onBeforeUnmount(() => {
 
 .layer-kind {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(29, 29, 27, 0.4);
 }
 
 .layer-caption {
   overflow: hidden;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(29, 29, 27, 0.8);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .layer-caption.missing {
-  color: #f6ad55;
+  color: #8a6d1f;
   font-style: italic;
 }
 
@@ -1063,13 +1061,13 @@ onBeforeUnmount(() => {
   margin-left: auto;
   padding: 2px 6px;
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(29, 29, 27, 0.35);
   font-size: 11px;
 }
 
 .layer-remove:hover {
-  background: rgba(248, 113, 113, 0.18);
-  color: #fca5a5;
+  background: #fdf4f3;
+  color: #b4342c;
 }
 
 .field {
@@ -1078,12 +1076,12 @@ onBeforeUnmount(() => {
   gap: 6px;
   margin-bottom: 10px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(29, 29, 27, 0.55);
 }
 
 .field em {
   margin-left: 6px;
-  color: rgba(255, 255, 255, 0.32);
+  color: rgba(29, 29, 27, 0.32);
   font-style: normal;
 }
 
@@ -1093,10 +1091,10 @@ onBeforeUnmount(() => {
 .ai-block textarea {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(17, 17, 16, 0.12);
   border-radius: 9px;
-  background: rgba(0, 0, 0, 0.28);
-  color: rgba(255, 255, 255, 0.88);
+  background: #ffffff;
+  color: #1d1d1b;
   font-size: 12px;
   font-family: inherit;
   line-height: 1.5;
@@ -1108,7 +1106,7 @@ onBeforeUnmount(() => {
 .field textarea:focus,
 .ai-block textarea:focus {
   outline: none;
-  border-color: rgba(246, 196, 83, 0.5);
+  border-color: rgba(17, 17, 16, 0.5);
 }
 
 .coord-grid {
@@ -1121,12 +1119,12 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(29, 29, 27, 0.45);
 }
 
 .asset-field {
   padding-top: 10px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  border-top: 1px dashed rgba(17, 17, 16, 0.08);
 }
 
 .asset-preview {
@@ -1134,9 +1132,9 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 10px;
   padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(17, 17, 16, 0.1);
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.24);
+  background: #fafaf8;
 }
 
 .asset-preview img {
@@ -1145,7 +1143,7 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   border-radius: 8px;
   object-fit: contain;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(17, 17, 16, 0.04);
 }
 
 .asset-preview-actions {
@@ -1156,64 +1154,64 @@ onBeforeUnmount(() => {
 
 .asset-upload-btn {
   padding: 10px 12px;
-  border: 1px dashed rgba(246, 196, 83, 0.45);
+  border: 1px dashed rgba(17, 17, 16, 0.45);
   border-radius: 10px;
-  background: rgba(246, 196, 83, 0.08);
-  color: #f6e3b0;
+  background: rgba(17, 17, 16, 0.08);
+  color: #1d1d1b;
   font-size: 12px;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .asset-upload-btn:hover {
-  background: rgba(246, 196, 83, 0.16);
+  background: rgba(17, 17, 16, 0.16);
 }
 
 .asset-hint {
   margin: 2px 0 0;
-  color: rgba(255, 255, 255, 0.32);
+  color: rgba(29, 29, 27, 0.32);
   font-size: 10px;
   line-height: 1.5;
 }
 
 .mini-btn {
   padding: 5px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(17, 17, 16, 0.14);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.72);
+  background: rgba(17, 17, 16, 0.05);
+  color: rgba(29, 29, 27, 0.72);
   font-size: 11px;
   cursor: pointer;
 }
 
 .mini-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(17, 17, 16, 0.1);
 }
 
 .mini-btn.danger {
-  border-color: rgba(248, 113, 113, 0.35);
-  color: #fca5a5;
+  border-color: #f0d3d0;
+  color: #b4342c;
 }
 
 .mini-btn.danger:hover {
-  background: rgba(248, 113, 113, 0.16);
+  background: #fdf4f3;
 }
 
 .ai-btn {
   width: 100%;
   margin-top: 8px;
   padding: 9px 12px;
-  border: 1px solid rgba(246, 196, 83, 0.4);
+  border: 1px solid rgba(17, 17, 16, 0.4);
   border-radius: 10px;
-  background: rgba(246, 196, 83, 0.12);
-  color: #f6e3b0;
+  background: rgba(17, 17, 16, 0.12);
+  color: #1d1d1b;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
 
 .ai-btn:hover:not(:disabled) {
-  background: rgba(246, 196, 83, 0.2);
+  background: rgba(17, 17, 16, 0.2);
 }
 
 .ai-btn:disabled,
@@ -1224,7 +1222,7 @@ onBeforeUnmount(() => {
 
 .error-text {
   margin: 8px 0 0;
-  color: #fca5a5;
+  color: #b4342c;
   font-size: 11px;
   line-height: 1.5;
 }
@@ -1232,27 +1230,27 @@ onBeforeUnmount(() => {
 .editor-foot {
   flex: 0 0 auto;
   padding: 12px 16px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(180deg, rgba(18, 17, 15, 0.92), rgba(12, 11, 10, 0.98));
+  border-top: 1px solid #ecece7;
+  background: #fafaf8;
 }
 
 .foot-note {
   margin: 0 0 10px;
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(29, 29, 27, 0.38);
   font-size: 11px;
   line-height: 1.5;
 }
 
 .foot-dirty {
   margin: 0 0 10px;
-  color: #f6d98a;
+  color: #8a6d1f;
   font-size: 11px;
   line-height: 1.5;
 }
 
 .foot-warn {
   margin: 0 0 8px;
-  color: #f6ad55;
+  color: #8a6d1f;
   font-size: 11px;
   line-height: 1.5;
 }
@@ -1267,8 +1265,8 @@ onBeforeUnmount(() => {
   padding: 9px 16px;
   border: 0;
   border-radius: 10px;
-  background: linear-gradient(135deg, #f6d98a, #e0a83a);
-  color: #241a06;
+  background: #111111;
+  color: #ffffff;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -1309,7 +1307,7 @@ onBeforeUnmount(() => {
     width: 100%;
     flex: 1;
     border-left: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(17, 17, 16, 0.08);
   }
 }
 </style>
