@@ -1,6 +1,13 @@
 <template>
   <div class="composer-wrap">
-    <div class="composer" :class="{ 'is-focused': focused, 'is-streaming': disabled, 'is-create': isCreateTone }">
+    <div
+      class="composer"
+      :class="{ 'is-focused': focused, 'is-streaming': disabled, 'is-create': isCreateTone, 'is-dragging': dragging }"
+      @dragover.prevent="handleDragOver"
+      @dragleave.prevent="handleDragLeave"
+      @drop.prevent="handleDrop"
+    >
+      <div v-if="dragging" class="drop-hint" aria-hidden="true">松开以添加参考素材</div>
       <div class="composer-modes">
         <div class="mode-switch conversation-switch" role="group" aria-label="对话模式">
           <button
@@ -25,6 +32,85 @@
         <span class="mode-tip">{{ modeTip }}</span>
       </div>
 
+      <div v-if="templateStore.applied" class="applied-template">
+        <span class="template-cover">
+          <img v-if="templateStore.applied.images[0]" :src="templateStore.applied.images[0]" alt="" />
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+            <path d="M3.8 15.5 8.6 11l3.4 3 2.8-2.4 5.4 4.1" />
+          </svg>
+        </span>
+        <span class="template-copy">
+          <strong>{{ templateStore.applied.name }}</strong>
+          <small>模板参考 · {{ templateStore.applied.category }}</small>
+        </span>
+        <button
+          type="button"
+          class="template-remove"
+          title="取消模板参考"
+          aria-label="取消模板参考"
+          @click="templateStore.clearApplied()"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+
+      <div v-if="attachments.length || pendingCount > 0" class="attach-tray" aria-live="polite">
+        <div v-for="item in attachments" :key="item.id" class="attach-chip">
+          <img
+            v-if="item.kind === 'image' && item.url"
+            :src="item.url"
+            alt=""
+            class="attach-thumb"
+          />
+          <img
+            v-else-if="item.kind === 'video' && item.frames?.length"
+            :src="item.frames[0]"
+            alt=""
+            class="attach-thumb"
+          />
+          <span v-else class="attach-icon">
+            <svg v-if="item.kind === 'video'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="3.5" y="5.5" width="17" height="13" rx="3" />
+              <path d="M10.4 9.6 15 12l-4.6 2.4z" fill="currentColor" stroke="none" />
+            </svg>
+            <svg v-else-if="item.kind === 'audio'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+              <path d="M6 10v4M10 7.5v9M14 9v6M18 11v2" />
+            </svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+              <path d="M6 3.8h7.5L18.5 9v11.2H6z" />
+              <path d="M13.2 4v5.2h5.2" />
+            </svg>
+          </span>
+          <span class="attach-copy">
+            <strong :title="item.name">{{ item.name }}</strong>
+            <small>{{ attachmentKindLabel(item.kind) }}<template v-if="attachmentMeta(item)"> · {{ attachmentMeta(item) }}</template></small>
+          </span>
+          <button
+            type="button"
+            class="attach-remove"
+            title="移除"
+            aria-label="移除参考素材"
+            @click="removeAttachment(item.id)"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </button>
+        </div>
+        <div v-if="pendingCount > 0" class="attach-chip is-reading">
+          <span class="attach-spinner" aria-hidden="true" />
+          <span class="attach-copy">
+            <strong>正在读取参考素材…</strong>
+            <small>{{ pendingCount }} 个文件</small>
+          </span>
+        </div>
+      </div>
+
+      <p v-if="attachNotice" class="attach-notice" role="status">{{ attachNotice }}</p>
+
       <textarea
         ref="textareaRef"
         v-model="text"
@@ -36,10 +122,48 @@
         @blur="focused = false"
         @keydown="handleKeydown"
         @input="resize"
+        @paste="handlePaste"
       />
 
       <div class="composer-bottom">
         <div class="composer-pickers">
+          <button
+            type="button"
+            class="composer-icon"
+            title="添加参考素材（最多 8 个）"
+            aria-label="添加参考素材"
+            :disabled="props.disabled || attachments.length >= MAX_ATTACHMENTS"
+            @click="pickFiles"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18.4 11.6 12 18a4.2 4.2 0 0 1-6-6l7.1-7.1a2.9 2.9 0 0 1 4.1 4.1l-7.1 7.1a1.6 1.6 0 0 1-2.3-2.3l6.4-6.4" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="composer-icon"
+            :class="{ active: templateStore.applied }"
+            title="模板库"
+            aria-label="打开模板库"
+            @click="templateStore.openLibrary()"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+              <rect x="3.4" y="4.4" width="7.2" height="7.2" rx="2" />
+              <rect x="13.4" y="4.4" width="7.2" height="7.2" rx="2" />
+              <rect x="3.4" y="14.4" width="7.2" height="5.2" rx="2" />
+              <rect x="13.4" y="14.4" width="7.2" height="5.2" rx="2" />
+            </svg>
+          </button>
+
+          <input
+            ref="fileInputRef"
+            class="file-input"
+            type="file"
+            multiple
+            accept="image/*,video/*,audio/*,.txt,.md,.markdown,.json,.jsonl,.csv,.tsv,.srt,.vtt,.html,.css,.js,.mjs,.ts,.vue,.py,.yaml,.yml,.xml,.pdf"
+            @change="handleFileInput"
+          />
+
           <div ref="engineRef" class="engine-anchor">
             <button
               type="button"
@@ -239,7 +363,7 @@
             v-else
             type="button"
             class="send-button"
-            :disabled="!text.trim()"
+            :disabled="!canSend"
             title="发送"
             aria-label="发送"
             @click="submit"
@@ -267,6 +391,16 @@ import AgentMark from '@/components/agent/AgentMark.vue'
 import { BUILTIN_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
+import { useTemplateStore } from '@/stores/templateStore'
+import {
+  MAX_ATTACHMENTS,
+  MAX_ATTACHMENT_BYTES,
+  attachmentKindLabel,
+  formatBytes,
+  formatDuration,
+  readAttachment,
+} from '@/features/agent/attachments'
+import type { AgentAttachment, ComposerSubmit } from '@/types/agent'
 
 const props = withDefaults(
   defineProps<{ disabled?: boolean; placeholder?: string; tone?: 'auto' | 'create' | 'chat' }>(),
@@ -277,7 +411,7 @@ const props = withDefaults(
   },
 )
 const emit = defineEmits<{
-  (event: 'send', content: string): void
+  (event: 'send', payload: ComposerSubmit): void
   (event: 'stop'): void
 }>()
 
@@ -285,6 +419,7 @@ const router = useRouter()
 const localAgentStore = useLocalAgentStore()
 const modelStore = useModelStore()
 const chatMode = useChatModeStore()
+const templateStore = useTemplateStore()
 /** tone=auto 跟随模式开关；剪辑台里固定为创作色。 */
 const isCreateTone = computed(() =>
   props.tone === 'auto' ? chatMode.isCreate : props.tone === 'create',
@@ -297,7 +432,20 @@ const modelQuery = ref('')
 const modelSearchRef = ref<HTMLInputElement | null>(null)
 const text = defineModel<string>({ default: '' })
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const fileInputRef = ref<HTMLInputElement | null>(null)
 const focused = ref(false)
+const dragging = ref(false)
+const attachments = ref<AgentAttachment[]>([])
+const pendingCount = ref(0)
+const attachNotice = ref('')
+let noticeTimer: number | null = null
+
+const canSend = computed(
+  () =>
+    !props.disabled &&
+    pendingCount.value === 0 &&
+    (!!text.value.trim() || attachments.value.length > 0),
+)
 
 const placeholderText = computed(() => {
   if (props.placeholder) return props.placeholder
@@ -406,6 +554,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('mousedown', handleDocumentPointer)
   document.removeEventListener('keydown', handleDocumentKeydown)
+  if (noticeTimer !== null) window.clearTimeout(noticeTimer)
 })
 
 function resize() {
@@ -417,11 +566,115 @@ function resize() {
 
 watch(text, () => nextTick(resize))
 
+function notify(message: string) {
+  attachNotice.value = message
+  if (noticeTimer !== null) window.clearTimeout(noticeTimer)
+  noticeTimer = window.setTimeout(() => {
+    attachNotice.value = ''
+    noticeTimer = null
+  }, 2800)
+}
+
+function attachmentMeta(item: AgentAttachment): string {
+  const parts: string[] = []
+  if (item.kind === 'video' || item.kind === 'audio') {
+    const duration = formatDuration(item.duration)
+    if (duration) parts.push(duration)
+  }
+  if (item.width && item.height) parts.push(`${item.width}×${item.height}`)
+  if (item.size) parts.push(formatBytes(item.size))
+  return parts.join(' · ')
+}
+
+function pickFiles() {
+  if (props.disabled) return
+  fileInputRef.value?.click()
+}
+
+async function addFiles(files: File[]) {
+  if (props.disabled || !files.length) return
+  const room = MAX_ATTACHMENTS - attachments.value.length
+  if (room <= 0) {
+    notify(`最多上传 ${MAX_ATTACHMENTS} 个参考素材，请先移除一个。`)
+    return
+  }
+  const picked = files.slice(0, room)
+  const skippedByCount = files.length - picked.length
+  const accepted = picked.filter((file) => {
+    if (file.size <= MAX_ATTACHMENT_BYTES) return true
+    return false
+  })
+  const skippedBySize = picked.length - accepted.length
+
+  pendingCount.value += accepted.length
+  let failed = 0
+  for (const file of accepted) {
+    try {
+      const item = await readAttachment(file)
+      attachments.value.push(item)
+    } catch {
+      failed += 1
+    } finally {
+      pendingCount.value = Math.max(0, pendingCount.value - 1)
+    }
+  }
+
+  const notes: string[] = []
+  if (skippedByCount > 0) notes.push(`最多 ${MAX_ATTACHMENTS} 个，已跳过 ${skippedByCount} 个`)
+  if (skippedBySize > 0) notes.push(`${skippedBySize} 个文件超过 80MB，已跳过`)
+  if (failed > 0) notes.push(`${failed} 个文件读取失败`)
+  if (notes.length) notify(notes.join('；'))
+}
+
+function handleFileInput(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files || [])
+  input.value = ''
+  void addFiles(files)
+}
+
+function removeAttachment(id: string) {
+  attachments.value = attachments.value.filter((item) => item.id !== id)
+}
+
+function handlePaste(event: ClipboardEvent) {
+  const files = Array.from(event.clipboardData?.files || [])
+  if (!files.length) return
+  event.preventDefault()
+  void addFiles(files)
+}
+
+function handleDragOver(event: DragEvent) {
+  if (props.disabled) return
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy'
+  dragging.value = true
+}
+
+function handleDragLeave(event: DragEvent) {
+  const next = event.relatedTarget as Node | null
+  if (next && (event.currentTarget as HTMLElement).contains(next)) return
+  dragging.value = false
+}
+
+function handleDrop(event: DragEvent) {
+  dragging.value = false
+  if (props.disabled) return
+  const files = Array.from(event.dataTransfer?.files || [])
+  void addFiles(files)
+}
+
 function submit() {
   const content = text.value.trim()
-  if (!content || props.disabled) return
-  emit('send', content)
+  if (!canSend.value) return
+  const payload: ComposerSubmit = {
+    content,
+    attachments: [...attachments.value],
+    template: templateStore.applied,
+  }
+  emit('send', payload)
   text.value = ''
+  attachments.value = []
+  attachNotice.value = ''
   nextTick(() => {
     resize()
     textareaRef.value?.focus()
@@ -538,6 +791,258 @@ defineExpose({ focus })
   .mode-switch button {
     padding: 3px 7px;
   }
+}
+
+.composer.is-dragging {
+  border-color: #c78a76;
+  box-shadow:
+    0 1px 2px rgba(17, 17, 16, 0.03),
+    0 0 0 3px rgba(180, 71, 47, 0.08);
+}
+
+.drop-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #b4472f;
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.composer {
+  position: relative;
+}
+
+.applied-template {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 8px 12px 0;
+  padding: 6px 8px 6px 6px;
+  border: 1px solid #ecdcd3;
+  border-radius: 10px;
+  background: #fdf7f4;
+}
+
+.template-cover {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #b4472f;
+}
+
+.template-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.template-cover svg {
+  width: 17px;
+  height: 17px;
+}
+
+.template-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.template-copy strong {
+  overflow: hidden;
+  color: #3b2a23;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-copy small {
+  color: #a98a7d;
+  font-size: 10px;
+}
+
+.template-remove,
+.attach-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #b9a49a;
+  cursor: pointer;
+}
+
+.template-remove svg,
+.attach-remove svg {
+  width: 12px;
+  height: 12px;
+}
+
+.template-remove:hover,
+.attach-remove:hover {
+  background: rgba(180, 71, 47, 0.08);
+  color: #b4472f;
+}
+
+.attach-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 9px 12px 0;
+}
+
+.attach-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  max-width: 220px;
+  padding: 4px 5px 4px 4px;
+  border: 1px solid #ecece6;
+  border-radius: 9px;
+  background: #fbfbf8;
+}
+
+.attach-thumb {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #f0f0ea;
+}
+
+.attach-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 6px;
+  background: #f3f3ed;
+  color: #8a8a82;
+}
+
+.attach-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.attach-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0;
+  line-height: 1.35;
+}
+
+.attach-copy strong {
+  overflow: hidden;
+  max-width: 130px;
+  color: #34342f;
+  font-size: 10.5px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attach-copy small {
+  overflow: hidden;
+  max-width: 130px;
+  color: #a3a39b;
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attach-chip.is-reading {
+  color: #8d8d85;
+}
+
+.attach-spinner {
+  width: 14px;
+  height: 14px;
+  margin: 0 8px;
+  border: 1.5px solid #e0e0d8;
+  border-top-color: #b4472f;
+  border-radius: 50%;
+  animation: attach-spin 700ms linear infinite;
+}
+
+@keyframes attach-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.attach-notice {
+  margin: 7px 14px 0;
+  color: #b4472f;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+.file-input {
+  display: none;
+}
+
+.composer-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #9a9a92;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.composer-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.composer-icon:hover:not(:disabled) {
+  border-color: #e9e9e3;
+  background: #fafaf8;
+  color: #4a4a44;
+}
+
+.composer-icon.active {
+  border-color: #ecdcd3;
+  background: #fdf7f4;
+  color: #b4472f;
+}
+
+.composer-icon:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .composer-input {
@@ -931,6 +1436,66 @@ defineExpose({ focus })
 
   .automation-switch button {
     padding: 3px 7px;
+  }
+}
+
+/* 窄屏：输入框底部控件很多，隐藏引擎文字、收紧模型与模式，避免互相压字。 */
+@media (max-width: 560px) {
+  .composer-bottom {
+    gap: 6px;
+    padding: 6px 8px 8px 10px;
+  }
+
+  .composer-pickers {
+    gap: 0;
+  }
+
+  .composer-pickers .engine-button {
+    gap: 4px;
+    padding: 4px 5px;
+  }
+
+  .composer-pickers .engine-button .engine-label {
+    display: none;
+  }
+
+  .automation-switch button {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  .model-button {
+    max-width: 78px;
+    padding: 4px 5px;
+  }
+
+  .model-button .engine-label {
+    max-width: 52px;
+  }
+
+  .composer-actions {
+    gap: 4px;
+  }
+
+  /* 手机上一行横滑，避免 8 个素材把输入框撑到半屏高。 */
+  .attach-tray {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 8px 10px 0;
+  }
+
+  .attach-tray::-webkit-scrollbar {
+    display: none;
+  }
+
+  .attach-chip {
+    flex: 0 0 auto;
+    max-width: 205px;
+  }
+
+  .attach-chip.is-reading {
+    padding-right: 10px;
   }
 }
 

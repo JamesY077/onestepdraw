@@ -1,9 +1,24 @@
 import { computed, reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { AGENT_MODEL_ID, AgentApiError, streamAgentChat } from '@/api/agent'
+import { AGENT_MODEL_ID, AgentApiError, analyzeImages, streamAgentChat } from '@/api/agent'
 import { LocalAgentError, streamLocalAgent, type LocalAgentMessage } from '@/api/localAgents'
-import type { AgentChatMessage, AgentConversation, AgentMessage } from '@/types/agent'
+import type {
+  AgentAttachment,
+  AgentChatMessage,
+  AgentContentPart,
+  AgentConversation,
+  AgentMessage,
+  AgentTemplateRef,
+} from '@/types/agent'
 import { buildAgentSystemPrompt } from '@/features/agent/prompt'
+import {
+  MAX_ATTACHMENTS,
+  collectAttachmentImages,
+  describeAttachments,
+  describeTemplate,
+  persistableAttachment,
+  toModelImage,
+} from '@/features/agent/attachments'
 import {
   buildAgentGeneration,
   describeAgentGeneration,
@@ -81,6 +96,10 @@ export interface AgentSendOptions {
   mode?: ConversationMode
   automation?: AutomationMode
   projectId?: string
+  /** 本轮上传的参考素材。 */
+  attachments?: AgentAttachment[]
+  /** 本轮应用的模板参考。 */
+  template?: AgentTemplateRef | null
 }
 
 export const useAgentStore = defineStore('agent', () => {
@@ -111,7 +130,16 @@ export const useAgentStore = defineStore('agent', () => {
         .slice(0, MAX_CONVERSATIONS)
         .map((conversation) => ({
           ...conversation,
-          messages: conversation.messages.slice(-MAX_MESSAGES_PER_CONVERSATION),
+          messages: conversation.messages.slice(-MAX_MESSAGES_PER_CONVERSATION).map((message) => ({
+            ...message,
+            attachments: message.attachments?.map(persistableAttachment),
+            template: message.template
+              ? {
+                  ...message.template,
+                  assets: message.template.assets?.map(persistableAttachment),
+                }
+              : undefined,
+          })),
         }))
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
     } catch {
@@ -180,20 +208,87 @@ export const useAgentStore = defineStore('agent', () => {
     })
   }
 
-  function buildContext(conversation: AgentConversation): AgentChatMessage[] {
-    const history = conversation.messages
-      .filter((message) => message.status !== 'error' && (message.content.trim() || message.generation))
+  /** 把历史消息拼成一段文本；附件与模板会变成可读清单。 */
+  function historyText(message: AgentMessage, includePaths = false): string {
+    const note =
+      message.role === 'assistant' && message.generation
+        ? `\n\n[系统记录] 已调用${message.generation.kind === 'image' ? '图片' : '视频'}生成：${describeAgentGeneration(message.generation)}。`
+        : ''
+    return `${message.content}${note}${askContext(message)}${describeAttachments(
+      message.attachments,
+      { includePaths },
+    )}${describeTemplate(message.template)}${describeAttachments(
+      message.template?.assets,
+      { includePaths },
+    )}`.trim()
+  }
+
+  function latestUserMessage(history: AgentMessage[]): AgentMessage | null {
+    for (let index = history.length - 1; index >= 0; index -= 1) {
+      if (history[index].role === 'user') return history[index]
+    }
+    return null
+  }
+
+  async function buildContext(
+    conversation: AgentConversation,
+    signal?: AbortSignal,
+  ): Promise<AgentChatMessage[]> {
+    const source = conversation.messages
+      .filter(
+        (message) =>
+          message.status !== 'error' &&
+          (message.content.trim() || message.generation || message.attachments?.length || message.template),
+      )
       .slice(-MAX_CONTEXT_MESSAGES)
-      .map<AgentChatMessage>((message) => {
-        const note =
-          message.role === 'assistant' && message.generation
-            ? `\n\n[系统记录] 已调用${message.generation.kind === 'image' ? '图片' : '视频'}生成：${describeAgentGeneration(message.generation)}。`
-            : ''
-        return {
-          role: message.role,
-          content: `${message.content}${note}${askContext(message)}`.trim(),
+
+    const latestUser = latestUserMessage(source)
+    const imageUrls = latestUser
+      ? collectAttachmentImages(latestUser.attachments, latestUser.template)
+      : []
+    const modelImages: string[] = []
+    for (const url of imageUrls) {
+      const data = await toModelImage(url)
+      if (data) modelImages.push(data)
+      if (modelImages.length >= 10) break
+    }
+
+    // 当前模型不支持图片时，用可用的多模态模型先做一次视觉分析，
+    // 让纯文本模型也能拿到画面信息；没有多模态模型则明确说明。
+    const model = useModelStore()
+    const supportsVision = model.selectedModel.kind === 'vision'
+    let visualNote = ''
+    if (modelImages.length && !supportsVision) {
+      const visionModel = model.models.find((item) => item.kind === 'vision')
+      if (visionModel) {
+        try {
+          const described = await analyzeImages(modelImages.slice(0, 6), visionModel.id, signal)
+          if (described) visualNote = `[视觉分析 · ${visionModel.id}]\n${described}`
+        } catch {
+          // 分析失败不影响正常对话，下面会给出说明。
         }
-      })
+      }
+      if (!visualNote) {
+        visualNote = '[说明] 当前模型不能直接查看图片，请参考上面的文件名与清单；需要看图时可在模型菜单里切换到「多模态」模型。'
+      }
+    }
+
+    const history = source.map<AgentChatMessage>((message) => {
+      const text = historyText(message)
+      // 只有本轮用户消息带图片，历史里保留文字清单，避免每轮都重传。
+      if (message === latestUser) {
+        const finalText = visualNote ? `${text}\n\n${visualNote}`.trim() : text
+        if (modelImages.length && supportsVision) {
+          const parts: AgentContentPart[] = [
+            { type: 'text', text: finalText || '请查看这些参考素材。' },
+          ]
+          for (const url of modelImages) parts.push({ type: 'image_url', image_url: { url } })
+          return { role: 'user', content: parts }
+        }
+        return { role: 'user', content: finalText }
+      }
+      return { role: message.role, content: text }
+    })
 
     return [{ role: 'system', content: systemPromptFor(conversation) }, ...history]
   }
@@ -203,19 +298,14 @@ export const useAgentStore = defineStore('agent', () => {
     return conversation.messages
       .filter(
         (message) =>
-          message.status !== 'error' && (message.content.trim() || message.generation),
+          message.status !== 'error' &&
+          (message.content.trim() || message.generation || message.attachments?.length || message.template),
       )
       .slice(-MAX_CONTEXT_MESSAGES)
-      .map<LocalAgentMessage>((message) => {
-        const note =
-          message.role === 'assistant' && message.generation
-            ? `\n\n[系统记录] 已调用${message.generation.kind === 'image' ? '图片' : '视频'}生成：${describeAgentGeneration(message.generation)}。`
-            : ''
-        return {
-          role: message.role,
-          content: `${message.content}${note}${askContext(message)}`.trim(),
-        }
-      })
+      .map<LocalAgentMessage>((message) => ({
+        role: message.role,
+        content: historyText(message, true),
+      }))
   }
 
   function stopStreaming() {
@@ -484,7 +574,7 @@ export const useAgentStore = defineStore('agent', () => {
       } else {
         assistant.model = modelStore.selectedId
         await streamAgentChat({
-          messages: buildContext(conversation),
+          messages: await buildContext(conversation, controller.signal),
           model: modelStore.selectedId,
           signal: controller.signal,
           onDelta: (text) => {
@@ -554,7 +644,9 @@ export const useAgentStore = defineStore('agent', () => {
 
   async function sendMessage(rawContent: string, options: AgentSendOptions = {}) {
     const content = rawContent.trim()
-    if (!content || streamingId.value) return
+    const attachments = (options.attachments || []).slice(0, MAX_ATTACHMENTS)
+    const template = options.template || undefined
+    if ((!content && !attachments.length && !template) || streamingId.value) return
 
     let conversation = options.conversationId
       ? findConversation(options.conversationId)
@@ -575,6 +667,8 @@ export const useAgentStore = defineStore('agent', () => {
       content,
       createdAt: now,
       status: 'done',
+      attachments: attachments.length ? attachments : undefined,
+      template,
     })
     const assistantMessage = reactive<AgentMessage>({
       id: createId(),
@@ -588,7 +682,12 @@ export const useAgentStore = defineStore('agent', () => {
     conversation.messages.push(userMessage, assistantMessage)
     conversation.updatedAt = now
     if (conversation.title === EMPTY_CONVERSATION_TITLE) {
-      conversation.title = makeTitle(content)
+      const titleSource =
+        content ||
+        template?.name ||
+        attachments[0]?.name ||
+        ''
+      conversation.title = makeTitle(titleSource)
     }
     persistNow()
 

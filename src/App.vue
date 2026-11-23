@@ -4,12 +4,14 @@
       <router-view />
     </main>
     <AddToProjectDialog />
+    <TemplateLibrary />
     <AppDialog />
   </div>
 </template>
 
 <script setup lang="ts">
 import AddToProjectDialog from '@/components/common/AddToProjectDialog.vue'
+import TemplateLibrary from '@/components/template/TemplateLibrary.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
 </script>
 

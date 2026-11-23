@@ -50,6 +50,14 @@
             {{ exporting ? `导出 ${Math.round(exportRatio * 100)}%` : '导出视频' }}
           </button>
         </template>
+        <button type="button" class="top-icon" title="模板库" aria-label="模板库" @click="templateStore.openLibrary()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+            <rect x="3.4" y="4.4" width="7.2" height="7.2" rx="2" />
+            <rect x="13.4" y="4.4" width="7.2" height="7.2" rx="2" />
+            <rect x="3.4" y="14.4" width="7.2" height="5.2" rx="2" />
+            <rect x="13.4" y="14.4" width="7.2" height="5.2" rx="2" />
+          </svg>
+        </button>
         <button type="button" class="top-icon" title="设置" aria-label="设置" @click="router.push('/settings')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3" />
@@ -237,6 +245,7 @@ import { useEditProjectStore, projectDuration } from '@/stores/editProjectStore'
 import { playhead, setPlayhead } from '@/features/edit/playhead'
 import { exportProjectVideo } from '@/features/edit/exportVideo'
 import { confirmDialog } from '@/features/ui/dialog'
+import { useTemplateStore } from '@/stores/templateStore'
 import {
   MAX_PROJECT_SECONDS,
   PROJECT_ASPECT_RATIOS,
@@ -245,6 +254,7 @@ import {
 
 const route = useRoute()
 const router = useRouter()
+const templateStore = useTemplateStore()
 const projectStore = useEditProjectStore()
 const agentStore = useAgentStore()
 

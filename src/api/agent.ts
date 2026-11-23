@@ -30,6 +30,52 @@ export interface AgentStreamOptions {
   onReasoning?: (text: string) => void
 }
 
+/**
+ * 用多模态模型快速描述参考图，供当前文本模型使用。
+ * 只在用户选的是纯文本模型、但消息里带图片时调用。
+ */
+export async function analyzeImages(
+  images: string[],
+  model: string,
+  signal?: AbortSignal,
+): Promise<string> {
+  const apiKey = getApiKey()
+  if (!apiKey || !images.length) return ''
+  const baseUrl = getApiBaseUrl().replace(/\/+$/, '')
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      stream: false,
+      temperature: 0.2,
+      max_tokens: 700,
+      messages: [
+        {
+          role: 'system',
+          content:
+            '你是视觉分析助手。用简洁中文描述用户提供的参考图，重点写主体、场景、构图、镜头、光线、色彩、材质与风格，以及可以直接写进创作提示词的细节。不要寒暄，不要 Markdown 标题。',
+        },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: `请分析这 ${images.length} 张参考图。` },
+            ...images.map((url) => ({ type: 'image_url', image_url: { url } })),
+          ],
+        },
+      ],
+    }),
+    signal,
+  })
+  if (!response.ok) return ''
+  const payload = await response.json().catch(() => null)
+  const content = payload?.choices?.[0]?.message?.content
+  return typeof content === 'string' ? content.trim() : ''
+}
+
 function extractErrorMessage(payload: unknown, fallback: string): string {
   if (!payload || typeof payload !== 'object') return fallback
   const data = payload as Record<string, any>

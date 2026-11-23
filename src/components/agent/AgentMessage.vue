@@ -5,7 +5,55 @@
     </div>
 
     <div class="message-main">
-      <div v-if="message.role === 'user'" class="user-bubble">{{ message.content }}</div>
+      <div
+        v-if="message.role === 'user' && (message.template || message.attachments?.length)"
+        class="message-refs"
+      >
+        <div v-if="message.template" class="ref-template">
+          <img v-if="message.template.images[0]" :src="message.template.images[0]" alt="" />
+          <span class="ref-template-icon" v-else aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+              <path d="M3.8 15.5 8.6 11l3.4 3 2.8-2.4 5.4 4.1" />
+            </svg>
+          </span>
+          <span class="ref-template-copy">
+            <strong>{{ message.template.name }}</strong>
+            <small>模板参考 · {{ message.template.category }}</small>
+          </span>
+        </div>
+        <div v-if="message.attachments?.length" class="ref-assets">
+          <component
+            :is="item.kind === 'file' ? 'span' : 'a'"
+            v-for="item in message.attachments"
+            :key="item.id"
+            class="ref-asset"
+            :class="{ 'has-thumb': hasPreview(item) }"
+            :href="item.kind === 'file' ? undefined : item.url || undefined"
+            :target="item.kind === 'file' ? undefined : '_blank'"
+            :rel="item.kind === 'file' ? undefined : 'noreferrer'"
+          >
+            <img v-if="item.kind === 'image' && item.url" :src="item.url" alt="" />
+            <img v-else-if="item.kind === 'video' && item.frames?.length" :src="item.frames[0]" alt="" />
+            <span v-else class="ref-asset-icon" aria-hidden="true">
+              <svg v-if="item.kind === 'video'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <rect x="3.5" y="5.5" width="17" height="13" rx="3" />
+                <path d="M10.4 9.6 15 12l-4.6 2.4z" fill="currentColor" stroke="none" />
+              </svg>
+              <svg v-else-if="item.kind === 'audio'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                <path d="M6 10v4M10 7.5v9M14 9v6M18 11v2" />
+              </svg>
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+                <path d="M6 3.8h7.5L18.5 9v11.2H6z" />
+                <path d="M13.2 4v5.2h5.2" />
+              </svg>
+            </span>
+            <span class="ref-asset-name">{{ item.name }}</span>
+          </component>
+        </div>
+      </div>
+
+      <div v-if="message.role === 'user' && message.content" class="user-bubble">{{ message.content }}</div>
 
       <template v-else>
         <details v-if="message.logs" class="reasoning-block">
@@ -86,7 +134,7 @@ import MarkdownView from './MarkdownView.vue'
 import AgentGenerationCard from './AgentGenerationCard.vue'
 import AgentAskCard from './AgentAskCard.vue'
 import { stripAgentControlBlocks } from '@/features/agent/tools'
-import type { AgentMessage } from '@/types/agent'
+import type { AgentAttachment, AgentMessage } from '@/types/agent'
 
 const props = withDefaults(
   defineProps<{ message: AgentMessage; isStreaming: boolean; canRetry?: boolean; compact?: boolean }>(),
@@ -101,6 +149,10 @@ defineEmits<{
 const copied = ref(false)
 
 const displayContent = computed(() => stripAgentControlBlocks(props.message.content))
+
+function hasPreview(item: AgentAttachment): boolean {
+  return (item.kind === 'image' && !!item.url) || (item.kind === 'video' && !!item.frames?.length)
+}
 
 const timeLabel = computed(() => {
   const date = new Date(props.message.createdAt)
@@ -145,6 +197,125 @@ async function copyContent() {
 
 .is-assistant .message-main {
   flex: 1;
+}
+
+.message-refs {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+
+.ref-template {
+  display: flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 9px 4px 4px;
+  border: 1px solid #ecdcd3;
+  border-radius: 9px;
+  background: #fdf7f4;
+}
+
+.ref-template img,
+.ref-template-icon {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #ffffff;
+}
+
+.ref-template-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #b4472f;
+}
+
+.ref-template-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.ref-template-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.ref-template-copy strong {
+  overflow: hidden;
+  color: #4a2f26;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ref-template-copy small {
+  color: #ad9185;
+  font-size: 9px;
+}
+
+.ref-assets {
+  display: flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.ref-asset {
+  display: inline-flex;
+  max-width: 150px;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px 3px 3px;
+  border: 1px solid #ecece6;
+  border-radius: 8px;
+  background: #fbfbf8;
+  color: #6b6b63;
+  text-decoration: none;
+}
+
+.ref-asset:hover {
+  border-color: #d8d8d0;
+}
+
+.ref-asset img {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 5px;
+  object-fit: cover;
+}
+
+.ref-asset-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 5px;
+  background: #f2f2ec;
+  color: #8a8a82;
+}
+
+.ref-asset-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ref-asset-name {
+  overflow: hidden;
+  max-width: 108px;
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .user-bubble {

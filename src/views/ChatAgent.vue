@@ -30,6 +30,20 @@
 
         <div class="header-actions">
           <button
+            type="button"
+            class="template-shortcut"
+            title="打开模板库"
+            @click="templateStore.openLibrary()"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3.4" y="4.4" width="7.2" height="7.2" rx="2" />
+              <rect x="13.4" y="4.4" width="7.2" height="7.2" rx="2" />
+              <rect x="3.4" y="14.4" width="7.2" height="5.2" rx="2" />
+              <rect x="13.4" y="14.4" width="7.2" height="5.2" rx="2" />
+            </svg>
+            <span>模板库</span>
+          </button>
+          <button
             v-if="activeProjectId"
             type="button"
             class="mode-badge project-shortcut"
@@ -175,6 +189,8 @@ import { useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useEditProjectStore } from '@/stores/editProjectStore'
+import { useTemplateStore } from '@/stores/templateStore'
+import type { ComposerSubmit } from '@/types/agent'
 
 const store = useAgentStore()
 const apiStore = useApiStore()
@@ -182,6 +198,7 @@ const localAgentStore = useLocalAgentStore()
 const modelStore = useModelStore()
 const chatMode = useChatModeStore()
 const projectStore = useEditProjectStore()
+const templateStore = useTemplateStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -300,6 +317,8 @@ function handleScroll() {
 }
 
 function syncRouteWithActive() {
+  // 创作对话会主动跳到剪辑台；此时活动会话变化不应把路由改回 /chat。
+  if (route.path.startsWith('/edit')) return
   const id = store.activeId
   const target = id ? `/chat/${id}` : '/chat'
   if (route.path !== target) router.replace(target)
@@ -341,20 +360,26 @@ async function handleLogout() {
   router.replace('/login')
 }
 
-async function handleSend(content: string) {
+async function handleSend(payload: ComposerSubmit) {
+  const { content, attachments, template } = payload
   stickToBottom.value = true
   if (chatMode.isCreate) {
     const conversation = store.activeConversation || store.createConversation(true)
+    const titleSource = content || template?.name || attachments[0]?.name || ''
     const project =
       projectStore.findProjectByConversation(conversation.id) ||
-      projectStore.createProject(projectTitle(content), conversation.id)
+      projectStore.createProject(projectTitle(titleSource), conversation.id)
     store.attachProject(conversation.id, project.id)
     void store.sendMessage(content, {
       conversationId: conversation.id,
       mode: 'create',
       automation: chatMode.automation,
+      attachments,
+      template,
     })
-    router.push(`/edit/${project.id}`)
+    // 先让 activeId 监听把 /chat 路由同步完，再进剪辑台，避免被 replace 抢回。
+    await nextTick()
+    void router.push(`/edit/${project.id}`)
     return
   }
 
@@ -362,6 +387,8 @@ async function handleSend(content: string) {
     conversationId: store.activeId || undefined,
     mode: 'chat',
     automation: chatMode.automation,
+    attachments,
+    template,
   })
   syncRouteWithActive()
   await nextTick()
@@ -602,6 +629,44 @@ onBeforeUnmount(() => {
 .project-shortcut {
   cursor: pointer;
   color: #5f5f57;
+}
+
+.template-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid #e6e6e0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #6b6b63;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease, background 140ms ease;
+}
+
+.template-shortcut svg {
+  width: 13px;
+  height: 13px;
+}
+
+.template-shortcut:hover {
+  border-color: #d4d4cc;
+  background: #fafaf8;
+  color: #1d1d1b;
+}
+
+@media (max-width: 720px) {
+  .template-shortcut span {
+    display: none;
+  }
+  .template-shortcut {
+    padding: 5px;
+    border-radius: 8px;
+  }
 }
 
 @media (max-width: 640px) {

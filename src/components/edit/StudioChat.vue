@@ -54,6 +54,7 @@ import { useAgentStore } from '@/stores/agentStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
+import type { ComposerSubmit } from '@/types/agent'
 
 const props = defineProps<{ conversationId: string; projectId: string }>()
 
@@ -92,19 +93,21 @@ watch(
   () => nextTick(scrollToBottom),
 )
 
-function send(content: string) {
-  const text = content.trim()
-  if (!text || agentStore.isStreaming) return
+function send(payload: ComposerSubmit) {
+  const text = payload.content.trim()
+  if ((!text && !payload.attachments.length && !payload.template) || agentStore.isStreaming) return
   void agentStore.sendMessage(text, {
     conversationId: props.conversationId,
     mode: 'create',
     automation: chatMode.automation,
     projectId: props.projectId,
+    attachments: payload.attachments,
+    template: payload.template,
   })
 }
 
 function sendChip(content: string) {
-  send(content)
+  send({ content, attachments: [], template: null })
   composerRef.value?.focus()
 }
 

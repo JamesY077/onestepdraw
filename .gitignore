@@ -31,3 +31,8 @@ test-results/
 
 # 本机 Agent 生成产物
 generated/
+
+# 模板导入缓存
+.cache/
+__pycache__/
+*.pyc

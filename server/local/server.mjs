@@ -45,14 +45,24 @@ const MIME_TYPES = {
   '.webp': 'image/webp',
   '.gif': 'image/gif',
   '.ico': 'image/x-icon',
+  '.avif': 'image/avif',
+  '.heic': 'image/heic',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
   '.ttf': 'font/ttf',
   '.otf': 'font/otf',
   '.mp4': 'video/mp4',
+  '.mov': 'video/quicktime',
+  '.m4v': 'video/x-m4v',
   '.webm': 'video/webm',
   '.mp3': 'audio/mpeg',
   '.wav': 'audio/wav',
+  '.m4a': 'audio/mp4',
+  '.aac': 'audio/aac',
+  '.flac': 'audio/flac',
+  '.ogg': 'audio/ogg',
+  '.opus': 'audio/opus',
+  '.pdf': 'application/pdf',
   '.bvh': 'text/plain; charset=utf-8',
   '.glb': 'model/gltf-binary',
   '.ply': 'application/octet-stream',
@@ -189,6 +199,71 @@ async function handleAgents(req, res, requestUrl) {
   } catch (error) {
     sendJson(res, 500, { error: { message: error?.message || '扫描本机 Agent 失败。' } })
   }
+}
+
+/** 保存用户上传的参考素材到 generated/uploads，返回可直接访问的地址。 */
+function handleUpload(req, res) {
+  const rawName = typeof req.headers['x-file-name'] === 'string' ? req.headers['x-file-name'] : ''
+  let fileName = ''
+  try {
+    fileName = decodeURIComponent(rawName)
+  } catch {
+    fileName = rawName
+  }
+  fileName = path.basename(fileName || `upload-${Date.now()}`).replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_')
+  if (!fileName || fileName === '.' || fileName === '..') fileName = `upload-${Date.now()}`
+
+  const contentType = String(req.headers['content-type'] || 'application/octet-stream').split(';')[0].trim()
+  let extension = path.extname(fileName).toLowerCase()
+  if (!extension) {
+    const guessed = Object.entries(MIME_TYPES).find(([, mime]) => mime.split(';')[0] === contentType)
+    extension = guessed ? guessed[0] : ''
+    if (extension) fileName = `${fileName}${extension}`
+  }
+
+  const uploadDir = path.join(rootDir, 'generated', 'uploads')
+  try {
+    fs.mkdirSync(uploadDir, { recursive: true })
+  } catch (error) {
+    sendJson(res, 500, { error: { message: `无法创建上传目录：${error.message}` } })
+    return
+  }
+
+  const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const target = path.join(uploadDir, `${unique}-${fileName}`)
+  const limit = 80 * 1024 * 1024
+  const output = fs.createWriteStream(target)
+  let size = 0
+  let failed = false
+
+  const abort = (message) => {
+    if (failed) return
+    failed = true
+    output.destroy()
+    fs.rm(target, { force: true }, () => {})
+    sendJson(res, 413, { error: { message } })
+  }
+
+  req.on('data', (chunk) => {
+    if (failed) return
+    size += chunk.length
+    if (size > limit) {
+      abort('单个参考素材不能超过 80MB。')
+      req.destroy()
+    }
+  })
+  req.on('error', () => abort('上传中断，请重试。'))
+  output.on('error', (error) => abort(`保存失败：${error.message}`))
+  output.on('finish', () => {
+    if (failed) return
+    sendJson(res, 200, {
+      url: `/generated/uploads/${encodeURIComponent(path.basename(target))}`,
+      path: target,
+      name: fileName,
+      size,
+    })
+  })
+  req.pipe(output)
 }
 
 async function handleAgentRun(req, res) {
@@ -345,6 +420,16 @@ const server = http.createServer((req, res) => {
       proxy.handler(req, res)
       return
     }
+  }
+
+  if (requestUrl === '/local/upload') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' })
+      res.end('Method Not Allowed')
+      return
+    }
+    handleUpload(req, res)
+    return
   }
 
   if (requestUrl === '/local/agent/run') {
