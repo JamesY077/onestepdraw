@@ -68,7 +68,6 @@ function save(key: string, value: unknown) {
 }
 
 export const useTemplateStore = defineStore('template', () => {
-  const open = ref(false)
   const tab = ref<'builtin' | 'custom' | 'skill'>('builtin')
   const groups = ref<UserTemplateGroup[]>(loadGroups())
   const applied = ref<AgentTemplateRef | null>(loadApplied())
@@ -77,16 +76,6 @@ export const useTemplateStore = defineStore('template', () => {
   const sortedGroups = computed(() =>
     [...groups.value].sort((a, b) => b.updatedAt - a.updatedAt),
   )
-
-  function openLibrary(nextTab: 'builtin' | 'custom' | 'skill' = 'builtin') {
-    tab.value = nextTab
-    open.value = true
-  }
-
-  function closeLibrary() {
-    open.value = false
-    draftGroupId.value = null
-  }
 
   function persistGroups() {
     save(
@@ -116,7 +105,6 @@ export const useTemplateStore = defineStore('template', () => {
   function applyTemplate(template: AgentTemplateRef) {
     applied.value = template
     persistApplied()
-    open.value = false
     draftGroupId.value = null
   }
 
@@ -126,8 +114,8 @@ export const useTemplateStore = defineStore('template', () => {
       name: template.name,
       category: template.category,
       guide: template.guide,
-      // 没有参考静帧时不把「文字参考」占位图当成视觉依据。
-      images: template.still ? [template.poster] : [],
+      // 原素材静帧与 AI 示例图都能当视觉参考；纯占位图不带。
+      images: template.still || template.generated ? [template.poster] : [],
       source: 'builtin',
     })
   }
@@ -214,14 +202,11 @@ export const useTemplateStore = defineStore('template', () => {
   }
 
   return {
-    open,
     tab,
     groups,
     sortedGroups,
     applied,
     draftGroupId,
-    openLibrary,
-    closeLibrary,
     applyTemplate,
     applyBuiltin,
     applyGroup,

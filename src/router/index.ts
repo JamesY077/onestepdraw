@@ -36,6 +36,13 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    // 模板库独立页面：风格、我的模板与 Skill 专区都在这里。
+    path: '/templates',
+    name: 'TemplateGallery',
+    component: () => import('@/views/TemplateGallery.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     // 对话式剪辑台：一个项目 = 时间轴 + 素材库 + 一段创作对话。
     path: '/edit/:id?',
     name: 'EditStudio',

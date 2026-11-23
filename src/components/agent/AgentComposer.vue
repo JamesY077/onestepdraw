@@ -79,7 +79,7 @@
           type="button"
           class="applied-skills-add"
           title="从模板库的 Skill 专区添加"
-          @click="templateStore.openLibrary('skill')"
+          @click="openTemplatePage('skill')"
         >
           +
         </button>
@@ -173,7 +173,7 @@
             :class="{ active: templateStore.applied }"
             title="模板库"
             aria-label="打开模板库"
-            @click="templateStore.openLibrary()"
+            @click="openTemplatePage('builtin')"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
               <rect x="3.4" y="4.4" width="7.2" height="7.2" rx="2" />
@@ -445,6 +445,10 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+
+function openTemplatePage(tab: 'builtin' | 'skill') {
+  router.push({ path: '/templates', query: { tab, from: router.currentRoute.value.fullPath } })
+}
 const localAgentStore = useLocalAgentStore()
 const modelStore = useModelStore()
 const chatMode = useChatModeStore()

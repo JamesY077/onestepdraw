@@ -33,7 +33,7 @@
             type="button"
             class="template-shortcut"
             title="打开模板库"
-            @click="templateStore.openLibrary()"
+            @click="openTemplatePage"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">
               <rect x="3.4" y="4.4" width="7.2" height="7.2" rx="2" />
@@ -189,7 +189,6 @@ import { useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useEditProjectStore } from '@/stores/editProjectStore'
-import { useTemplateStore } from '@/stores/templateStore'
 import type { ComposerSubmit } from '@/types/agent'
 
 const store = useAgentStore()
@@ -198,9 +197,12 @@ const localAgentStore = useLocalAgentStore()
 const modelStore = useModelStore()
 const chatMode = useChatModeStore()
 const projectStore = useEditProjectStore()
-const templateStore = useTemplateStore()
 const route = useRoute()
 const router = useRouter()
+
+function openTemplatePage() {
+  router.push({ path: '/templates', query: { from: router.currentRoute.value.fullPath } })
+}
 
 const activeProjectId = computed(() => store.activeConversation?.projectId || '')
 

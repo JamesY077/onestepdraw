@@ -172,7 +172,6 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSkillLibraryStore } from '@/stores/skillLibraryStore'
-import { useTemplateStore } from '@/stores/templateStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import {
   DISTILL_MAX_INPUT_CHARS,
@@ -189,7 +188,6 @@ import {
 import { AppError, showErrorMessage } from '@/utils/errors'
 
 const libraryStore = useSkillLibraryStore()
-const templateStore = useTemplateStore()
 const chatMode = useChatModeStore()
 const router = useRouter()
 
@@ -230,7 +228,6 @@ function applySkill(skill: DistilledSkill, target: 'chat' | 'image' | 'video') {
   } else {
     notice.value = `已启用「${skill.name}」。`
   }
-  templateStore.closeLibrary()
   if (target === 'chat') {
     chatMode.setConversation('create')
     void router.push('/chat')

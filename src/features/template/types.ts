@@ -20,8 +20,10 @@ export interface BuiltinTemplate {
   demo: string
   /** 打包后的预览图地址。 */
   poster: string
-  /** 是否有参考静帧；false 时 poster 是生成的「文字参考」占位图。 */
+  /** 是否有原素材的参考静帧。 */
   still: boolean
+  /** 原素材没有静帧、由 Seedream 生成的示例图（poster 就是这张图）。 */
+  generated: boolean
   /** 风格提示词摘要，应用模板时一起交给模型。 */
   guide: string
 }

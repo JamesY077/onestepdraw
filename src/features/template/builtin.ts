@@ -72,6 +72,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/a1.jpg",
     still: true,
+    generated: false,
     guide: "风格：字雨（A1 · 代码样片）\n\n提示词：\n画一段\"字雨\"的动画：话像雨一样落下来，越积越多。\n适合讲：被说教、重复的话、压力\n关键词：字雨、落下、堆积\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -84,6 +85,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/a2.jpg",
     still: true,
+    generated: false,
     guide: "风格：光标打字（A2 · 代码样片）\n\n提示词：\n画一段\"光标打字\"的动画：黑底一个光标，一字一字打，打了又删。\n适合讲：说不出口的话、心里的独白\n关键词：打字、光标、删掉\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -96,6 +98,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/a3.jpg",
     still: true,
+    generated: false,
     guide: "风格：大字冲击（A3 · 代码样片）\n\n提示词：\n画一段\"大字冲击\"的动画：一个词一个词砸进画面，跟着节拍。\n适合讲：情绪爆发、金句、MV 副歌\n关键词：大字、砸下来、跟节拍\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -108,6 +111,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/a4.jpg",
     still: true,
+    generated: false,
     guide: "风格：字的隧道（A4 · 代码样片）\n\n提示词：\n画一段\"字的隧道\"的动画：字排成一圈一圈，镜头往里钻。\n适合讲：想不通、越想越深\n关键词：隧道、旋转、往里钻\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -120,6 +124,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/a5.jpg",
     still: true,
+    generated: false,
     guide: "风格：字散了再聚（A5 · 代码样片）\n\n提示词：\n画一段\"字散了再聚\"的动画：一句话散成粒子，聚成另一句话。\n适合讲：转念、换一种理解\n关键词：散开、聚成、变成\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -132,6 +137,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/b1.jpg",
     still: true,
+    generated: false,
     guide: "风格：流动的丝线（B1 · 代码样片）\n\n提示词：\n画一段\"流动的丝线\"的动画：无数细线跟着看不见的风流动。\n适合讲：思绪、情绪在流、平静下来\n关键词：流动、丝线、风\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -144,6 +150,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/b2.jpg",
     still: true,
+    generated: false,
     guide: "风格：萤火光尘（B2 · 代码样片）\n\n提示词：\n画一段\"萤火光尘\"的动画：暖色光点慢慢往上飘，有远有近。\n适合讲：温暖、回忆、找回光\n关键词：萤火、光尘、暖\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -156,6 +163,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/b3.jpg",
     still: true,
+    generated: false,
     guide: "风格：粒子聚形（B3 · 代码样片）\n\n提示词：\n做一段\"粒子聚形\"动画：几千颗发光的小粒子聚成一个形状，停住，散开，沿弧线流向下一个形状再聚拢，循环。\n\n怎么画：\n背景：#07080C 铺满；中心一个径向渐变（半径 800）从 rgba(40,46,66,0.30) 到 rgba(7,8,12,0)；再画 220 颗固定位置的暗星点（启动时随机一次，透明度 0.15–0.4，随 t 轻微闪烁）。\n粒子：用 叠加 = 'lighter' 叠加发光。 颜色：心 #F08A8A，房子 #F1C070，人 #A9C6FF，汉字 #F6EBD0；变形时按 e 在\"当前形状的颜色\"和\"下一个形状的颜色\"之间线性混合。\n每颗粒子的亮度 L = 0.75 + 0.25·sin(f·t + ph)；半径 r = 1.1 + 1.6·s（像素）；基础透明度 0.55·L。\n拖尾：每颗粒子画 3 次，分别在时间 t、t−0.045、t−0.09（用同一个位置函数重新算，不要保存历史）；透明度依次 ×1、×0.5、×0.25，半径依次 ×1、×0.8、×0.6。\n光晕：glow=true 的粒子再多画一个半径 ×3、透明度 0.05 的大圆。\n字幕：每个形状停住时（q 从 0.3 到 1.0 淡入，q 从 2.1 到 2.5 淡出），在 (960, 960) 居中显示该形状对应的那一句，衬线体 46px，颜色 #EDE6D6，最大透明度 0.85。\n\n避免：\n爆炸的闪光、镜头光晕、彩虹色、第二种背景、实时计时器驱动的随机、在 draw 里保存上一帧的状态。",
   },
   {
@@ -168,6 +176,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/b4.jpg",
     still: true,
+    generated: false,
     guide: "风格：星空连线（B4 · 代码样片）\n\n提示词：\n画一段\"星空连线\"的动画：点和点连成网，中间那颗暖的是你。\n适合讲：人和人的关系、联结、孤独\n关键词：星座、连线、网\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -180,6 +189,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/b5.jpg",
     still: true,
+    generated: false,
     guide: "风格：呼吸的圆（B5 · 代码样片）\n\n提示词：\n画一段\"呼吸的圆\"的动画：一团粒子跟着呼吸胀大、缩小。\n适合讲：安抚、慢下来、冥想\n关键词：呼吸、胀缩、慢\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -192,6 +202,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/c1.jpg",
     still: true,
+    generated: false,
     guide: "风格：水墨晕开（C1 · 代码样片）\n\n提示词：\n画一段\"水墨晕开\"的动画：墨在宣纸上一团一团晕开。\n适合讲：中国感、回忆、哀伤\n关键词：水墨、晕开、宣纸\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -204,6 +215,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/c2.jpg",
     still: true,
+    generated: false,
     guide: "风格：一笔画（C2 · 代码样片）\n\n提示词：\n画一段\"一笔画\"的动画：一根线慢慢画出山、太阳和一个小人。\n适合讲：讲一个人、一件事的轮廓\n关键词：一笔画、线描、生长\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -216,6 +228,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/c3.jpg",
     still: true,
+    generated: false,
     guide: "风格：心里的等高线（C3 · 代码样片）\n\n提示词：\n画一段\"心里的等高线\"的动画：像地图上的等高线，一直在起伏。\n适合讲：情绪起伏、心里的地形\n关键词：等高线、地形、起伏\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -228,6 +241,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/c4.jpg",
     still: true,
+    generated: false,
     guide: "风格：涟漪（C4 · 代码样片）\n\n提示词：\n画一段\"涟漪\"的动画：一滴落下，一圈圈荡开。\n适合讲：一句话的影响、余波\n关键词：涟漪、水滴、扩散\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -240,6 +254,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/d1.jpg",
     still: true,
+    generated: false,
     guide: "风格：雨窗（D1 · 代码样片）\n\n提示词：\n画一段\"雨窗\"的动画：玻璃上的雨滴，后面是虚化的夜灯。\n适合讲：等待、夜里、想念\n关键词：雨窗、夜、虚化灯光\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -252,6 +267,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/d2.jpg",
     still: true,
+    generated: false,
     guide: "风格：窗光与尘（D2 · 代码样片）\n\n提示词：\n画一段\"窗光与尘\"的动画：一束光从窗照进来，灰尘在光里飘。\n适合讲：安静、时间、老房子\n关键词：窗光、灰尘、光束\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -264,6 +280,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/d3.jpg",
     still: true,
+    generated: false,
     guide: "风格：雪与火星（D3 · 代码样片）\n\n提示词：\n画一段\"雪与火星\"的动画：雪往下落，几点火星往上飘。\n适合讲：告别、结束、冷里的一点热\n关键词：雪、火星、往上飘\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -276,6 +293,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/d4.jpg",
     still: true,
+    generated: false,
     guide: "风格：天亮（D4 · 代码样片）\n\n提示词：\n画一段\"天亮\"的动画：天从深蓝慢慢变暖，太阳升起来。\n适合讲：结尾、希望、重新开始\n关键词：日出、渐变、天亮\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -288,6 +306,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/e1.jpg",
     still: true,
+    generated: false,
     guide: "风格：极简几何（E1 · 代码样片）\n\n提示词：\n画一段\"极简几何\"的动画：圆、方、半圆在纯色上滚、落、长出来。\n适合讲：把复杂的事讲清楚\n关键词：几何、扁平、色块\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -300,6 +319,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/e2.jpg",
     still: true,
+    generated: false,
     guide: "风格：剪纸层叠（E2 · 代码样片）\n\n提示词：\n画一段\"剪纸层叠\"的动画：一层层纸片有阴影，前快后慢地移动。\n适合讲：童年、故事、温柔的段落\n关键词：剪纸、纸片、层叠\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -312,6 +332,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/e3.jpg",
     still: true,
+    generated: false,
     guide: "风格：字符画（E3 · 代码样片）\n\n提示词：\n画一段\"字符画\"的动画：画面全是字符拼成的，像老电脑屏幕。\n适合讲：科技、冷、记忆碎片\n关键词：字符画、终端、像素\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -324,6 +345,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/f1.jpg",
     still: true,
+    generated: false,
     guide: "风格：图表生长（F1 · 代码样片）\n\n提示词：\n画一段\"图表生长\"的动画：柱子一根根长出来，数字跳动，再连成线。\n适合讲：讲数据、研究结论\n关键词：图表、数字、生长\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -336,6 +358,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/f2.jpg",
     still: true,
+    generated: false,
     guide: "风格：关系图（F2 · 代码样片）\n\n提示词：\n画一段\"关系图\"的动画：人和人之间的箭头一条条画出来，箭头上写着那句话。\n适合讲：家里的关系、因果\n关键词：节点、箭头、关系图\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -348,6 +371,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/f3.jpg",
     still: true,
+    generated: false,
     guide: "风格：分屏对比（F3 · 代码样片）\n\n提示词：\n画一段\"分屏对比\"的动画：左边以前，右边现在，中间一条线。\n适合讲：以前和现在、父母和孩子\n关键词：分屏、对比、左右\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -360,6 +384,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/g1.jpg",
     still: true,
+    generated: false,
     guide: "风格：老胶片（G1 · 代码样片）\n\n提示词：\n画一段\"老胶片\"的动画：颗粒、闪烁、划痕、边上的漏光。\n适合讲：回忆、旧时光、整片的统一质感\n关键词：胶片、颗粒、漏光\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -372,6 +397,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/g2.jpg",
     still: true,
+    generated: false,
     guide: "风格：信号故障（G2 · 代码样片）\n\n提示词：\n画一段\"信号故障\"的动画：画面错位、颜色分离，突然闪一下。\n适合讲：崩溃、混乱、话被打断\n关键词：故障、错位、干扰\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -384,6 +410,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m1.jpg",
     still: true,
+    generated: false,
     guide: "风格：白板手绘讲解（M1 · 动态风格）\n\n提示词：\n做一段白板手绘讲解动画。\n\n画面怎么画：\n底色 #FBFAF7；再叠几条很淡的灰色擦痕（宽 40–90px，透明度 0.03–0.06）。\n线条是黑色马克笔 #1B1B1B，宽 10px，lineCap 和 lineJoin 都用 round。 每一笔画两遍：第一遍透明度 0.93；第二遍宽 5.5px、透明度 0.55、位置偏移 ±1.5px。\n只有黑和一个强调色 #E5432B（用在标题下划线、箭头、副标题和笔帽）。 不要第三种颜色。\n字体：font-family: KaiTi, STKaiti, \"Kaiti SC\", \"Microsoft YaHei\", sans-serif，粗体；标题 110px，标签 90px，副标题 56px。 字用 strokeText 加 fillText，描边宽约字号的 3.5%。\n要画的东西\n云朵形的\"脑\"：极坐标 r = R·(1 + 0.11·|sin(3.5θ)|)，里面画几条波浪线；\n一个火柴人：圆头、一根线的身体、两条手臂（末端画一个圆当手）、两条腿；\n一条弯曲的强调色箭头，箭头头部要顺着线尾的方向；\n一支马克笔：黑杆、红帽，长约 330px，斜 55°，笔尖始终停在\"当前正在画的那一笔\"的末端；全部画完后滑出画面。\n\n动起来的规则：\n每一笔是一个点列表。 用 progress（0→1）决定画到第几个点，progress 用 ease-in-out；一笔 0.4–1.2 秒。\n顺序：标题 → 标题下划线（红）→ 左边的脑 → 右边的小人 → 红色箭头 → \"指令\"两个字 → 两处标签文字。 同一时间只画一笔。\n全部画完后静止 1.5 秒，再循环。\n\n避免：\n渐变、阴影、发光、3D、粒子、复杂配色、满屏文字、镜头晃动。",
   },
   {
@@ -396,6 +423,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m2.jpg",
     still: false,
+    generated: true,
     guide: "风格：纸感手写笔记（M2 · 动态风格）\n\n提示词：\n纸感手写笔记风格。 米白纸面背景，配色只用纸色、墨黑和两个强调色，深色模式用炭灰。 马克笔批注一笔一笔画出来，手写字用描边动画（stroke-dashoffset）写出来，标题用很大的粗体字。 每 1.5 到 2 秒出一个新点子，每次转场只做一个主要动作。 动作要有真实的缓动、挤压拉伸和跟随。 不要出现播放条、时间码这些界面元素。",
   },
   {
@@ -408,6 +436,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m3.jpg",
     still: false,
+    generated: true,
     guide: "风格：文字建筑（M3 · 动态风格）\n\n提示词：\n做一段 [20] 秒、只用文字的口播动画。 台词按顺序是：[第1句]、[第2句]……每个关键词有一个结构上的角色，比如\"学习\"是地基，\"相信\"是柱子，\"自己\"是站在上面的人。 文字用真实的字形轮廓搭出来，每一句都改变画面的结构。 最后一句必须\"站\"在前面那些词搭好的东西上。 配色：深色背景、纸色字、一个强调色。 不要麦克风、人群、旗子这类俗套画面，不要素材视频。 做完挑 8 帧检查，读起来顺序对，最后的平台确实是前面的元素搭起来的。",
   },
   {
@@ -420,6 +449,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m4.jpg",
     still: false,
+    generated: true,
     guide: "风格：一个元素串全片（M4 · 动态风格）\n\n提示词：\n一个 [颜色] 小圆点串起每一个场景：[场景1里它是什么]，然后变成 [场景2里的什么]……最后回到结尾卡片。 圆点不能瞬移，只能连续地动过去。 动作干脆利落，弹簧回弹很小，没有空档。 不用素材视频、渐变、发光、粒子爆炸、随机转场。 最后一帧和第一帧一样，可以循环。",
   },
   {
@@ -432,6 +462,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m5.jpg",
     still: false,
+    generated: true,
     guide: "风格：一镜到底（M5 · 动态风格）\n\n提示词：\n一镜到底。 每个场景都从上一个场景里变出来：文字从一条线里升起来，按钮展开成页面，用一种颜色铺满画面切到下一段。 不要淡入淡出、不要模糊、不要硬切。 每个场景镜头只做一次缓动。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -444,6 +475,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m6.jpg",
     still: false,
+    generated: true,
     guide: "风格：苹果发布会风（M6 · 动态风格）\n\n提示词：\n苹果发布会的感觉：柔和、白、亮蓝、玻璃质感。 镜头从不在静止画面上切，每个镜头进来时已经在动，离开时加速或者带运动模糊。 字体用 Inter。 不要出现紫色、品红和橙色。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -456,6 +488,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m7.jpg",
     still: false,
+    generated: true,
     guide: "风格：极简卡点（M7 · 动态风格）\n\n提示词：\n高级极简。 一个镜头只讲一件事，大量留白，只用一个强调色，字距收紧的无衬线字体，文字用遮罩显出来，镜头稳。 每一刀都切在重拍上，每个界面动作踩在拍子上。 屏幕上的字不要句号。 不要冲击波、粒子、RGB 分离、抖动、光晕、霓虹、闪烁、弹来弹去的缓动。 只用可以商用的音乐和音效。",
   },
   {
@@ -468,6 +501,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m8.jpg",
     still: false,
+    generated: true,
     guide: "风格：口播 + 逐字字幕（M8 · 动态风格）\n\n提示词：\n以口播录音为主线。 字幕跟着说话逐词出现，时间用 Whisper 从录音里对出来，不按文案逐字对。 白底，只用一种字体，黑字。 镜头每段只做一次慢慢的漂移。 图片在音乐的 16 分音符上换。 屏幕上的字不要句号。 不要给字加选中框一样的底色。 音乐在关键那句话上起来，人声出来的时候音乐自动压低。 响度统一到 -14 LUFS。",
   },
   {
@@ -480,6 +514,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m9.jpg",
     still: false,
+    generated: true,
     guide: "风格：情绪弧线：混乱、掌控、清晰（M9 · 动态风格）\n\n提示词：\n全片是一条连续的弧线：从混乱，到掌控，到清晰，最后落到 [结尾那句话]。 场景之间用同一个物体、同一个形状变过去，不要硬切，除非有特别的理由。 动作要有高级的缓动和错开的层次，有一点景深和光感。 不要满屏模糊、不要弹来弹去的界面、不要粒子。 每一个重要的画面单独截出来都能当海报用。",
   },
   {
@@ -492,6 +527,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m10.jpg",
     still: false,
+    generated: true,
     guide: "风格：把一个抽象概念、一种情绪做成画面（M10 · 动态风格）\n\n提示词：\n做一段 [15] 秒的动态图形，表现\"[情绪/概念]\"这个感觉，比如\"焦虑\"、\"对未知的恐惧\"。 不要具体的人和物，用形状、文字和颜色的变化来表现。 从 [一种状态] 慢慢变到 [另一种状态]。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -504,6 +540,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m11.jpg",
     still: false,
+    generated: true,
     guide: "风格：人生循环（M11 · 动态风格）\n\n提示词：\n做一段 [20] 秒的动画，同一个人从 [阶段1] 到 [阶段2] 到 [阶段3]……最后无缝接回开头，可以循环播放。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -516,6 +553,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m12.jpg",
     still: false,
+    generated: true,
     guide: "风格：剪纸皮影（M12 · 动态风格）\n\n提示词：\n配轻柔合适的声音，声音也用代码做。 主题是：[一个问题，比如\"是什么让一个地方变成家\"]。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -528,55 +566,8 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m13.jpg",
     still: false,
+    generated: true,
     guide: "风格：手绘定格，第一人称（M13 · 动态风格）\n\n提示词：\n做一段手绘定格动画。 你就是 [东西]，用第一人称跟观众介绍你自己。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
-  },
-  {
-    id: "ca-m14",
-    code: "M14",
-    name: "待补充",
-    nameEn: "M14",
-    category: "动态风格",
-    categoryEn: "Motion",
-    demo: "",
-    poster: "/templates/code-animation/m14.jpg",
-    still: false,
-    guide: "风格：M14（动态风格）\n\n原素材里这一条只留了编号，没有风格描述或提示词。用户选中它时要先让用户描述想要的画面，不要凭空编造一种风格。",
-  },
-  {
-    id: "ca-m15",
-    code: "M15",
-    name: "待补充",
-    nameEn: "M15",
-    category: "动态风格",
-    categoryEn: "Motion",
-    demo: "",
-    poster: "/templates/code-animation/m15.jpg",
-    still: false,
-    guide: "风格：M15（动态风格）\n\n原素材里这一条只留了编号，没有风格描述或提示词。用户选中它时要先让用户描述想要的画面，不要凭空编造一种风格。",
-  },
-  {
-    id: "ca-m16",
-    code: "M16",
-    name: "待补充",
-    nameEn: "M16",
-    category: "动态风格",
-    categoryEn: "Motion",
-    demo: "",
-    poster: "/templates/code-animation/m16.jpg",
-    still: false,
-    guide: "风格：M16（动态风格）\n\n原素材里这一条只留了编号，没有风格描述或提示词。用户选中它时要先让用户描述想要的画面，不要凭空编造一种风格。",
-  },
-  {
-    id: "ca-m17",
-    code: "M17",
-    name: "待补充",
-    nameEn: "M17",
-    category: "动态风格",
-    categoryEn: "Motion",
-    demo: "",
-    poster: "/templates/code-animation/m17.jpg",
-    still: false,
-    guide: "风格：M17（动态风格）\n\n原素材里这一条只留了编号，没有风格描述或提示词。用户选中它时要先让用户描述想要的画面，不要凭空编造一种风格。",
   },
   {
     id: "ca-m18",
@@ -588,6 +579,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m18.jpg",
     still: false,
+    generated: true,
     guide: "风格：数学/科学讲解（M18 · 动态风格）\n\n提示词：\n用 Manim 做一个讲 [概念] 的视频，要通俗易懂，有例子，能引人思考。 配音用 edge-tts，中文。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -600,6 +592,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m19.jpg",
     still: false,
+    generated: true,
     guide: "风格：零基础科普（M19 · 动态风格）\n\n提示词：\n做一个讲 [主题] 的视频，要深入浅出，让一个完全没有相关基础的人也能看懂。 先用一个生活里的例子开头，再讲专业的说法。 要有声音，中文讲。 需要什么工具可以自己装，可以上网查资料。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -612,6 +605,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m20.jpg",
     still: false,
+    generated: true,
     guide: "风格：时间线/历史（M20 · 动态风格）\n\n提示词：\n做一段时间线动画，讲 [从什么时候到什么时候] 的几个关键节点：[节点1、节点2、节点3]。 时间轴从左往右推进，每到一个节点，画面放大讲这一件事，再缩回来继续走。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -624,6 +618,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m21.jpg",
     still: false,
+    generated: true,
     guide: "风格：原理拆解（M21 · 动态风格）\n\n提示词：\n做一段动态图形，讲清楚 [东西] 是怎么工作的。 把过程拆成 [3 到 5] 步，每一步一个画面，前一步的结果变成下一步的开头，最后合起来看全貌。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -636,6 +631,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m22.jpg",
     still: false,
+    generated: true,
     guide: "风格：配方式步骤（M22 · 动态风格）\n\n提示词：\n用讲解视频的风格，从 [起点] 一步步做到 [成品]。 每加入一样东西，画面上同时标出它叫什么、加了多少。 [N] 秒。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -648,6 +644,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m23.jpg",
     still: false,
+    generated: true,
     guide: "风格：五幕讲解（M23 · 动态风格）\n\n提示词：\n你是一个资深动态设计师。 用一个 HTML 页面做一段 [30] 秒的讲解动画，分 5 幕：1）观众遇到的问题；2）[东西] 是什么；3）怎么用，3 步；4）一个真实的例子；5）结尾卡片写 [频道名]。 字要大要粗，转场要顺，用我们的配色。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -660,6 +657,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m24.jpg",
     still: false,
+    generated: true,
     guide: "风格：四段式发布片（M24 · 动态风格）\n\n提示词：\n你是一个资深动态设计师。 做一段 [30] 秒的视频，4 到 5 个场景：为什么现在这件事重要、大家现在的麻烦、[工具] 怎么解决、用了以后的好处。 文字逐词出现，用弹簧物理做动作，元素踩着节拍进场，不要突然冒出来。 每出现一个元素配一个很轻的音效，其他时候安静。 最后用 logo 动画加一句话收尾。 做完自己渲染出来逐帧检查，有重叠、被裁掉、太赶的地方改好再给我。",
   },
   {
@@ -672,19 +670,8 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m25.jpg",
     still: false,
+    generated: true,
     guide: "风格：歌词卡点（M25 · 动态风格）\n\n提示词：\n根据附上的歌做一个歌词动态视频，歌词和动画要和人声、节拍完全对上。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
-  },
-  {
-    id: "ca-m26",
-    code: "M26",
-    name: "待补充",
-    nameEn: "M26",
-    category: "动态风格",
-    categoryEn: "Motion",
-    demo: "",
-    poster: "/templates/code-animation/m26.jpg",
-    still: false,
-    guide: "风格：M26（动态风格）\n\n原素材里这一条只留了编号，没有风格描述或提示词。用户选中它时要先让用户描述想要的画面，不要凭空编造一种风格。",
   },
   {
     id: "ca-m27",
@@ -696,6 +683,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m27.jpg",
     still: false,
+    generated: true,
     guide: "风格：无对白短片，声音讲一半（M27 · 动态风格）\n\n提示词：\n做一个 [45] 秒的无对白短片，声音要讲出一半的故事。 故事你来编，主题是 [主题]。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -708,6 +696,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m28.jpg",
     still: false,
+    generated: true,
     guide: "风格：对称暖色的电影感空镜（M28 · 动态风格）\n\n提示词：\n火车窗外四季流过，车厢很温暖，桌上放着一杯咖啡。 画面左右对称，粉嫩暖色，像精致的舞台布景，镜头很稳。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -720,6 +709,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m29.jpg",
     still: false,
+    generated: true,
     guide: "风格：日落天空的 3D 空镜加一句话（M29 · 动态风格）\n\n提示词：\n用网页 3D 做一个日落的海面，紫色积云、海面反光，镜头像动画电影那样慢慢飞过去。 画面上写一句：[一句话]。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -732,6 +722,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m30.jpg",
     still: false,
+    generated: true,
     guide: "风格：东方意境（M30 · 动态风格）\n\n提示词：\n根据你对我的了解，选一个我可能喜欢的东方古典意境（比如月夜、江水、楼阁），做一个 [30] 秒的视频，再做一个可以交互的网页版。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -744,6 +735,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m31.jpg",
     still: false,
+    generated: true,
     guide: "风格：粘土定格 MV（M31 · 动态风格）\n\n提示词：\n做一个 [60] 秒的粘土定格动画风格的音乐视频，粘土小人有手指印和手作质感，动作一顿一顿的。 顺便写一首适合这个画面的原创歌。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -756,6 +748,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m32.jpg",
     still: false,
+    generated: true,
     guide: "风格：竖屏快节奏 POV（M32 · 动态风格）\n\n提示词：\n竖屏 9:16，快节奏碎剪，第一人称视角，讲 [主题]，动作和音效都要做得很好，加一点你自己的性格。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -768,6 +761,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m33.jpg",
     still: false,
+    generated: true,
     guide: "风格：从一个点拉远到宇宙（M33 · 动态风格）\n\n提示词：\n从黑屏上的一个点开始，展开成 [画面]，镜头在好几个尺度上推拉，一直拉远到整个画面像太空里的一个点，再推进到 [另一个画面]，最后落到 [一句话]。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -780,19 +774,8 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m34.jpg",
     still: false,
+    generated: true,
     guide: "风格：新闻快讯盘点（M34 · 动态风格）\n\n提示词：\n做一个约 60 秒、好看好懂的动态图形，像新闻快讯那样介绍 [时间段] 里 [领域] 的新东西，从普通用户的角度说清楚每一条有意思在哪。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
-  },
-  {
-    id: "ca-m35",
-    code: "M35",
-    name: "待补充",
-    nameEn: "M35",
-    category: "动态风格",
-    categoryEn: "Motion",
-    demo: "",
-    poster: "/templates/code-animation/m35.jpg",
-    still: false,
-    guide: "风格：M35（动态风格）\n\n原素材里这一条只留了编号，没有风格描述或提示词。用户选中它时要先让用户描述想要的画面，不要凭空编造一种风格。",
   },
   {
     id: "ca-m36",
@@ -804,6 +787,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m36.jpg",
     still: false,
+    generated: true,
     guide: "风格：破框（M36 · 动态风格）\n\n提示词：\n做一段动态设计：一张海报里的 [东西] 冲出海报自己的边框。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -816,6 +800,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m37.jpg",
     still: false,
+    generated: true,
     guide: "风格：Logo 慢慢拼出来（M37 · 动态风格）\n\n提示词：\n做一段慢慢揭示的转场：碎片一点点聚拢，最后拼出你的 logo。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -828,31 +813,8 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/m38.jpg",
     still: false,
+    generated: true,
     guide: "风格：一个形状变到底（M38 · 动态风格）\n\n提示词：\n一个形状从头到尾不切，依次变成 [例子1、例子2、例子3……]，变的是大小、圆角和颜色。 每次变化都由鼠标真的点击或拖动触发。 到处用弹簧，最多一点点回弹。 镜头跟着放大，让每个状态填满画面。 最后一帧和第一帧一样。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
-  },
-  {
-    id: "ca-m39",
-    code: "M39",
-    name: "待补充",
-    nameEn: "M39",
-    category: "动态风格",
-    categoryEn: "Motion",
-    demo: "",
-    poster: "/templates/code-animation/m39.jpg",
-    still: false,
-    guide: "风格：M39（动态风格）\n\n原素材里这一条只留了编号，没有风格描述或提示词。用户选中它时要先让用户描述想要的画面，不要凭空编造一种风格。",
-  },
-  {
-    id: "ca-m40",
-    code: "M40",
-    name: "待补充",
-    nameEn: "M40",
-    category: "动态风格",
-    categoryEn: "Motion",
-    demo: "",
-    poster: "/templates/code-animation/m40.jpg",
-    still: false,
-    guide: "风格：M40（动态风格）\n\n原素材里这一条只留了编号，没有风格描述或提示词。用户选中它时要先让用户描述想要的画面，不要凭空编造一种风格。",
   },
   {
     id: "ca-k1",
@@ -864,6 +826,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k1.jpg",
     still: true,
+    generated: false,
     guide: "风格：扁平矢量（K1 · 卡通画风）\n\n提示词：\n扁平矢量插画，平涂，统一线宽，无阴影 / flat vector, consistent line weight, no shading\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -876,6 +839,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k2.jpg",
     still: true,
+    generated: false,
     guide: "风格：Q 版（K2 · 卡通画风）\n\n提示词：\nQ 版，大头小身，短四肢，大眼睛，柔和配色 / chibi, big head small body, pastel\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -888,6 +852,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k3.jpg",
     still: true,
+    generated: false,
     guide: "风格：卡哇伊（K3 · 卡通画风）\n\n提示词：\n圆润造型，豆豆眼，小嘴，粉彩 / kawaii, rounded, dot eyes, pastel\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -900,6 +865,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k4.jpg",
     still: false,
+    generated: true,
     guide: "风格：极简线条小人（K4 · 卡通画风）\n\n提示词：\n极简线条，单色，留白 / minimalist line, monochrome\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -912,6 +878,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k5.jpg",
     still: false,
+    generated: true,
     guide: "风格：孟菲斯扁平人（K5 · 卡通画风）\n\n提示词：\ncorporate memphis, flat vector people\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -924,6 +891,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k6.jpg",
     still: false,
+    generated: true,
     guide: "风格：清线漫画（K6 · 卡通画风）\n\n提示词：\n清线风格，均匀线条，平涂 / ligne claire\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -936,6 +904,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k7.jpg",
     still: false,
+    generated: true,
     guide: "风格：日式动画（K7 · 卡通画风）\n\n提示词：\n日式动画赛璐璐，大眼睛，干净线条 / anime cel\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -948,6 +917,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k8.jpg",
     still: false,
+    generated: true,
     guide: "风格：绘本（K8 · 卡通画风）\n\n提示词：\n儿童绘本插画，柔和造型，纸张纹理，暖色 / children's book\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -960,6 +930,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k9.jpg",
     still: false,
+    generated: true,
     guide: "风格：涂鸦（K9 · 卡通画风）\n\n提示词：\n线条松、歪，能看见草稿线\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -972,6 +943,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k10.jpg",
     still: false,
+    generated: true,
     guide: "风格：粉笔黑板（K10 · 卡通画风）\n\n提示词：\n黑底彩色粉笔，手绘的温度\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -984,6 +956,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k11.jpg",
     still: false,
+    generated: true,
     guide: "风格：手账笔记（K11 · 卡通画风）\n\n提示词：\n像学生笔记，有勾画、有便利贴\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -996,6 +969,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k12.jpg",
     still: false,
+    generated: true,
     guide: "风格：报纸四格（K12 · 卡通画风）\n\n提示词：\n黑白线条，几格讲一个小笑话\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1008,6 +982,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k13.jpg",
     still: false,
+    generated: true,
     guide: "风格：美漫网点（K13 · 卡通画风）\n\n提示词：\n粗线条，网点，速度线，对比强\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1020,6 +995,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k14.jpg",
     still: false,
+    generated: true,
     guide: "风格：波普（K14 · 卡通画风）\n\n提示词：\n粗线，圆点，对话框，红黄蓝\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1032,6 +1008,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k15.jpg",
     still: false,
+    generated: true,
     guide: "风格：橡皮管 1930（K15 · 卡通画风）\n\n提示词：\n手脚像橡皮管，饼形眼睛，黑白或旧色\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1044,6 +1021,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k16.jpg",
     still: false,
+    generated: true,
     guide: "风格：中世纪现代（K16 · 卡通画风）\n\n提示词：\n几何、平、颜色少而大胆，像 50 年代广告\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1056,6 +1034,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k17.jpg",
     still: false,
+    generated: true,
     guide: "风格：几何（K17 · 卡通画风）\n\n提示词：\n用圆、方、三角拼出来\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1068,6 +1047,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k18.jpg",
     still: false,
+    generated: true,
     guide: "风格：水彩（K18 · 卡通画风）\n\n提示词：\n边缘晕开，纸纹，颜色淡\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1080,6 +1060,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k19.jpg",
     still: false,
+    generated: true,
     guide: "风格：厚涂（K19 · 卡通画风）\n\n提示词：\n能看见笔触，层次丰富\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1092,6 +1073,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k20.jpg",
     still: false,
+    generated: true,
     guide: "风格：剪纸（K20 · 卡通画风）\n\n提示词：\n一层层纸片，边缘看得见，有一点阴影\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1104,6 +1086,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k21.jpg",
     still: false,
+    generated: true,
     guide: "风格：手工纸艺（K21 · 卡通画风）\n\n提示词：\n手作、纸工艺的质感\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1116,6 +1099,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k22.jpg",
     still: false,
+    generated: true,
     guide: "风格：折纸（K22 · 卡通画风）\n\n提示词：\n折出来的纸\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1128,6 +1112,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k23.jpg",
     still: false,
+    generated: true,
     guide: "风格：拼贴（K23 · 卡通画风）\n\n提示词：\n撕边、照片、混材料\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1140,6 +1125,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k24.jpg",
     still: false,
+    generated: true,
     guide: "风格：粘土（K24 · 卡通画风）\n\n提示词：\n手指印，手作纹理，圆润\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1152,6 +1138,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k25.jpg",
     still: false,
+    generated: true,
     guide: "风格：皮克斯式 3D（K25 · 卡通画风）\n\n提示词：\n比例夸张、大眼睛、圆润、质感好\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1164,6 +1151,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k26.jpg",
     still: false,
+    generated: true,
     guide: "风格：卡通渲染 3D（K26 · 卡通画风）\n\n提示词：\n3D 模型但阴影是硬边，有黑描边\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1176,6 +1164,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k27.jpg",
     still: false,
+    generated: true,
     guide: "风格：低多边形（K27 · 卡通画风）\n\n提示词：\n很少的面拼出来的 3D\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1188,6 +1177,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k28.jpg",
     still: false,
+    generated: true,
     guide: "风格：像素（K28 · 卡通画风）\n\n提示词：\n方块像素，颜色少\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1200,6 +1190,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k29.jpg",
     still: false,
+    generated: true,
     guide: "风格：蓝图（K29 · 卡通画风）\n\n提示词：\n技术图纸，等距视角\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1212,6 +1203,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k30.jpg",
     still: false,
+    generated: true,
     guide: "风格：说明书线稿（K30 · 卡通画风）\n\n提示词：\n像宜家说明书，极简线条\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1224,6 +1216,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k31.jpg",
     still: false,
+    generated: true,
     guide: "风格：平铺整理（K31 · 卡通画风）\n\n提示词：\n东西整整齐齐摆在桌面上，俯拍\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1236,6 +1229,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k32.jpg",
     still: false,
+    generated: true,
     guide: "风格：积木（K32 · 卡通画风）\n\n提示词：\n乐高一样的积木\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1248,6 +1242,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k33.jpg",
     still: false,
+    generated: true,
     guide: "风格：地铁图（K33 · 卡通画风）\n\n提示词：\n像地铁线路图\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1260,6 +1255,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k34.jpg",
     still: false,
+    generated: true,
     guide: "风格：赛博霓虹（K34 · 卡通画风）\n\n提示词：\n深色底，霓虹光\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1272,6 +1268,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k35.jpg",
     still: false,
+    generated: true,
     guide: "风格：旧学院风（K35 · 卡通画风）\n\n提示词：\n泛黄、棕褐、老书的感觉\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1284,6 +1281,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k36.jpg",
     still: false,
+    generated: true,
     guide: "风格：丝网印刷（K36 · 卡通画风）\n\n提示词：\n套色、平涂、有点错位\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1296,6 +1294,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k37.jpg",
     still: false,
+    generated: true,
     guide: "风格：哥特（K37 · 卡通画风）\n\n提示词：\n细长、尖、黑紫暗红\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1308,6 +1307,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/k38.jpg",
     still: false,
+    generated: true,
     guide: "风格：情景喜剧（K38 · 卡通画风）\n\n提示词：\n像《辛普森一家》，平涂，动作少\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1320,6 +1320,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z1.jpg",
     still: false,
+    generated: true,
     guide: "风格：水墨（Z1 · 中国风）\n\n提示词：\n水墨晕染，留白，竹林 / ink wash, negative space\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1332,6 +1333,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z2.jpg",
     still: false,
+    generated: true,
     guide: "风格：工笔（Z2 · 中国风）\n\n提示词：\n细腻笔触，色彩鲜艳，牡丹 / gongbi, fine brushwork\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1344,6 +1346,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z3.jpg",
     still: false,
+    generated: true,
     guide: "风格：写意（Z3 · 中国风）\n\n提示词：\n大笔挥洒，意到笔不到 / xieyi, expressive brush\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1356,6 +1359,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z4.jpg",
     still: false,
+    generated: true,
     guide: "风格：山水（Z4 · 中国风）\n\n提示词：\n壮丽山景，流水，古亭 / shan shui, mountains, pavilions\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1368,6 +1372,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z5.jpg",
     still: true,
+    generated: false,
     guide: "风格：剪纸（Z5 · 中国风）\n\n提示词：\n做一段\"中国剪纸\"风格的动画：红纸对折剪出来的圆形镂空窗花，一层层叠在窗户纸上，有投影。\n\n颜色：\n窗户纸 #F1E8D4；主红 #C8102E；深红 #8F0B22。 除这三色外不要别的颜色，不要金色、渐变、高光。\n\n怎么画：\n这一层只画一次，放进单独一层 缓存。\n造两张红纸（各用一个单独一层，大小 1920×1080，坐标原点移到画面中心）\nlayerBase：深红 #8F0B22 的圆盘，半径 452；用 挖孔 挖外缘 48 个半径 10 的小孔（放在半径 428 处），再挖掉半径 400 以内的整个圆（只留一圈深红边）。\nlayerTop：亮红 #C8102E 的圆盘，半径 404；用 挖孔 挖下面这些，每一圈都是\"画 1/N，旋转复制 N 份\"\n外缘 48 个小孔：半径 9，放在 r=378；\n24 个小水滴：从 r=342 到 r=274，宽 22；\n12 片大花瓣：从 r=244 到 r=74，宽 50；\n12 个小菱形：每个先转 π/12，中心在 r=226，宽 32 高 48；\n12 个小圆点：每个先转 π/12，半径 12，放在 r=170；\n12 片内圈花瓣：从 r=78 到 r=148，宽 26；\n再挖掉半径 66 的中心圆；然后用亮红在中心补一个半径 46 的小盘；最后用 挖孔 在小盘上写中心的字（粗体 66px，居中）。\n花瓣之间必须留红色的\"桥\"，不要把红纸挖断。\n四个角花：用另一个单独一层 画一块\"四分之一圆\"（半径 250，圆心在画面角上）的亮红，挖：9 个沿弧边的小孔（半径 7）、4 片水滴、一个半径 58 的圆窗。 复制到四个角（翻转）。\n合成：先画窗户纸；再把 layerBase、layerTop、四个角花依次画上去，每一层画之前设置投影：投影颜色='rgba(70,12,12,0.38)'，投影模糊=16，投影横向偏移=5，投影纵向偏移=9。\n水滴形的路径可以直接用这个函数（原点在窗花中心，y 轴向上为负）\n\n动起来：\n0–0.8 秒：深红底盘从半径 0 展开到满（ease-out）；0.25 秒后亮红主盘同样展开。\n1.2–4 秒：镂空由外向内一圈圈\"打开\"（每个孔的半径从 0 长到目标值，每圈晚 0.18 秒，每个孔 0.35 秒）；因为孔是挖出来的，所以实现时把\"孔的半径 × 进度\"传给上面的挖孔步骤，每帧重新生成 layerTop（可以缓存已经完成的圈）。\n4–4.4 秒：中心的字\"盖章\"：缩放 1.15 → 1.0。\n之后整张窗花以 ±0.6° 缓慢摆动（周期 6 秒），影子偏移跟着变 ±2px。\n最后一秒保持静止，然后循环。\n\n避免：\n金色、渐变、塑料高光、3D、粒子、发光、过重的阴影、把字写在纸上（必须是镂出来的）。",
   },
   {
@@ -1380,6 +1385,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z6.jpg",
     still: false,
+    generated: true,
     guide: "风格：年画（Z6 · 中国风）\n\n提示词：\n红灯笼，对联，喜庆 / New Year woodblock print\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1392,6 +1398,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z7.jpg",
     still: false,
+    generated: true,
     guide: "风格：皮影（Z7 · 中国风）\n\n提示词：\n镂空剪影，光后面演，关节能动 / shadow puppetry（动起来见 M12）\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1404,6 +1411,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z8.jpg",
     still: false,
+    generated: true,
     guide: "风格：敦煌（Z8 · 中国风）\n\n提示词：\n壁画色，飞天，矿物颜料 / Dunhuang mural\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1416,6 +1424,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z9.jpg",
     still: false,
+    generated: true,
     guide: "风格：青花（Z9 · 中国风）\n\n提示词：\n白底蓝花，瓷器纹样 / blue and white porcelain\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1428,6 +1437,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z10.jpg",
     still: false,
+    generated: true,
     guide: "风格：木版画（Z10 · 中国风）\n\n提示词：\n木刻线条，套色 / woodblock print\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1440,6 +1450,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z11.jpg",
     still: false,
+    generated: true,
     guide: "风格：京剧脸谱（Z11 · 中国风）\n\n提示词：\n脸谱纹样，浓烈色块 / Peking opera mask\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1452,6 +1463,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z12.jpg",
     still: false,
+    generated: true,
     guide: "风格：书法（Z12 · 中国风）\n\n提示词：\n毛笔字一笔笔写出来 / calligraphy stroke animation\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1464,6 +1476,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z13.jpg",
     still: false,
+    generated: true,
     guide: "风格：水墨漫画（Z13 · 中国风）\n\n提示词：\n毛笔线条加水墨晕染的漫画 / ink-brush comic\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1476,6 +1489,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z14.jpg",
     still: false,
+    generated: true,
     guide: "风格：彩铅手绘（Z14 · 中国风）\n\n提示词：\n彩铅排线，纸张纹理 / colored pencil on textured paper\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1488,6 +1502,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/z15.jpg",
     still: false,
+    generated: true,
     guide: "风格：温暖水彩科普卡（Z15 · 中国风）\n\n提示词：\n柔和水彩晕染，友好易懂的造型，适合做科普卡片 / warm friendly watercolor educational card\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1500,6 +1515,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/h1.jpg",
     still: true,
+    generated: false,
     guide: "风格：Biennale Yellow（H1 · 现成版式）\n\n提示词：\n做一张\"艺术双年展杂志封面\"风格的动画标题卡。\n\n颜色和线：\n底色 paper = #F2E9D2；加纸纹：5000 个 1–3px 的小方点，一半 #8C7A55、一半 #FFFAF0，透明度 0.045–0.095。 纸纹只画一次，缓存到单独一层。\n唯一的强调色 sun = #F6C23E。\n字和所有线都用 ink = #1D2A68，线宽 1.6–1.8px。\n\n字体：\nfont-family: Georgia, \"Times New Roman\", \"Noto Serif SC\", \"Songti SC\", serif。 全片只用衬线体。 大标题约 214px，字距 = '-4px'；页眉 26px，大写，字距 = '6px'；页脚中文 34px。 \n\n版面：\n外框：strokeRect(64, 64, 1792, 952)；再画两道横线：y=148 和 y=932，从 x=64 到 x=1856。\n太阳，圆心 (1380, 470)\n光晕：径向渐变，半径 20→560，从 rgba(246,194,62,1) 到 rgba(246,194,62,0.92)（38% 处），再到 rgba(246,214,120,0.35)（70% 处），到 rgba(246,214,120,0)（100%）；\n实心圆：半径 250，颜色 sun；\n三道同心细圈：半径 250、330、410（ink，透明度 0.9、0.45、0.45）；\n刻度环：半径 410 到 421（每 5 条一条长的，到 432），一共 120 条，ink，透明度 0.85。\n大标题：左边 x=100，第一行基线 y=560，第二行（斜体）基线 y=770。 注意标题的右端不要碰到刻度环（最左端约 x=948）。\n页眉两行小字基线 y=118（左 x=104，右 x=1650）；页脚中文基线 y=980（左 x=104），编号右对齐到 x=1816。\n\n动起来：\n0–0.8 秒：外框和两道横线从四角向中间\"画出来\"（用 虚线 或按进度截取）；\n0.4–1.8 秒：太阳从下方 300px 处升到位（ease-out），光晕透明度 0→1；\n1.0–2.4 秒：标题两行依次从下方 24px 处淡入，字距从 +20px 收到 −4px；\n2.0–2.8 秒：页眉页脚淡入；刻度环以每秒 1° 顺时针慢转；\n结尾 0.5 秒：整体淡出到纸色，然后循环。\n\n避免：\n渐变色块、阴影、圆角卡片、第二种强调色、无衬线大标题、发光、粒子。",
   },
   {
@@ -1512,6 +1528,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/h2.jpg",
     still: false,
+    generated: true,
     guide: "风格：BlockFrame（H2 · 现成版式）\n\n提示词：\n新粗野主义，粗黑边框，硬投影，糖果色点缀\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1524,6 +1541,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/h3.jpg",
     still: false,
+    generated: true,
     guide: "风格：Blue Professional（H3 · 现成版式）\n\n提示词：\n羊皮纸底，钴蓝主色，Space Grotesk 标题\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1536,6 +1554,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/h4.jpg",
     still: false,
+    generated: true,
     guide: "风格：Bold Poster（H4 · 现成版式）\n\n提示词：\n倾斜的花体大字，奶油底红色强调，杂志封面感\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1548,6 +1567,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/h5.jpg",
     still: false,
+    generated: true,
     guide: "风格：Broadside（H5 · 现成版式）\n\n提示词：\n工业报纸海报，奶油色配墨色，火橙色点缀\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1560,6 +1580,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/h6.jpg",
     still: false,
+    generated: true,
     guide: "风格：Capsule（H6 · 现成版式）\n\n提示词：\n胶囊形状，奶油纸，糖果配色，Bodoni 衬线标题\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1572,6 +1593,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/h7.jpg",
     still: false,
+    generated: true,
     guide: "风格：Cartesian（H7 · 现成版式）\n\n提示词：\n极简留白，暖羊皮纸，墨色标题，灰褐点缀，细线\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1584,6 +1606,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/h8.jpg",
     still: false,
+    generated: true,
     guide: "风格：Cobalt Grid（H8 · 现成版式）\n\n提示词：\n羊皮纸加钴蓝网格，Newsreader 标题\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1596,6 +1619,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/h9.jpg",
     still: false,
+    generated: true,
     guide: "风格：Coral（H9 · 现成版式）\n\n提示词：\n全大写 Bebas Neue 标题，奶油底珊瑚色\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1608,6 +1632,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/h10.jpg",
     still: false,
+    generated: true,
     guide: "风格：Creative Mode（H10 · 现成版式）\n\n提示词：\n奶油底，饱和糖果色，Archivo Black 大字\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1620,6 +1645,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/h11.jpg",
     still: false,
+    generated: true,
     guide: "风格：Daisy Days（H11 · 现成版式）\n\n提示词：\n阳光花园粉彩，3px 炭灰描边，硬投影，圆体字\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1632,6 +1658,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/h12.jpg",
     still: false,
+    generated: true,
     guide: "风格：Editorial Forest（H12 · 现成版式）\n\n提示词：\n绿、粉、奶油的杂志配色，衬线标题，细线\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1644,6 +1671,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/r1.jpg",
     still: true,
+    generated: false,
     guide: "风格：霓虹雨夜 · 电影感（R1 · 参考学习）\n\n提示词：\n一点透视的雨夜窄街，两边挂满竖招牌，青色的雾越远越浓，街尽头一团暖光；湿地面上的倒影占了半个画面。\n\n定死的画法：\n不描边；冷青做底，红粉招牌和尽头的橙光做主光；越远越被雾吃掉；倒影竖着拉长、被雨打出波纹；最近的几家拉着卷帘门，把前景压暗。 招牌的字从洗过的词表里发，不重复。",
   },
   {
@@ -1656,6 +1684,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/r2.jpg",
     still: true,
+    generated: false,
     guide: "风格：80–90 年代复古日漫（R2 · 参考学习）\n\n提示词：\n赛璐珞画的人和车在夜里的高架上飞驰，仰着看的高楼，尾灯拖出两条光带，整片像老录像带放出来的。\n\n定死的画法：\n人和车是平涂 + 一块硬边阴影 + 一条硬边高光 + 有颜色的描边；背景是喷枪画、横向拉丝表示速度（招牌在拉丝之后画，字才看得清）；画面微微歪；最后过一遍录像带的色渗和扫描线。",
   },
   {
@@ -1668,6 +1697,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/r3.jpg",
     still: true,
+    generated: false,
     guide: "风格：美式漫画 · 潮流涂鸦（R3 · 参考学习）\n\n提示词：\n黄底，品红和青的闪电劈开画面，网点、喷漆、往外炸的速度线；粗黑描边的人一拳打出画面，旁边一个大拟声字。\n\n定死的画法：\n粗黑描边；只用黄、品红、青、蓝四个颜色平涂；阴影是整块的深紫，压一层网点；不发光、不虚化；人往动作的方向整个倾过去。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1680,6 +1710,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/r4.jpg",
     still: true,
+    generated: false,
     guide: "风格：末日工业 · 暗黑科幻（R4 · 参考学习）\n\n提示词：\n几乎只有绿；巨大的机械结构一层层叠进雾里，远处一个大圆环，顶上漏下光柱；走道上一个穿红衣、背着包的小人背对镜头。\n\n定死的画法：\n一个颜色分七层远近，越远越淡；唯一的暖色是小人和几盏小灯；最前面垂下来的铁链几乎全黑，再推远一层。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1692,6 +1723,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/r5.jpg",
     still: true,
+    generated: false,
     guide: "风格：像素赛博 · 复古游戏（R5 · 参考学习）\n\n提示词：\n俯看一条满是招牌的街，天桥横过去，街尽头一块\"不夜城\"大屏，打伞的人、小车、飞车，下着像素雨。\n\n定死的画法：\n先画在 480×270 的小画布上，整张压进 28 色调色板（拜耳抖动处理渐变和光晕），再放大 4 倍、不做平滑。 动起来时不用一格一格跳的像素动画，每帧从连续的骨骼重画，动作一定要流畅。",
   },
   {
@@ -1704,6 +1736,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/r6.jpg",
     still: true,
+    generated: false,
     guide: "风格：东方赛博 · 国风幻想（R6 · 参考学习）\n\n提示词：\n纸色的天，一轮大红日头，一行鹤飞过；水边一座五层飞檐楼阁，身上挂着\"不夜城\"\"酒家\"霓虹竖招牌和一块屏，塔尖套着青色的全息光环；后面是淡墨的未来塔楼和山，电缆上挂着一串串小红灯笼；水上一叶小船、一个戴斗笠的人，倒影像水墨一样化开。\n\n定死的画法：\n纸色底，墨分浓淡做远近；颜色只有墨、纸、朱红，霓虹只点一点青；墨块边上有洇开的淡墨，檐上有干笔擦痕；水边一带雾把楼脚化开；竖排题字和一方印章收住画面。",
   },
   {
@@ -1716,6 +1749,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/r7.jpg",
     still: true,
+    generated: false,
     guide: "风格：扁平插画 · 黄昏屋顶（R7 · 参考学习）\n\n提示词：\n黄昏的大渐变天，三层平涂的城市剪影，屋顶上一块\"夜城\"大霓虹字，一个人和一只猫坐在楼边，后面一列轻轨开过。\n\n定死的画法：\n不描边；只有天是渐变，其他全是平涂；越远的楼越接近天的颜色；发光只给霓虹字、灯串和小灯。\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，不要引入与它无关的风格。",
   },
   {
@@ -1728,6 +1762,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l1.jpg",
     still: true,
+    generated: false,
     guide: "风格：字幕新闻（L1 · Lemo-Opuscar）\n\n长什么样：美国一年死掉 130 万箱蜜蜂，总数却涨了 6%：静音也能看懂的新闻。\n\n适合：不开声音也能看懂，适合竖屏版\n\n关键特征：\n- Not Data Storytelling (charts are short inserts between footage, never the whole film, never a dashboard). Not a TV news package (no anchor, no lower-third ticker, no studio, no scrolling crawl).…\n- Sound-off first. Every beat must be understood from the picture and the captions alone; the voice adds pace, not information.\n- The caption is the shot. One Chinese line, set huge, slammed in two or three chunks, one keyword in a yellow block…\n- Evidence on screen. Each number arrives with its source: a source tag slides in…\n\n质感与用色：\n- Under the caption: a bottom gradient (0 → 84 % from y 560) plus a soft dark radial from the bottom-left corner; a top gradient (55 % → 0 over 200 px) under the bug and the credit. Data cards use a lighter gradient that starts at y 820.…\n\n用色：\n- Cuts on a 120 BPM half-beat grid (every cut at a multiple of 0.5 s). Footage shots 1.5–3 s; data cards and documents 3–4.5 s…\n- Captions cross cuts. A caption can run over two shots (picture changes, words don't)…\n\n节奏：\n- Ledger card (the data-card ground): #151512 sheet, faint ruled lines every 54 px (4.5 % white), a thin red double margin at x 78/86 — the \"a…\n- Colour meaning: honey #FFC21A = the point / gains / the highlight; red #FF4A3D = losses, the spike, the bad number…\n\n镜头：\n- One grade for every piece of footage: contrast(1.07) saturate(0.92) brightness(0.98) + a 6 % warm soft-light layer; documents 4 %.…\n\n避免：\n- Ask the user first whether they have their own footage, photos, documents or data (and the rights to them). Their material comes first…\n- Where to look (judge every file on its own page, not the search result)\n- Wikimedia Commons (video and photos): read the licence on each file page. Fine: CC0, public domain, CC BY (credit author, title, licence on…\n- U.S. federal agencies (USDA, USGS, NASA, NOAA, NARA): works of federal employees are public domain…",
   },
   {
@@ -1740,6 +1775,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l2.jpg",
     still: true,
+    generated: false,
     guide: "风格：1920 年代新闻片（L2 · Lemo-Opuscar）\n\n长什么样：1926 年报纸说查尔斯顿会跳坏膝盖，福特工人野餐会上的孩子照跳不误。\n\n适合：讲\"以前\"，怀旧\n\n关键特征：\n- An edit style: the look is in how real material is arranged, cut, captioned and carried by sound, not in a drawing technique.\n- Archive in a projected gate: 1.37:1 picture, full height, rounded corners, black outside…\n- News objects do the explaining: newspapers, magazine pages, books, telegrams, maps, records.…\n- A voice talks over everything: short exclamations, half joking, never a lecture.\n\n质感与用色：\n- Gate: 1480 × 1080 inside 1920 × 1080 (1.37:1), corner radius 26 px, pure black outside. Nothing is ever drawn outside the gate.\n- Two layers: the picture layer (footage, print, maps, cards) gets the film look…\n\n用色：\n- Monochrome warm silver for the picture; values do the work (check every shot as a thumbnail).\n- Type is cream on near-black (#f3eee4 / #d6cfc0 on rgba(12,11,10,.8)), framed by a 2 px cream rule…\n\n节奏：\n- The band is the clock: pick a hot-dance tempo (190–220 BPM); every cut, landing, slam and label entrance sits on a beat, most cuts on bar li…\n- One story = one place + one kind of material + one line of voice. Stories get shorter towards the end (2–3 bars → 1 bar → beats), then one h…\n\n镜头：\n- Archive footage is not reframed with fake camera moves bigger than ~6 % (it already has its own camera); stills always get a move with a purpose.\n\n避免：\n- Ask the user first whether they have their own material: film or video, photographs, newspapers, letters, documents, data, a period recordin…\n- If not, search sources whose licence is clear, with demo/tools/footage.py (search archive|commons|nasa, files, fetch, used, md…\n- U.S. National Archives (films, often via Internet Archive \"FedFlix\" copies): federal works are public domain…\n- Internet Archive: check every item's licence field and provenance; skip anything that is a YouTube mirror, a colourised or \"restored/AI enha…",
   },
   {
@@ -1752,6 +1788,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l3.jpg",
     still: true,
+    generated: false,
     guide: "风格：倒计时分屏（L3 · Lemo-Opuscar）\n\n长什么样：阿尔忒弥斯二号发射的最后一分钟，一秒不剪：格子从 1 开到 9，点火合成 1。\n\n适合：对比、倒计时，比如\"三个月\"\n\n关键特征：\n- Not a montage (time jumps), not a security wall (the layout never moves), not a flashback structure (real time cannot go back), not a slide deck (cells that don't follow events, text filling the cells, centred titles with page turns).\n- Real time. One continuous stretch of the event, never cut, never re-ordered, never sped up.…\n- The clock is the lead. It ticks every whole second (sound and a falling digit), it says who is in control, and it changes state at zero.\n- Cells show the same second. Every video cell is synced to the clock, or says plainly that it is not (§8, \"sync badge\").\n\n质感与用色：\n- Three kinds of material at once: video cameras of the same moment (2–8), documents (a fact sheet, a filing, a schedule: shown as paper, neve…\n- Data drawn by us: checklists, bars, a flight or process profile, a second countdown to the next milestone.…\n\n用色：\n- Orange means \"now / synced / done\". Grey means \"pending / not synced\". Nothing else is coloured; colour belongs to the footage.\n\n节奏：\n- 30 fps. Clock: on each whole second the new digits drop 14 px in 0.12 s (ease-out)…\n- Re-layout: 0.34 s easeInOutCubic. Cells that stay interpolate their rectangles; new cells open from their left edge…\n\n镜头：\n- Screen time = event time. One mapping, M = t − T0, for the whole film. Each camera has its own source offset (s = M + c) measured once and b…\n\n避免：\n- Unsyncable footage (an edited \"rover\" reel with no clock or event to align on).…\n- Measuring zero. Never trust metadata. Combine two independent marks: a visible event (ignition flash, a broadcast countdown bug's flip) and…\n- Audio and picture of one file can disagree (a switched feed whose audio lagged its video by ~1 s). Sync each camera on its picture.\n- Slow-motion sources: measure the factor from two events with a known gap (e.g. engine start to booster ignition = 6.36 s) and re-time with s…",
   },
   {
@@ -1764,6 +1801,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l4.jpg",
     still: true,
+    generated: false,
     guide: "风格：延时摄影交响（L4 · Lemo-Opuscar）\n\n长什么样：纽约的一天：延时光河、踩着十六分音符的网格，1899 年和今天并排。\n\n适合：时间过去、城市节奏\n\n关键特征：\n- An edit style. The picture is real footage of a place (time-lapse, hyperlapse, aerials, slow motion, archive film, photographs).…\n- The score is the script. It is written first, with a clear arc: minimal repetition → acceleration → climax → a sudden stop → acceleration ag…\n- Machines fast, people slow. Cars, trains, clouds and light are sped up until they become lines…\n\n质感与用色：\n- Footage only (2D). Sources mixed freely: tripod time-lapse, long single-camera time-lapse (≥ 12 h, sunrise and sunset in the same frame), hy…\n- Everything is unified into one 35 mm release-print look: 1.85:1 matte (21 px bars on 1920×1080), warm highlights, lifted blacks, highlight b…\n\n用色：\n- Grade (tools/render.py → make_luts / grade): per-shot partial grey-world white balance first (only pixels with luminance 0.12–0.88, strength 0–0.6…\n\n节奏：\n- Speed is the main instrument. Shot speeds run from 0.3× to 75×; every speed above 1× uses frame blending (a 360° shutter): each output frame…\n- Speed ramps are smooth (smoothstep between key speeds) and always mean something: a corridor accelerates out of real time (1× → 6×), a time-…\n\n镜头：\n- Cut-point table (the score decides; numbers at 120 BPM and 30 fps: 1 beat = 15 frames, triplet = 5, sixteenth = 3.75)\n- Cuts land on beats. All cut times come from one function, bar(n, beat) in tools/timeline.py; shot lengths are never typed in seconds.…\n\n避免：\n- Watermarks and slates hidden in CC footage: corner logos (scale from the centre until they leave frame, within 1.5×), opening thank-you card…\n- Hidden cuts inside sources. Hyperlapse reels hide 2–3-frame jump cuts and whip transitions; frame blending across a cut makes ghosts.…\n- Too much blending turns noon clouds into grey mush: about 40 % shutter (24 of 60 frames) looks better than 100 %.\n- Grey-world balance kills night: it washes sodium light to white. Strength 0 for night shots.",
   },
   {
@@ -1776,6 +1814,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l5.jpg",
     still: true,
+    generated: false,
     guide: "风格：视觉调查（L5 · Lemo-Opuscar）\n\n长什么样：新闻片、照片、证词和调查报告排上同一条时间轴，五路来源指向一处。\n\n适合：几个来源对到一条时间线上，科普里讲来龙去脉\n\n关键特征：\n- Not Satellite Briefing (no orbital imagery, no zoom from space). Not Archive Light Table (no paper on glass, loupes or hands: documents are flat evidence frames). Not Halftone Dossier (no print texture, stamps or collage).…\n- Sources meet at one moment. The payoff of every section is two or more independent sources (a frame, a photo, a testimony, a report line, a…\n- One clock, read in the picture. Time is carried by large readouts that belong to the layout: the timestamp on each telegram card, a playhead…\n- One finding per layout. Each section says one thing; a heading is part of the layout, never a page header.\n\n质感与用色：\n- Three kinds of source at least: moving image (newsreel, CCTV, phone video, launch camera), documents (testimony, memo, telegram/teletype, re…\n- Documents: a scanned page is shown as a strip or a page, never re-drawn; only the decisive line is highlighted (red, multiply, α ≈ 0.6, wipe…\n\n用色：\n- Sources are greyscale; red is the only colour and it only ever points: circles, the chart playhead, sync lines, highlights, ✓ badges (a drawn tick in a red box, no words), the zone everything converges on, the unresolved column, a strike-th…\n\n节奏：\n- 30 fps. Elements cut in (≤ 0.1 s opacity) with a 3–4-frame white flash, as if pulled from the evidence locker…\n- Only things that are drawn are progressive: circles drawn clockwise in 0.5 s (ease-out cubic), leaders and links 0.4–0.8 s, plans stroke by…\n\n镜头：\n- 1920×1080, 60 px margins; content y 60–900, subtitles below it (y ≈ 950–1030). Layouts use the full height…\n\n避免：\n- Inference passed off as fact. Camera positions, photo times and offsets need ≈ / inferred / unlocated on screen and in FACTS.md.\n- Early reports as facts. The first-night memo and the period newsreel often disagree with the final report…\n- Faking a multi-camera event. With one licensable film, do not borrow clips of unclear origin…\n- Seams in \"continuous\" shots. An exposure jump or splice breaks timing…",
   },
   {
@@ -1788,6 +1827,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l6.jpg",
     still: true,
+    generated: false,
     guide: "风格：构成主义蒙太奇（L6 · Lemo-Opuscar）\n\n长什么样：帝国大厦的小册子写着建造者，工地实拍和老照片给出答案：每天 2,500 人。\n\n适合：有力量的号召\n\n关键特征：\n- Not Data Storytelling or a keynote: no centred headline with bullets, no slide transitions, no header bars; data appears as marked documents, counters and measured bars inside the composition.…\n- Evidence, recut. Every picture is real material (archive film, photographs, documents) about the actual subject.…\n- One printed sheet. All material is converted to the same two-tone print (warm ink → paper)…\n- The beat is the editor. Cuts, slams, wipes and counts sit on a 120 BPM grid (or the score's tempo)…\n\n质感与用色：\n- Four kinds of element only: bands (red or ink, along the axis), windows (rectangles or parallelograms holding film or photographs), cut-outs…\n- The print grade (one function for film, photos and documents): luminance → percentile stretch (film: one pair of percentiles per clip, so it…\n\n用色：\n- Everything photographic is ink-on-paper; nothing else has colour. Red is never laid on red: a red block on a red ground becomes ink.\n- Alternate grounds to make cuts land: paper scene → ink scene → paper. In an acceleration the background itself alternates red / ink per cut.\n\n节奏：\n- Grid: one tempo for picture and score (120 BPM: beat 0.5 s, bar 2 s). Every cut, slam, wipe and count lands on a beat, half-beat or sixteent…\n- Shot length: 0.5–2 s for footage; one idea per shot. A section may accelerate by halving: 0.5 → 0.25 → 0.125 s (never shorter than 3 frames)…\n\n避免：\n- Ask first. Before searching, ask the user for their own material: film, video, photographs, scans of documents (reports, brochures, letters…\n- Where to look, and how to judge the licence (demo/tools/footage.py searches, downloads and records licence, author and source page into SOUR…\n- Internet Archive: read each item's licenseurl and description. Public Domain Mark / CC0 / CC BY are usable; no licence field is not.…\n- Wikimedia Commons: read the file page's licence and its source institution. Public domain, CC0, CC BY (credit in full) are usable…",
   },
   {
@@ -1800,6 +1840,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l7.jpg",
     still: true,
+    generated: false,
     guide: "风格：体育战术板（L7 · Lemo-Opuscar）\n\n长什么样：半场 0–3，费内巴切 12 分钟连进三球：冻住画面、画线、分屏、射门图。\n\n适合：定格、画线讲解，拆一个瞬间\n\n关键特征：\n- Not Visual Investigation (that is restrained, synchronised multi-camera evidence where the timeline is the protagonist; this is a pundit's show with packaging and enthusiasm). Not a highlight reel (no montage of goals to music…\n- Watch it, then take it apart. Every piece of action is seen moving before it is explained. A freeze always follows play…\n- One freeze, one finding. Each freeze says one thing (the ball wasn't cleared; nobody stepped out…\n- Drawn on the real picture. Rings sit under feet, arrows follow the ball's real path, the box line is traced over the real line.…\n\n质感与用色：\n- Full-frame footage most of the time. The packaging lives in the corners\n- Corner bug, top right (x 1452–1880, y 38–110): show name on a yellow block + a mode line in the mode's colour — LIVE (red dot) / ANALYSIS (y…\n\n用色：\n- Order inside one piece of action: live at 1× (original sound) → rewind (0.6 s, reversed with tracking bars and ◀◀) → freeze ① → slow play (0…\n- Lighter variants for secondary pieces of action, so the deep breakdown stays special\n\n节奏：\n- Labels: Noto Sans SC 900, 40 px (30 px for a name), English line Barlow Condensed 600, 21 px, letter-spacing 2 px, in the role colour.\n- Packaging numbers (score, minute, stopwatch, big data): Barlow Condensed 800 Italic.\n\n镜头：\n- Freeze entry: white flash 0.1 s (0.55) + punch 1.035 → 1.0 in 0.35 s (ease-out) + desaturate 42 % + a cool cast + heavier vignette…\n\n避免：\n- Freeze and draw — a freeze segment = one source frame + flash + punch + desaturate + spotlight…\n- Tracked ring — hand keyframes of the feet point in source pixels every ~3–6 frames, linearly interpolated (TRK, at())…\n- Frame-counting stopwatch — starts at the receiving frame and counts source frames ÷ fps; stops and turns yellow on the strike (stopwatch()).\n- Score-bar flip on the goal frame, one entry per goal (GOALS, scoreAt(), bugScore()).",
   },
   {
@@ -1812,6 +1853,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l8.jpg",
     still: true,
+    generated: false,
     guide: "风格：电视新闻包装（L8 · Lemo-Opuscar）\n\n长什么样：一周四条 AI 新闻，一整套电视台包装：串联单、标题条、翻牌价格表、规格卡。\n\n适合：新闻快讯式的开场\n\n关键特征：\n- Not Caption News (that is captions-first social video: huge slammed captions are the lead, no rundown, no strap; here type is small and orderly and the graphics lead). Not Data Storytelling (one chart per beat, never a dashboard…\n- One package system, used consistently. Every graphic is built from the same few parts: a brand plate (parallelogram), a tab in the accent co…\n- The bulletin's order. Sting → rundown (\"today we have four stories\") → item → item → … → back to the rundown, ticked off → sign-off.…\n- One fact per screen. A full-frame graphic states one thing: the price, the break, the two stocks, the place, the two letters, the quote, the…\n\n质感与用色：\n- Content layers sit lower than a subtitled layout would put them (a 60–110 px downward shift) so the bottom strap does not leave an empty band above it. When you remove subtitles and the crawl, re-lay the page…\n\n节奏：\n- Chinese: Noto Sans SC 900 (headlines, strap) / 700 (labels).\n- Latin: Barlow Condensed 800 (numbers, names, the plate), 600 (secondary lines, quotes), 600 italic (the end-card English title).\n\n镜头：\n- When there is no footage, the picture layer is data graphics drawn in code plus, at most, a few illustrative plates (generated or stock), ea…\n\n避免：\n- Where each move lives in the demo's code: DEMO.md (build notes).\n- Sting becomes the bug — the brand plate slams in, then flies to the corner and stays there for the whole bulletin…\n- Strap tab = category — the strap's tab changes category (模型 MODELS, 市场 MARKETS, 监管 POLICY …) with a white flash when a new story starts…\n- Rundown, then ticked off — the same list opens and closes the bulletin; at the end each row gets its tick.\n- Spec card — a launch reduced to its proportions: the whole and the part on one scale, then what it runs on, joined by a bracket to the total…",
   },
   {
@@ -1824,6 +1866,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l9.jpg",
     still: true,
+    generated: false,
     guide: "风格：卫星地图简报（L9 · Lemo-Opuscar）\n\n长什么样：卫星照着地图去找咸海，找到的是沙漠；只有筑了坝的那一块回来了。\n\n适合：讲地点、范围\n\n关键特征：\n- Not Data Storytelling (a chart on paper), not Sci-fi Hologram HUD (no glowing wireframes or invented chrome), not Blueprint, not Isometric Infographic (real nadir or oblique views, no diorama), not a keynote (no slides, header bars or chapt…\n- The ground is a photograph: real, licence-clean, georeferenced satellite or aerial imagery of the actual place.…\n- Two layers, two truths: the imagery is what the satellite saw; the hairlines are what the analyst measured.…\n- The grade moves with the story: orbit in true colour, the analysis layer in grey, colour back only where the story turns.\n\n质感与用色：\n- Plates: georeferenced rasters with a lon/lat box, sampled in a shader where the camera ray hits the ground, nested by resolution (world → re…\n- Globe: ray–sphere from a perspective camera, a thin atmosphere rim, limb shading at orbit only…\n\n用色：\n- Example (our demo): ground #070B0E → #A1A7A9, marks #F2F5F6, reading #FFBE55, map blue rgb(46, 112, 206).\n- Neutral ground: grey, roughly 3–65 % in value. White means measured.\n- One accent (warm, e.g. amber) for the single reading on screen, never decoration.\n\n节奏：\n- The camera never stops: distance interpolates in log space, segments ease, holds keep a 2–5 % creep or a slow rotation.…\n- Marks arrive by being made: a line grows, an outline prints behind the scan, a counter rolls and lands with a small pop, a reticle snaps wit…\n\n镜头：\n- At key moments the subject fills a third of the frame height; reading right, subtitles bottom left, instruments in the corners. Transitions: scan-line swaps, a map layer switched off, zooming through plates, whip pans, the reticle opening i…\n\n避免：\n- Licences: not usable: Google Earth/Maps, Bing, Esri World Imagery, Mapbox Satellite, Planet, Maxar, news photos, AI-generated imagery.…\n- Finding imagery for a new place: search by bounding box and date in the Planetary Computer STAC (Landsat C2, Sentinel-2 L2A…\n- Seams: paths imaged on other days disagree.…",
   },
   {
@@ -1836,6 +1879,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l10.jpg",
     still: true,
+    generated: false,
     guide: "风格：工程方案比较墙（L10 · Lemo-Opuscar）\n\n长什么样：一条河要架桥，四种桥型在一面简报墙上逐个受检，拍板的是桥下要过的船。\n\n适合：几个方案放在一起比\n\n关键特征：\n- Not Whiteboard Explainer (a hand drawing line art on a flat page): the board is a filmed object, subjects are photographs. Not Data Storytelling: comparisons are dimension lines in real units beside real objects.…\n- A physical board in a room: enamel, window falloff, a sliding reflection, ghosts of earlier work, frame and tray.\n- Real things on it: cut-out photographs of the real objects, a few millimetres off the board, shadowed by one window, parallaxing.…\n- Ink that means something: graphite for names and rules, blue for water and measurement, red only for the decision…\n\n质感与用色：\n- Board (z 0): procedural enamel, wiped ghost strokes, smudges, a window falloff, a sliding diagonal reflection…\n- Ink (multiply): flat colour at about 90 %, lighter core, round caps, a wet-tip glint on the stroke being drawn.…\n\n用色：\n- Ground: the enamel and its light falloff; the wall around is neutral warm grey.\n- Ink: graphite = names, rules, facts; blue = water and measurement (dimensions, projection lines, measured numbers)…\n\n节奏：\n- 24 fps on ones; nothing is stepped.\n- Camera: overlapping eased moves, velocity ∝ u^a (1−u)^b (a, b ≈ 1.5–4), so speed and acceleration never jump; b > a gives inertia.…\n\n镜头：\n- Framing: off-centre, cropped, close. The first frame holds a readable subject; the first strong action hits within 0.5 s. Items tested against a limit each get a judgement frame (wider each time if they grow)…\n\n避免：\n- Text glimpsed in passing fails the reading time. Fix: words where the camera rests; frame each new item with the last result.\n- Only close-ups. The viewer never sees the whole object against the limit. Fix: detail → judgement frame → hold → verdict → move on.\n- Photos that don't belong together. Fix: one grade, one light vector, one viewpoint family.\n- Thin parts lost or stair-stepped by the matte. Fix: key them against the clean background, redraw clean lines at the measured positions.",
   },
   {
@@ -1848,6 +1892,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l11.jpg",
     still: true,
+    generated: false,
     guide: "风格：激光点云扫描（L11 · Lemo-Opuscar）\n\n长什么样：激光点云剥掉一片森林的树冠，露出当年农田的石墙：3.4 公里。\n\n适合：科技感，\"扫一遍\"\n\n关键特征：\n- Not Sci-fi Hologram HUD (no invented interface: the points are real, sparse where the survey was), not Satellite Briefing (photographs from above…\n- The cloud is the data: every point is a real return at its measured position; points appear, glow, lift away or give way to a surface, but a…\n- Points become a surface: a front (scan line, cutting plane) behind which the cloud condenses into a solid model of the same place.\n- Classification is a lever: ground, vegetation, buildings, water are layers to peel, isolate and recolour.\n\n质感与用色：\n- Points: GL points sized in world units (0.12–0.3 m), floor of one output pixel, soft discs, opaque and depth-tested (additive only for a gho…\n- Quantise for the browser: uint16 positions (2 cm / 1 cm) plus a byte each for height above ground, class, intensity, seed.\n\n用色：\n- Example (our demo): background #05080A, canopy #1F3F35 → #5C9A7A → #E2F3DC, ground returns #C8B38C, surface #BDB5A6, front #D4FFF0, accent #FFB347, chart green #83C495.\n- Background near-black with a cold tint; never pure black, never a gradient sky.\n- Points: one ramp by height or class, desaturated (deep green-teal → pale; or grey → white); intensity modulates value, not hue.…\n\n节奏：\n- On ones, 24 fps; the camera never stops; keys as a C1 spline in target / distance / heading / pitch (no lookAt from nadir).\n- The front moves on an ease, slowest where the subject is; a cutting plane steps on the beat (eased steps, short holds) so the layers read.\n\n镜头：\n- Subject ≥ a third of the frame height at key moments; readings right third; instruments in a corner; nothing in the subtitle strip.…",
   },
   {
@@ -1860,6 +1905,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l12.jpg",
     still: true,
+    generated: false,
     guide: "风格：白模投影（L12 · Lemo-Opuscar）\n\n长什么样：投影机把数据一层层刷上鹿特丹白模：从 1940 年的空洞到今天的塔楼。\n\n适合：把数据投到白色模型上\n\n关键特征：\n- Not Isometric Infographic (no diorama or icons), not Low-poly Island (no invented terrain), not Sci-fi Hologram HUD (no wireframes; light lands on matter), not Satellite Briefing (no imagery), not a laser-scan or point-cloud film (no scan l…\n- The model is real geometry of a real place: building footprints and heights from open data (§2), extruded at a stated scale (1:1000, 1:2000……\n- The model is white; data is light. Colour is never painted into the material: it is projected, so it brightens surfaces that face the projec…\n- Layers arrive one at a time, each with its own gesture of light (a wash, a pop-on, a rising level, a moving sun), and each answers the quest…\n\n质感与用色：\n- Model: matte white (≈ #F3F3F1, roughness ≈ 0.9), crisp edges; water a darker satin inlay in the base plate; bridges low white slabs…\n- Light model: house light = one soft key + a neutral studio environment + AO on close shots.…\n\n用色：\n- Neutral ground: white model, dark room (near black), dark plinth. Projector black level is a cool near-black on the plate.\n- One hue family per layer, chosen for the data: a single categorical accent for \"the old/the exception\" (e.g.…\n\n节奏：\n- The camera moves continuously and slowly; it changes speed with the layers, never stops dead.\n- Light is the actor. Each layer arrives by a soft-edged gesture of light: a wash spreading from the projector axis, buildings switching on on…\n\n镜头：\n- At key moments the subject fills a third of the frame height; readouts left third, subtitles bottom centre, pins never over the readout.…\n\n避免：\n- Wall normals wound the wrong way show inside faces (walls look hollow): derive the outward normal from ring orientation.…\n- Warm HDRIs turn the white model beige: use a neutral studio environment.\n- GTAO on wide grazing views produces wedge-shaped dark bands; keep it on close shots only.\n- A low sun lights facades, not roofs: shoot from the sunlit side or side-on. Narrow shadows vanish among all the others: trace the one that m…",
   },
   {
@@ -1872,6 +1918,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l13.jpg",
     still: true,
+    generated: false,
     guide: "风格：数据实体化（L13 · Lemo-Opuscar）\n\n长什么样：十二年风电和太阳能装机叠成实物，绕表盘升成两条螺旋，2021 年太阳能反超。\n\n适合：数字变成一堆实物\n\n关键特征：\n- Not Isometric Infographic (no icons, no flat colour coding), not Glass Product Render (the object is data), not Data Storytelling (no paper chart or inked axes), not Dark Tech Keynote (no black stage or neon), not Brick Toy (no toy proporti…\n- The unit is an object. One plate, block or coin equals one stated quantity, and the rule is said on screen once (\"1 plate = 10 GW\").…\n- Scale is exact. Heights, counts and areas are computed from the data; rounding is one unit at most and written in the facts.…\n- Studio light, real matter. Metal reflects an HDRI, wood shows grain, acrylic transmits; nothing glows, nothing is outlined, no fake UI.\n\n质感与用色：\n- Pieces: thin boxes or cylinders instanced in the thousands, each with a few-millimetre random offset and yaw, a ±7 % value change and a hair…\n- Material per series, chosen so two series separate in one glance at thumbnail size: brushed metal against tinted acrylic, pale wood against…\n\n用色：\n- Example (our demo): sweep #C4BEB4, walnut base, aluminium #C8CCD1 (metal), acrylic #9FD3D6 with teal attenuation, brass #D2B07A, ink #1C1D20, accent #D4521C.\n- The set is warm and neutral: a seamless greige sweep, the base in a natural material, the series in material colours (silver, pale teal, bra…\n- One accent (e.g. signal orange) for the reading or verdict that matters on this screen; nothing else is accent-coloured.\n\n节奏：\n- On ones, 24 fps; the camera never stops (2–5 % creep on holds).\n- Cascade: a stack assembles bottom-to-top in 0.5–1.0 s, each piece dropping a few centimetres with an ease-out.\n\n镜头：\n- The subject fills at least a third of the frame height at key moments; readings live in empty background, never over the subtitle strip…",
   },
   {
@@ -1884,6 +1931,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l14.jpg",
     still: true,
+    generated: false,
     guide: "风格：爆炸图拆解（L14 · Lemo-Opuscar）\n\n长什么样：开源键盘的一半在一次环绕中逐层拆开，看到主控再合拢，标上真实尺寸。\n\n适合：拆开看里面，比如 AI 由哪几部分组成\n\n关键特征：\n- A frame reads as this style when\n- the object is real and exact: geometry, positions and counts come from the product's own files (STEP, KiCad, BOM, assembly guide).…\n- it is shown apart: layers float on one axis with even, readable gaps, each still oriented as it sits in the product;\n- it is photographed, not drawn: physically based materials, a studio key light, a cool rim, an HDRI reflection, soft contact shadow on an inv…\n\n质感与用色：\n- Where the geometry comes from. For the user's own product, ask for its STEP / IGES / KiCad / other CAD exports, BOM and spec sheet before anything else.…\n- Real-time PBR (three.js MeshPhysicalMaterial) at 2× and downsampled, ambient occlusion, a depth of field with one aperture for wide and macr…\n- Each material keeps its character: plastics with soft sheen (roughness 0.55–0.7), boards with a thin clearcoat and traces as a raised, light…\n\n用色：\n- The product brings its own colours; the frame around it is neutral and dark, so the product is always the brightest, most saturated thing.\n- Interface ink is one warm white at two strengths (names at full, specs at about 60 %), plus one accent reserved for measured things: dimensi…\n\n节奏：\n- 24 fps on ones; everything is smooth and deterministic.\n- Separation: smooth start, fast middle, long settle (ease-in-out cubed); layers leave top first, 0.15–0.2 s apart…\n\n镜头：\n- At key moments the subject fills at least a third of the frame height. Labels live in a column on the free side (shift the projection with a…\n\n避免：\n- Invented numbers. A size that no file gives. Fix: measure it from the CAD and say \"measured\" in the facts file, or leave it out.\n- Mixed-up revisions. Plates, cases and boards from different versions of a project.…\n- Panelised boards. Layout files may hold a panel with breakaway tabs. Fix: take the outline from a plate or case of the same revision, or flo…\n- Zero-length edges. Duplicate outline points give zero normals → NaN → black squares after bloom.…",
   },
   {
@@ -1896,6 +1944,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l15.jpg",
     still: true,
+    generated: false,
     guide: "风格：显微镜故事（L15 · Lemo-Opuscar）\n\n长什么样：一镜从肝组织玻片推到单个细胞核，两个圆逐像素数出 2.4 倍的蓝。\n\n适合：一层层放大，讲眼睛、神经这类感知科普很合适\n\n关键特征：\n- Not Satellite Briefing (no grey grade; the stain keeps its colour), not Sci-fi HUD (no glowing wireframes or crosshairs), not Data Storytelling (no chart paper), not a keynote (no slides or header bars).\n- The specimen is a photograph: a real micrograph or whole-slide scan of the actual sample, CC0, public domain or CC BY.…\n- Scale is the camera: one log-space dive (and, when the story wants it, the climb back) through nested plates of the same sample.…\n- Focus has a grammar: a rack-in from soft at the start, a short breath (blur + a hint of field change) each time the magnification changes, a…\n\n质感与用色：\n- Plates: the WSI pyramid levels as plates in one world frame (level-0 pixels), the coarse levels whole and alpha-feathered at the scan edge…\n- The naked-eye plate: the scanner's own photo of the whole slide (many WSI files carry one), registered through the scan's area-of-interest m…\n\n用色：\n- Example (our demo): glass #F4F1EC, bench #0B0D0F → #2A3036, ink #181B1F, panel rgba(12,14,17,0.74), accent mint rgb(120,240,205) (on stain) / rgb(0,122,99) (on glass).\n- Glass: warm paper white. Bench: graphite. The stain is evidence and keeps its true colour (e.g.…\n- One accent, cool and away from the stain's hues (mint against red and blue; amber against a green or purple stain), only for the measured re…\n\n节奏：\n- The camera is a similarity transform (zoom, roll, position) interpolated as a log spiral between keys (M^u about the fixed point of the two…\n- Magnification changes happen where the plates actually change, each with a breath of focus, a turret click and the new magnification said on…\n\n镜头：\n- At key moments the measured structure fills a third of the frame height or more; instruments in a corner, subtitles bottom centre, readings beside their marks.…\n\n避免：\n- Licences: most microscopy on the web is CC BY-NC or all rights reserved.…",
   },
   {
@@ -1908,6 +1957,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l16.jpg",
     still: true,
+    generated: false,
     guide: "风格：档案灯箱（L16 · Lemo-Opuscar）\n\n长什么样：电报说最长飞了 57 秒；放大镜下，莱特兄弟的底片和档案说是 59 秒。\n\n适合：翻旧资料、回忆\n\n关键特征：\n- Sources and licences. Open collections with masters and catalogue records: the Library of Congress (files on tile.loc.gov; records from its SRU server lx2.loc.gov:210/lcdb when loc.gov pages are blocked), Smithsonian Open Access (CC0), the…\n- The objects are real: scans of public-domain or licensed archive items, at their true proportions, with their real damage (broken corners, e…\n- Light comes from below: the table glows a near-white cool grey; film and glass transmit it, paper glows warm at its edges, opaque things rea…\n- The loupe is the camera's door: every dive into an object goes through a loupe that lands on it.…\n\n质感与用色：\n- One world, one camera: every object is a textured quad on the table with a centre, rotation and scale (texture px → world units at true size…\n- The light table: an emissive surface (≈ 0.97 white, slightly cool), soft falloff, diffuser noise, an aluminium frame and a dark desk beyond.…\n\n用色：\n- Example (our demo): table #F7F9FB, ink #15171A, signal #FF5A1F, caption plates rgba(14,15,17,0.74).\n- Neutral ground: the light table (near-white, cool) and the archive's own tones (silver greys, paper tans).…\n- One signal colour (e.g. a signal orange) for marks, readings, anchors and the verdict…\n\n节奏：\n- 24 fps on ones; every camera parameter on smooth monotone curves through keys (no overshoot, no stepping).\n- The camera glides across the table, slows to let the loupe land, then pushes. Speed lives in the glides and pushes; holds are for reading.\n\n镜头：\n- Framing: at a reading moment the subject fills at least a third of the frame height; readings and labels stay clear of the subtitle strip (bottom 140 px). Transitions are made by the loupe (land, push, rise, lift) and the glide…\n\n避免：\n- Over-magnifying a weak scan: keep the lens interior under about 1.5 screen px per scan px…",
   },
   {
@@ -1920,6 +1970,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l17.jpg",
     still: true,
+    generated: false,
     guide: "风格：蜡笔儿童绘本（L17 · Lemo-Opuscar）\n\n长什么样：月亮失眠了，小女孩爬上屋顶给它唱摇篮曲。\n\n适合：温暖、童年、回忆\n\n关键特征：\n- A children's picture book page being drawn while you watch: wax crayon on warm off-white paper, a limited box of crayons, child-logic perspective, colour that spills past the outline, and every line gently boiling because each frame is a fr…\n\n质感与用色：\n- Paper: warm off-white (around #f4efe3). The tooth is anchored to the page (it pans with the camera…\n- Wax adhesion (the core rule): every crayon layer is a canvas where RGB = colour and A = pressure…\n\n用色：\n- A box of about a dozen crayons, never more. Outlines in one dark colour (indigo, dark brown, plum), never black.…\n- At most one watercolour per film, chosen for what it reveals (ultramarine for night, rose for dawn, sap green for rain).…\n\n节奏：\n- Everything drawn steps at 12 fps (lines, colouring, characters, boil seed); camera, the wash's leading edge and twinkles run at 24 fps.\n- Boil: each stroke re-jitters offset (<1 px), wobble and hatching rows every 2 frames.…\n\n镜头：\n- The camera moves over a large page. A vocabulary, not a route; every move needs a reason. Opening and ending come from the topic.\n\n避免：\n- Gaps between wash bands leave white stripes → overlap bands and cover all intended paper.\n- Wavy band edges and wide light streaks read as hills → small high-frequency waviness, thin faint streaks (α ≤ 0.12).\n- Light-pressure colouring goes muddy under a wash → pressure ≥ 0.8 or cross-hatch wherever the wash crosses.\n- Text where the wash passes survives it (wax resists) → place it elsewhere or accept it.",
   },
   {
@@ -1932,6 +1983,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l18.jpg",
     still: true,
+    generated: false,
     guide: "风格：水彩笔刷（L18 · Lemo-Opuscar）\n\n长什么样：跟着降雨从澳洲红色腹地一路画到绿色海岸，一镜到底。\n\n适合：情绪段，温柔\n\n关键特征：\n- Not ink wash (colour, not ink tones; no calligraphic brush-as-gesture), not impasto (no thick paint, no knife), not a children's picture book (no crayon, no cute outlines), not vector illustration with a watercolour texture laid on top.\n- One sheet of warm, fibrous paper under everything; it is also the eraser (paper-coloured mist washes things away).\n- Everything is individual brush strokes: a variable-width ribbon at partial opacity plus a few thin bristle tracks that break into dashes (fl…\n- Things paint themselves in, stroke by stroke, structure before detail (trunk → branches → leaves; outline wash → shadow → accent).\n\n质感与用色：\n- Paper: a pre-generated image (warm base, three octaves of smooth noise ±3.5 %, a few thousand short curved fibres, fine grain, light vignett…\n- Stroke (engine.js mk/drawS): a ribbon whose width follows a profile (brush, leaf, even, tip, trunk) with ~±22 % value-noise roughness, fille…\n\n用色：\n- Paper is the white. Never paint pure white; light is unpainted paper.\n- Transparent layering: darker = more passes, not a darker pigment on top. Keep 3–5 hues per scene plus ink.\n\n节奏：\n- Painting-in is the main motion: an object's progress is a function of where it sits on screen or of a cue…\n- Sway only after an object is finished: a small horizontal skew (sin(1.15t+φ) + .4 sin(2.7t+2φ)), ~0.006 for trees, 0.01–0.03 for grass.\n\n镜头：\n- A vocabulary, not a route. The picture is one painted sheet; cutting is rare.…",
   },
   {
@@ -1944,6 +1996,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l19.jpg",
     still: true,
+    generated: false,
     guide: "风格：中国水墨（L19 · Lemo-Opuscar）\n\n长什么样：侠客踏水过江，一剑断流。\n\n适合：东方意境，和 Z1、M30 一起看\n\n关键特征：\n- An ink painting (水墨) painted and unrolled before you: black ink on warm rice paper in five tones, plus one red, the vermilion seal. No Western outlines: forms are made by loaded brushstrokes whose dark edge is the contour (没骨, \"boneless\" pa…\n\n质感与用色：\n- Paper is procedural, in the compositor, never a texture file: warm rice paper (around #F2ECDE), cloud mottling, long fibres, pulp flecks, gr…\n- Ink is stroke opacity multiplied onto paper (never an overlay), in five tones (墨分五色)\n\n用色：\n- Ink only, from cool grey at low density to warm black at full density. No other hue in the world.\n- One vermilion (around #B02E22), for the seal and at most one tiny accent in the story (an object the protagonist carries).…\n\n节奏：\n- Figures step at 12 fps (on twos); their position, the camera, blooms, ripples and splatter move on ones at 24 fps.\n- Stable strokes on twos: seed every stroke by its index and compute bristle breaks along normalized arc length × a fixed reference length, so…\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Dry brush looks like dashed lines → breaks from long-scale noise and an ink load that drops along the stroke.\n- Parallel semi-transparent strokes make bodies look like organ pipes → one base mass + two loaded strokes.\n- Big side-brush strokes look like a hairbrush → a gradient mass + a few low-dryness strokes.…\n- A stroke body split between wet and dry layers loses density → full body in the dry layer plus a wet halo.",
   },
   {
@@ -1956,6 +2009,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l20.jpg",
     still: true,
+    generated: false,
     guide: "风格：油画厚涂（L20 · Lemo-Opuscar）\n\n长什么样：灰色雨中广场，第一把红伞撑开，圆舞曲把整个广场刷上颜色。\n\n适合：浓烈的情绪\n\n关键特征：\n- A moving oil painting made of knife strokes. Each stroke is a real object: a slanted plane of paint with a ridge where the blade pressed, a lip where it lifted off, broken streaks where the paint ran out, two colours dragged into each other…\n\n质感与用色：\n- Value first. Design each set as a flat, value-planned illustration (3 values minimum), then convert it to strokes.…\n- Stroke sizes by importance and depth. Coarse to fine: large planes in sky and walls, a few px only at edges and faces (per shape: maxR, deta…\n\n用色：\n- Planes of mixed, slightly broken colour; each stroke may drag a second colour (c2) into the first.…\n- Warm light against cool shadow is the default temperature structure; the brightest, purest chroma is reserved for the story's subject (a pro…\n\n节奏：\n- Static paint is static. Only the things the story moves move (weather, figures, props, ribbons, light).…\n- Moving figures are procedural strokes rebuilt each frame from fixed seeds, so their paint doesn't boil (walk cycles, IK arms, props that ope…\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Confined strokes shrink near edges and leave canvas-coloured outlines → add the underpainting texture.\n- Draw order in the reference matters: painting the ground after the buildings covers their feet.\n- Plain rectangles read as posts or blocks → give silhouettes taper, a lit edge, and one or two defining dabs (shoulder, hair, handle).\n- Proportions carry the object's identity at this stroke size: a prop drawn too wide reads as a different thing.…",
   },
   {
@@ -1968,6 +2022,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l21.jpg",
     still: true,
+    generated: false,
     guide: "风格：一笔画（L21 · Lemo-Opuscar）\n\n长什么样：一根不离纸的线画完一个人的一生，再把笔交给孩子。\n\n适合：一条线讲到底，和样片库 C2、M4 一起看\n\n关键特征：\n- Not a whiteboard explainer (no hand, no marker, no erasing, no text-heavy boards), not ink wash (no tones, no brush bloom as a look), not a line-art animation with cuts and many strokes.\n- One continuous line on warm white paper. The pen never lifts: in code the whole film can literally be one point array, from the first touch…\n- Everything is a line: characters, places, objects, even time. No fills, no shading, no second line weight, no background art.\n- We watch the line being drawn: the camera follows the nib with a little lag and anticipation.\n\n质感与用色：\n- Paper: warm white (around #F4EFE4), procedural mottling (soft-light, large tile), long fibres that fade out when zoomed out (or they shimmer…\n- Ink is a filled polygon around the path (not ctx.stroke), mixed with paper colour to an opaque tone per point.\n\n用色：\n- Ink on paper. A warm black (around #1D1A17) on warm white; nothing else fills the frame.\n- One accent at most, used once, on a stretch of the line that means something; it returns to ink afterwards and stays visible in the final pi…\n\n节奏：\n- Everything on ones (24 fps): the appeal is the continuous act of drawing; stepping breaks it.\n- Timing = chapter windows + curvature: within a window, time per point is weighted by 1 + K·turn (sharp turns get more time, smoothed so spee…\n\n镜头：\n- A vocabulary, not a route. The camera is one continuous move: composition centre, zoom, a few degrees of roll, and a follow weight (0 = composed, 1 = locked to the nib)…\n\n避免：\n- Stray connectors ruin a reveal: every extra line reads as a wrinkle, beard or mask.…\n- Each region of a final picture is drawn exactly once; connectors must fall on natural lines of that picture.\n- Test the reveal early and often: render the whole path at once at final scale after every change.\n- Lines drawn too close braid together once width is applied; keep a gap.",
   },
   {
@@ -1980,6 +2035,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l22.jpg",
     still: true,
+    generated: false,
     guide: "风格：白板讲解（L22 · Lemo-Opuscar）\n\n长什么样：手机怎么知道你在哪：GPS、原子钟，和相对论每天多出的 38 微秒。\n\n适合：讲道理、讲步骤，就是你发来的那条\n\n关键特征：\n- Not Blueprint (no blue sheet, no drafting conventions), not Crayon Picture Book (no wax texture, no children's story), not a kinetic-type explainer (text is handwritten stroke by stroke, never animated as blocks).\n- One physical whiteboard. Everything the viewer learns is drawn in dry-erase marker in front of them, in real handwriting order.\n- The board is a map: each idea lives in its own region; the camera travels between regions, often led by the pen.…\n- Real marker, not animated text: ink pools where the nib lands, dry streaks and speckle, strokes overshoot and don't quite close, ghosts of o…\n\n质感与用色：\n- Board: a warm white gradient, a faint scuff and micro-scratch tile, a few dozen ghost marks (old words, circles, arrows) at 5–10 % in grey o…\n- Ink: alpha ~0.94, composited with multiply so overlaps darken like real marker.…\n\n用色：\n- Three marker colours at most, each with a meaning held for the whole film: one dark ink for things and structure, one for signals / measurem…\n- Monochrome variant: everything in the dark ink, one element in the accent (the \"only colour\").\n\n节奏：\n- Hand speed: every stroke follows a slow-fast-slow curve (u − sin(2πu)/2π × 0.8).…\n- Pen hops between strokes lift in proportion to distance (shadow slides and blurs)…\n\n镜头：\n- A 2D camera over a large board (e.g. 8000 × 4500): position, zoom interpolated in 1/z so pushes feel like dollies, a little roll. A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- One pen, too many jobs drifts later and later → give each drawing a deadline window and let overlapping jobs go to another pen.\n- Minimum stroke duration × many dashes makes a dashed line take seconds → dashes need their own floor.\n- A pooled-ink dot bigger than the stroke start leaves halos on every letter → keep it inside.\n- Punctuation vanishes (a font period is a 1 px stroke) → render sub-width strokes as dots.",
   },
   {
@@ -1992,6 +2048,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l23.jpg",
     still: true,
+    generated: false,
     guide: "风格：钢笔淡彩（L23 · Lemo-Opuscar）\n\n长什么样：公园只是一张钢笔速写，风把草帽吹到哪里，哪里才有颜色。\n\n适合：生活记录、城市速写\n\n关键特征：\n- Reportage drawing, made on location in a few minutes. Two layers that stay visibly separate\n- Ink. One thin, near-constant line (a 0.3–0.5 mm fineliner) in dark sepia. It wobbles slightly, overshoots corners by a few pixels, breaks mi…\n- Wash. Transparent watercolour glazed on top, misregistered by 1–3 px from the line, sometimes spilling past it, leaving paper white for high…\n\n质感与用色：\n- Paper: two octaves of fbm mottling (a few %), a tooth tile multiplied over everything, figures included.\n- Ink: ~96 % coverage; world line width thinner far, thicker near (e.g. 1.3–3.4 px); wobble ~1 px; overshoot 3–8 px…\n\n用色：\n- Ink is one colour (dark sepia or warm black); it never changes.\n- Wash is local colour, lightly: few pigments, mixed on the page; shadows are the local colour mixed toward one shared cool violet…\n\n节奏：\n- Figures boil at 12 fps (line wobble and wash seeds change every 1/12 s). The static page does not boil (it is a real page)…\n- Performance: anticipation, action, follow-through; footsteps on the beat.\n\n镜头：\n- A 2D camera over a large page (e.g. 5120 × 2880). Designed moves use cubic easing; follow shots use a critically damped spring on a lead-ahead target, so the camera lags like a hand-held follow. A vocabulary, not a route.…\n\n避免：\n- Straight edges in the colour field from clipping by a bounding box → clip by the actual noisy distance.\n- Rectangular masks around complex silhouettes leave notches → mask with the real stepped silhouette.\n- Characters losing colour when they move into unpainted areas → sample arrival once (or tie it to the event), never at the current position.\n- Static ink can't be occluded by later washes → erase far ink inside nearer shapes before drawing; use carrot people for far crowds.",
   },
   {
@@ -2004,6 +2061,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l24.jpg",
     still: true,
+    generated: false,
     guide: "风格：皮影戏（L24 · Lemo-Opuscar）\n\n长什么样：十日炙烤大地，后羿张弓射日。\n\n适合：讲故事，和 M12 一起看\n\n关键特征：\n- A white cloth screen; behind it, flat puppets cut from translucent dyed hide, lit by an oil lamp. Colour arrives by transmitted light: dyes glow like stained glass, carved holes shine brightest, overlaps go darker.…\n\n质感与用色：\n- Rendering model. Per pixel: image = tonemap( lampLight × hideTransmission × clothTexture ).\n- hideTransmission: a 2D canvas that starts white; every piece is drawn with multiply. Holes stay white, overlaps darken by themselves.\n- lampLight: per lamp a broad lobe plus a tight hotspot (~6 : 1), each flickering independently (a few % of ~7 Hz value noise plus a faster si…\n\n用色：\n- All colour is transmitted: a dye filters warm lamplight, so nothing is brighter than the lamp and every hue leans warm.\n- 3–5 saturated dyes + raw hide (the neutral) + ink (outlines, hair, boots). Holes are the brightest value.\n\n节奏：\n- 24 fps continuous for puppets and camera; only swapped effect pieces (fire, water) step at 12 fps.\n- Hand tremor on every puppet (a few px, ~0.02 rad, low-frequency), stronger under tension.\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Flat clip-art look → hide texture, denser openwork, deeper dyes, carved outlines everywhere.\n- Figures unreadable in profile → bigger head, fuller lower body, collar piece, contrasting sleeves.\n- Radiating shapes read as saw blades or petals → flame tongues with a fat base, belly and hooked tip, alternating curl.\n- Grey corners when overexposed → warm vignette.",
   },
   {
@@ -2016,6 +2074,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l25.jpg",
     still: true,
+    generated: false,
     guide: "风格：浮世绘（L25 · Lemo-Opuscar）\n\n长什么样：旅人走向远山，每个镜头都是一幅版画；巨浪是高潮，结尾是远山与整幅画轴拉远。\n\n适合：日式、海浪\n\n关键特征：\n- Every shot is a complete woodblock print: a sheet of washi, a thin double ink border, flat areas of colour printed from separate blocks, a black key-block line on top, a vertical title cartouche and a red seal.…\n- Paper is always visible: warm washi, long fibres, slight edge ageing.\n- Each colour is its own block, slightly out of register (1.5–2.5 px) with the key line.\n- Large colour areas show woodgrain and baren rubbing (uneven ink density, circular streaks) and fine goma-zuri specks.\n\n质感与用色：\n- The sheet is the frame: the print fills the screen at zoom 1, inside a thick + thin ink border, with a paper margin beyond.…\n- Blocks: draw each colour group into its own offscreen canvas, cached once (key lines; blues; greens / secondary; reds / figures).…\n\n用色：\n- A pigment set, not a colour wheel: 6–9 flat hues, each printed from its own block, over the paper ground.…\n- Sumi key line over everything; paper is the white (no white pigment for foam, snow, mist, blank sky).\n\n节奏：\n- Prints are still. Most of the frame does not move; each view has one or two small actions (steam, rain, a lantern, a falling leaf).\n- Figures and nature step at 8 fps; rain and fast water at 12 fps; the camera moves on ones (24 fps). A stepped camera judders.\n\n镜头：\n- The camera moves over prints and between them; it never rotates in 3D space inside one. Opening and ending come from the topic.\n\n避免：\n- Bokashi from fillRect strips leaves vertical seams → build it per pixel.\n- Too much speckle or fibre makes dark areas look like sandpaper or scratched film → specks α ≈ 0.3, fibres α ≈ 0.09.\n- A perspective grid for fields looks digital → parallel, slanted, flat layering.\n- Pine clusters drawn as half-discs look like parasols → flat pads with needle fans.",
   },
   {
@@ -2028,6 +2087,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l26.jpg",
     still: true,
+    generated: false,
     guide: "风格：红色窗花剪纸（L26 · Lemo-Opuscar）\n\n长什么样：除夕年兽进村，小女孩剪出的大窗花照亮全村，把它吓跑。\n\n适合：年味、中国风\n\n关键特征：\n- Every visible thing is a piece of paper that was cut with scissors and laid flat on another sheet. There is no painting, no gradient shading, no outline stroke: detail, volume and expression come only from what was cut away.…\n\n质感与用色：\n- Paper grain: a neutral-grey texture in soft-light inside each piece (dye mottling, fibres, specks), then the piece's alpha restored with des…\n- Cut edge: every silhouette is a polyline with a slight low-frequency wobble (hand-cut), a 1 px light rim upper-left and a dark rim lower-rig…\n\n用色：\n- China red (around #d2201f, range #c8102e–#d7261e) is the hero material. Depth and role are shown by paper tones one step apart, not by shadi…\n- Ground and hero must be different paper families. If background and hero are both red, the silhouettes stop popping.…\n\n节奏：\n- Characters step at 12 fps (pose sampled at floor(t·12)/12); camera, light, weather, flames and flying pieces move on ones at 24 fps.\n- Rigs pin pieces at rivets (neck, shoulders, elbows, hips, knees, jaws, tails). Hard poses, tiny eases, 1-frame overshoots (\"pop\" = 1.15× for…\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Red on red reads as one blob → different ground family, near/far paper tones, inset contours for overlaps.\n- Darkening a layer through the light map also darkens what covers it → tint the layer itself (multiply + restore alpha).\n- A flat cos-squashed flap reads as a sliding card, not a fold → strips with fake perspective, darken as it stands up, show the back colour.\n- Cut reveal shows the uncut stack through the holes → stack thickness inside the \"uncut\" mask only; the cut part gets its own offset copies.",
   },
   {
@@ -2040,6 +2100,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l27.jpg",
     still: true,
+    generated: false,
     guide: "风格：纸雕灯影（L27 · Lemo-Opuscar）\n\n长什么样：一枚月饼讲中秋的团圆与思念，纸雕灯箱层层透光。\n\n适合：一层层透光，温暖\n\n关键特征：\n- Every shot is one physical object: a shallow box (a cavity about 0.56 × 0.33 m, 0.16 m deep) holding parallel sheets of cut paper. Everything on screen is one of three things\n- A paper layer: a flat cut sheet, one flat colour, fibre grain, a thin warm rim of light on its top edge and a dark band on its bottom edge.…\n- Light through paper: a warm, cloudy translucency (pulp mottling), strongest near the light source.…\n- Shadows: a top spot casts soft shadows from every layer onto the layers behind. This sells \"real paper in a real box\"; never turn it off.\n\n质感与用色：\n- Units in metres, y up. Layers from z ≈ −0.14 (sky) to 0 (front); camera at z ≈ 0.3–0.56, fov ~26°.…\n- A layer is a Canvas2D drawing in metre space mapped to a plane; cut-outs are 挖孔 holes.…\n\n用色：\n- Back layers bright and translucent, front layers dark and opaque. Each layer is one flat colour…\n- One temperature per stack, chosen by the scene (cool night, warm interior, violet or green elsewhere).…\n\n节奏：\n- Everything moves like paper on a stick: layers slide (x/y), rotate about a pivot, scale in from 0 along one axis (\"written out\"), or light u…\n- Jointed figures: a body sheet + separate limb sheets anchored at the joint; animate rotation only.\n\n镜头：\n- A vocabulary, not a route. The lens is small and the box is shallow: moves are short. Opening and ending come from the topic.\n\n避免：\n- 挖孔 cut-outs need an opaque fillStyle before punching, or the hole is half-cut (props.js cut(x, fn) does it).\n- Soft shadows bleed and halo: layers that must not take part need both shadow: false and recv: false.\n- A transparent radial-gradient texture shows a square edge as an additive glow → use an analytic shader falloff (burst()).\n- A near-plane curtain whose halves don't meet at their front edges leaves a slit of the old shot.",
   },
   {
@@ -2052,6 +2113,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l28.jpg",
     still: true,
+    generated: false,
     guide: "风格：Risograph 丝网印刷（L28 · Lemo-Opuscar）\n\n长什么样：周日早晨骑车穿过城市：面包店、公园、河边，每到一处加一版油墨，最后三版套印。\n\n适合：杂志感、潮\n\n关键特征：\n- A risograph prints one colour at a time: each colour is its own stencil (\"plate\") with its own drum of translucent ink. That one fact makes the look\n- A tiny palette: 2–3 spot inks on warm off-white paper.\n- Overprint mixing: inks multiply, so two inks make a third colour and all three approach black…\n- Misregistration: every plate lands a few pixels off; edges show slivers of paper or a coloured halo.\n\n质感与用色：\n- Pipeline. Draw each frame into one RGB canvas where each channel is one plate's density (R = ink 1, G = ink 2, B = ink 3; 0 = none, 1 = solid). source-over gives true knockouts…\n- per plate: offset in px + tiny rotation → misregistration;\n- halftone: cosine spot function on a rotated grid, period ~6–8 px at 1080p, anti-aliased threshold; densities ≥ ~0.9 print solid…\n\n用色：\n- 2–3 spot inks, never more, plus paper; every other colour is an overprint or a tint. No gradients except stepped halftone.\n- Pick inks whose pairs mix into useful colours; at least one must carry a silhouette alone.\n\n节奏：\n- Characters act on twos (12 fps); camera moves on ones (24 fps): a stepped camera reads as judder.\n- Registration is not jittered every frame. One fixed set of offsets per shot (±1–3 px).…\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Three halftoned plates in one area = mud → two plates, one tint.\n- fract(pvec2(233.34,851.73)) draws vertical stripes across solids at 1080p → a well-mixed hash (fract(vec3(p.xyx).1031) family).\n- Per-frame registration jitter and sheet streaks flicker and blow up file size → fixed offsets per shot, kicks on accents, sheet noise at cut…\n- JPEG screenshots (4:2:0) smear saturated dots → PNG frames into a lossless yuv444 intermediate, encoded once with -tune grain…",
   },
   {
@@ -2064,6 +2126,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l29.jpg",
     still: true,
+    generated: false,
     guide: "风格：复古半调案卷（L29 · Lemo-Opuscar）\n\n长什么样：橘猫胖橘被立案审查：测试重力、凌晨跑酷，最后无罪释放。\n\n适合：揭秘、档案\n\n关键特征：\n- Not Risograph (no grainy two-ink riso texture as the whole look, no zine collage), not Swiss motion (no grid-driven kinetic type on white), not Game Show Flat (no candy sets, no rhythm-game rounds).…\n- The whole film is paper. A warm cream sheet with low-frequency mottling, fine grain, a vignette and a fold…\n- Shading is never a gradient: it is halftone dots whose size follows a density field.…\n- Bureaucratic apparatus: case numbers, file chips, numbered exhibits, height charts, name plates, stamps. Their seriousness is the frame…\n\n质感与用色：\n- Paper layer (canvas, multiply over everything, built once): an upscaled random tile for mottling, per-pixel noise with a slight warm bias, a…\n- Grain layer (per frame): a few hundred paper-coloured specks and fewer ink specks, reseeded every 2 frames: dust on the print, not film grai…\n\n用色：\n- A paper ground, one dark ink, and four or five flat spot inks. The dark ink (navy, black-brown or deep green) carries every outline, body te…\n- One ink is the overprint shadow colour (misregistration offsets, caption shadows); one is the highlight for keywords and numerals…\n\n节奏：\n- 30 fps transforms; line boil at ~10 fps on characters, so the drawing breathes while positions stay smooth.\n- Everything enters with overshoot (back ease, 0.3–0.45 s): rising from below the frame or scaling from 0. Nothing fades in.\n\n镜头：\n- A 2D camera group over a flat, frontal page. A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Fonts not loaded before layout → per-character positions computed with a fallback font, glyphs overlap.…\n- Boil on text or dots turns them to mush → filter only characters and props.\n- Clip-path ids are global → every clipped numeral needs a unique id.\n- Time-windowed scenes → an element invisible before its cue needs explicit opacity 0 for t < t0.",
   },
   {
@@ -2076,6 +2139,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l30.jpg",
     still: true,
+    generated: false,
     guide: "风格：木刻版画（L30 · Lemo-Opuscar）\n\n长什么样：村子用一整个冬天铸一口钟，钟声第一次响起，雪停了。\n\n适合：粗犷、有力量\n\n关键特征：\n- Each shot is one printed plate: black ink on laid paper, framed by a paper margin. It follows three rules of real relief printing\n- Black is the wood, white is what the knife removed. Light is carved: a bright area is many wide cuts, a dark area untouched wood.\n- Pictures appear by being carved. Nothing fades in: cuts grow stroke by stroke along the form, coarse gouges first, fine lines after.\n- The block is a mirror. Letters read backwards until the paper is pulled; that reversal is the style's own transition.\n\n质感与用色：\n- Print frame: the printed image area sits inside a paper margin; the wider bottom margin holds captions.…\n- Knife classes (widths in 1080p pixels at 1× camera)\n\n用色：\n- Two values carry everything: near-black ink and warm laid-paper white. The raw wood colour appears only in shots that show the block itself.\n- At most one colour plate, printed only where white has been carved, so it glows out of the cuts and never sits on the black.…\n\n节奏：\n- Characters on twos (12 fps); camera, particles, fire and light on ones (24 fps).…\n- Anticipation / action / follow-through on every key action: a few frames back → a 2-frame strike → settle + a short shake.\n\n镜头：\n- The camera moves over the paper; the margin stays fixed. The knife tip, or the brightest cut, is the focus.\n\n避免：\n- White marks on white areas are invisible → stab cuts need dark masses behind them.\n- Hatching every surface looks like fur or rain → grazing light; 3–6 cuts on the lit edge only.\n- Black faces with white cuts don't read small → skin white, features black, a black keep-line around white parts.\n- Hand-drawn close-up props look like mittens and blobs → height field + woodcutFilter.",
   },
   {
@@ -2088,6 +2152,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l31.jpg",
     still: true,
+    generated: false,
     guide: "风格：铜版画（L31 · Lemo-Opuscar）\n\n长什么样：一张博物志图版自己刻出来：雕刀推开铜版，蜜蜂一线线成形，最后手工水彩上色。\n\n适合：精细，像老科普书插图\n\n关键特征：\n- An intaglio print: the line is ink held in a groove a burin cut into copper. Three rules\n- Tone is made of lines, never of fills. Light is bare paper; half-tone is one family of parallel lines; shadow a second family crossing it…\n- Every line swells and tapers. The burin enters fine, bites deeper mid-run and lifts out to a point.…\n- Colour comes afterwards, by hand: transparent watercolour laid flat region by region over the finished black print, spilling past the lines…\n\n质感与用色：\n- The sheet is the world: 1920×1080 world units of laid paper (cream, ~#f1e8d2) with world-space texture (fibres, laid lines, sparse foxing) t…\n- Ink is one warm near-black (~#1c1510). Width ratios: outlines heaviest (swelling ×0.45–1.35), first hatching from a hair (~0.18 px) to ~2 px…\n\n用色：\n- The print is two values, paper and ink; all tone is line density.\n- Colour is transparent wash only, in muted earth and mineral pigments, one stronger pigment at most.…\n\n节奏：\n- Cutting order is the animation: outline → first hatching sweeping across each form → crossing → darks, hair, stipple.…\n- A long single stroke may be followed by the camera; start it partly cut so no frame is empty. Keep a full build to a few seconds.\n\n镜头：\n- The camera is a loupe over a sheet. A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Uniform width reads as pen → swell hatches, pinch contours between runs (hatch({swell}), outline({run, pinch})), keep wMin hair-fine.\n- Overlaps without occlusion → pass occluders as excl (subtracted ring by ring; even-odd would cancel overlaps).\n- Outline-only parts beside a hatched body → hatch along each part's axis, a dark at every joint.\n- Burin along the cut hides the groove; big skew looks like poking → ≤ 15°. Regular swarf helix reads as a spring → vary winding, twist, light…",
   },
   {
@@ -2100,6 +2165,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l32.jpg",
     still: true,
+    generated: false,
     guide: "风格：丝印旅行海报（L32 · Lemo-Opuscar）\n\n长什么样：三条步道各一张丝印海报，一色一刮印出来，再沿山脊一镜到底从正午爬到黄昏。\n\n适合：海报、标题、封面\n\n关键特征：\n- A poster being printed on camera. Every colour is an opaque ink laid by its own pull; later ink covers earlier ink completely. No halftone, no fluorescent ink, no line work: a shape's edge is where one flat ink stops.…\n- Registration: every layer offset 1–3 px at 1080p; a knocked-out shape leaves a crescent of bare paper.\n- Overprint edge: a faint multiply ghost ~2 u off under each ink, leaving a darker sliver where ink laps over ink.\n- Ink thickness: a light rim top-left, a dark rim bottom-right, fills only; fresh ink has a wet sheen that fades within a second.\n\n质感与用色：\n- One Path2D per ink layer, filled in the current transform's units; knock-outs are holes in the path. Any shape can be printed.\n- Pull reveal: a ragged squeegee front as a clip (a ~30 u drag tail); blade, bead and a sliver of handle ride on it.\n\n用色：\n- One palette per poster, ≤ 6 inks, assigned by role: light sky, deep sky / bands, far, mid, near (darkest…\n- Values step from far (light) to near (dark); depth is value, never blur.\n\n节奏：\n- Pulls are linear and steady (a squeegee does not ease). Accent inks start half a beat after the main ink of their layer.\n- Info items print left to right on subdivisions of the beat. There is no fade anywhere.\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Stroke edge effects draw internal lines on unioned paths → fills only (fill, then fill shifted inside a clip).\n- A full-rectangle screen shadow muddies the print → ring shadow.\n- Cool shadow facets next to water read as water → shadows in the near ink.\n- Jagged ink beads read as paper edges → a round bead.",
   },
   {
@@ -2112,6 +2178,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l33.jpg",
     still: true,
+    generated: false,
     guide: "风格：瑞士动态排版（L33 · Lemo-Opuscar）\n\n长什么样：一张音乐会海报按瑞士设计的五条规则自己排版，第五条是只打破一条。\n\n适合：干净的文字排版\n\n关键特征：\n- Not a keynote (no gradients, no glow, no device renders), not kinetic typography for a lyric video (words don't fly, spin or bounce), not data visualisation (bars have mass as graphic form, not as charted quantities, unless the grid gives t…\n- Pure 2D graphic design animated on a grid: flat paper, black type and bars, a very light grey and one saturated signal colour.\n- Every element snaps to the grid, every move lands on a beat, nothing bounces.\n- Rigor with one exception: the whole frame obeys a system, so the one element that doesn't becomes a character.\n\n质感与用色：\n- Frame grid: 1920×1080, 12 columns, ~96 px side margins, 24 px gutters, 24 px baseline.…\n- Artifact grid derived from the content (Gerstner): what the columns and rows mean is a design decision.…\n\n用色：\n- Paper, ink, greys, and one signal colour. Only one thing carries the signal colour; that makes it the protagonist.…\n- Overprint is allowed: black type on the signal colour.\n\n节奏：\n- Two curves only: a precise ease cubic-bezier(.7,0,.2,1) for snaps; linear for lines being drawn, playheads and the exception.…\n- Durations are note values at the film's tempo. A snap starts one note value early and lands on the beat.\n\n镜头：\n- A vocabulary, not a route. The camera moves only with the precise ease and only on beats. Opening and ending come from the topic.\n\n避免：\n- Too many thin columns look like a chart → fewer, wider modules.\n- A \"better\" composition that isn't obviously better → one strong diagonal with long/short rhythm, a larger signal element, bleeds, type over…\n- Rotating and labelling at once reads as noise → rotate, hold, then add labels.\n- Merged bars show seams after rotation → overdraw 1 px.",
   },
   {
@@ -2124,6 +2191,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l34.jpg",
     still: true,
+    generated: false,
     guide: "风格：60s 间谍片头（L34 · Lemo-Opuscar）\n\n长什么样：虚构 1964 年间谍片的片头：追一把被偷的钥匙，几何碎片最后拼成片名。\n\n适合：片头、悬念\n\n关键特征：\n- Not flat vector motion graphics (the edges are cut, the paper is physical), not a halftone print style (no dots), not a Swiss grid (diagonals, jaunty type, playful), not a spy parody with gadgets and gun barrels.\n- Flat, opaque inks on paper: four colours, no gradients.\n- Hand-cut edges on every shape; pieces layered with cut gaps and small paper shadows.\n- Abstraction down to silhouettes: figures in profile, all acting in outline and timing.\n\n质感与用色：\n- Scissor-cut edges: every polygon resampled every ~9–10 px and displaced along its normal by low-frequency noise (amp ~1.2–2.2 px, larger for…\n- Paper layering: separate pieces are separated by a ~2.4 px cut gap in the ground colour and cast a small paper shadow (offset a few px, blur…\n\n用色：\n- Four inks: ink black, paper cream, one hot colour, one warm secondary. Darker \"shadow paper\" variants of those inks only for depth.\n- One dominant ground colour per scene, changing with the location; figures and type in the other inks.\n\n节奏：\n- Puppets on twos (12 fps): poses and positions of figures, hands, letters landing, vehicles.…\n- Run cycles of ~8 drawings, one step per beat, a strong lean, the accent flying back. Walks one step per beat, coats swinging.\n\n镜头：\n- A vocabulary, not a route. Graphic, flat, decisive. Opening and ending come from the topic.\n\n避免：\n- Every internal piece outlined with a gap looks like a mannequin diagram → merge pieces in an offscreen layer, cut only joint slits (destinat…\n- A clear() that resets the transform silently kills the camera.\n- A figure fully hidden behind a letter reads as \"nobody there\" → let hat, nose and accent stick out.…\n- A credit only ever seen partially is uncomfortable → always open wide on the full line.",
   },
   {
@@ -2136,6 +2204,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l35.jpg",
     still: true,
+    generated: false,
     guide: "风格：装饰艺术（L35 · Lemo-Opuscar）\n\n长什么样：1930 年的大饭店，门童赶在午夜前把一封信送上顶楼。\n\n适合：华丽\n\n关键特征：\n- A world built from gold keylines on warm black, filled with airbrushed hard-edged volumes (Cassandre, Lempicka), organised around one vertical axis.…\n\n质感与用色：\n- Ground: warm lacquer black, never neutral grey-black; a night sky may drift toward a deep emerald near the horizon.\n- Gold is a banded metal gradient (dark – light – hot – light – dark); animate its sheen offset for a light sweep.\n\n用色：\n- Three constants: warm black ground, gold line and metal, ivory for paper, gloves, light and type.\n- One saturated accent reserved for the protagonist (or the one object the story follows).…\n\n节奏：\n- Characters step on twos (12 fps); camera, light, bulbs, gold draw-on and sheen run on ones (24 fps). A stepped camera reads as stutter.\n- Everything unfolds from the centre: a point → a hairline → bars open symmetrically → text rises → wings and sparkle.\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Bulb signs from glyph skeletons break on curves (G, S, R): Zhang–Suen staircase pixels fool a neighbour-count junction test → use the crossi…\n- A generic cartoon character looks pasted in → characters are deco (§2).\n- Fish-scale reads as brickwork → lower half-circles row by row, each overlapping the previous row, plus an inner arc.\n- Door leaves over a flat \"interior\" read as a blank frame → draw only the leaves, closing over the live shot.",
   },
   {
@@ -2148,6 +2217,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l36.jpg",
     still: true,
+    generated: false,
     guide: "风格：蓝图 / 工程制图（L36 · Lemo-Opuscar）\n\n长什么样：发明家的蓝图自己画出一台接云机器，修订云线变成了真的雨云。\n\n适合：讲原理、讲结构\n\n关键特征：\n- Not Hologram HUD (no glowing wireframe, no 3D orbit), not Whiteboard (no marker on white), not Copperplate Engraving (no burin tonal hatching as the whole look).\n- The whole film happens on one sheet of blueprint paper lying on a dark drafting table.…\n- White line work on uneven Prussian blue: centre lines, outlines, hatching, dimension lines, leader lines with numbered balloons, a title blo…\n- A 2D line-drawing language: orthographic and oblique/isometric projection are allowed, 3D rendering never.\n\n质感与用色：\n- Sheet: procedural cyanotype in a shader in sheet coordinates, crisp at any zoom: fbm between two Prussian blues, coating streaks, fibres, fo…\n- Lines: pale blue-white, slightly soft (mipmap bleed), a faint ink breakup driven by paper grain. Four weights (outline, detail, thin, hair…\n\n用色：\n- Blue and white only. The blue varies in value (coating, stains, folds); the white varies in weight and softness, never in hue.\n- One non-blue colour, used exactly once: a rubber-stamp ink (red is classic; a green APPROVED or black VOID work too).…\n\n节奏：\n- Camera and draw-on on ones (24 fps). Continuous moves within a section, hard cuts on downbeats between sections…\n- Draw-on truncated by arc length with a glowing nib at the head; items staggered within a layer; each layer starts on a beat.\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Main figure near the sheet edge → wides show the desk. Keep margins or enlarge the sheet.\n- Upward explosions hit the header → explode sideways and flatten long parts during the explode.\n- Subtitles on the ink buffer vanish off-sheet and can't occlude lines → separate overlay, premultiplied alpha.\n- An object darkened by its own shadow → zero the shadow channel only in its area.",
   },
   {
@@ -2160,6 +2230,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l37.jpg",
     still: true,
+    generated: false,
     guide: "风格：彩色玻璃窗（L37 · Lemo-Opuscar）\n\n长什么样：阳光从清晨移到黄昏，照到哪一格花窗，哪一格的故事就动起来。\n\n适合：光、庄重\n\n关键特征：\n- Not vector art with black outlines, not a kaleidoscope or Voronoi filter, not Tiffany Art Nouveau, not mosaic (mosaic reflects; glass transmits).\n- Cut pieces of coloured glass in dark lead cames, faces and folds painted in brown grisaille.\n- Glass has no light of its own: it glows only when the sun is behind it and throws a soft coloured copy onto the stone floor…\n- Figures move piece by piece, rigid and stepped.\n\n质感与用色：\n- One formula for everything (a WebGL compositor), so every element sits in the same light\n- Hue-preserving tone mapping: per-channel 1-exp(-x) turns cobalt pastel; blend to per-channel only at the very top so a sun disc burns white…\n- Unlit panes: weak sky light + room-lit weathering haze, figures ghostly but readable.…\n\n用色：\n- Two hues carry the picture (one deep, one hot); three or four more only as small touches.…\n- Greenish white glass sparingly (faces, fillets, sky). Flesh darker than you think, or backlit faces burn white.\n\n节奏：\n- Figures step at 8 fps; light, camera, shafts and dust move on ones (24 fps): stepped light reads as flicker.\n- Rigid pieces on 2D FK (setTransform(base · T(part)), free draw order); long bodies are spine chains of banded pieces.\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Hidden leads show through front pieces → erase the surface under each piece before stroking its lead.\n- Pastel glass → hue-preserving tone mapping; darker flesh. Red dusk × blue glass = mud → keep blue alive, raise intensity.\n- Voronoi reads as a filter; flat fills read as clip-art → hand-cut lozenges, texture on every piece, heavy grisaille.\n- A sharp floor patch looks like a decal → blur, desaturate, stone-modulate, halo. Shafts at full strength at the window wash out the pane.",
   },
   {
@@ -2172,6 +2243,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l38.jpg",
     still: true,
+    generated: false,
     guide: "风格：象形运动图形（L38 · Lemo-Opuscar）\n\n长什么样：2026 亚运会 43 个大项，几何象形人卡着节拍快闪。\n\n适合：小图标卡点，讲步骤、讲数字\n\n关键特征：\n- A catalogue film: N items (products, dishes, steps, species…) shown one card at a time, fast, on the beat. Each card = one pictogram doing one action + a huge title + a second-language line + a mono index \"07 / N\".…\n- The grid pattern: big discs and half-discs spanning square cells, about half the cells carrying a small motif, all in five tones of one hue…\n- The pictogram figure: flat, faceless, rounded bars and a disc head; far-side limbs mixed toward the background.…\n- Type as architecture: a 900-weight grotesk title set very large, a heavy second-language line under it, small mono meta text in the corners…\n\n质感与用色：\n- Flat Canvas2D, rendered clean; grain only at mux time. One square grid (cell ≈ 1/6 of the frame height) rules bands, transitions and walls.\n- Pattern model: fill with a mid-dark tone; on grid nodes randomly place cell-radius discs in random tones and discs-with-inner-discs…\n\n用色：\n- A set of five hues + one dark neutral, each hue in five tones (darkest → lightest, the middle one is the base). A chapter = one hue…\n- Under type the pattern runs at low contrast; on chapter cards at full contrast.\n\n节奏：\n- A grid of time: pick one tempo for the film; every shot starts on a beat and every key action in a pose (release, contact, landing) lands on…\n- Pace ladder: normal cards last one bar; related sub-items become half-length rapid-fire runs.…\n\n镜头：\n- Mostly a locked flat frame; energy comes from row shifts, transitions and figure actions. When the camera moves, it moves along the grid. Opening and ending come from the topic.\n\n避免：\n- Figure environments spread into the text column → render the figure layer into its own buffer and fade it out with a gradient mask before th…\n- Cream on light hues fails contrast → dark type and dark figures on light hues; their disc is the lighter tone.\n- The sun disc vanishes on the dark neutral → use a lighter tone for it.\n- Pattern canvases are large and seeded per card → cache with a bounded LRU…",
   },
   {
@@ -2184,6 +2256,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l39.jpg",
     still: true,
+    generated: false,
     guide: "风格：ASCII / CRT 终端（L39 · Lemo-Opuscar）\n\n长什么样：月球基地的 AI 沉睡 40 年后被唤醒，用字符画出“家”来回复。\n\n适合：讲代码、讲 AI，和样片库 E3 字符画一起看\n\n关键特征：\n- A single monochrome terminal screen: P3 amber (or P1 green) phosphor glowing on dark glass, curved at the edges, with scanlines. Every image, including title, landscape, face, room and subtitles, is made of real glyphs placed on a character…\n\n质感与用色：\n- Font: one monospace bitmap-style font (VT323, OFL); cell 0.4 em × 0.8 em (1:2).…\n- Grids: column count per shot (title ~20, terminal 80, picture 200+); a push-in can go until one cell holds a sub-grid of its own.\n\n用色：\n- One phosphor carries everything: amber, green or white, in its own brightness ramp. No second hue for decoration.\n- At most one soft second colour, used for one thing only (the emotional object), switched on at a single moment, on a downbeat, and never tak…\n\n节奏：\n- Characters never move off-grid, except in a declared transformation moment. Typing, scrolling and counters jump from cell to cell.…\n- Only three things move continuously: grid scale (the camera), CRT physics, and particles in a transformation.\n\n镜头：\n- The only camera is the grid scale, plus CRT power states and one possible shot outside the screen.\n\n避免：\n- Inverse video: 挖孔 only changes alpha, which the upload ignores → opaque black canvas, cut letters with a black atlas.\n- Negative not aligned to the grid drifts across hundreds of columns → map with cell width / samples exactly.\n- Wrong cell centre: cells are 2·cw tall, so the centre is (j + .5)·2cw, not (j + 1)·cw.\n- Every dark pixel becomes a character (-+-+ walls) → threshold, gamma ≈ 1.25, local contrast.",
   },
   {
@@ -2196,6 +2269,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l40.jpg",
     still: true,
+    generated: false,
     guide: "风格：数据叙事（L40 · Lemo-Opuscar）\n\n长什么样：一百年的夏季气温，图表本身就是故事。\n\n适合：用图表讲故事\n\n关键特征：\n- The chart is the film. Every mark is a real number and every movement is a meaningful chart operation (a mark lands, an axis grows, the scale changes, a series morphs, a note is pinned). The data is real, openly licensed and traceable.…\n\n质感与用色：\n- Paper: warm cream, fixed-seed fibre noise and a faint dot grid in world space. Ink: dark warm ink for axes and series, pale warm grey for gr…\n- Marks: data dots carry a thin ink ring so pale values stay visible on cream. A mark lands with a short pop and a thin ripple…\n\n用色：\n- Colour encodes one thing: the value. Diverging data uses a ramp (ColorBrewer RdBu family) centred on the mean of a meaningful reference peri…\n- Honesty beats drama: pale values stay pale; never stretch a ramp to make a change look bigger.\n\n节奏：\n- The rhythm of the data is the rhythm of the film. Map the marks to a musical grid…\n- Pencil acting: lift before each tap, land with the shadow meeting the tip, a tiny rebound…\n\n镜头：\n- A 2D camera {x, y, zoom, roll} over one sheet of paper. A film is one take; a hard cut is rare and meaningful. The moves below are a vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Select data columns by header name, never by index; print every fact the narration claims.\n- Notes collide with later data → data-space pins, a memory zone.\n- A frame break rescaled too fast is invisible → hold the pierced state ≥ half a beat.\n- Right-aligned notes are still written left to right → the pencil hops to the first letter.",
   },
   {
@@ -2208,6 +2282,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l41.jpg",
     still: true,
+    generated: false,
     guide: "风格：等距信息图（L41 · Lemo-Opuscar）\n\n长什么样：一杯咖啡从种植园到你手里的旅程。\n\n适合：一个小世界、一套流程\n\n关键特征：\n- Not low-poly 3D (no perspective, no lighting beyond three face tones), not a flat 2D explainer (everything has isometric depth), not a blueprint (colour blocks, not line drawings on blue).\n- Flat, true isometric. No perspective, no outlines on solids; shapes are separated only by the three tones of each face.…\n- Infographic furniture is part of the picture: leader lines, label pins, dashed cut lines, hatched section faces, tracking rings, a legend, a…\n- Numbers are built from icons (Isotype), and they add up.\n\n质感与用色：\n- Projection: axes at 30°. sx = (x − y)·cos30°·k, sy = ((x + y)·½ − z)·k; x runs down-right, y down-left, z up; painter depth = x + y + z.…\n- Three tones per face chosen from its normal: top light, left (+y) mid, right (+x) dark.…\n\n用色：\n- A pale neutral ground (cream, paper grey or pale blue) and 5–7 flat hues, each with its three tones; one ink colour.\n- Colour codes meaning, the way a legend does: one hue per material or role (water is always the same blue, the subject always its hue).…\n\n节奏：\n- Nothing moves without a line leading it: a route line is drawn slightly ahead, a leader grows before an inset opens, a cut line draws before…\n- Cutaway: cut line (~0.3 s) → the near skin slides out along its normal and fades (~0.35 s, ease-out) → hatched section rims fade in over the…\n\n镜头：\n- A vocabulary, not a route. The camera is a world centre plus a log-interpolated zoom k (px per unit); the projection never changes. Opening and ending come from the topic.\n\n避免：\n- Newell normals depend on vertex order: faces get culled as back faces → give every face an outward hint and flip the normal to match before…\n- Painter sorting breaks on composites → draw them as one ordered item; add depth bias for overhangs.\n- Semi-transparent moving solids look like ghosts → motion only, no alpha.\n- A hull or wheel touching the wrong surface reads as an accident → leave visible clearance.",
   },
   {
@@ -2220,6 +2295,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l42.jpg",
     still: true,
+    generated: false,
     guide: "风格：暗色科技发布（L42 · Lemo-Opuscar）\n\n长什么样：虚构 app Tidy 的发布片：被埋掉的光标一键把几百个窗口归位。\n\n适合：发布会感\n\n关键特征：\n- A keynote-grade product film for software. There is no physical product and no glass render: the protagonist is the interface (a cursor, windows, notifications, tiles, a number).…\n\n质感与用色：\n- Stage: a near-black base with a radial lift at the upper centre, one large cool glow at single-digit opacity off-centre, a 50–55 % corner vi…\n- UI kit, all original and drawn in code: rounded windows (title bar with only a small glyph and title…\n\n用色：\n- A cool neutral ladder only: near-black stage, three surface steps, text in three greys (primary, secondary, label).…\n- One accent, saturated and luminous, with its own glow. It is reserved for what the product is or does: the protagonist element, the call to…\n\n节奏：\n- 24 fps on ones, no stepping, no boil: this is precision, not craft.\n- Everything lands on the grid and on the beat. Moves start a beat early and land on it.…\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Strip perspective of a semi-transparent canvas shows vertical seams (overlapping slices double alpha) → project the opaque surface, then lig…\n- A hard white glint reads as a sticker reflection → soft front, glint ≤ 20 %.\n- Nearest-slot snapping looks like a flicker, not a collapse → typed destinations, curved paths, trails.\n- Too few elements leave holes in a grid that read as a mistake → generate by rule, then trim or pad to exactly the slot count per group.",
   },
   {
@@ -2232,6 +2308,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l43.jpg",
     still: true,
+    generated: false,
     guide: "风格：活体实机录屏（L43 · Lemo-Opuscar）\n\n长什么样：像素小人 Clawd 搬进 Claude 应用，一镜到底演示 Plan 模式和自检。\n\n适合：录屏加一个动画角色，演示\"我\"怎么用 AI 工具\n\n关键特征：\n- The film looks like a screen recording of the real product, but it is not a recording. Every window, menu, diff line and button is redrawn in 2D (HTML/CSS/SVG), so the camera can go anywhere, every pixel is controllable and text stays sharp…\n\n质感与用色：\n- Real UI, redrawn: every label, mode name and shortcut matches the real product; no screenshots, no lorem ipsum.…\n- Pixel grid is sacred: the mascot, its props (pencil, \"!\", sparkles, heart, dust) and trails share one square-pixel grid with crisp edges.…\n\n用色：\n- The product's own interface colours rule: follow its real light and dark themes exactly.\n- The mascot keeps the product's or brand's mascot colour, or one saturated hue that no UI element uses, so it finds the eye in any frame.\n\n节奏：\n- 30 fps; UI on ones; mascot position stepped to its pixel grid.\n- Mascot acting: jumps with anticipation crouch, stretch on take-off, tucked legs, landing squash with a damped bounce and dust.…\n\n镜头：\n- A recording-software camera: one continuous take inside the screen, zoom ≥ 1, cuts only under chapter transitions. Opening and ending come from the topic.\n\n避免：\n- Invented features or renamed modes → check every button, mode and shortcut against the product's documentation…\n- The mascot floats or drifts off its element → measure the DOM every frame, stand only on top edges.\n- The mascot covers text or sits under a caption → reserve a text-free lane for it.\n- Blur-filter \"fake depth\" on text you want read, or zooming out past the screen → rack focus only on panes not being read; zoom ≥ 1.",
   },
   {
@@ -2244,6 +2321,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l44.jpg",
     still: true,
+    generated: false,
     guide: "风格：科幻全息界面（L44 · Lemo-Opuscar）\n\n长什么样：电助力车被扫描成全息线框，目标框依次锁定电池、电机、刹车。\n\n适合：未来感\n\n关键特征：\n- The subject is always a line wireframe made of light above a round projector pad on a near-black stage, never a rendered object. Everything reads as scanned data: a scan plane grows the model, parts pull apart along their assembly axes, num…\n\n质感与用色：\n- Stage: near-black tinted by the hue, a radial lift behind the subject, a fading dot grid, a strong vignette.\n- Projector pad in true perspective: concentric rings (one bright, one dashed), ticks, faint rays…\n\n用色：\n- One cold hue plus one warm accent, both parameters (e.g. mint/orange, violet/lime, ice-blue/red; choose from the subject).\n- The hue carries lines, HUD and fills. The accent is spent on locked values only: a number turns accent-coloured at the frame it becomes true…\n\n节奏：\n- Everything on ones at 24 fps. Only glyph scrambling steps, every frame.\n- Target lock: oversized, rotated 45°, faint; snaps to fit in ~0.2 s (cubic ease-out), flashes white 3 frames on the downbeat.\n\n镜头：\n- An orbit camera (yaw, pitch, distance, narrow fov) with a screen position for the target, so the subject can sit beside text. A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Target boxes balloon → rest pose, skip internal pieces, long attachments box:false.\n- Long diagonal leaders point at the wrong part → ring on the part body, flash the part.\n- Two parallel boxes moving don't read as an explode → shell slides on its axis, contents stay and glow.\n- A part built from generic boxes doesn't read as that part → give it its characteristic silhouette.",
   },
   {
@@ -2256,6 +2334,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l45.jpg",
     still: true,
+    generated: false,
     guide: "风格：1930s 橡皮管卡通（L45 · Lemo-Opuscar）\n\n长什么样：一只咖啡杯满厨房追一块逃跑的方糖。\n\n适合：复古卡通、搞笑\n\n关键特征：\n- Hand-inked black-and-white animation from the early sound era: characters with rubber-hose limbs (equal-width tubes, no elbows, no knees), white four-finger gloves, pie eyes (black oval pupils with a wedge cut out), huge round shoes, and bo…\n\n质感与用色：\n- Frame: 1920×1080 output with a 4:3 gate (1440×1080 centred, black pillarbox), gate corners rounded (r ≈ 28 px), soft inner shadow on the gat…\n- Characters: flat fills, one hard-edged form-shadow band (light grey) on the side away from an upper-left light, ink outline constant in scre…\n\n用色：\n- Strictly greyscale: about 6 grey steps plus a separate character white. No hue anywhere, not even in the film damage.\n- Characters own the extremes: character whites and ink blacks are brighter and darker than anything in the background.…\n\n节奏：\n- Characters on twos (12 fps); camera moves on ones (24 fps). A stepped camera reads as judder.\n- Tempo grid: choose a tempo where one beat is an even whole number of frames at 24 fps (8, 10, 12, 16 or 20 frames), so every beat lands on a…\n\n镜头：\n- A theatre camera: mostly locked, moving only to follow a runner or to land a gag. Opening and ending come from the topic.\n\n避免：\n- Flat grey frames. Push backgrounds to mid grey, keep pure white and ink for characters, add a contrast boost.\n- Wide shots kill gags: a far shot makes characters tiny and Mickey-mousing unreadable. Use medium shots, and a packed medium-full for crowds.\n- \"Sad\" brows drawn as \"angry\": define brows by inner / outer end (inner = near the nose), not by left / right.\n- A limb drawn behind a body gets hidden by the silhouette (a handle, a tail): kick and reach outward past it.",
   },
   {
@@ -2268,6 +2347,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l46.jpg",
     still: true,
+    generated: false,
     guide: "风格：80 年代赛璐璐动画（L46 · Lemo-Opuscar）\n\n长什么样：快递少女骑车穿过雨后霓虹都市，赶在黎明发射前送到一盘磁带。\n\n适合：霓虹城市、怀旧\n\n关键特征：\n- Four layers, and the contrast between them is the look\n- Background painting: soft airbrushed gradients, glowing windows, wet reflections…\n- Cel (characters, vehicles, props): flat fills, hard-edged shadow and highlight shapes, coloured outlines, never pure black…\n- Light: backlit cel (透過光): signs, lamps, title letters glowing through the frame; flares, halation.\n\n质感与用色：\n- Cel rendering. Fill, then a hard shadow crescent, then a hard highlight crescent, then the coloured outline. No gradients inside a cel shape (exception: one \"harmony\" painted still at a peak).…\n\n用色：\n- Painted plates carry gradients and atmosphere; cels are flat, few-colour, saturated.…\n- The protagonist has one accent colour that pops in every lighting set. Line colours are dark versions of their fill.\n\n节奏：\n- Characters on twos (12 fps); performance beats (blinks, eye openings, lip flaps, gestures) on threes (8 fps).…\n- Cycles: hair and cloth as ribbons driven by a travelling sine, 4-drawing cycle (6 when calm); bounce = a 12 fps jitter of a few px.\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- White cels bloom pink → bloom from the emissive canvas; weak, high-threshold bloom on colour.\n- Neon bleeds through characters → silhouettes stamped into the emissive canvas.\n- Black holes in highlights → clamp before S-curves.\n- Thick rim light swallows thin shapes → 2–4 px offsets.",
   },
   {
@@ -2280,6 +2360,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l47.jpg",
     still: true,
+    generated: false,
     guide: "风格：科幻情景喜剧卡通（L47 · Lemo-Opuscar）\n\n长什么样：厌世天才开传送门只想买杯咖啡，却穿过越来越离谱的平行宇宙。\n\n适合：轻松搞笑\n\n关键特征：\n- Hand-drawn-looking 2D TV animation for adults: uniform thick dark outlines that boil, flat fills with hard-edged shadow shapes (no gradients), big white eyes with tiny pupils, elastic mouths, grotesque-but-cute creatures, and sci-fi hardwar…\n- Never reproduce any existing show's characters, silhouettes or colour combos (e.g.…\n- Invent your own cast, props and portal device. Never write the source show's name in the film or docs…\n\n质感与用色：\n- Line: near-black (a slightly purple black reads best), ~7 px for characters and props, 4–6 px for background detail, round joins.…\n- Line boil: resample every outline in screen space (~7 px steps) and displace along the normal with low-frequency noise, amplitude ~1.7 px…\n\n用色：\n- One palette per world, 3–5 colours, maximally different from the previous world in hue and value, so the audience reads \"we jumped\" from col…\n- Line colour and eye white never change between worlds; everything else may.\n\n节奏：\n- Characters on twos (12 fps): poses, mouths, blinks, walk cycles and boil step at 12 fps.…\n- Acting over moving: held poses with small changes (eye twitch, pupils sliding, a gulp, sweat drops).…\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- TTS reads hyphen stutters as words: write syllables (\"buh, buh-broken\"); respell words it mangles; pick names that survive a low voice.\n- Whisper mis-hears very short clips unless padded with ~0.6 s of silence.\n- A real interruption: generate the interrupted line longer than needed and truncate the audio where the other voice cuts in.\n- A springy overshoot swallows the actors: gentle back-ease.",
   },
   {
@@ -2292,6 +2373,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l48.jpg",
     still: true,
+    generated: false,
     guide: "风格：50s 扁平卡通（L48 · Lemo-Opuscar）\n\n长什么样：用 50 年代教育片的口吻，三步教你装好一台扫地机。\n\n适合：老科普片的感觉，感知科普很合适\n\n关键特征：\n- Flat, printed-looking colour with a thin, breathing ink line that never quite closes. Every fill is a separate \"cel\" printed a few px off its line, re-rolled on twos, so the picture shimmers like hand-registered paint while the camera glide…\n\n质感与用色：\n- Off-register cels: fill drawn with a small offset (a few px, down-right) from its line; the offset jitters ±1–2 px on twos.…\n- Line: 3–5 px ink ribbons with ±40 % width breathing and 12–25 % breaks. Characters ~4 px, props 3–4.5 px, walls in plans thicker and broken.…\n\n用色：\n- A warm paper ground, a warm near-black ink, soft atomic-age complements. Nothing pure or neon.\n- One ground colour per scene: a lighter tint for walls, a darker shade for floors.…\n\n节奏：\n- On twos: poses, hand shapes and the cel jitter change at 12 fps. The camera, iris wipes, arrows, plan routes and rays move at 24 fps.\n- Held body, moving hands: switch poses with a single in-between. A hand action has anticipation (pull back or lift), a fast action (0.15–0.25…\n\n镜头：\n- The camera is \"the stand\": never handheld. A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- A route that ignores obstacles → follow the product's real rules; flow streamlines bend around obstacles and never cross.…\n- A separate nose wedge looks glued on → one open spline from the bridge round the skull, closed at the nose tip.\n- Thin arms read as sticks from the neck → shoulders at the torso corners, sleeves as a thick ink ribbon with a colour ribbon on top.\n- Fat-blob fingers turn the hand into a cloud → stroke every part first, fill second (one union outline), slender fingers with separation line…",
   },
   {
@@ -2304,6 +2386,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l49.jpg",
     still: true,
+    generated: false,
     guide: "风格：16-bit 像素 RPG（L49 · Lemo-Opuscar）\n\n长什么样：勇士在最终 Boss 门前存档，存档画面闪回一路冒险。\n\n适合：学习像打怪升级\n\n关键特征：\n- Not HD-2D (no depth of field, bloom or real-time light), not CRT nostalgia (no scanlines, no grain), not a parody.\n- 320×180 native pixels, scaled ×6 nearest-neighbour to 1080p; everything, text included, lives in the framebuffer.\n- A limited, indexed palette; gradients are ordered dither, never blends.\n- Sprites around 20–34 px tall animating in a handful of frames; faces act in portraits.\n\n质感与用色：\n- Indexed framebuffer (Uint8Array of palette indices) presented through a lookup table (index → RGB), so a whole palette can change in one fra…\n- Master palette of ~32 colours (a free palette such as ENDESGA-32), plus protected duplicates of a few indices that no palette effect touches…\n\n用色：\n- Palette = feeling. Colour depth, fades and swaps are story tools; change the whole palette by table, never by alpha.\n- Colour depth can stand for time: older = fewer colours, lower resolution.\n\n节奏：\n- Output 24 fps. Sprites step at 8 fps (walk) to 12 fps (flames, blinks); camera and parallax move on ones at integer pixels.\n- Game-native acting: hop forward to act, cast pose, knockback recoil, kneel, KO blink (12 fps on/off) and vanish; breath = shoulders up 1 px.\n\n镜头：\n- A vocabulary, not a route. Game cameras are simple and legible. Opening and ending come from the topic.\n\n避免：\n- Rank-based palette mapping crushes a scene to black → map by luminance with a gamma.\n- Reduced subsets without warm hues turn a sunset solid red → keep warm hues.\n- An 8-bit set without dark green or brown turns night grass blue; generic brightening near fire turns grass neon → warm remap.\n- Post-quantising a full-colour scene to 4 shades is mud → draw low eras natively with known indices at half resolution.",
   },
   {
@@ -2316,6 +2399,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l50.jpg",
     still: true,
+    generated: false,
     guide: "风格：HD-2D（L50 · Lemo-Opuscar）\n\n长什么样：灯塔熄灭，孙女提着最后一簇火穿过夜林、爬上风暴悬崖。\n\n适合：像素加光影，有电影感\n\n关键特征：\n- A 3D miniature set of boxes and cylinders wrapped in pixel-art textures, populated by flat 2D pixel sprites that receive light and cast shadows, seen from a high, far camera through a tilt-shift band so the world reads as a tabletop model.…\n\n质感与用色：\n- Constant texel density: surfaces drawn per pixel on small canvases, NearestFilter, world-space UVs at one density (e.g. 24 px/m)…\n- Colour from ramps: 3–6 swatches picked by brightness through a narrow 4×4 Bayer dither.…\n\n用色：\n- Two temperatures: one large ambient key (cold, or pale, or dusty) against small warm or saturated practicals.…\n- The darkest value is a warm ink, never pure black; the brightest is the light source itself, bloomed.\n\n节奏：\n- Sprites step, everything else glides. Walk cycles 4 frames at 6–10 fps, idles alternate two frames at ~1–2 Hz, blinks every few seconds, pos…\n- Poses are data: a parameter object per drawing; a new pose is a new table entry.\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic. Always look down on the world (never at eye level); every path is a monotone spline of a few keys, no overshoot; focus is recomputed every frame from camera to the subject.\n\n避免：\n- Checkerboard everywhere → the dither band is too wide (≈ .22 on sprites, ≈ .45 on textures).\n- A light burns out the sprite that holds it → move the light ~0.45 m toward the camera…\n- Lights behind a billboard don't light it (front normal only) → always the front fill.\n- Cylinder beams facing the camera give NaN that bloom spreads into black blocks → billboard beam cards that fade toward the lens, glow sprite…",
   },
   {
@@ -2328,6 +2412,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l51.jpg",
     still: true,
+    generated: false,
     guide: "风格：微游戏快闪（L51 · Lemo-Opuscar）\n\n长什么样：见习宇航员闯五秒训练营，越来越快，Boss 关亲手降落回地球。\n\n适合：快节奏，一连串小场景\n\n关键特征：\n- Not Game Show Flat (one art style, rounds of bars, call-and-response), not a style sampler reel (every game has stakes; lives connect them), not a montage (each game has a rule grasped in under a second).\n- A microgame = a shouted command word + 2.5–4 s + one action + one result (success, or a funny failure).\n- Each microgame uses a different visual medium (crayon, ink wash, terminal, risograph, pixel, blueprint, Swiss type, clay, cut paper, woodcut…\n- One fixed home look holds the film together: a show stage with a host, a lives counter and a stage number, which the film returns to between…\n\n质感与用色：\n- Home stage: flat toon, thick near-black outline (~7 px), flat fills, one hard-edged shadow (fill in the shade colour, clip to the shape, ref…\n- Each medium is a simplified re-drawing, 100–200 lines of code, built around one channel trick that makes it read at a glance\n\n用色：\n- The home stage owns a saturated party palette: a deep ground behind a rotating sunburst, two or three loud accents, plus a fixed success col…\n- Each medium brings its own palette from its tradition (wax colours, one-ink-plus-vermilion, amber phosphor, three riso plates, a limited pix…\n\n节奏：\n- The frame rate is part of the ladder: characters step on twos or at 8 fps early, faster later, on ones at the climax.…\n- Five things accelerate together at each speed-up: tempo, game length, stage dwell, command hold, character frame rate.\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- A luminance-ramp ASCII figure is mush → hand-authored glyph art with structural glyphs, an inverse glyph for the accent.\n- Ink shapes read as smoke unless their silhouette is designed (a short round blot phase, then a clear structure with seams and light edges).\n- A failure at high tempo goes unread → make the action overshoot and hit something, or give it an instant replay.\n- Alpha-coverage media show the background through gaps → a full-pressure base where it must be solid.",
   },
   {
@@ -2340,6 +2425,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l52.jpg",
     still: true,
+    generated: false,
     guide: "风格：综艺节奏扁平（L52 · Lemo-Opuscar）\n\n长什么样：把 AI 发展史做成一局节奏游戏，模型踩着拍登场，最后发成绩单。\n\n适合：综艺感\n\n关键特征：\n- Not a microgame frenzy (no timer or one-verb command per 3 s game, no change of art style per round), not a mid-century cartoon (no textured painted backgrounds, no character acting), not a keynote (no slow reveals, no gradients).\n- Everything is on the grid. One fixed, fast tempo. Every pop, drop, stamp, typed character and camera punch sits at a (bar, beat) and is also…\n- One drawing kit, many sets. Flat fills, one heavy ink outline, round caps, hard offset shadows…\n- Characters are toys. One body construction for the whole cast, told apart by colour, a belly patch, one head accessory and a name tag.…\n\n质感与用色：\n- Vector only, SVG or canvas paths at 1920×1080: flat fills, one outline colour (near-black), 8 px outlines on characters and props, 5–7 px on…\n- No gradients, no blur, no texture, no soft shadow. Depth is a hard offset shadow: the same shape in outline colour shifted ~10 px (stickers…\n\n用色：\n- Ink + paper + candy. Near-black ink, white, and a warm cream for cards and paper props…\n- One set = one hue. The background, its pattern and the round card share a hue; the card changes colour to match the set it introduces.…\n\n节奏：\n- Idle = hop on the beat: a parabola per beat (8–30 px); neighbours hop on the off-beat so a crowd ripples.\n- Hit = squash: a damped wobble (~30 rad/s, ~0.35 s) after each hit; a small squash on every downbeat.\n\n镜头：\n- The stage is a frontal, symmetrical proscenium; the frame itself does the moving. A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Stateful updates break parallel renders: a worker starting cold shows the initial state. Recompute every pose from t…\n- Cue lists drift when cut flashes, jingles and arrangement are separate hand lists: derive them from one table.\n- Fixed-length audio buffers cut the tail: size them from the duration.\n- Text measured before fonts load overflows plates: load fonts, then build.",
   },
   {
@@ -2352,6 +2438,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l53.jpg",
     still: true,
+    generated: false,
     guide: "风格：1920s 默片（L53 · Lemo-Opuscar）\n\n长什么样：面包店学徒追一个滚走的面包，最后掰成两半分给饿肚子的小女孩。\n\n适合：字幕卡、怀旧\n\n关键特征：\n- A one-reel film as it would look projected\n- A 4:3 print in a gate between theatre curtains; the sides of the 16:9 frame are the picture house.\n- An ink drawing with washed greys and hatching, printed on silver stock that flickers, weaves, scratches and burns at the edges.\n- Nobody speaks. Beats are told by action in wide shots and by intertitle cards.\n\n质感与用色：\n- Tonal painting + Redraw. Scenes are painted in grey values only (print densities roughly: ink 0.07, dark cloth 0.15–0.3, mid wood 0.45–0.6…\n- Print pass: silver tone with a sepia amount between ~0.1 and ~0.36, print black ~0.055 and white ~0.93, S-curve, halation on highlights, une…\n\n用色：\n- Monochrome silver, tinted only by the print: colder and harsher (more damage, less sepia) when things go wrong, warmer and cleaner when the…\n- Values carry everything: dark clothes against pale walls, pale faces against dark interiors; check every shot as a thumbnail.\n\n节奏：\n- Hand-cranked sampling: character and camera motion sampled at 16 fps (18 or more to undercrank a fast scene)…\n- Speed is an emotion: undercrank chases and panic (faster motion, faster flicker); return to 16 fps and a calmer print for tender scenes.\n\n镜头：\n- A vocabulary, not a route. The period camera is heavy: most shots are locked. Opening and ending come from the topic.\n\n避免：\n- Too much content kills a silent film: a many-step chain at small figure scale is noise in a thumbnail.…\n- Puppet arms: apply abduction before flexion, let the shoulder rise and swing forward as the arm goes up, slim the torso's shoulder corner on…\n- Pose pops: drive every figure by eased keyframe lists, never by if branches.\n- Floating props: hold a prop between the palms at the depth between the arms; tie a rolling object's rotation to distance (angle = distance /…",
   },
   {
@@ -2364,6 +2451,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l54.jpg",
     still: true,
+    generated: false,
     guide: "风格：后室 / 新怪谈（L54 · Lemo-Opuscar）\n\n长什么样：新夜班员工拍下入职第一晚：无尽的黄色办公空间，和墙上的员工守则。\n\n适合：不安、对未知的害怕\n\n关键特征：\n- Not a horror film (no monster close-ups, no gore, no jump scares, no score stings), not an ASCII/CRT terminal piece (the artefacts are tape and lens, not phosphor and scanlines), not a ruin (clean is part of the style).\n- One first-person camcorder recording (1990s VHS, 4:3), handheld, continuous.\n- An empty, familiar-but-wrong interior that repeats: an office, a hotel floor, a school, a mall, a parking level, a hospital wing.…\n- Dread from emptiness, repetition, bureaucratic rules, and the camera's own machinery failing at the wrong moment. Nothing chases anyone.…\n\n质感与用色：\n- Frame: 4:3 pillarboxed in 1920×1080. Render 3D at low resolution (e.g. 720×540) and let the VHS pass upscale…\n- Space: axis-aligned partitions on a grid with random gaps and stubs, pillars, a drop ceiling of tiles with recessed light panels at regular…\n\n用色：\n- One dominant sickly hue from the location's materials (mustard wallpaper, institutional green, hospital blue, beige laminate), with a darker…\n- Exactly one saturated colour: a signal such as a red alarm lamp, a green emergency sign, an amber warning light.…\n\n节奏：\n- One continuous handheld take. Cuts happen only where the tape breaks: power-on roll-in, tracking tear, REC off.\n- Handheld = walking gait (head bob a few cm, sway, small roll) + breathing (~0.27 Hz) + tremor noise at a few frequencies whose amplitude fol…\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- A fully bright scene reads as a hospital corridor → partitions with gaps; far areas fall dark.\n- Lights leak through walls (no occlusion) → a dead zone needs every light within ~±5 m dead, and the space behind it dim.\n- Background shows as a bright rectangle at a corridor's end → background = fog × ~0.15.\n- Uniform fog lifts silhouettes to grey → fog follows local light.",
   },
   {
@@ -2376,6 +2464,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l55.jpg",
     still: true,
+    generated: false,
     guide: "风格：积木玩具（L55 · Lemo-Opuscar）\n\n长什么样：积木宇航员用零件拼出火箭，飞向积木月亮。\n\n适合：一块块搭，\"搭自己的系统\"\n\n关键特征：\n- A brick world on a real surface (a wooden desk, a kitchen table, a windowsill), shot with a macro lens and animated in stop-motion. The charm is the tension between the toy world and the real room.\n\n质感与用色：\n- Plastic: ABS with strong clearcoat (~0.85, clearcoat roughness ~0.07); a roughness map with faint fingerprints and scratches (base ~0.17, sc…\n- Geometry: rounded box bodies (bevel ~0.045 stud), studs with a thin lip. Unit = 1 stud pitch (8 mm); brick height 1.2, plate 0.4.…\n\n用色：\n- A toy palette: a handful of saturated brick primaries plus white, black, greys, tan.…\n- The real world stays natural and muted: wood, paper, ceramic, daylight. The saturated colour belongs to the toys, which makes them pop again…\n\n节奏：\n- Characters and bricks step at 12 fps (on twos); camera, focus, fire and flying vehicles move on ones at 24 fps.…\n- Bricks fly in on arcs and snap with a tiny overshoot (a fraction of a stud → 0 in ~4 frames). Every snap is a click on the soundtrack.\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Tungsten HDRI → orange whites. Use a neutral studio HDRI and a slightly cool grade.\n- Clearcoat on a large flat baseplate reflects softboxes as a coloured wash. Make it matte.\n- Flat, slightly jagged first renders: even light, no AO, single-sample rendering, stepped camera.…\n- Too much aperture blurs the hero at mid distance. Scale aperture with shot size.",
   },
   {
@@ -2388,6 +2477,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l56.jpg",
     still: true,
+    generated: false,
     guide: "风格：纸片立体书（L56 · Lemo-Opuscar）\n\n长什么样：立体书在书桌上打开，小精灵 Pip 在纸片世界冒险，最后跳出书外。\n\n适合：翻书讲故事\n\n关键特征：\n- Two worlds in one frame. The real world at human scale: a photoreal surface lit by an HDRI room, a few real objects, a macro lens (shallow focus, warm practical light, soft contact shadows). The paper world: a hardcover book in that room…\n\n质感与用色：\n- Real units (metres): page 0.3–0.5 m wide, actors 3–5 cm, near plane a few mm, so HDRI, shadows and depth of field behave like a real macro s…\n- Cut-paper finish: Canvas2D art with a dark ink outline; its silhouette dilated (drawn at many angles on several rings, recoloured source-in)…\n\n用色：\n- Examples of spread families: green meadow under sky blue; pink-and-lilac market with mint accents; ochre desert with a turquoise oasis.\n- Saturated children's-book colour, never neon; the real world stays natural and slightly warm so paper pops against it.\n- One dominant hue family per spread, so a page turn is also a colour change; a few accents (a red, a yellow, a gold) recur across spreads to…\n\n节奏：\n- On ones (60 fps suits the smooth macro camera), all a pure function of t. Paper moves stiffly…\n- Pop-ups rise back to front (delay grows with distance from the reader), far pieces lying back, near ones folding forward face-down…\n\n镜头：\n- One virtual macro camera keyed as position / target / fov / aperture / focus with monotone-cubic interpolation; a new key list = a hard cut. A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- rotation.y shows a card edge-on, then its blank back → scale.x flip. Negative scale also swaps front/back materials → draw mirrored props in…\n- A one-plane container hides its contents → back card + front card, contents between.\n- Near-lens foreground pop-ups fill the frame with blur → move them or close the aperture.\n- Rectangle shadows kill the illusion → alpha-mapped depth material on every card…",
   },
   {
@@ -2400,6 +2490,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l57.jpg",
     still: true,
+    generated: false,
     guide: "风格：移轴微缩（L57 · Lemo-Opuscar）\n\n长什么样：玩具城的早高峰，一切都像模型。\n\n适合：小人国，俯看日常生活\n\n关键特征：\n- A place seen from high up through a tilt-shift lens: only a thin horizontal strip of the frame is sharp, everything above and below melts into blur. The eye reads that as a macro shot of something small, so the world becomes a model.…\n\n质感与用色：\n- Vantage: always high. Oblique views at roughly 45–55° pitch from 100–200 m with a moderately long lens (~27–30° vertical FOV)…\n- Blur band (demo/post.js): physical depth of field mixed with a screen-space band.…\n\n用色：\n- Saturated, sunny, \"freshly painted model\": a pale warm ground of buildings with a few candy accents, very saturated greens, dark ground surf…\n- Shadows stay blue and clean, never grey. Night and dawn are the only low-saturation states…\n\n节奏：\n- Time-lapse stutter is the soul of the style. In fast-forward the whole world (vehicles, people, lights, sun) updates at a low rate and holds…\n- Systems run on simple simulations pre-computed per clip (car-following, signal cycles, crowds gathering and surging), with cycle offsets cho…\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- Tall buildings plus shallow pitch hide the ground → low to mid-rise buildings, pitch 45°+.\n- The subject hides in a canyon or behind a facade → route it on the camera side and let the band follow it.\n- Instance caps silently drop actors → cull by distance from the camera (≈ 4× camera height) and raise the cap.\n- Simulated vehicles stop short of lines (the jam gap) → subtract it where the story needs contact.",
   },
   {
@@ -2412,6 +2503,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l58.jpg",
     still: true,
+    generated: false,
     guide: "风格：低多边形等距（L58 · Lemo-Opuscar）\n\n长什么样：空海里一格格长出小岛和村庄，每放一块响一个音符，直到星空。\n\n适合：小岛、小世界\n\n关键特征：\n- A miniature world built from flat-shaded low-poly geometry (hexagonal tile columns, box buildings with prism roofs, cone and icosahedron trees) floating in a faceted sea or void, watched by an orthographic camera at an isometric angle.…\n\n质感与用色：\n- Geometry (world unit = one hex tile's circumradius): pointy-top hexagonal columns (CylinderGeometry(r, r, h, 6)), axial → world x = √3(q + r…\n- Props are primitive assemblies: boxes, prisms, low-segment cylinders and cones, icosahedra at detail 0, pinched boxes.…\n\n用色：\n- Examples of world palettes: sand, grass and coral roofs under a pale-blue day; snow tiles, pine greens and red cabins under a lilac sky; terracotta mesas, sage scrub and turquoise pools under an apricot dusk.\n- Pastel, low contrast, a handful of hues: one ground family (sand/grass/earth or its equivalent), one neutral rock, and a small set of wall a…\n- Time of day is a keyframed set of colours (zenith, horizon, deep, shallow, sun colour, intensity, elevation, azimuth), interpolated.…\n\n节奏：\n- On ones (24 fps), smooth. The charm is in the arrival curves, not stepping.\n- Rise from below: a short cubic ease up, then a damped-sine overshoot; a splash ring and spray the moment it breaks the surface.…\n\n镜头：\n- THREE.OrthographicCamera. Frustum height is the zoom (a few units for a close-up, the whole world at a dozen or more, hundreds for a scale reveal); place the camera ≥ 3 × frustum height away or the bottom of the frame looks under the sea.…\n\n避免：\n- perspectiveDepthToViewZ in shared post code is wrong for an orthographic camera → orthographicDepthToViewZ.\n- GTAO renders sprites and transparent objects as solid quads → hide them during the AO pass; set visible = false at zero opacity.\n- Side column and top cap sharing one plane → z-fighting → sink the column.\n- A double-sided additive cone reads as two white lines → a camera-facing Gaussian ribbon + halo.",
   },
   {
@@ -2424,6 +2516,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/l59.jpg",
     still: true,
+    generated: false,
     guide: "风格：玻璃质感产品（L59 · Lemo-Opuscar）\n\n长什么样：虚构玻璃耳机 Aura 的开箱与特写。\n\n适合：高级的产品感\n\n关键特征：\n- A single hero object of glass, metal and light floating in an infinite black studio. Long strips behind and beside it turn clear glass into a thin white outline with rainbow edges; the internals show through as in a display case.…\n\n质感与用色：\n- Studio = a strip-light scene, not an HDRI. Photo-studio HDRIs contain windows and clutter that print as messy streaks on glass.…\n- Clear glass: MeshPhysicalMaterial, transmission 1, roughness ≈ 0.015, IOR ≈ 1.5, thickness sets lensing (thicker = stronger), dispersion on…\n\n用色：\n- The world is neutral: black, greys, the white of strip reflections, the metals' own tints.\n- One accent colour family, reserved for light (emission, caustic rings, the dispersion line on UI), optionally drifting between two neighbour…\n\n节奏：\n- Everything moves on ones (24 fps), eased: ease-in-out for camera orbits, ease-out for parts decelerating into a float, ease-in for a snap ba…\n- The camera always drifts: slow orbits or push-ins; never a locked-off frame, never handheld, except a couple of frames of micro-shake on an…\n\n镜头：\n- A vocabulary, not a route. Opening and ending come from the topic.\n\n避免：\n- A manually updated mirror uses last frame's camera → call scene.updateMatrixWorld(); camera.updateMatrixWorld() first…\n- A coloured emitter inside frosted glass tints the whole object; idle glow under a lens dome becomes a pale blob; AgX turns accents white…\n- An exploded view seen perpendicular to its axis is edge-on lines → axis ~40° to camera.\n- Pure profiles read as simple shapes (mushrooms, pot lids) → 3/4 views, lids upright behind.",
   },
   {
@@ -2436,6 +2529,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v1.jpg",
     still: false,
+    generated: true,
     guide: "风格：逐帧手绘 / 抖动线条（V1 · MG 风格）\n\n风格：\n逐帧手绘 / 线条沸腾 Cel Animation / Frame-by-Frame & Line Boil\n\n要点：\n手绘逐帧或在矢量动画上叠加逐帧质感，标志性特征是 line boil——线条每隔几帧轻微抖动，仿佛画面在'呼吸'。 Giant Ant、Buck 等工作室大量使用 cel 元素（烟、水花、速度线）点缀主动画，反数字精致感的核心手段。 视觉特征 线条持续微抖(boil), 一拍二/一拍三节奏, smear拖影帧, 手绘烟火水花点缀, 纸纹底 关键技法 打帧节奏：24fps 下'一拍二'（实际12fps）为主，快动作切'一拍一'，静止镜头'一拍三' line boil 伪造法：AE 用 Turbulent Displace（数量2~5、大小50）+ 每 2 帧随机化 evolution + Posterize Time 12fps；真 boil 则画 3~4 张微差线稿循环 smear frame：快速位移的中间帧把物体拉长 150%~300% 只保留 1 帧 cel FX 点缀层：烟/水花/闪电用纯手绘逐帧叠在矢量主体上（Buck 式 hybrid） 整体叠纸纹（multiply 10~15%）统一手作气质",
   },
   {
@@ -2448,6 +2542,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v2.jpg",
     still: false,
+    generated: true,
     guide: "风格：等距 2.5D（V2 · MG 风格）\n\n风格：\n等轴 2.5D Isometric / 2.5D\n\n要点：\n以 30° 等轴测投影展示微缩世界：小城市、办公室切片、数据机房，无灭点、处处等比。 信息密度高又不失可爱，是科技公司架构图动画和 App 功能演示的标配。 School of Motion 有专门的 isometric mograph 教程系列。 视觉特征 30°等角投影, 无透视灭点, 微缩场景, 楼房生长动画, 平行滑轨式运镜 关键技法 SSR 公式造等轴面：Scale 纵向 86.6% → Shear/skew ±30° → Rotate ∓30°，三个面分别做后拼合 假 3D 靠图层排序：Z 序=画面 y 坐标，物体沿等轴网格移动时保持 2:1 像素斜率 楼房'生长'：底面先落位，立面用 scaleY 从 0 拉起 + 顶面延迟 2~3 帧盖上 运镜是整组平移（无旋转），配合前中后景 1:0.8:0.6 的视差速度 AE 里可用真 3D 图层+正交相机（无透视）偷懒，Motion Design School 的 Isometric Camera 技巧即此路",
   },
   {
@@ -2460,6 +2555,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v3.jpg",
     still: false,
+    generated: true,
     guide: "风格：扁平矢量（V3 · MG 风格）\n\n扁平矢量动画 Flat / Vector 2D Motion Graphics：\n原片：popwise「One Dot」一个点的一镜到底 · 1920×1080 · 30 fps · 10 秒 · AI 评审终评 7.64 / 10\n源码：demos/01-flat-vector/\n\n风格：\n扁平矢量动画 Flat / Vector 2D Motion Graphics\n\n要点：\nMG 动画最主流的基本盘风格，源自 Google Material/企业解释视频（explainer）传统。 纯色几何化的人物与场景、无描边或极简描边、大色块撞色，一切元素都是矢量形状。 常见于 SaaS 产品宣传、科普解说、企业年报视频。 视觉特征 纯色大色块, 几何化角色, 无渐变或极少渐变, 干净留白, 高饱和品牌色板, 元素弹性入退场 关键技法 AE Shape Layer + 父子级 null 控制层级，人物四肢用锚点旋转做 rig 弹性缓动是灵魂：overshoot 用 cubic-bezier(0.34,1.56,0.64,1) 或 AE 里 70~85% influence 的贝塞尔手柄；入场'预备-冲出-回弹'三段式 元素错峰入场（stagger 2~4 帧），同一时刻只让一个主体动 30fps 居多；位移动画带 10% 左右 squash&stretch 增加弹性 转场常用色块擦除（shape wipe）或元素飞出带动整场切换",
   },
   {
@@ -2472,6 +2568,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v4.jpg",
     still: false,
+    generated: true,
     guide: "风格：线条画（V4 · MG 风格）\n\n风格：\n线条动画 Line Art / Line Animation\n\n要点：\n以单色细线为唯一造型语言，线条自我描绘（draw-on）、延伸、转折并变形为下一个图形，一笔连成整支片子。 极简高级感强，常见于奢侈品、金融、建筑类品牌片和 logo 动画。 视觉特征 等宽细线, 单色或双色, 大量负空间, 线条连续生长, 线面转换瞬间 关键技法 核心是 stroke 描绘：AE 用 Trim Paths 0→100%，Web 端用 SVG stroke-dasharray/dashoffset 线宽全片恒定（2~4px），转角处让描绘速度略减速，用 easeInOut cubic-bezier(0.65,0,0.35,1) '一笔画'叙事：上一图形的尾线即下一图形的起线，路径提前在 Illustrator 里连好 线转面：描完轮廓后用同路径的 fill 从锚点扩展填充 配合微小的端点圆头（round cap）与路径抖动可增加手绘感",
   },
   {
@@ -2484,6 +2581,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v5.jpg",
     still: false,
+    generated: true,
     guide: "风格：3D 渲染（V5 · MG 风格）\n\n3D 渲染系3D Render / CGI Motion Design：\n原片：soft.「Soft Landing 柔软着陆」 · 1920×1080 · 24 fps · 10 秒 · AI 评审终评 7.71 / 10\n源码：demos/04-3d-render/\n\n风格：\n3D 渲染系（C4D/Blender 质感） 3D Render / CGI Motion Design\n\n要点：\nCinema 4D + Redshift/Octane 或 Blender 渲染的实体质感动画：软胶、玻璃、金属、布料，配合克隆阵列和物理模拟。 是高端产品片（手机、饮料、球鞋）和品牌 ident 的主流，Maxon 官方 Demo Reel 就是该风格的年度风向标。 视觉特征 PBR真实材质, 浅景深, 柔和棚拍布光, 克隆器阵列, 软体碰撞, 糖果色软胶质感 关键技法 MoGraph 核心：Cloner 克隆器 + Random/Plain Effector 做群体波浪式动画 质感三件套：SSS 次表面散射（软胶感）+ AO + HDRI 三点布光 运动多用长尾 ease：位移曲线前 20% 完成 80% 路程，收尾极慢，配 motion blur 24/25fps 电影帧率 + 浅景深（f/1.8 感）区别于 2D 系的 30fps 利落感 常见结构：产品为轴心，粒子/流体/布料围绕它做物理模拟编排",
   },
   {
@@ -2496,6 +2594,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v6.jpg",
     still: false,
+    generated: true,
     guide: "风格：形变（V6 · MG 风格）\n\n风格：\n形变动画 Morphing / Shape Morph\n\n要点：\n一个图形丝滑连续地变成另一个图形：手机变成地图钉、咖啡杯变成落日。 是图形叙事（visual storytelling）的核心语法，苹果发布会动效和高端 explainer 里最见功力的部分。 视觉特征 轮廓连续过渡无跳变, 中介形状桥接, 形变伴随位移旋转, 变形瞬间的挤压拉伸 关键技法 路径对齐是前提：两形状顶点数一致、首顶点方位对应（AE 里重设 first vertex），否则会打结 复杂 A→B 不直接变：先收敛为中介简形（圆/胶囊）再展开，'A→圆→B'两段各 8~12 帧 形变全程叠加 10~15% squash & stretch 与轻微旋转，掩盖插值的机械感 速度曲线中段最快 cubic-bezier(0.7,0,0.3,1)：起止各留 3 帧缓冲 Web 端用 flubber/polymorph 库做最优顶点匹配插值，效果远好于朴素 SMIL",
   },
   {
@@ -2508,6 +2607,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v7.jpg",
     still: false,
+    generated: true,
     guide: "风格：贴纸讲解（V7 · MG 风格）\n\n粗描边贴纸人科普 MGBold-outline Sticker Explainer MG：\n原片：一部手机里，藏着多少种元素？ 70/118 · 1920×1080 · 30 fps · 10 秒 · AI 评审终评 7.71 / 10\n源码：demos/19-paperclip/\n\n风格：\n粗描边贴纸人科普 MG（回形针/林超风格） Bold-outline Sticker Explainer MG (PaperClip / Lin Chao style)\n\n要点：\n回形针 PaperClip 带火的知识区标准包装：实拍图片抠图后加粗白描边变成『贴纸』，与扁平图标、数据图表一起铺在大画布上，镜头平移缩放串联信息点；林超等财经/跨学科 UP 主将其与手写板书、公式卡片结合。 至今仍是硬核科普、财经知识区、企业宣传片的主流范式。 视觉特征 照片贴纸化（粗白描边）, 蓝灰/米白冷静底色, 扁平图标+精确数据图表, 大画布镜头平移缩放, 信息密度极高的节拍化叙事 关键技法 素材照片抠图 + 8~12px 白描边统一质感，消除图片来源差异 超宽大画布布局，摄像机层做平移/缩放（ease 长曲线），一镜串多个信息点 图表动效：柱状图生长、数字滚动计数、路径描边生长 解说词逐句驱动画面元素入场，语速快、每句必有新视觉元素 克制配色（2~3 色）+ 等线字体，保持『严肃感』",
   },
   {
@@ -2520,6 +2620,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v8.jpg",
     still: false,
+    generated: true,
     guide: "风格：赛博朋克界面（V8 · MG 风格）\n\n风格：\n赛博朋克 HUD / FUI Cyberpunk HUD / FUI (Fictional UI)\n\n要点：\n模拟科幻电影/游戏界面的抬头显示包装：青橙霓虹线框、目标锁定框、雷达扫描、数据流小字。 在科技数码测评、游戏剪辑（赛博朋克2077、EVA 二创）、军事航天科普和 AI 产品演示中作为『科技感』的默认皮肤，B 站 AE HUD 案例教程播放量达 20 万。 视觉特征 青色/橙色霓虹线框, 目标锁定框与十字准星, 雷达/环形扫描 loop, 等宽小字数据流与打字机文字, 六边形网格与辉光 关键技法 线框生长：SVG stroke-dasharray/dashoffset 描边动画，元素按层级错帧展开 环形雷达：conic-gradient 扫描扇区旋转 loop + 目标点闪烁 数字滚动：随机数快速跳变 3~5 帧后落定真实值；文字打字机 + 光标闪烁 锁定框：四角括号从大到小收缩吸附目标（scale 1.4→1.0 + 快出缓入） 全局外发光（glow）+ 轻微色差 + 扫描线叠加统一质感",
   },
   {
@@ -2532,6 +2633,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v9.jpg",
     still: false,
+    generated: true,
     guide: "风格：拼贴 / 剪贴（V9 · MG 风格）\n\n风格：\n拼贴剪贴 Collage / Cutout Animation\n\n要点：\n把老照片、报纸、手撕纸片剪出来重新拼装的复古超现实风格，源头是 Monty Python 和苏联构成主义海报。 人物头身比例失衡、嘴巴单独开合、半调网点纹理是标志。 近年与'杂志风'合流，成为音乐类、街头潮流类短视频的高频风格。 视觉特征 照片剪影白描边, 半调网点, 报纸纹理, 比例失衡的超现实拼装, 定格式抽帧运动 关键技法 素材处理：人物/物件抠图后加 2~4px 白描边（剪刀剪出来的感觉）+ 半调 halftone 滤镜 关节动画：锚点设在肩/肘/颌，做 puppet 式分段旋转，嘴巴用两三张替换帧开合 刻意降帧：主体运动 12fps 甚至 6fps（stop-motion 感），位置加 ±2px 随机抖动模拟手摆 图层结构：背景纸纹 → 大形色块 → 照片剪影 → 手写涂鸦/胶带贴纸 → 颗粒调整层 转场用'手把元素拍上来'或整页翻纸",
   },
   {
@@ -2544,6 +2646,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v10.jpg",
     still: false,
+    generated: true,
     guide: "风格：极光与毛玻璃（V10 · MG 风格）\n\n风格：\n弥散渐变 / 玻璃拟态 Gradient Blur (Aurora) & Glassmorphism\n\n要点：\n大面积高斯模糊的彩色光斑（aurora/mesh gradient）缓慢漂移作底，磨砂半透明玻璃卡片浮在其上。 苹果 iOS 26 Liquid Glass 与各家 AI 产品发布把这一风格推成 2024-2026 科技品牌片的默认视觉，气质是'慢、透、高级'。 视觉特征 大色斑高斯模糊漂移, 磨砂玻璃卡片, 1px高光描边, 邻近色低对比配色, 缓慢呼吸感节奏 关键技法 底层 aurora：3~5 个纯色大圆 blur 80~150px，各自沿贝塞尔路径 20~40 秒漂移循环，彼此 blend 出 mesh gradient 感 玻璃卡片配方：backdrop-filter blur(20~40px) + 白色 5~10% 填充 + 1px 白色 30% 内描边 + 大半径圆角 配色用邻近色 2~3 色（紫蓝青/橙粉红），撞色会脏；暗底亮斑比亮底更出效果 全局叠 3~5% 噪点防 banding（与颗粒质感技法交叉） 缓动接近 linear 或 sine 呼吸曲线，一切都慢——快动作会立刻破坏气质；文字入场也只用 opacity+8px 位移",
   },
   {
@@ -2556,6 +2659,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v11.jpg",
     still: false,
+    generated: true,
     guide: "风格：包豪斯几何（V11 · MG 风格）\n\n几何构成 / 包豪斯 Geometric / Bauhaus Motion：\n原片：KONSTRUKTION · 20 SCHLÄGE「二十拍构成」 · 1920×1080 · 30 fps · 10 秒 · AI 评审终评 7.71 / 10\n源码：demos/09-bauhaus/\n\n风格：\n几何构成 / 包豪斯 Geometric / Bauhaus Motion\n\n要点：\n圆、三角、矩形在严格网格上做精确的平移、旋转、缩放，三原色+黑白的限定色板，机械理性的秩序美。 源自包豪斯与瑞士国际主义平面传统（Adobe 曾与 Bauhaus 档案馆合作 Hidden Treasures 项目），也是动态海报（kinetic poster）的主流语言，与音乐节拍天然合拍。 视觉特征 基础几何形, 红黄蓝黑限定色, 严格网格对齐, 旋转以几何中心为轴, 节拍驱动的模块化运动 关键技法 一切运动锚定网格：位移距离=网格模数整数倍，落点必在网格线上 缓动克制：easeInOutQuad 或干脆匀速，禁用 overshoot——机械感是特征不是缺陷 节拍驱动：每个几何元素在节拍点瞬时出现/翻转，一拍一个动作，类似我们已做的卡点逻辑 旋转轴心玩法：绕自身中心、绕边缘顶点、绕画面中心三种交替制造韵律 生成式变体：Processing/p5.js 用三角函数相位差批量驱动几何阵列（国内动态海报圈主流做法）",
   },
   {
@@ -2568,6 +2672,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v12.jpg",
     still: false,
+    generated: true,
     guide: "风格：80 年代合成波 / VHS（V12 · MG 风格）\n\n风格：\n复古系（80s Synthwave / Y2K 千禧） Retro: 80s Synthwave / VHS / Y2K\n\n要点：\n对特定年代媒介美学的整体引用：80s synthwave 是霓虹网格+日落渐变+镀铬字；VHS 是扫描线+色偏+磁带噪声；Y2K 千禧风是液态镀铬金属、酸性绿紫、拟物系统窗口和低保真 3D。 近两年 Y2K 在音乐视频与潮流品牌片中强势回潮，B站模板市场大量供应'酸性镀铬'素材。 视觉特征 霓虹辉光, 透视网格地平线, 扫描线与RGB色偏, 镀铬金属字, 酸性配色, 拟物窗口UI 关键技法 synthwave 三件套：透视网格滚动（一点透视 grid + 纵向位移循环）、日落多层渐变球、双层辉光（内层紧 4px 高亮+外层散 30px 低透明） VHS 做旧链：RGB split（红蓝通道各偏 1~2px）→ 扫描线（2px 间隔 10% 黑条）→ 波浪扭曲抖动（每秒 1~2 次随机 glitch 抽帧）→ 4:3 圆角遮罩 Y2K 镀铬字：极高对比的多段金属渐变 + bevel 高光 + 环境映射感反光，配 lens flare Y2K 运动语言：弹窗式 pop 出现、光标点击、窗口拖拽，界面拟物即动画叙事 帧率故意不稳：关键段落抽帧到 15fps 或倒放 2 帧制造磁带卡顿",
   },
   {
@@ -2580,6 +2685,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v13.jpg",
     still: false,
+    generated: true,
     guide: "风格：像素（V13 · MG 风格）\n\n风格：\n像素风 Pixel Art / 8-bit\n\n要点：\n低分辨率大颗粒像素 + 有限色板 + 低帧率精灵动画的复古游戏美学，在 B 站游戏区（MC、泰拉瑞亚、独立游戏）、8-bit 音乐 MV 和品牌怀旧营销中常见；Aseprite 教程在 B 站有 10 万+ 播放的稳定学习生态。 视觉特征 大颗粒像素与硬边缘, 有限色板(8~32色), 8~12fps 精灵帧动画, 抖动渐变 dithering, CRT 扫描线滤镜 关键技法 Aseprite 绘制精灵表（sprite sheet）+ 序列帧循环（走路 6~8 帧、呼吸 2~4 帧） 缩放必须最近邻插值（CSS image-rendering: pixelated），杜绝抗锯齿糊边 动画用 steps() 阶梯时序而非平滑缓动，保持逐帧感 视差卷轴背景：远中近三层不同速度整像素平移 可选 CRT 后处理：扫描线+桶形畸变+磷光辉光",
   },
   {
@@ -2592,6 +2698,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v14.jpg",
     still: false,
+    generated: true,
     guide: "风格：液态流动（V14 · MG 风格）\n\n液态流动 Liquid Motion：\n原片：drop.「万物始于一滴」 · 1920×1080 · 30 fps · 10 秒 · AI 评审终评 7.57 / 10\n源码：demos/07-liquid/\n\n风格：\n液态流动 Liquid Motion\n\n要点：\n图形像液体一样流动、拉丝、滴落、融合：转场是一泼颜料漫过屏幕，logo 从一滴液体聚合成形。 有机、解压、高能量，广泛用于音乐视频、食品饮料广告和转场包装。 视觉特征 波浪边缘转场, 拉丝与滴落, metaball融合, 次级液滴跟随, 有机曲线永不直线 关键技法 液态转场：遮罩路径手 K 波浪形前沿扫过画面，前沿加 3~5 个错相位的凸起 metaball 融合的通用伪造法：高斯模糊(20px+) → 提高对比度阈值（AE 用 Levels 收紧、Web 用 feColorMatrix alpha 阈值），两球靠近即自动'粘连' 拉丝-断裂-回弹：主形离开时留一条细颈，断裂瞬间两端各回弹 2~3 帧 缓动前快后慢 cubic-bezier(0.22,1,0.36,1)，液体只会被'甩'出去不会匀速 次级液滴延迟主体 2~3 帧跟随（follow-through），落地做扁平化 squash",
   },
   {
@@ -2604,6 +2711,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/v15.jpg",
     still: false,
+    generated: true,
     guide: "风格：综艺花字（V15 · MG 风格）\n\n风格：\n综艺花字 Variety Show Kinetic Captions (Hanazi)\n\n要点：\n源自电视综艺后期的情绪化装饰字幕：多层描边圆体字带弹性入场，跟随人物情绪变色变形，配打击音效。 现已下沉为 vlog、萌宠、访谈、搞笑二创的通用包装语言，剪映内置大量花字模板，B 站也有免费花字样式包流通。 视觉特征 多层描边圆体/胖体字, 高饱和撞色+白边+投影, 弹性 pop 入场, 配合音效出现, 手绘装饰符号（爆炸框/汗滴/闪光） 关键技法 字体三层结构：填充色+粗白描边+彩色外描边/投影（CSS 可用多层 text-shadow 或 SVG stroke 模拟） 入场 overshoot：scale 0→1.15→1.0（约 8 帧），或逐字弹跳错帧 2 帧 情绪匹配：吐槽用歪斜手写体、惊讶用放射线爆炸框、尴尬用汗滴符号 出现时机对齐笑点/音效，比语音晚 2~3 帧更自然 长时间驻留花字加轻微 wiggle 保持活性",
   },
   {
@@ -2616,6 +2724,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x1.jpg",
     still: false,
+    generated: true,
     guide: "风格：手绘（X1 · Code Video）\n\n要点：\nWarm empty paper, a thin ink horizon, and an 8-bit mascot that acts out the story, cut against dark title cards and arcade screens.\nReference frames from the original: <skill>/docs/styles/handdrawn.jpg.\n\n特征：\n1 · Plain warm off-white paper with no grid; one thin ink horizon with grass tufts; outline clouds\n2 · The logo mascot as an 8-bit sprite that acts out the beats: pushes, smashes, stands on top of the winning bar\n3 · A dark title card: small serif \"Introducing\", the name typing in a large serif, the accent part (version, product word) in the brand colour with a hand underline, a script subline\n4 · Level structure: a small mono WORLD 1-1 tag in the top-left of each beat and one pixel-font \"WORLD 2\" interstitial card\n5 · Numbers as serif count-ups with a bold label and a script note; hatched-vs-solid bars; a pixel HI-SCORE board on a dark screen; a price tag struck through\n6 · One full-bleed brand-colour scene entered with a torn-paper transition\n7 · Ending: the logo mark and the serif name with its underline, a short \"available now\" line, a spaced list of where to get it, the mascot on the horizon\n\n画面：\nPalette: paper #f4f2ee, ink #2b2a28, dark #1c1b1a, plus the brand accent (Claude orange #D97757 in the original). Nothing else is coloured.\nFonts: Source Serif 4 (titles, numbers), Caveat (notes, sublines), Press Start 2P (HI-SCORE, WORLD cards), IBM Plex Mono (tags, small values), Geist (bold labels). For Korean use Nanum Myeongjo, Gaegu, Galmuri11, NanumGothicCoding, and Pretendard in the same roles (unicode-range pairs, see kit-api.md).\nLines: thin (2–2.5 px) and calm, with a gentle wobble; this is pen on paper, not a marker.\nDensity: one idea per beat, lots of empty paper.",
   },
   {
@@ -2628,6 +2737,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x2.jpg",
     still: false,
+    generated: true,
     guide: "风格：品牌动态图形（X2 · Code Video）\n\n要点：\nA clean explainer that looks like an official brand asset: one dark field, thin white hand-drawn line art, bold type with a single accent, scribbled emphasis, and a persuasion arc from pain to call to action. Silent.\nReference frames from the original: <skill>/docs/styles/motion.jpg.\n\n特征：\n1 · One dark field for the whole video (no light scenes), one accent colour, pain words in red\n2 · Thin white hand-drawn line illustrations of everyday objects that draw themselves on (faucet, manual, clock, eye, wallet, camera, mic)\n3 · Bold geometric sans headlines that pop in word by word, the key word in the accent\n4 · Hand-drawn emphasis on type: a scribbled oval around a key word, a swoosh under a phrase\n5 · A thin \"frustration\" gauge that climbs across the pain beats\n6 · Proof drawn as line art: a bar chart with hatched pain bars and one tiny accent bar; a big accent number; a cloud of outline pill tags with one filled\n7 · The product shown working: a line-art phone with camera corners, the question in an outline bubble with a mic and a live waveform, the answer in a filled accent bubble\n8 · Ending: the wordmark with an accent full stop and swoosh, a glowing pill CTA that the cursor clicks, the free-to-try line and URL\n\n画面：\nPalette: background #0c0b1d, ink #f2f1f7, dim #8f8da8, pain #ff5d5d, camera cyan #38d6e6, and the brand's accent (read it from the site CSS or logo pixels; the original used its purple #7c5cff). If the brand is light-themed, still keep the dark field and carry the brand in the accent and logo.\nFonts: Poppins SemiBold/Bold (or the brand's geometric sans), IBM Plex Mono for tiny labels. Korean: Pretendard in the same roles.\nLines: white, 2.5–3 px, a slight wobble: a steady hand, not a sketch.",
   },
   {
@@ -2640,6 +2750,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x3.jpg",
     still: false,
+    generated: true,
     guide: "风格：沙画（X3 · Code Video）\n\n要点：\nScenes poured in dark sand on a glowing light table, lit by sunbursts and night skies, that break into grains and blow away between eras. Music and sound effects. Suits stories told through time.\nReference frames from the original: <skill>/docs/styles/sand.jpg.\n\n特征：\n1 · A parchment light table with visible grain everywhere, dark brown sand with grainy soft edges\n2 · Silhouettes, not outlines: buildings, vehicles, people, landscapes as solid shapes, often moving (a train crossing, a plane flying)\n3 · The year in an old-style serif in a top corner with a short italic caption under it; no heavy sans captions\n4 · Scene changes where the picture breaks into grains and blows away, or is swept off by hand, then the next is poured in\n5 · Lighting that changes with the story: a sunburst with rays, a glowing sun, a night sky with a moon and stars cut out of the sand, fireworks\n6 · Grain as material: smoke, crowds, water, and dust drawn as scattered specks, not flat fills\n7 · Title and ending built from a ring of stars or an emblem around one big serif number or name, with the dates in serif\n\n画面：\nPalette: table #f3dcae → #9b7648, sand #2e2014. Sand is one colour; the brand shows only in the final logo card and, at most, one accent.\nFonts: Cormorant (medium) for years and titles, Cormorant Italic for captions. Korean: Nanum Myeongjo for both. Captions stay small (22–30 px) and elegant; the picture carries the scene.\n\nRules：\nKeep captions and years on a clear patch of the table; grain behind text makes it hard to read.",
   },
   {
@@ -2652,6 +2763,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x4.jpg",
     still: false,
+    generated: true,
     guide: "风格：歌词 MV（X4 · Code Video）\n\n要点：\nAn educational music video that reads like a technical explainer set to a song: a dark grid, a section label in the corner, one diagram per lyric line, and the sung line at the bottom. The engine makes the instrumental; the lyrics are on screen, not sung.\nReference frames from the original: <skill>/docs/styles/lyric.jpg.\n\n特征：\n1 · A dark navy field with a faint grid and vignette in every scene\n2 · The song section in a small mono label top-left (VERSE 1 · how Jev differs from a chat model), the title top-right, a thin progress line along the top\n3 · The sung line at the bottom under a hairline: sung words bright, the rest dim\n4 · One diagram per line, centred: node boxes joined by connectors with a travelling pulse, JSON/code cards, probability bars, a stopwatch or a big glowing value, a crossing-curves chart\n5 · The chorus repeats the same diagram with a new accent each time it returns (cyan, pink, yellow, green)\n6 · Intro and outro: the name in a glowing ring, the subtitle in the accent, \"an educational music video\", the about line, the song title between ♪ marks\n\n画面：\nPalette: bg #0b0f1e, ink #e9edf6, dim #5e6886, cards #121832, accents cyan #35d0e6, pink #ff5cc8, yellow #ffc53a, green #4ade80. If the brand has a strong colour, make it the first accent.\nFonts: IBM Plex Sans (semibold/bold) and IBM Plex Mono. Korean: Pretendard and NanumGothicCoding.\nDiagrams: flat, precise, thin 2 px borders, 10 px radius; no hand-drawn wobble, no illustrations of scenery. Each diagram builds on the line's first beat and holds while the line is sung.\n\nRules：\nEvery lyric line is one researched fact with its own diagram.\nThe lyrics are on screen, not sung: do not claim the video has vocals.",
   },
   {
@@ -2664,6 +2776,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x5.jpg",
     still: false,
+    generated: true,
     guide: "风格：卡点素材剪辑（X5 · Code Video）\n\n要点：\nA high-end, minimal promo cut to a song: a hook that lands word by word on a light stage, the product UI, then real clips on a dark stage as a scanned wall, a 3D carousel, and a phone next to a campaign panel, with stats on push cuts and every cut on a beat.\nReference frames from the original: <skill>/docs/styles/beat.jpg.\n\n特征：\n1 · The hook lands word by word on the beats on a warm light stage, with one word hidden as an accent block\n2 · The product UI: the masked block grows into a clean window where a cursor types an input and clicks the button\n3 · The drop into a near-black stage with a warm floor glow\n4 · A wall of real vertical clips scanned by a light bar, all but three winners dimmed, winners framed with a score tag\n5 · The key output as big type or ranked rows with scores\n6 · A 3D carousel of clips with floor reflections that whips onto one hero clip\n7 · The hero clip in a phone next to a settings panel: toggles switch on, the button turns green, the panel flips into results\n8 · Big stats on push cuts with motion blur, a three-word ticker with the last word in the accent, then the logo\n\n画面：\nPalette: light stage #f7f3ef with peach glows #ffd9c4, dark stage #0b0b0c with an orange floor glow, ink #151515 / #f4f4f4, one accent (the brand's; the original used orange #ff5a1f), success green #22c55e for the button only.\nType: one clean sans with tight tracking (Geist or Inter), a mono for tiny labels. Korean: Pretendard. No full stops in on-screen text.\n\nRules：\nEvery cut lands on a downbeat, every UI hit on a beat.",
   },
   {
@@ -2676,6 +2789,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x6.jpg",
     still: false,
+    generated: true,
     guide: "风格：界面形变（X6 · Code Video）\n\n要点：\nOne interface element that never cuts: a button becomes a loader, a player, a slider, tabs, a chart, a command palette, a toast, and finally the button again, so the video loops. A cursor clicks and drags to cause every change, on the beat. Reference frames are in docs/styles/uimorph.jpg.\n\n特征：\n1 · A single shape, never cut: every state is the same element changing size, corner radius, and fill\n2 · Content swaps inside it with a short blur, entering and leaving on its own timing\n3 · A cursor causes every change with real clicks and drags; dragged values follow it and spring back on release\n4 · Spring motion with at most a tiny overshoot; tab indicators and knobs stretch because their edges ride different springs\n5 · Real UI states the subject would have (its buttons, player, sliders, tabs, chart, command palette, toast), in black and white on a light warm grey, one clean UI font\n6 · Something happens on every beat; the camera zooms so each state fills the frame\n7 · The last frame is the first frame, cursor included, so it loops\n\n画面：\nPalette: canvas #ecebe7, ink #0b0b0b, cards #ffffff, secondary text #8d8c88. Colour appears only in content such as album art or the subject's own accent; no gradients or glows on the UI itself.\nFonts: Geist (Pretendard for Hangul), Geist Mono for times and shortcuts.\nMotion: springs everywhere; no bouncy easing, particles, or dead time.",
   },
   {
@@ -2688,6 +2802,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x7.jpg",
     still: false,
+    generated: true,
     guide: "风格：英雄漫画（X7 · Code Video）\n\n要点：\nA superhero comic book come to life: newsprint pages, thick ink panels, Ben-Day halftone, yellow narration boxes, speech balloons, burst lettering, and a red title slab over flipping pages.\n\n特征：\n1 · Pages of panels with thick ink borders and white gutters on newsprint; slanted panels for action beats\n2 · Ben-Day halftone for shading, skies, and backgrounds\n3 · Yellow narration boxes in uppercase comic lettering\n4 · Speech or thought balloons with tails\n5 · Sound effects in burst shapes (POW!, ZAP!, BOOM!) on impact beats\n6 · Focus lines behind the hero moment\n7 · Opening: pages flip past under a red title slab; scene changes turn the page\n\n画面：\nPalette: newsprint #f4ecd6, ink #141414, comic red #e23b2e, yellow #ffd43b, blue #2a6fdb, cyan #59c3e8; put the brand colour on the hero's costume or the title slab.\nFonts: Bangers for Latin; pair it with Do Hyeon (or Black Han Sans) for Hangul through unicode-range.\nCharacters: flat bold shapes with 7–9 px ink outlines and halftone shading. A logo mascot can be the hero; a pixel mini drawn large with an ink outline also works.",
   },
   {
@@ -2700,6 +2815,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x8.jpg",
     still: false,
+    generated: true,
     guide: "风格：手账剪贴本（X8 · Code Video）\n\n要点：\nA making-of journal on a kraft desk: lined notebook pages, polaroids held by washi tape, torn paper labels, die-cut stickers, rubber stamps, and marker doodles.\n\n特征：\n1 · A kraft paper desk and lined notebook pages at slight angles\n2 · Polaroids of real images (screenshots, logos, product shots) held by washi tape, with handwritten captions\n3 · Handwritten notes and dates in marker or pen\n4 · Torn paper labels for key words\n5 · Die-cut stickers and a rubber stamp for milestones\n6 · Marker doodles that point and circle: arrows, stars, underlines\n7 · Scene changes as a new page sliding over the desk\n\n画面：\nPalette: kraft #cdb38d, notebook #fbf8f0, ink #2b2622, red pen #d94f3d, blue pen #3b6fb6, tape beige and mint. The brand appears in the photos, stickers, and one accent.\nFonts: Caveat / Gaegu for notes, Permanent Marker / Black Han Sans for headings and stamps, IBM Plex Mono for typed labels.\nLayout: things overlap and tilt (±2–8°), never on a grid; leave some desk showing.",
   },
   {
@@ -2712,6 +2828,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x9.jpg",
     still: false,
+    generated: true,
     guide: "风格：撕纸拼贴（X9 · Code Video）\n\n要点：\nPictures built from torn scraps of watercolour-tinted paper, laid one by one on a sheet of cold-press paper: skies and seas in long strips, rocks and crowds in small shards, a sun as a torn disc. Calm, handmade, and warm.\n\n特征：\n1 · A cold-press paper sheet as the ground, never a flat fill\n2 · Every shape is torn paper: a jagged edge with a white fibre rim and a soft shadow; no clean vector shapes\n3 · Colour as washed, muted tints with visible blotches, like watercolour on paper\n4 · Pictures assemble scrap by scrap, back to front: strips for sky, water, and fields; shards for textured masses\n5 · The subject's logo or product rebuilt from torn scraps\n6 · Words set in serif ink, each on its own torn strip, landing one after another\n7 · Scene changes as a fresh sheet with a torn edge sliding over, or scraps peeling off\n\n画面：\nPalette: paper #f1ece1, ink #3a3833, and muted tints (sky #b8c9da, sea #6f8dab, sand #e2cfa8, sun #efc25c, stone #8e8b85, slate #5f6570, moss #8b8d5c, rust #c7684e). Bring the brand in as one or two washed tints and the rebuilt logo; keep everything a little desaturated.\nFonts: Source Serif 4 / Nanum Myeongjo for words on strips, Caveat / Gaegu for a pencil note.\nComposition: one picture per scene, filling about two-thirds of the frame with a margin of bare paper around it. Pictures are simple and flat, like a children's book, with pieces that overlap and overshoot their outlines a little. Use scraps a hand could tear: strips 40–90 px tall, shards 60–140 px.",
   },
   {
@@ -2724,6 +2841,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x10.jpg",
     still: false,
+    generated: true,
     guide: "风格：粒子（X10 · Code Video）\n\n要点：\nThousands of glowing particles drift on a flow field, gather into words, logos, and numbers, then scatter and re-form. The purest \"drawn in code\" look.\n\n特征：\n1 · A near-black field with thousands of short glowing streaks drifting on a smooth flow\n2 · Words and numbers that form out of the drift and hold with a gentle shimmer\n3 · The logo or a symbol formed from particles (sampled from the logo image or a path)\n4 · Morphs from one shape straight into the next\n5 · A burst that scatters everything before the next idea\n6 · Bloom on everything\n7 · A crisp caption under each formed shape\n\n画面：\nPalette: background #05060b; particles in cyan, violet, white, and pink, with the brand colours among them.\nFonts: Geist (heavy weights sample best) for particle text; Pretendard Black for Hangul.\n\nRules：\nKeep particle text at 150–260 px so the particles read as letters.",
   },
   {
@@ -2736,6 +2854,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x11.jpg",
     still: false,
+    generated: true,
     guide: "风格：翻牌显示板（X11 · Code Video）\n\n要点：\nA railway departures board: tiles clatter through the alphabet onto each message, amber lamps blink, and a station clock ticks.\n\n特征：\n1 · A dark board of individual flap tiles with a hinge line and a split between halves\n2 · Messages land by flipping through characters, column after column\n3 · A departures table: time, destination, gate or code, status\n4 · Status lamps in amber, green, red; one blinks (BOARDING, NEW, NOW)\n5 · A header with the board title and a clock\n6 · The clatter: flap clicks placed on the flips\n\n画面：\nPalette: board #0f0f10, tiles #232326, characters #f1ede2, amber #ffb000, green #39d353, red #ff5a4f. The brand shows in one status colour and the final message.\nFonts: Roboto Mono (bold) for Latin; Pretendard Bold for Hangul (Hangul tiles flip through a few letters, then land).\nMessages: uppercase, short (tiles are wide); one idea per board change.",
   },
   {
@@ -2748,6 +2867,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x12.jpg",
     still: false,
+    generated: true,
     guide: "风格：霓虹灯牌（X12 · Code Video）\n\n要点：\nGlass tubes on a dark brick wall that buzz and flicker on, glow onto the wall, and reflect on a wet floor.\n\n特征：\n1 · A dark brick wall with a wet floor\n2 · Words as neon tubes: coloured halo, glow, white-hot core\n3 · Tubes flicker and buzz on before they hold steady; unlit tubes show as dark glass\n4 · Icons, arrows, and frames bent from tube\n5 · Light spilling onto the wall and a reflection in the floor\n6 · The buzz: a click on each flicker\n\n画面：\nPalette: wall #1b1417; tubes pink #ff4fa3, cyan #3ff0ff, yellow #ffe45c, green #6bff8a, orange #ff8a3d, violet #b56bff. Make the brand colour the main tube.\nFonts: Tilt Neon for Latin; Pretendard (light weights) for Hangul, drawn as strokes.\nComposition: one sign per scene, centred or offset like a shop sign; at most three tube colours at once.",
   },
   {
@@ -2760,6 +2880,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x13.jpg",
     still: false,
+    generated: true,
     guide: "风格：16-bit 街机（X13 · Code Video）\n\n要点：\nA 16-bit console game come to life: a starry violet night, pixel sprites, CRT scanlines, and game UI that turns the story into a run from INSERT COIN to GAME CLEAR.\n\n特征：\nStage · A deep violet night sky (#10081f → #1b0f3a → #5a2a6e) with twinkling pixel stars and faint CRT scanlines over everything\nType · Press Start 2P for Latin and Galmuri11 Bold for Hangul, kept crisp at multiples of 8 px and 11 px; gold #ffd23f titles, white text, soft lilac #d9ccff sublines\nOpening · INSERT COIN, then the lines drop in with a small screen shake\nTitle · The game title, a hero sprite, and a blinking PRESS START\nSteps · A STAGE SELECT map where the hero hops from node to node, each node a step or feature, labels on a dark plate\nNumbers · HIGH SCORE: the value counts up under its label\nEnding · GAME CLEAR with a dialog box carrying the call to action",
   },
   {
@@ -2772,6 +2893,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x14.jpg",
     still: false,
+    generated: true,
     guide: "风格：CRT 终端（X14 · Code Video）\n\n要点：\nA green phosphor terminal on an old CRT: commands type themselves out, logs scroll, progress bars fill, and big block-letter banners glow for the name and the numbers.\n\n特征：\nScreen · Near-black green glass (#031208) with phosphor text #46ff8a, a soft glow, scanlines, and a slight curvature vignette\nType · Nanum Gothic Coding (regular and bold) for every line, prompt user@studio:~$; amber #ffc24a for highlights\nOpening · A boot line, then the opening lines typed at the prompt with a blinking block cursor\nTitle · ./intro runs and prints the name as a large block-letter banner\nSteps · A make style log where each step ends in an [ OK ] tag, with a progress bar filling underneath\nNumbers · A stats command prints the value as a block-letter banner with its label\nEnding · The call to action typed as a command, the URL, and exit",
   },
   {
@@ -2784,6 +2906,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x15.jpg",
     still: false,
+    generated: true,
     guide: "风格：热敏小票（X15 · Code Video）\n\n要点：\nA thermal receipt printer on a teal desk: every scene prints a fresh slip that rises out of the printer, gets stamped, and is torn off. Works in 16:9 and 9:16.\n\n特征：\nDesk · A teal tabletop (#2e5b5f / #3c7277) with a dark printer at the bottom edge\nSlip · Off-white thermal paper #f6f3ea with dark ink #2c3038, a zigzag torn edge, dashed rules, and a barcode; the slip grows up out of the printer line by line\nType · Nanum Gothic Coding for the receipt lines and Black Han Sans for large headings\nOpening · A NOTICE slip with the opening lines\nTitle · A slip with the name printed large\nSteps · An ORDER slip with checkboxes ticked one by one\nNumbers · A TOTAL slip with the value as the total\nEnding · A thank-you slip with a red stamp #d23a3a, then the slip is torn off",
   },
   {
@@ -2796,6 +2919,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x16.jpg",
     still: false,
+    generated: true,
     guide: "风格：地铁线路图（X16 · Code Video）\n\n要点：\nA transit map and station signage: coloured lines are drawn across cream paper, stations light up one by one, a train runs the line, and the ending is the terminus sign.\n\n特征：\nGround · Cream map paper #f4f0e6, ink #1d1d22, muted #6f6a60 for small print\nLines · Thick rounded route lines in the line colours (terracotta #d9774f, navy #23408e) with white-ringed station dots and 45° bends\nSignage · Navy station signs #1f2a44 with white Pretendard (Regular, Bold, Black) text\nOpening · A station sign board carrying the opening lines\nTitle · A logo, the name, and a line drawn across the frame\nSteps · A line with numbered stations and a train moving from station to station\nNumbers · The value in a badge in the line colour\nEnding · The terminus sign and a ticket with the call to action",
   },
   {
@@ -2808,6 +2932,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x17.jpg",
     still: false,
+    generated: true,
     guide: "风格：蓝图（X17 · Code Video）\n\n要点：\nA cyanotype engineering drawing: white linework on blueprint blue, dimension lines, numbered balloons, and a title block, as if the product were being specified on a drafting table.\n\n特征：\nSheet · Blueprint blue #17508c with a faint grid and a thin border; lines in near-white, construction lines faint\nType · IBM Plex Mono and Nanum Gothic Coding in capitals, like drafting lettering; yellow #ffd166 for the highlight\nTitle block · A title block in the lower right with the drawing number, sheet name, and date\nOpening · NOTE lines with dashed underlines\nTitle · The name with a dimension line carrying the tagline\nSteps · Process boxes joined by arrows, each tagged with a numbered balloon\nNumbers · A huge value dimensioned by its label\nEnding · A release sheet with a stamp",
   },
   {
@@ -2820,6 +2945,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x18.jpg",
     still: false,
+    generated: true,
     guide: "风格：漫画书（X18 · Code Video）\n\n要点：\nA video that stages its content as a physical vintage comic book being read on camera: a portrait-oriented comic page/spread sits centered in the landscape frame against a near-black vignette background, and a virtual camera pans and pushes into individual panels the way a motion-comic or Ken Burns documentary reveals a print page. The book opens with a magazine-style cover, then turns through several two-page spreads of a 2x2 panel grid, and closes on a colophon-style back cover. Panels are built from flat pop-art color blocks (red, gold/orange, blue), Ben-Day halftone dot textures, and sunburst ray backgrounds, with comic sound-effect bursts and a speech-bubble mascot giving it an energetic, Silver-Age-superhero-comic / 1960s advertising-comic feel. The mood is upbeat, punchy, and declarative, reinforced by a continuously driving instrumental music bed with frequent hard transient hits.\n\n特征：\nBase/ground · Near-black navy vignette (~#000010–#101020) fills the canvas outside the page; the comic page/spread itself sits on a cream/off-white paper color (~#f8f8f0, ~#f0e8d0)\nPanel backgrounds · Flat color blocks per panel: warm red (~#e03028), golden-yellow/orange (~#f8d038, ~#f8b020), sky/cobalt blue (~#38b8e0, ~#1848a0, ~#3068c8), plus a dark maroon (~#581010, ~#902018) on the \"next issue\" teaser page\nTexture · Radiating sunburst/rays behind hero panels, overlaid with small Ben-Day halftone dots; blue \"text placeholder\" panels use short horizontal line-bars instead of real text to suggest dense copy\nShapes and outlines · Every panel, badge, speech bubble, and character has a thick, uniform black outline with rounded corners…",
   },
   {
@@ -2832,6 +2958,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x19.jpg",
     still: false,
+    generated: true,
     guide: "风格：纪录片（X19 · Code Video）\n\n要点：\nA piece that reads like a serious investigative-documentary case file rather than a marketing reel: a near-black canvas holding a slowly turning low-poly \"network sphere\" emblem, chaptered like folder tabs (\"Chapter 1 — ...\", \"Chapter 2 — ...\"), with aged paper \"evidence cards\" laid under a desk lamp, minimal data-journalism bar charts, and one dramatized \"witness testimony\" segment shot as a backlit, explicitly-labeled graphic silhouette. Everything moves slowly and settles rather than snaps; captions build up phrase by phrase like narration being typed out; a hushed, low ambient bed with a slow recurring pluck tone underscores the whole thing, broken only by a hard opening hit and a bright closing chime. The net effect is hushed, credible, forensic — closer to a true-crime/60-Minutes case-file open than a tech-hype trailer.\n\n特征：\nBackdrop · Pure black canvas (#000000) scattered with faint pinpoint \"stars\" and dim warm embers; a soft diagonal light-wedge/vignette appears only in the reenactment scene, along with a few out-of-focus glowing bokeh orbs (dust-in-a-spotlight look)\nEmblem · A translucent low-poly sphere made of thin connecting lines and node-dots (\"network globe\"), rendered in dim bronze/amber, recurring at the open and close as a logo/chapter device\nPalette · Near-black ground; ivory/cream display type (#E8DED2); warm coral-terracotta accent used for dates, the current/highlighted data point, and stamps of emphasis (#D07152); muted brick-red \"correction ink\" used only for strike-through of an old number and a circular rubber stamp (#96473C); aged, grain-textured cream paper for evidence cards (#D5CAB4); charcoal gray for inactive/comparison bars (#403D38)\nTypography · Large numerals and section headlines set in a high-contrast serif with bracketed serifs (old-book / editorial feel); dates and percentages set in tabular, fixed-width digits…",
   },
   {
@@ -2844,6 +2971,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x20.jpg",
     still: false,
+    generated: true,
     guide: "风格：博物馆展览（X20 · Code Video）\n\n要点：\nA piece that plays like a nighttime museum special-exhibit walkthrough: a single visitor moves room to room through a pitch-dark gallery where each \"diorama\" is picked out by one hanging spotlight, a low-poly artifact on a pedestal, a cream museum wall-label, and a docent's caption bar typing out commentary along the bottom. The overall feeling is hushed, reverent, and slightly theatrical — closer to an after-hours exhibit tour than a tech product demo, with warm sepia light carving objects out of near-total black.\n\n特征：\nBackground · Near-black warm charcoal (#070604), a faint horizontal-plank floor fading into darkness, heavy vignette; only the spotlight cone and its objects are ever lit.\nSpotlight · One vertical cone per shot from a small black ceiling fixture (soft halo glow), rendered as a warm sepia/amber beam (#6A5A43-ish) with tiny drifting white dust-mote particles inside it; the beam fades down and \"searches\" to reveal the next scene rather than the camera simply cutting.\nHero object · A faceted low-poly gem/crystal (flat-shaded polygons, hard facet edges, no smooth gradients) floating over a plain cylindrical pedestal, sometimes inside a hairline-outline glass vitrine; lit facets in bright copper-orange (#FF9C60), shadowed facets in dark maroon-brown (#653728). It rotates slowly in place.\nMuseum label card · A solid cream/parchment plaque (#DAD2C5–#EADEC6) with a small \"No.…",
   },
   {
@@ -2856,6 +2984,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x21.jpg",
     still: false,
+    generated: true,
     guide: "风格：突发新闻（X21 · Code Video）\n\n要点：\nThis clip resembles a cable-news \"breaking news\" graphics package — the kind of template a 24-hour news channel uses to announce a major story. It opens on a slowly-revealed rotating-globe title card, sweeps a diagonal tri-color ribbon across the screen for the headline stinger, cuts to a flat-vector illustrated news anchor at a desk with a persistent lower-third and scrolling ticker, pushes into a zooming world map (globe → country → city → geolocation pin), then alternates between data/stat cards and the anchor before closing on a minimal logo card. The feeling is urgent, corporate-broadcast, and info-dense: deep navy blues, hard red accents, bold condensed numerals, and a constant on-screen HUD (live clock, channel bug, ticker) that never disappears, evoking authority and immediacy rather than warmth.\n\n特征：\nBackground · Deep navy-blue field throughout, #030e29–#051129, with a faint rectangular grid overlay and soft diagonal light-ray streaks radiating from top corners (visible clearly in the globe intro)\nPanel / card fill · Slightly lighter navy blue boxes for graphic panels and stat cards, #0c2151–#112e72, edged with a thin bright cyan-blue top border #36b5fe\nPrimary accent (alert) · Saturated red #d6121c used for the \"속보\"/breaking tag, lower-third bar, ticker background, and logo block\nSecondary accent · Gold/amber #ffc02f used as a thin underline stripe beneath the red lower-third and in the diagonal ribbon band\nText · Pure white #ffffff for headlines and big numerals…",
   },
   {
@@ -2868,6 +2997,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x22.jpg",
     still: false,
+    generated: true,
     guide: "风格：侦探线索板（X22 · Code Video）\n\n要点：\nThis clip reads like a detective's evidence corkboard being filmed and slowly revealed: a warm, lamp-lit cork bulletin board covered in pinned index cards and handwritten sticky notes, centered on a \"mugshot\" placeholder card for an unidentified suspect. Instead of cutting between shots, a single camera pans and tracks sideways across the board as new evidence cards appear one by one, each strung to the suspect card with taut red thread, building toward a wide \"conspiracy board\" pull-back. A camera-flash whiteout is the only hard cut in the video, swapping the mystery card for a clean \"identified\" result card stamped closed. The pacing feels like a true-crime documentary graphics package: steady ticking/pulsing music under a slow reveal, a stab of sharp hits, one big swell exactly on the flash-cut, then a fade to quiet.\n\n特征：\nBackdrop · tight, textured cork-board surface, warm brown (observed ~#89552F, #694929, #917350), vignetting to near-black at the frame edges (~#17100A) as if lit by a single desk lamp\nSuspect card · tall grey \"mugshot\" placeholder: black silhouette bust, a white \"?\" for a face, faint horizontal height-ruler ticks, and a solid black name-plate bar along the bottom\nEvidence cards · cream/off-white lined index cards (~#F0E6CE–#EFE4CE), pinned slightly askew, each with a bold headline, a small numbered tag in the corner, and a tiny citation line along the bottom edge\nSticky notes · small handwriting-font notes in muted mustard yellow (~#A19347 as lit) and dusty pink/lavender (~#B78F9A as lit), scattered at random tilts around the board edges, carrying half-finished questions\nRed accents · round red pushpins and taut red string joining them into a web (reds observed roughly #C8271D–#FE5E50), red hand-drawn circles/underlines marking a \"found\" value, a red strike-through-and-replace on a corrected number, and a red rubber-stamp outline near the end\nTypography · a rounded sans-serif for headings and on-card numbers, paired with a casual marker/handwriting font for sticky notes and red hand-annotations…",
   },
   {
@@ -2880,6 +3010,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x23.jpg",
     still: false,
+    generated: true,
     guide: "风格：绘本（X23 · Code Video）\n\n要点：\nThe video looks like a physical children's picture book filmed lying flat on a wooden desk: a leather-bound cover with gold ornamental corners opens like a real book, then the camera holds a flat, head-on view of each cream-paper spread as it \"reads itself\" — a circular illustration on the left breathing with small looping motion, and serif body copy typing itself in on the right. The mood is warm, nostalgic, and gentle: soft pastel scene-paintings inside a locket-shaped frame, muted earth-tone data callouts, and a plush round mascot that waves through every scene. It reads as a bedtime-story explainer: cozy rather than corporate, tactile rather than flat-UI.\n\n特征：\nBase surface · Dark wood-grain desk background (~#40291a–#4a3320) visible around the book at all times, with faint soft-focus dust/light motes drifting over it\nBook object · Closed cover is deep maroon leather (~#461912 to #632c21) with a thin gold double-rule border (~#b2965e) and gold diamond corner ornaments; opened pages are matte cream paper (~#f4ead4 family) with a visible center gutter/spine shadow and a small triangular page-fold mark at the bottom center\nIllustration frame · Every left page holds one circular \"locket\" window (thin brown ring) framing a single flat-vector scene…",
   },
   {
@@ -2892,6 +3023,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x24.jpg",
     still: false,
+    generated: true,
     guide: "风格：RPG 任务（X24 · Code Video）\n\n要点：\nA clip that reads like a cutscene lifted from a 16-bit console RPG (SNES/Game Boy Advance era): a fixed-camera pixel-art diorama, a JRPG dialogue box with typewriter text, a \"quest log\" stat panel, a sword-and-slime battle vignette, a radial-burst level-up screen, and a loot-pickup card, bookended by a night title card and a sunset \"quest clear\" card. A thin scanline texture sits over every frame, and a chiptune-style pulsing melody drives the pacing. The overall feeling is nostalgic, toy-like, and gamified — factual/data content (benchmark scores, price changes) is translated one-to-one into RPG game-feel (quest completion bars, \"+EXP\" pickups, loot cards, stat increases).\n\n特征：\nGround truth: fixed low-res pixel-art dioramas · Every scene is a static illustrated background (starry night skyline with moon and castle silhouette; daytime village with houses/trees/road; dungeon brick corridor with wall torches; sunset hillside) rendered in blocky, low-detail pixel art with no camera pan/zoom\nPalette: deep indigo night + warm amber accents · Night/dungeon backdrops sit in #0C0A22–#1B1545–#371D5A indigo-violet; warm points of light in #E6B85A (window glow) and #FDF2D2 (torch flame); daytime scene uses #5FB3FC sky and #54A048 grass; sunset ending blends #271A50 → #C65952 → #F29F6B\nUI chrome: rounded steel-bordered dialogue/panel boxes · Navy-blue fill (#283267/#314292) boxes with a light-gray beveled border, a tabbed name-plate in the corner (e.g. a small pill reading a speaker name), used for both dialogue and stat panels\nProgress bars as game meters · Horizontal bordered bars with a solid orange-terracotta fill (#BE674C) over a dark navy track, a white tick mark marking a \"previous score\" reference point, a percentage readout, and a rotated red/gold \"완료!\" (complete) stamp ribbon on finish\nBlocky pixel typography with drop shadow · All text (titles, dialogue, UI labels) uses a chunky, uniform-width pixel font with a hard 1-tone drop shadow; headline words (e.g.…",
   },
   {
@@ -2904,6 +3036,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x25.jpg",
     still: false,
+    generated: true,
     guide: "风格：天气预报（X25 · Code Video）\n\n要点：\nA short data video styled as a Korean TV nightly-weather-report broadcast graphics package repurposed for a status update. It opens with a satellite/radar-style storm-spiral animation, then cuts through a sequence of \"forecast card\" scenes — a temperature-style map, thermometers, wind/speed gauges, a multi-day forecast strip, and a sunny sign-off — each dressed with real broadcast chrome: a channel logo pill, a live date badge, and a scrolling breaking-news ticker along the bottom. The screen stays locked-off and flat; all motion lives inside the graphics (falling snow, twinkling stars, drifting wind lines, a fast diagonal wipe between scenes). A bright, plucky instrumental loop runs under it with an accented musical hit landing on every scene change, giving the whole thing a polished, on-air, slightly playful newsroom feel.\n\n特征：\nBackground · Vertical navy gradient, lighter blue near the top (#09316b/#0a326e) fading to near-black at the bottom (#031433/#051530) — same gradient in every scene\nCards / panels · Solid-fill rounded-rectangle panels (#092348), no stroke, soft drop shadow, one stat or graphic per card\nPalette · Navy bg #09316b→#031433, panel #092348, alert/ticker red #dd2222–#df2122 with a brighter dot #fe4544, accent yellow #fdd118, sun gradient #fef2a4(center)→#fdaf23/#fe9d18(rim), off-white text #f7ffff/#dee4e7\nTypography · Heavy, rounded geometric sans (bold Korean UI/dashboard face); oversized bold stat numbers in yellow/blue/white; smaller muted gray-blue captions and source lines\nIconography · Flat vector weather icons with a soft gradient + drop shadow (sun, cloud, snowflake, thermometer, wind compass, speedometer gauge, umbrella) — a rounded \"fluent\"/2.5D icon look\nFixed chrome · Top-left pill logo (circular spiral emblem + wordmark) and top-right rounded status badge with a glowing dot, present unchanged in every scene…",
   },
   {
@@ -2916,6 +3049,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x26.jpg",
     still: false,
+    generated: true,
     guide: "风格：电视购物（X26 · Code Video）\n\n要点：\nThe video reads as a parody of a Korean late-night TV home-shopping / infomercial broadcast: a flat, rounded-vector cartoon world where each beat of the pitch gets its own full-bleed, single-hue \"sunburst\" backdrop, a chunky comic-shout headline slams onto the screen, and a persistent lower-third news-ticker bar keeps scrolling bullet claims underneath. A simple blob-shaped mascot character stands in for \"the customer,\" shown gloomy and gray before the pitch and pumped-up and colorful after it. There is no camera movement at all — it behaves like a slide deck of hard graphic cards, each card populated with big bold numbers, price tags, comparison panels, and cartoon icons (a ticking bomb, a ringing phone, a rocket, a green checkmark). The audio is a bright, dense, evenly-pulsing music-and-SFX bed that stays \"hot\" almost the entire runtime, occasionally spiking with comedic riser/whoosh effects timed to the hard cuts, giving the whole thing a caffeinated, game-show-auction energy.\n\n特征：\nBackground treatment · Full-bleed radial \"sunburst\" rays fill every scene in one saturated hue; the hue itself is the scene-to-scene variable (measured: near-black charcoal #131313/#1F1F1F for a \"gloomy before\" beat, golden #FED84A/#FEB812 for a product-reveal beat, alert red #D80011/#DC0111 for a price-drop beat, electric blue #1C38FF/#385BFD for a comparison/CTA beat, purple-to-magenta #851C92/#5B088A for a phone-in-now beat, and a dark warm-brown vignette #130D08→#592917 for the closing card)\nPalette accents · Ticker tag red #E70010/#E80012, ticker scroll-bar yellow #FED300, stat/progress-bar orange #FE7A19, confirmation-badge green #18B44B, neutral flat gray #DDDDDD for the \"before\" state and inactive bars, white card fills with heavy black strokes for comparison panels\nShapes / icons · Flat, thick-outlined cartoon props: a bomb with a lit, sparking fuse; a corded phone receiver mid-ring with motion arcs; a cardboard-box product reveal rendered in simple isometric-style panels; a rocket; a circular green checkmark badge…",
   },
   {
@@ -2928,6 +3062,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x27.jpg",
     still: false,
+    generated: true,
     guide: "风格：体育直播（X27 · Code Video）\n\n要点：\nThe clip reads like a cable-TV live-sports broadcast package — a night-match stadium open with floodlights and an LED-dot crowd, cut with the on-screen graphics package a network overlays during a match (score bug, \"LIVE\" badge, lower-third source ticker) — repurposed to walk through a head-to-head stat comparison instead of a game. Motion is entirely 2D broadcast-graphics motion (nothing pans or dollies; text counts up, bars fill, cards slide and glow) cut into short hard-cut chapters every few seconds. The audio is a rhythmic, plucked/percussive pulse that tightens and loosens with the on-screen drama — quieter during the analytical stat-sheet beat, swelling into a bright, confetti-timed climax at the finale — which together with the broadcast chrome gives it the feel of a TV \"match highlights\" reel rather than a slide deck.\n\n特征：\nBackdrop · Two modes: (1) a night stadium establishing shot — dark navy sky, crossed floodlight beams, a dot-matrix grid of crowd/scoreboard lights, a green turf pitch with center circle at the bottom edge; (2) flat deep-navy card panels with a faint diagonal pinstripe/chevron texture (like jersey fabric) behind data content\nBroadcast chrome · Persistent top-left mini score bug (event name + running score), top-right red \"LIVE\" pill + league/season badge, and a bottom-edge scrolling ticker bar citing the data source — all classic sports-broadcast overlay furniture that stays fixed while the content behind it changes\nCards & data viz · Rounded dark cards with a bold solid-color header bar coding the two sides (warm orange vs. cool slate-blue), oversized tabular numerals for the headline stat, thin horizontal comparison bars, a trading-card-style \"player card\" (jersey silhouette, numbered stat rows), and a lane-track \"race\" diagram with motion-trail ghost dots standing in for a speed comparison\nPalette · Deep navy #0f172f (base/panels); darker navy #0b1224/#091330 (backgrounds); pitch green #0b3318/#16442a; primary orange accent #fd772c; burnt-orange gradient #cc5a28; muted slate-blue #586b8b…",
   },
   {
@@ -2940,6 +3075,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x28.jpg",
     still: false,
+    generated: true,
     guide: "风格：组装说明书（X28 · Code Video）\n\n要点：\nThe video reads like a printed IKEA-style product-assembly instruction booklet that has been turned into a motion explainer: flat vector line art on aged cream paper, a giant chapter numeral opening every page, an isometric shipping-box \"hero\" object, a small stick-figure mascot for scale, and literal hardware metaphors (price tags, coin stacks, a conveyor belt, wall outlets) standing in for abstract data instead of ordinary charts. Pages slide over one another like leaves of a manual being turned rather than cutting, each diagram builds itself piece by piece before its number snaps in, and a steady rhythmic tick-track under occasional synth swells gives the whole thing a calm, deliberate, \"assembled and verified\" feeling that ends on a stamped checkmark held in a still frame.\n\n特征：\nBackground · Warm cream paper, solid core #F0EEE4 with a soft vignette toward the edges (#E1DDD1); flat, no gradients, same tone on every single page\nLine and ink · Uniform bold warm-black outlines (#191A18) on every shape; clean flat vector, no soft shadows or gradients except a thin drop-shadow where one page slides over another\nPalette accents · Neutral tan/putty fill for the \"old/base\" object (#E4E0D1 lit face, #CCC6B6 shaded face), a single blush-salmon fill for the \"new/better\" object (#F4D7CA), and one terracotta/burnt-orange (#D0643A) reserved only for hero stats, badges, checkmarks and deltas\nTypography · Heavy grotesque bold sans headline (Latin + a matching bold Korean gothic), an oversized numeral leading each chapter like a manual step, a lighter warm-gray subtitle line beneath it, tiny warm-gray footer citation and page number in the bottom corners of every screen\nIconography as metaphor · Abstract stats are shown as literal objects: a price tag for cost, a coin stack for spend, a conveyor belt feeding out of a machine chute for throughput, rows of a small repeated fence/arch icon as an isotype pictogram grid for a ratio, wall electrical outlets for platform availability, an isometric shipping box for the product, a plain stick figure for hu…",
   },
   {
@@ -2952,6 +3088,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x29.jpg",
     still: false,
+    generated: true,
     guide: "风格：白板讲课（X29 · Code Video）\n\n要点：\nA static \"desk-cam\" shot of a physical whiteboard, framed by its own aluminum bezel, on which a hand entering from the bottom-right corner writes, draws, underlines, circles, and erases with dry-erase markers and a block eraser — the classic hand-drawn whiteboard-explainer look. Everything is built stroke-by-stroke in real time rather than fading in, numbers get crossed out and replaced live, and nothing is ever fully wiped clean: every earlier section keeps ghosting through as a barely-visible watermark under the current one, giving the board a used, palimpsest-like texture. The mood is brisk, corporate-friendly, and a little playful (circled step numbers, a green checkmark shield, a red circled callout), riding a continuous, steady percussive beat underneath.\n\n特征：\nBoard & frame · Warm off-white board (#F7F7F5) with faint pre-existing gray cleaning-smudge arcs baked into the texture, bordered by a silver/gray beveled double-frame (#B4B8C0 outer rim fading to #F5F5F3 inner bevel) that reads as a physical whiteboard's aluminum edge\nHand & tool · A right hand + forearm in a navy sleeve (skin #F0C3A2, sleeve #2F4A77) enters diagonally from the bottom-right corner every time, holding whichever tool the beat calls for: a capped marker or a blue block eraser (#2F5BD6-ish body, gray felt base)\nInk palette · Black #24262E for headers/labels, blue #1B4DC6 for new/updated values and taglines, red #D5382B for strikethroughs/alerts/circled callouts, green #158A45 for a checkmark/safety icon, orange #DE7426 used sparingly as the sole accent (title underline, one bar series, key stat)\nSection slug · Each section opens with a circled sequential numeral (①②③) in black plus a short handwritten headline, top-left, drawn before anything else in that section\nData visuals · Hand-drawn bar charts: a wavy freehand baseline, solid rectangular bars (gray #99A2AB = before/old, orange = after/new), value labels hand-lettered above each bar in matching color, category label below in cursive\nComparison rows · \"label : old value (red strikethrough) → new value (b…",
   },
   {
@@ -2964,6 +3101,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x30.jpg",
     still: false,
+    generated: true,
     guide: "风格：电影预告片（X30 · Code Video）\n\n要点：\nA prestige announcement trailer that reads like a luxury-watch or car-launch teaser borrowed for a tech reveal: an ultra-wide cinematic letterbox holds a near-black, warm vignette sky sprinkled with slow-drifting dust motes, and every idea — a question, then a date, then a run of benchmark numbers, then the product name, then a release date — gets its own held, centered, fully-faded screen. Nothing cuts hard; everything breathes in as a soft bloom of light, holds, and dissolves through black into the next. The mood is confident and expensive rather than energetic: hushed opening, a rhythmic pulse of swelling hits under the numbers, one big flare-and-impact at the name reveal, then a slow decrescendo fade-out.\n\n特征：\nBackground · Near-black warm umber/brown (~#150B09), soft radial vignette (darker at edges), faint floating dust/particle field (small soft specks, brightest near #FFFAF7) drifting almost imperceptibly\nFrame / crop · The frame letterboxed to an ultra-wide ~2.6:1 window with thick pure-black bars top and bottom, held for the entire runtime\nPalette (hex) · Near-white warm glow core #FFF9F0 / #FFFAE6 · champagne-gold #FBE6CB / #DDB59B · copper-amber accent #E5AF81 / #E2A882 · bronze divider #9A7562 · muted warm gray (secondary line) #B0A6A5 · dim gray (footer) #807F7D\nTypography · Two-register serif system: a Western Didone/Times-like serif for big hero numerals and the English wordmark (bold, wide letter-spacing on the wordmark), and a softer Korean serif (myeongjo-style) for sentence lines; small caption/eyebrow words are set in slim, letter-spaced tracked caps\nHero-stat template · Every metric screen repeats the same layout: small tracked eyebrow label (amber) → giant glowing serif number/word, centered → thin horizontal bronze rule → one mid-size cream sentence → one smaller muted-gray comparison line beneath it\nGlow / flare · A horizontal lens-flare hairline sits at vertical-center across the full width during bright moments, blooming into a soft radial halo behind hero text…",
   },
   {
@@ -2976,6 +3114,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/x31.jpg",
     still: false,
+    generated: true,
     guide: "风格：数学证明讲课（X31 · Code Video）\n\n要点：\nA dark, quiet, textbook-like explainer that stages an argument the way a math lecture stages a proof: a title card, a numbered \"lemma\" per claim, and a closing \"therefore\" statement with a QED mark. Everything sits on a near-black panel with a faint off-center glow, rendered as flat 2D vector graphics — thin-stroke bar and scatter charts, color-coded equations that build term by term, and small dim citation text in the corner. The mood is restrained and confident rather than flashy: no camera movement, no particle effects, just clean typography and numbers arriving in a steady, metronomic rhythm under a soft ambient pulse.\n\n特征：\nBackground · Flat near-black navy (~#0a0b0f) with a faint, slightly off-center radial glow (lighter toward left-of-center, a touch darker in a band on the far right) — subtle, almost imperceptible, never a full gradient\nPalette · Off-white primary text (~#c7c7c9); gold/amber for the highlighted subject and positive reveals (~#fed74b, dot/marker ~#fed74b); cyan/sky-blue for the baseline/reference entity (marker ~#5ac4dc, glass fill ~#234755); sage green for positive deltas and \"better\" callouts (~#8ab679); dusty coral-red for cost or negative values (dashed line ~#ca6f74, glass fill ~#532623)\nTypography · A serif display face (Georgia/Playfair-like) for the big title and large numerals; a plain geometric sans (Latin+Hangul mixed) for labels, axis ticks, and body sentences, stepped down in brightness for lower-hierarchy text (title brightest, body mid-gray, footer citation almost invisible dim gray)\nSlide template · Consistent per-slide anatomy: small serif \"series\" title top-left, one line of colored subtitle directly under it acting as a step/lemma label (e.g.…",
   },
   {
@@ -2988,6 +3127,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o1.jpg",
     still: true,
+    generated: false,
     guide: "风格：翼（O1 · 奥斯卡 98 部）\n\n提示词：\n平滑着色的 3D 按默片正色片拷贝调色：高反差，红色发黑。 天空近白，地面留清楚的中灰层次，深黑占画面 25%–35%，只在剪影里。 染色：白位向琥珀 #FFCC80 混一半，天空是淡奶油琥珀，不要整片橙；黑位不变。 只有故事围绕的那个主角留色，整个人都留，饱和度约七成（如 #D97757）；灯火和其他光源一律是灰的。 叠 24 fps 片门抖动（±1 像素）、闪烁（±5%）、细颗粒（±4%）、一到三条细划痕、稀疏灰尘，片门圆角加柔和暗角，第一镜 1 秒圆形光圈打开。 招牌镜头：机位绑在跟主角一起动的东西上，露出一截支架，轻微震动；再接跟拍和主观镜头。 每 2–3 秒一切，穿过云、烟或强光白场转场。 对标 William Wellman《翼》（1927）。 避免：运动模糊、灰阶里有颜色。",
   },
   {
@@ -3000,6 +3140,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o2.jpg",
     still: true,
+    generated: false,
     guide: "风格：百老汇旋律（O2 · 奥斯卡 98 部）\n\n提示词：\n装饰艺术歌舞海报。 黑漆底；金和银都用分带金属渐变做（每个面 3–5 条硬分界），喷枪光晕、放射线、阶梯形、流线型，场景外圈套一道层层退进的金线台口框，嵌一排灯泡。 色板按用途：底 #0A0908，金 #D6B560，高光 #F3E2A2，银 #BFC4C9；皮肤用淡银奶油色；只有故事围绕的那个主角用一个饱和强调色（如 #D97757）。 人物是 Erté 式修长造型，有五官表情，题材允许时加流苏、亮片或羽毛。 细颗粒、闪光点、星星。 正面对称，中间一束追光。 动起来：灯泡流动，一排重复元素（舞者、浪头）向中心卷成波浪，主要声源或光源放射环纹；镜头慢推，踩音乐的拍子切，无乐每 2–3 秒一切。 对标 A. M. Cassandre 的海报、Erté 的服装设计。 避免：平涂黄色冒充金属、人物没脸、多余的颜色。",
   },
   {
@@ -3012,6 +3153,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o3.jpg",
     still: true,
+    generated: false,
     guide: "风格：西线无战事（O3 · 奥斯卡 98 部）\n\n提示词：\n仿凯绥·珂勒惠支《战争》组画（1921–22）的表现主义木刻。 画面六到七成是实黑；形体之间用白色轮廓刀分开，刀宽为画幅宽的 1/300–1/150；人脸刻成白形，只留几笔黑五官；手要大。 人物占满画面，被画框裁切。 每刀都有尖的进刀收刀和碎木边，离光越近的刀越宽，刀痕成组排、节奏略不均。 墨色 #17130F 印在 #E8DFCA 纸上；纹理只有木纹条和缺墨斑点（±5%）。 只有故事围绕的那个主角套一块色版（如 #D97757），平铺在身体或衣服上，刀痕照样压在上面，黑仍占六成以上。 光只从一个开口进来（窗、云缝）；灯只刻一小圈短刀痕。 人物脚下的地面留不刻的黑。 动作安静（呼吸、一个小手势）；慢摇、慢推。 避免：灰雾灰调、排刀规整成条纹、血腥。",
   },
   {
@@ -3024,6 +3166,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o4.jpg",
     still: true,
+    generated: false,
     guide: "风格：壮志千秋（O4 · 奥斯卡 98 部）\n\n提示词：\n会动的 1880 年代金调色蛋白照片。 先画边缘柔和的平涂形，按亮度分：主体深（15%–30%），地面 50%–60%，天空约 90%；物面和草丛有看得见的排线（线宽约画幅宽 1/300）。 再“印”：转灰度，轻柔焦（约画幅宽 1/800），三层横向错开的淡影随运镜拉长，乘奶油色 #F2DCB4，黑位抬成暖褐 #2E1C0F，显影不匀（±5%），暗角压到 #785634，每帧刷新颗粒（±4%），稀疏灰尘划痕。 只给故事围绕的那个主角手工上色（如 #D97757），像透明染料，蒙版羽化 2–3 像素；灯光仍是棕褐。 横向全景，中间一条带排满重复小元素：人物、动物、车辆，题材冷清就用篱笆、木桩、树；别让一整块大面占满画面。 天空默认发白。 运镜：从主角近景 4–5 秒缓出拉到全景。 避免：硬墨线、主角以外的颜色、干净的数码天空、发灰的印相。",
   },
   {
@@ -3036,6 +3179,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o5.jpg",
     still: true,
+    generated: false,
     guide: "风格：大饭店（O5 · 奥斯卡 98 部）\n\n提示词：\n真 3D 场景，默认装饰艺术风大堂（大理石、镀铬、吊灯、亮面棋盘格地面）；室外保留真实场景，表面做出光泽（湿路面、静水），构图对称。 环境光遮蔽加柔和辉光，调成 30 年代片厂银色黑白：约四成画面深黑，白位亮度约九成，不发灰。 光从一个高处光源成束落下。 只有故事围绕的那个主角留色（如 #D97757），至少占画面高度六分之一；暖灯渲染成白光，辉光只在灯旁。 颗粒（±3%），灯旁光晕。 招牌镜头：平视大全景，望进对称纵深，地面和天花同时入画，地面有倒影；再接 4–6 秒的侧向跟拍；俯拍同心圆、人像棋子只用一次。 年代人物有头、帽、四肢，按路线走。 对标美术指导 Cedric Gibbons、摄影师 William Daniels。 避免：原地踏步、抽象图案铺满画面、偏色。",
   },
   {
@@ -3048,6 +3192,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o6.jpg",
     still: true,
+    generated: false,
     guide: "风格：乱世春秋（O6 · 奥斯卡 98 部）\n\n提示词：\n慕夏式彩色石印。 褐色 #4B3326 轮廓线，宽约画幅宽 1/250，背光侧（光默认从左上来）加粗到两倍，两端收尖；粉彩平涂，每块在背光侧叠一层深一档的硬边色。 色板：奶油 #F5ECD6 作纸和天空，鼠尾草绿 #A9B490 作植物衣褶，淡金 #CFA55A 作光环装饰，玫瑰 #DBA49C 作皮肤和花；故事围绕的那个主角用一个更浓的强调色（如 #D97757）。 横幅：人物和细环纹大光环居中三分之一，两侧拱格，后面铺灰青（鼠尾草绿掺灰）方块马赛克；鞭线藤蔓和花草；底部一条衬线大写铭文，用用户语言，字高约画面 1/25。 留白不超过画面八分之一。 杏仁眼、厚眼睑；头发或衣料三色成束。 石版颗粒、纸斑、暗角。 慢摆；下摇到光环再拉远。 避免：干净细线、饱和色、空荡背景。",
   },
   {
@@ -3060,6 +3205,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o7.jpg",
     still: true,
+    generated: false,
     guide: "风格：一夜风流（O7 · 奥斯卡 98 部）\n\n提示词：\n30 年代初的黑白橡皮管卡通。 角色：软管四肢、白手套、饼切眼、圆脑袋，三到四头身；墨线 #141414 粗细变化（画幅宽 1/400–1/150），背光一侧变粗（默认光从左上）；角色平涂只用纯黑、纯白，加至多一种浅灰作硬阴影，黑面一道高光。 背景只用中间灰（明度 30%–80%），不用纯黑白：铅笔线不擦，灰色水彩罩染，边缘积水有颗粒沉淀。 只有故事围绕的那个主角带颜色（如 #D97757）：整个身体，主角是人时只给关键道具。 加 ±1 像素片门抖动、24 fps 颗粒（±4%）、闪烁、划痕、灰尘。 动作都有预备、冲过头再回落：落地压扁、快动拉长、吃惊时弹眼，碰撞时镜头轻震。 对标弗莱舍工作室的 Betty Boop 短片、迪士尼《糊涂交响曲》的背景。 避免：光滑矢量线、角色发灰和背景糊在一起。",
   },
   {
@@ -3072,6 +3218,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o8.jpg",
     still: true,
+    generated: false,
     guide: "风格：叛舰喋血记（O8 · 奥斯卡 98 部）\n\n提示词：\n18 世纪末的铜版地图，默认是英国海军部海图（内陆题材换成测绘图）。 明暗全靠刻刀细排线和交叉排线，线宽约画幅宽的 1/1200；线宽设下限，细小处变暗而不是消失。 墨色 #1C1610 印在 #EFE3C4 直纹纸上，带淡霉斑和折痕。 只上很薄的手工淡彩：沿水边的海蓝 #9EBCBC，陆地 #B8C08C；故事围绕的那个主角（如 #D97757）是唯一的浓色。 32 向罗盘玫瑰拉出恒向线网、刻度边框、晕滃山形、装饰图名框、一个装饰物（如海怪）、衬线字。 情节放进一幅不加边框的排线插画，排线向纸面渐隐；推到底时插画占画面高度 60%–75%。 运镜：一个 5–6 秒的镜头从整张图滑进插画，四周留着地图；一条虚线路线自己画出来。 避免：切出纸面、浓重水彩、僵硬的人物。",
   },
   {
@@ -3084,6 +3231,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o9.jpg",
     still: true,
+    generated: false,
     guide: "风格：歌舞大王齐格飞（O9 · 奥斯卡 98 部）\n\n提示词：\n真 3D 舞台大场面，调成 30 年代片厂银色黑白：把题材的世界搭成圆形分层转台上的歌舞布景，慢慢转（每秒约 3 度），挂满垂幔花环；题材里的人变成一排排穿戏服、有脸有手的合唱队。 灰阶：戏服浅缎灰，布景中灰，褶皱大幕更深，剧场深黑；白色不到纯白。 正面柔和主光，轮廓光更亮，把缎子和羽毛的边勾到近白。 淡光柱，颗粒（±3%）。 只有故事围绕的那个主角留色（如 #D97757），灯都渲染成白光。 招牌镜头：贴低的中景沿层台看过去，人物占画面高度四分之一到三分之一，主角在前排。 再接帷幕升起（3 秒）、10 秒吊臂上升，落到平视主角的中景。 对标 Robert Z. Leonard《歌舞大王齐格飞》（1936）。 避免：平均打光、没脸的锥形人、转得太快。",
   },
   {
@@ -3096,6 +3244,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o10.jpg",
     still: true,
+    generated: false,
     guide: "风格：左拉传（O10 · 奥斯卡 98 部）\n\n提示词：\n1890 年代的报纸印刷。 文字先排成清晰墨版再“印”：约 1 像素模糊加噪声阈值切边，做出油墨外扩、字边毛糙、局部缺墨、淡淡的背面镜像透字。 版面语法：报头、横贯全宽的木活字大标题（约画面高度 1/6）、3–6 栏小字正文（用用户的语言，字高约画面 1/80）夹着一幅大线刻插图。 木活字一字一块，带木纹。 所有画面都是线刻：线宽约画幅宽 1/1000、间距约 1/400，顺着形体走，交叉排线只用在暗部，背光一侧轮廓加粗，远处用淡墨。 暖黑 #17130F 印在新闻纸 #E8E0CC 上；故事围绕的那个主角单独一块强调色版（如 #D97757），套印偏 1–2 像素。 动起来：活字块砸下、回弹、留下印迹；一个反复的机械动作，报纸翻页。 避免：干净的数码字体、平滑灰调、其他颜色。",
   },
   {
@@ -3108,6 +3257,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o11.jpg",
     still: true,
+    generated: false,
     guide: "风格：浮生若梦（O11 · 奥斯卡 98 部）\n\n提示词：\n1936–39 年 WPA 联邦艺术计划的丝网海报。 六色不透明油墨从浅到深套印，后印的版要在不该盖住的浅色形（云、太阳、高光）处镂空：奶油 #F0E2C0 给光和云，赭 #E0A842、朱红 #C84A2A 给天空和暖色面，青 #22686E 给水和阴影，主角专用色（如 #D97757，只用在故事围绕的那个主角身上），最后印深棕描边 #322018。 阴影是深一色叠印，不用灰。 大面积用分色渐变：两色 2–3 级粗台阶，中间一级是两色叠印。 每版套偏 1–3 像素，模版边缘游移，刮板拖痕、漏印，平涂上都有暖色棉浆纸纹（±5%）。 人物占画面高度二分之一到三分之二：大块面、月牙形暗面、棕色描边、脸有表情。 留一条粗体大写标题，用用户的语言。 慢推，一版一版弹出来。 避免：网点、平滑渐变、干净的矢量平涂。",
   },
   {
@@ -3120,6 +3270,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o12.jpg",
     still: true,
+    generated: false,
     guide: "风格：乱世佳人（O12 · 奥斯卡 98 部）\n\n提示词：\n1939 年 Technicolor 配色的厚涂油画。 刮刀色块：天空用长条横向色带（长为画幅宽的 1/15–1/6，厚约 1/60），地面和人物用顺形体的短笔触，之间留出平静、薄涂的区域；颜料棱受左上方的光，越亮越厚，薄处露布纹。 默认是落日天空，从酒红 #3A0912 经大红 #A8241A、橙 #F27A22 烧到金 #FFD878；地面红褐 #6E2214；剪影是带暖意的近黑；故事围绕的那个主角保持看得清的暖中间调（如 #D97757），不做成剪影。 强逆光，金色轮廓光；近景加一道暖色侧光照亮半边脸和手。 构图像史诗海报：大块深色剪影（树、房子、岩石、人物）压在低地平线上。 灯火用油画火焰。 运镜：全景慢推，低机位推近主角，最后吊臂升起看大景。 避免：大小一样的碎块铺满画面、脏棕色、平滑渐变。",
   },
   {
@@ -3132,6 +3283,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o13.jpg",
     still: true,
+    generated: false,
     guide: "风格：蝴蝶梦（O13 · 奥斯卡 98 部）\n\n提示词：\n有纹的纸上画炭笔。 纸纹细（颗粒约画幅宽 1/600）：轻压只挂纹峰，重压填满纹谷。 颗粒只在中间调；黑如天鹅绒，擦白是干净纸面。 明暗：约六成画面暗到中灰，一成半深黑，在最近的前景和最大块面上，亮处少。 炭色 #121111，纸色 #EEECE7。 笔法：藤炭干笔断线，炭条侧锋顺形体宽扫（宽为画幅宽 1/60–1/30），排线，手指抹，橡皮擦出边光和光晕；雾是在铺好的灰调上横向擦出来的（如 William Kentridge 的动画素描）。 只有故事围绕的那个主角用粉彩（如 #D97757），铺得较实、透点纸纹，炭笔勾边；火焰保持炭黑和纸白。 月光从上方来，两三层雾带不同速横漂。 运镜：主观镜头慢推，前景向两边分开。 避免：数码噪点、光滑的数码光晕、发灰的黑、空亮的天空。",
   },
   {
@@ -3144,6 +3296,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o14.jpg",
     still: true,
+    generated: false,
     guide: "风格：青山翠谷（O14 · 奥斯卡 98 部）\n\n提示词：\n仿威尔士画家 Kyffin Williams 的不透明水粉。 方向性笔触宽为画幅宽 1/80–1/40，长是宽的 2–5 倍，边缘毛糙，完全覆盖；房子、墙、山脊用断续深色短线勾边；暗山上刮几笔亮绿或灰蓝。 色板：天空和光淡金 #F1C565（别成芥末黄），田野绿 #86A03F，暗部煤黑 #1D1B1E，远山和水面灰蓝 #48505E，小点缀黄 #F6CF2F，其他颜色由这几色调出；故事围绕的那个主角用 #D97757，至少占画面高八分之一。 田野和天空偏亮（约六成），山和房子偏暗。 暖色调色不超过一成，暗角，颗粒。 默认傍晚低角度侧光，田野受光，山脊有轮廓光。 从高处真透视取景，一条路把视线引下去；小房子（或墙、石块）顺山坡一级级排开。 动起来：烟或云循环飘动，横向跟拍。 避免：水彩透明感、矢量平涂、发暗发脏。",
   },
   {
@@ -3156,6 +3309,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o15.jpg",
     still: true,
+    generated: false,
     guide: "风格：忠勇之家（O15 · 奥斯卡 98 部）\n\n提示词：\n做成 1942 年英国战时的石印海报。 造型简化有力，三版套印，略错位 1–3 像素：色版承载所有平涂；冷灰蓝蜡笔版压暗每一处阴影，带短而斜的石纹颗粒（不用网点）；墨绿黑轮廓版给每个形描一圈约画幅宽 1/500 的线，人物和云也要描。 配色按用途：奶油 #EBDFC2 是纸色和亮部，灰蓝 #8497A6 是天空和阴影，砖红 #A23F2D 和深绿 #34503F 只作点缀，合计不超过画面四分之一；棕色和肤色由奶油加砖红调出；轮廓色 #1E2422。 场景可以排满。 天空用喷枪渐变，只有纸纹每秒 12 帧跳动。 浅色光带顺着光源方向斜落，照到之处阴影版消失。 人物正面站立，像海报里的人。 镜头慢移带视差、上摇。 对标 Frank Newbould、Abram Games。 避免：网点阴影、干净的矢量边、大片饱和色。",
   },
   {
@@ -3168,6 +3322,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o16.jpg",
     still: true,
+    generated: false,
     guide: "风格：卡萨布兰卡（O16 · 奥斯卡 98 部）\n\n提示词：\n40 年代好莱坞片厂黑白，画成精修剧照。 形体是边缘干净的喷枪明暗块。 人脸用短光位：主光照亮离镜头远的那半边脸，靠近镜头的脸颊落在暗部，留一块伦勃朗三角光；每只眼两个眼神光。 条状影子借手边的东西（百叶窗、栏杆、树枝），斜落在物面上；光柱只在烟雾飘过处显形。 明暗：三到四成画面是深黑，白色面积小而发光；外景天空中暗灰。 调色：轻柔光溢出、S 曲线、细颗粒（±3%）、柔暗角、轻微闪烁；雾只在局部。 只有故事围绕的那个主角的身体或衣服保留颜色（如 #D97757），皮肤和灯光都是灰阶。 镜头：长运镜，推向一张脸，再拉远退进雾里。 对标摄影师 Arthur Edeson（《卡萨布兰卡》，Michael Curtiz，1942）。 避免：平光、整片灰雾、僵硬的胸像。",
   },
   {
@@ -3180,6 +3335,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o17.jpg",
     still: true,
+    generated: false,
     guide: "风格：与我同行（O17 · 奥斯卡 98 部）\n\n提示词：\n逆光的哥特彩窗，占画面高度八到九成、宽度约六成，两边露出相邻发光的窗。 每个形状是一块切好的玻璃：每块明度浮动约 8%，有流纹气泡和褐色内描边，外压黑铅条（宽约画幅宽 1/250）。 天空和空地切成菱形格（每格约画幅宽 1/30）；边框是带圆珠的宝石红。 主要人物至少占窗高一半，用尖细的深褐线描脸和衣褶。 配色按用途：背景钴蓝 #1B3F9E，边框宝石红 #B3121F，高光金 #E3A526，铅条 #16161A；皮肤淡琥珀；景物用深绿、青绿。 只有故事围绕的那个主角是橙色玻璃（如 #D97757）。 亮玻璃光晕吃进铅条；彩光落在地面和窗台上。 镜头：下摇、横摇，落到光斑上。 对标沙特尔大教堂、Harry Clarke。 避免：平涂、随意切割、窗四周大片暗墙。",
   },
   {
@@ -3192,6 +3348,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o18.jpg",
     still: true,
+    generated: false,
     guide: "风格：失去的周末（O18 · 奥斯卡 98 部）\n\n提示词：\n所有画面都用打字机字符打出来：等宽粗体字逐个敲，落在固定网格上，格宽约画幅宽 1/150、格高是格宽两倍。 85%–95% 的格子都要打字，只有最亮的光留纸白。 灰阶靠字键分级（浅 . : -，中 = + o，深 X # M），暗部约占三成，用 M# 这样的叠打。 形体靠边界清楚的字块和剪影读出。 每种材质重复自己的字键（如竖向结构 I H，砖缝 _|，水 ~）。 招牌或说明要打得能读。 色带墨色不匀：半边缺墨，几个键总是偏高或偏低。 纸 #EBE6DA，墨 #1D1C21；只有故事围绕的那个主角用红橙色带 #D4704F 打，至少占画面高度三分之一，影子仍是黑的。 硬侧光投出边缘清楚的密集长影。 画面在第一秒内打完，然后停住。 对标 Paul Smith 的打字机画。 避免：稀疏空白、看不出形的横向字条。",
   },
   {
@@ -3204,6 +3361,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o19.jpg",
     still: true,
+    generated: false,
     guide: "风格：黄金时代（O19 · 奥斯卡 98 部）\n\n提示词：\n每一帧当成 1946 年画报的新闻摄影跨页。 先把场景按照片渲染成灰调（3D 或手绘都行）：低角度太阳、长影子、深焦，近处和地平线一样清楚。 照片满版跨过两页，竖向中缝折痕从中间穿过，带一点阴影。 再印成 45° 黑色网点，间距约画幅宽 1/250，米白铜版纸 #ECE6D8，墨 #1A1A1A，略有扩墨。 从第一镜起，在安静的区域叠印一小块黑色标题和图说。 只有故事围绕的那个主角走专色橙版（如 #D97757），换一个网角，错版 2–3 像素，黑版只留在它最深的暗部；主角至少占画面高度四分之一。 镜头：走进全景，推进一个细节，再拉远，照片缩成一本摊开的杂志。 对标摄影师 Gregg Toland、《生活》杂志战后摄影专题。 避免：中缝切过主角，网点粗到照片碎掉。",
   },
   {
@@ -3216,6 +3374,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o20.jpg",
     still: true,
+    generated: false,
     guide: "风格：君子协定（O20 · 奥斯卡 98 部）\n\n提示词：\n用石墨铅笔画成 40 年代杂志插画，画得完整、有控制。 画面在前 1–1.5 秒内画成，然后停住：先淡淡的透视线和头部椭圆，再画两头轻中间重、转角出头的轮廓（宽约画幅宽 1/600），然后一到四遍近乎平行的排线（遍数越多越暗），间距约画幅宽 1/300，顺着形体走，再擦抹出平滑的过渡，用橡皮提亮。 完成的画面几乎铺满：环境和背景都画充分，以中灰为主，深色约占一成半，只有最外一圈约十分之一淡成没画完的边角。 纸 #F2EEE5 带轻齿纹，铅色 #2C2B2E。 只有故事围绕的那个主角的衣服用彩铅（如 #D97757），皮肤仍是铅笔灰。 戏在脸上。 镜头：缓缓拉远，再切特写。 对标插画家 Al Parker、Robert Fawcett。 避免：交叉网格、潦草速写感、大片空白纸面。",
   },
   {
@@ -3228,6 +3387,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o21.jpg",
     still: true,
+    generated: false,
     guide: "风格：王子复仇记（O21 · 奥斯卡 98 部）\n\n提示词：\n真 3D 场景，40 年代末的深焦黑白。 建筑是裸露的砌体，逐块砌出，带倒角和错缝（场景本有这类建筑时才用罗马式半圆拱）；湿的表面发黑发亮。 阴天柔光，没有硬投影：深色实体衬着银灰天空。 高度雾贴着画面下三分之一，成片里远景是 60%–70% 灰，中景清晰；云后亮天透出淡淡光柱。 有水时：多层涌浪、蕾丝般的白沫、礁石上的水雾。 后期：环境光遮蔽、轻辉光、高反差银色调色（有真黑，白不过曝），颗粒 ±3%，轻微闪烁。 只有故事围绕的那个主角保留颜色（如 #D97757），所有光源都是灰的。 镜头：慢慢漂近，沿高处横移，低机位仰拍主角。 对标 Laurence Olivier《哈姆雷特》（1948）。 避免：晴天硬影子、雾糊成一片白、贴图平铺。",
   },
   {
@@ -3240,6 +3400,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o22.jpg",
     still: true,
+    generated: false,
     guide: "风格：国王班底（O22 · 奥斯卡 98 部）\n\n提示词：\n每帧都是木活字和刻版印的凸版海报。 米黄纸 #EEE3C7 上印三色：蓝 #20488C 管天空、水和大块暗部，红 #C82C28 管暖色面和条纹，黑 #1E1B1E 管轮廓和字；只有故事围绕的那个主角多加一块专色（如 #D97757）。 每色一版，错位 2–4 像素；实地挖空下层，只有网点处叠印。 实地有木纹、缺墨针孔，边缘挤墨。 中间调走粗网点（约画幅宽 1/200），各版网角不同，不超过画面三分之一。 人物像麻胶版画：粗黑轮廓、刻刀白线、月牙阴影。 画面约七成是图；一两行粗木活字短句写在图里的横幅和招牌上，带错位投影，字高约画面十分之一，用用户语言。 镜头：小推，横移，重拍上特写一震（无音乐每 2 秒）。 对标 Hatch Show Print。 避免：碎灰调代替大块实地、套色精准得像电脑。",
   },
   {
@@ -3252,6 +3413,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o23.jpg",
     still: true,
+    generated: false,
     guide: "风格：彗星美人（O23 · 奥斯卡 98 部）\n\n提示词：\n画成 Al Hirschfeld 式的漫画，白纸黑墨。 线条有弹性、长而连贯，能一笔画完的轮廓就一笔：两端约画幅宽 1/800，转弯处加粗到 1/250。 深色衣服、头发和大件物体用实心黑块；灰调只用稀疏的平行排线。 环境用细线画完整：建筑、家具、道具连同细节都画，物与物之间留白；约六成纸面留白，但绝不是空纸。 每个人物靠姿态和比例夸张一个特征（长脖子、大头），五官具体。 纸 #FBFAF6，墨 #131012；只有故事围绕的那个主角的身体或主要衣服用一种颜色平涂（如 #D97757），代替黑块。 线条在第一秒内一笔笔写完，然后停住；留白处可有一句手写短句。 镜头：拉远，横摇扫过场景，小推。 避免：四肢僵直、火柴人、空荡荡的环境。",
   },
   {
@@ -3264,6 +3426,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o24.jpg",
     still: true,
+    generated: false,
     guide: "风格：一个美国人在巴黎（O24 · 奥斯卡 98 部）\n\n提示词：\n用拉乌尔·杜飞的水彩画法：先上色、后画线，两者永远对不齐。 透明色块铺满大部分画面，带湿边、积色边和颗粒，比物体大一到四成，朝同一方向滑开约画幅宽 1/30：钴蓝 #2258CE 管天空和水，柠檬黄 #FCE02E 管光和地面，玫瑰红 #EC3A7C 管暖色面。 重叠可混出紫或绿，绝不脏成棕，主角的色块别压在蓝上。 再用蓝黑墨 #1E1E3A 快速细线把整个场景画满（线宽约画幅宽 1/700），有提按和甩尾：建筑、窗、人物、小配景；直边单独一笔、角上出头；树冠和云画成一串小圈。 留白两到三成，皮肤是纸白。 故事围绕的那个主角有自己的一块色（如 #D97757）。 人物轻快有弹性。 镜头：小推，踩拍子切（没有音乐约每 2 秒）。 避免：颜色叠脏、线描死色块、线条稀疏。",
   },
   {
@@ -3276,6 +3439,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o25.jpg",
     still: true,
+    generated: false,
     guide: "风格：戏王之王（O25 · 奥斯卡 98 部）\n\n提示词：\n19 世纪末马戏团彩色石印，仿 Strobridge 石印公司。 平涂油墨加粗黑轮廓（约画幅宽 1/300）；阴影是月牙形加深，加排线；光从左上来。 四块石版：铬黄 #F4C416、朱红 #D62C24、钴蓝 #1E4EA0、黑 #181210，印在暖奶油纸 #EBD9B4 上；叠印和浅网只能得到橙、绿、棕、土黄、浅蓝、灰。 实地平印，只有天空、皮肤、地面这类渐变处挂网（网点约画幅宽 1/250），各版网角不同，错位 1–3 像素，带石版颗粒。 故事围绕的那个主角用黄实地叠朱红实地，得到平的橙（如 #D97757）。 构图用夸张透视：放射线汇向主要动作，几件事同时发生；有人群时画成许多可辨的小人，只有一个人物也成立。 镜头：上摇，横移，在动作中切到高潮。 避免：四色以外的颜色、只有圆点的人群、挂网挂成粉色的主角。",
   },
   {
@@ -3288,6 +3452,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o26.jpg",
     still: true,
+    generated: false,
     guide: "风格：乱世忠魂（O26 · 奥斯卡 98 部）\n\n提示词：\n50 年代初高调的黑白外景摄影，用 2D 画出照片感：不描线、不平涂，只用柔和渐变加细腻纹理（沙粒、岩石麻点、布纹）。 明暗：约七成画面亮于中灰；天空浅中灰，只比亮云暗一档；深黑很少。 默认正午硬朗的太阳，影子短而清楚；其他光线下仍保持浅天空和明亮结构。 水、浪沫或雾在最亮处冲白，留住蕾丝细节；湿的表面映着天空。 按印片收尾：柔和 S 曲线、略软的镜头、高光晕、每帧刷新的细颗粒（±4%）、轻暗角、轻微闪烁。 只有故事围绕的那个主角整个人保留颜色（如 #D97757），明暗也有照片感。 镜头：从天空下摇，平视紧框，再慢慢拉远。 对标摄影师 Burnett Guffey（《乱世忠魂》）。 避免：低调暗沉、死白一片、卡通平涂。",
   },
   {
@@ -3300,6 +3465,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o27.jpg",
     still: true,
+    generated: false,
     guide: "风格：码头风云（O27 · 奥斯卡 98 部）\n\n提示词：\n仿本·沙恩的社会写实蛋彩画。 墨线（宽约画幅宽 1/500）会颤：细抖叠着慢摆，一个轮廓分两三笔、不闭合，偶有转印鬼线（旁边多一道偏移的淡线）。 颜色是平涂蛋彩块，比墨线偏 2–4 像素，边缘毛糙，每块约三分之一面积带干笔拖痕，拖痕一笔宽（约画幅宽 1/100），不随色块放大；明暗只用同色深一档的硬边平色。 配色按用途：灰蓝 #768492 管天空和冷色区，砖红 #9E4834、赭黄 #C89852 管房屋、土地和衣服，墨 #1F1A1A，底板暖白 #F0E9DA；皮肤浅赭；其他颜色由这几色加深或加灰。 故事围绕的那个主角的主要衣服用唯一的暖色（如 #D97757）。 人物头大手大、长脸重下巴，衣服下垂。 镜头：短推，上摇，收在近景。 避免：平滑渐变、干净闭合的轮廓、鲜亮讨喜的颜色。",
   },
   {
@@ -3312,6 +3478,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o28.jpg",
     still: true,
+    generated: false,
     guide: "风格：君子好逑（O28 · 奥斯卡 98 部）\n\n提示词：\n把场景做成 50 年代木壳电视里播放的 kinescope 录像。 屏幕里：黑白，冷色荧光调（白位约 #DCE6EA），画面发软（半分辨率再放大），有光晕、重影、撕裂带、缓慢滚动的暗带、少量雪花、抬起的黑位、闪烁和颗粒；只有故事围绕的那个主角保留颜色（如 #D97757），同样带这些瑕疵。 显像管：圆角、四边外鼓，约 330 条扫描线，玻璃反光。 屏幕外是暖色扁平插画风的客厅（赭黄墙纸、木家具、台灯），台灯打暖光，屏幕在附近墙面投出明显的冷蓝光。 招牌镜头：电视占画面约六成，先停约 2 秒，再用 4–5 秒推进玻璃，直到节目铺满画面、扫描线还在，然后用演播室式稳定中景拍戏。 对标导演 Delbert Mann 的 Philco 电视剧场直播剧。 避免：雪花盖住画面、客厅沉闷平光。",
   },
   {
@@ -3324,6 +3491,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o29.jpg",
     still: true,
+    generated: false,
     guide: "风格：环游地球八十天（O29 · 奥斯卡 98 部）\n\n提示词：\n50 年代 UPA 现代主义卡通。 墨线 #221C19 约画面宽的 1/400，有粗细、偶尔断开；色块相对墨线统一朝一个方向错开约 1/300。 物体由重叠的平面剪片拼成：一块受光面，加一块同色深约一成半的平色暗面。 明亮通透：浅水绿天空和奶油纸 #F2E9D3 占大半画面，芥末黄 #E3A92B、青绿 #2B8C86、橙红 #D4452B 只作点缀；天空、草绿、灰蓝由这些色兑纸色得到。 其他时段只改天空颜色。 全画面轻蜡笔颗粒（亮度 ±5%），少量纸白斑点。 海报构图：一个大图形（建筑、日轮或山峰），旁边是带轮廓的棱角人物。 光束画成浅色平涂楔形。 机位之间每一两秒硬切，段内慢视差。 对标 UPA《Gerald McBoing-Boing》（1950）、Saul Bass《环游地球八十天》片尾（1956）。 避免：渐变、套色太准、饱和色铺满画面。",
   },
   {
@@ -3336,6 +3504,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o30.jpg",
     still: true,
+    generated: false,
     guide: "风格：桂河大桥（O30 · 奥斯卡 98 部）\n\n提示词：\n青晒工程蓝图。 图纸铺满画面（胡桃木绘图桌只在拉远时露出）：斑驳的普鲁士蓝纸 #143874，曝光不匀，边缘过曝发绿，有折痕和淡水渍。 白线 #ECF4FF 锐利但是印出来的：轮廓约画面宽的 1/600，剖面线和尺寸线减半，曝光弱处断续，带几像素青色微晕。 用制图语法把主体画得密：立面、剖面、详图圈、尺寸链、虚线、单线工程字、标题栏。 批注和动作用红铅笔 #D63426，写用户的语言。 唯一的主角是图上唯一手绘上色的东西，比图纸比例放大（至少占画面高五分之一），不透明水粉，一种暖色分几个深浅（比如橙 #D97757），其余没有暖色。 镜头：推近时各层视差，再切详图。 避免：霓虹发光、干净的数码蓝、空荡的图纸。",
   },
   {
@@ -3348,6 +3517,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o31.jpg",
     still: true,
+    generated: false,
     guide: "风格：金粉世界（O31 · 奥斯卡 98 部）\n\n提示词：\n罗特列克式美好年代彩色石印。 大块平涂色版，边缘略手抖；人物和主要形体用饱蘸的笔刷勾轮廓，起笔钝、中段鼓、收尾分叉飞白，粗约画面宽的 1/250。 牙刷弹的墨点只在背光面、投影和光晕处：1920×1080 下点径一到三像素，稀疏，合计不到画面一成半，颜色取底色深一档。 大面用成组的同向干笔条纹。 色板：黄 #F1C232、橙红 #E0602C、橄榄绿 #6E7036、黑 #1D1A16，底是带石版颗粒的奶油纸 #EFE3C3；另加灰暗的瓶绿和淡紫，肤色是橙红兑纸色。 人物是夸张的讽刺侧脸，画出五官；前景放一个被画框裁掉的大人物。 光平而匀，阴影也是平涂色版。 镜头：浅视差，慢慢横摇过场景，落到中景。 避免：慕夏式光环、平滑渐变、规整网点、满屏黑点。",
   },
   {
@@ -3360,6 +3530,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o32.jpg",
     still: true,
+    generated: false,
     guide: "风格：宾虚（O32 · 奥斯卡 98 部）\n\n提示词：\n1959 年 65mm 宽银幕史诗，用 3D 搭。 默认是硬朗的高太阳（约 50°），影子短而利，天空钴蓝、到地平线渐成沙白；太阳低时影子仍硬但拉长，天空转琥珀色。 大理石、镀金、红花岗岩和沙色石头，做出线脚和槽柱，不能是光秃方盒。 暖色尘雾约两成混进中景颜色。 调色像 Technicolor 拷贝：暖、饱和、略高反差，不过曝不加辉光；细颗粒（±3%）、轻微片门晃动。 核心是规模：背景布满宏伟建筑、雕像和重复元素，绝不空。 唯一的主角（比如橙 #D97757）是画面里最饱和的东西；重复动作（步伐、轮、桨）节奏随速度。 招牌镜头：全画幅等效 35 到 50mm，低机位贴着运动的主角跟拍；其次是大全景、正俯、近景、仰拍。 避免：干净的 CG 光、空荡粗糙的布景、过曝。",
   },
   {
@@ -3372,6 +3543,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o33.jpg",
     still: true,
+    generated: false,
     guide: "风格：桃色公寓（O33 · 奥斯卡 98 部）\n\n提示词：\n把 Saul Bass 片头的线条做成布景，黑白加一个暖色。 镜头从全黑开始：细白线（约画面宽的 1/800）滑入、向纵深长成网格；两三秒内灰面填满，灯一排排亮起。 之后完成态停约三秒：中到浅灰，从 #140F0D 到 #F4F1E8 均匀分四五级平涂，每个形体有约画面宽 1/600 的深色轮廓。 严格一点透视，灭点居中；一样的东西重复排向纵深（有人群时是桌子和人，单人时是柱子、路灯、窗格）。 人物是两色平涂。 唯一的暖色是橙红 #E2472A，只给唯一的主角和一件道具；所有光都是白的。 轻颗粒、柔暗角。 镜头：急推到主角，硬切到正上方俯视，网格变成图案。 避免：草稿感的线、渐变、颜色渗入、透视歪、没填色的暗线框。",
   },
   {
@@ -3384,6 +3556,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o34.jpg",
     still: true,
+    generated: false,
     guide: "风格：西区故事（O34 · 奥斯卡 98 部）\n\n提示词：\nTechnicolor 3D 舞台布景，像 60 年代棚拍歌舞片。 几何简化，每个面都细节密集（窗洞窗台、檐口、栏杆、梯子、绳线）；表面是有质感的砖、灰泥或岩石，不能素面。 剧场布光：低角度暖阳斜扫表面拉出长影；冷补光约为主光四分之一。 手绘天空以橙红 #E0481E 为主，云带镶金边，只在最上沿带一点紫；远处融进暖雾。 唯一的主角用饱和橙 #D97757，至少占画面高六分之一，背后衬深色砖墙或加一圈黑边，不能化进天空。 人物是木偶式假人。 暖而饱和的调色，细颗粒（±3%）。 招牌镜头：衬着橙色天空的低角度仰拍；其次一个连续镜头从高处降进布景、再贴地推进。 避免：写实脏旧、紫粉天空、素面墙、动作跳变。",
   },
   {
@@ -3396,6 +3569,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o35.jpg",
     still: true,
+    generated: false,
     guide: "风格：阿拉伯的劳伦斯（O35 · 奥斯卡 98 部）\n\n提示词：\n60 年代手绘史诗电影海报，水粉打底、油彩提亮。 先把形体画扎实再上色：铺不透明中间调底色，再用顺形体走的笔触（大面宽约画面宽的 1/80 到 1/50，脸和手用小笔），边缘柔和衔接；每个形体分亮、中、暗三级；干笔只用在尘土、布料和远处人物上；最后在受光边缘压锐利的暖奶油色高光。 冷暖对比：钴蓝天空 #1F4D97 过渡到浅蓝 #A9C3D6，低垂的太阳周围转暖；地面 #EEC27A（任何地形），皮肤、泥土和衣服用赭红 #B56A33，远处阴影用紫 #6C6394。 主角居中最大，一个斜向动作，布料飘起；身后可以有更小更松的人物退远。 轻画板颗粒、暖暗角、雾气。 运动：起伏、缓推到仰角近景、甩镜出画。 避免：又碎又匀的刮擦线、平涂数码色、只有冷色。",
   },
   {
@@ -3408,6 +3582,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o36.jpg",
     still: true,
+    generated: false,
     guide: "风格：汤姆·琼斯（O36 · 奥斯卡 98 部）\n\n提示词：\n乔治王时代讽刺版画：先刻铜版，印完再手工上色。 墨只有棕黑色的线：雕刀轮廓约画面宽的 1/400，起伏鼓胀，背光一侧更粗；排线顺形体走、铺满每个面（线距约画面宽的 1/250），只在暗部交叉，平面用直尺排线。 颜色几乎铺满整幅，清透但饱满：水色溢出墨线几像素，用酒红 #B3262E、黄铜 #D8A93A、肉色 #F0C4A4、石板蓝 #6D8AA6，大面用暖赭和棕褐。 浅棕褐帘纹纸，淡霉点，版框印痕，刻线边框。 按 William Hogarth 的方式布置：大鼻子的漫画人物，主体身边是旁观者或搞笑的道具、动物；一个手写斜体对话气泡，用用户的语言。 镜头：全幅停两秒，急推，横滑到另一处细节，再给近景。 避免：机械均匀的排线、大片空白纸、颜色严丝合缝填在线里、颜色发脏。",
   },
   {
@@ -3420,6 +3595,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o37.jpg",
     still: true,
+    generated: false,
     guide: "风格：窈窕淑女（O37 · 奥斯卡 98 部）\n\n提示词：\n仿 Bob Peak 的 60 年代时装插画。 墨线很快：转弯处变粗、直线处变细，后段飞白，收笔一甩；粗细在画面宽的 1/600 到 1/250 之间，小弯处变细。 深色衣服、帽子和条纹用实心墨块；脸留白纸 #FBF7F1。 水彩是松散柔边的色池，干后边缘积色更深：粉 #EE84B2 做主色，品红 #CE3076 做热点，加玫瑰粉 #F4B2CC 和一点梅紫 #80285C；次要人物和阴影用暖灰；带方向的甩点。 场景只用几根线和这几种水彩带过。 横排人物是核心：修长侧身，九到十个头高，横向重复（主角加暖灰人物或重影），黑白图案压在粉色上；水彩盖住画面六到八成。 镜头：沿人物慢横移；转场借图形遮罩。 避免：轮廓粗细一样、平涂数码色、多边形硬边色块、空白页上孤零零一个人。",
   },
   {
@@ -3432,6 +3608,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o38.jpg",
     still: true,
+    generated: false,
     guide: "风格：音乐之声（O38 · 奥斯卡 98 部）\n\n提示词：\n绘本感的 3D 风景，60 年代宽银幕的饱和色，形体圆润光滑有雕塑感，不写实也不做低多边形。 默认光：太阳高挂、略在镜头身后，大地满色：翠绿草地 #3FA33A、钴蓝天空 #2F6FD0、干净的白雪白云。 风化山脊圆润，雪线顺坡，岩层暖灰赭，有云影。 空气透视只加在最远的山脊，约两成半淡紫。 积云是受光的白色棉花团。 前景是齐膝密草和野花，随阵风弯伏。 太阳低时只拉长影子、让云边变暖；其他场景也用这些颜色。 一个连续镜头：前两秒高空飞越，再两秒降到草坡，之后贴草低机位环绕主体（每秒约 20°，主体约占画面高四分之一）。 对标摄影师 Ted McCord（《音乐之声》，1965）和宫崎骏的草地。 避免：泛紫、针尖山峰、写实灰岩、不动的草。",
   },
   {
@@ -3444,6 +3621,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o39.jpg",
     still: true,
+    generated: false,
     guide: "风格：日月精忠（O39 · 奥斯卡 98 部）\n\n提示词：\n仿小汉斯·霍尔拜因的北方文艺复兴油画肖像。 一层层画：带色底、顺明暗的笔触、柔和罩染、最后细笔；成品光滑，背景和布料隐约见笔触。 每种材质各有画法：毛皮一根根画，天鹅绒褶子亮脊锐利，金属每件两个高光点，呢料和皮革画出柔和绒面。 任何主体都画成穿自己衣服的正式半身像；它的场景从窗口露出，或由手里一件东西交代。 色板：深绿帘幕 #1F4A26，黑 #141113、天鹅绒红 #6E0C15、金 #B0801E、毛皮棕 #3E2818；皮肤暖色、体积完整。 柔光从左上来。 招牌镜头：衬着绿帘的半身像；其次是材质特写，再慢慢拉远到暖色光池照亮的暗房间。 收尾叠暖色光油和轻龟裂。 避免：平涂、数码硬边、均匀亮光、没有体积的脸。",
   },
   {
@@ -3456,6 +3634,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o40.jpg",
     still: true,
+    generated: false,
     guide: "风格：炎热的夜晚（O40 · 奥斯卡 98 部）\n\n提示词：\n三色专色 Risograph 印刷：橙红 #EC5032 是主场（约占画面六成，带竖向流淌痕），深蓝 #162C76 给剪影和阴影，荧光粉 #FF48B0 只给轮廓光和光晕，印在暖白纸 #F7F2E7 上。 每色是各自网角的半调，点径约画面宽的 1/300，版间错位二到四像素；有墨粒、针孔，逐帧轻微抖动。 蓝剪影底下挖掉橙色，印成纯蓝；只有最暗处两色叠成近黑。 光就是没有墨：光束、灯和被照亮的地面露出纸白，外圈一道粉。 人物是带粉色边缘光的蓝剪影，肤色用三到六成橙色网点加一级蓝暗部。 时间偏冷时仍保留红场，只让蓝色升到天空顶部。 镜头：手持跟在提着光源的人身后，一个反打近景，一次缓推。 避免：蓝色占满画面、平滑渐变、第四种墨、套印太准。",
   },
   {
@@ -3468,6 +3647,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o41.jpg",
     still: true,
+    generated: false,
     guide: "风格：雾都孤儿（O41 · 奥斯卡 98 部）\n\n提示词：\n维多利亚玩具纸剧场（Pollock's 式）。 一切都是印出来的卡纸：黑色石印轮廓约画面宽的 1/400，每张剪纸一侧有稀疏蜡笔排线；手工上色是沉稳旧色：深红 #C8262C 和暗金 #E0AB36 用在台口和帷幔（金色不能是亮黄），蓝 #2F5A9A 给服装；布景、天空、水和肤色用发灰的棕、灰和奶油卡纸 #F4ECD6。 每个人物和景片留一圈剪刀白边（约画面宽的 1/200）。 景片是平行的 2.5D 层，层间视差，层内无透视。 烛光脚灯把剪纸影子放大约一倍半投到后面景片上，柔边，随烛火闪动。 镀金台口、红帷幔和画出来的包厢观众框住舞台，台口宽占画面八到九成。 镜头：慢推、横移，近景微震；结尾拉远露出暗房间。 避免：鲜艳矢量色、真 3D 纵深、柔和摄影光、没有剪边的人物。",
   },
   {
@@ -3480,6 +3660,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o42.jpg",
     still: true,
+    generated: false,
     guide: "风格：午夜牛郎（O42 · 奥斯卡 98 部）\n\n提示词：\n安迪·沃霍尔式照片丝网印。 唯一的主角用最强的那块颜色。 刮板压力不匀：有的地方网点糊成墨团，有的地方拖成横向干笔条纹和针孔，底下隐约有画布纹。 重复就是构图：同一个人物或物体全身，在空银底上并排印两次、再印三次，略有重叠。 场景只以褪成银色的印样出现在重复里。 镜头：手持晃动、推近、正面平面定格。 对标沃霍尔《Double Elvis》（1963）。 避免：干净均匀的网点、套色完全对齐、处处一样清晰。",
   },
   {
@@ -3492,6 +3673,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o43.jpg",
     still: true,
+    generated: false,
     guide: "风格：巴顿将军（O43 · 奥斯卡 98 部）\n\n提示词：\n1940 年代美国战争债券石印海报。 平涂油墨：红 #C2342C、海军蓝 #213261、橄榄绿 #5F5C31、卡其 #B7975E，印在米白 #E6D5B3 的纸上，有纤维、霉点和磨边。 每个形体三档：留纸、平涂、油墨加网点，压成硬边色阶。 棕黑轮廓线约画面宽的 1/500，最后压上；阴影是粗的 45° 网点带（点径约画面宽的 1/150），带蜡笔颗粒；色版错开约画面宽的 1/600。 默认像舞台：对称正面，小主体站在占满大半画面的巨大图形前（旗帜、徽章、放射光芒），灯光是硬边浅色块或留纸；户外也一样，光落成地上的硬边浅斑。 文字可有可无，用用户的语言。 镜头慢推，配一次干脆的拉出。 对标 1942–45 年美国战争债券海报。 避免：喷枪渐变、套色完全对齐、网点细到像一片灰。",
   },
   {
@@ -3504,6 +3686,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o44.jpg",
     still: true,
+    generated: false,
     guide: "风格：法国贩毒网（O44 · 奥斯卡 98 部）\n\n提示词：\n70 年代初粗粝的纪实感，放在细致的 3D 世界里，按增感冲洗的 16mm 收尾。 调色：低饱和、高反差；中性冷灰 #7A7C7A、带青的暗部 #1E2A2C，砖、木头、车辆保持暖棕 #6E4A34，至少占四分之一画面，绝不整体泛蓝；唯一的主角（比如橙 #D97757）保持饱和。 默认阴天，天空亮到近白，任何时段都一样；阳光穿过头顶格栅（轨道、桥、栈桥）落成硬边条纹。 颗粒成团，约画面宽的 1/700，亮度 ±8%；片门晃动、闪烁、灰尘，亮处偶有淡重影。 杂物多且符合地点。 手持机位跟着动作走：18 到 25mm 低机位向前冲，重复物体频闪掠过；回看主体的跟拍机位；墙角广角。 对标 William Friedkin《法国贩毒网》（1971）和摄影师 Owen Roizman。 避免：干净的 CG 反光、整体泛蓝、空荡的方块场景、颗粒糊成一片。",
   },
   {
@@ -3516,6 +3699,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o45.jpg",
     still: true,
+    generated: false,
     guide: "风格：教父（O45 · 奥斯卡 98 部）\n\n提示词：\n伦勃朗、卡拉瓦乔式明暗油画，只有一盏顶光。 约七成画面是看得出形体的暖暗部，大多是赭褐 #24150B，近黑 #070403 只在最深的角落。 琥珀 #8F5D2A 中间调约两成；朝上的面亮到 #E2B673。 主角整个站在光池里，受光部分至少占画面高的四分之一；眉骨把眼睛压进阴影。 一处饱和的红 #9C1A1A。 暗部薄而平滑地罩染，亮部是带亮笔脊的厚涂，笔触约画面宽的 1/100；过渡柔和，不用刮擦线条。 琥珀光油，重暗角，细画布纹（±3%）。 背景可有一处暖色亮口（窗、门洞、发亮的天边）；画内的小灯只是一小团光，不算第二个主光。 镜头慢拉、慢推。 对标 Francis Ford Coppola《教父》（1972），摄影师 Gordon Willis。 避免：提亮暗部、平光、人脸跳出来、暗到看不清。",
   },
   {
@@ -3528,6 +3712,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o46.jpg",
     still: true,
+    generated: false,
     guide: "风格：骗中骗（O46 · 奥斯卡 98 部）\n\n提示词：\n30 年代《星期六晚邮报》封面插画。 写实人物，比例准确、表情生动，用块面塑造（受光、背光、下方暖色反光），块面里填顺着形体、长短不一的笔触，宽约画面宽的 1/150，柔和衔接，不成条纹。 深色轮廓在背光一侧加粗，画面宽的 1/800 到 1/300。 暖色主光从左上来。 配色：灰泥 #E2C492、橡木 #764626、石板 #28322C、黄铜 #E2B046、墨 #341E18；橡木和墨色暗部约占三分之一画面；天空灰泥偏石板，水是浅石板，皮肤灰泥加黄铜。 轻颗粒画板（±3%）加暖暗角。 默认一点透视，时代细节，薄雾，故事有就加次要人物。 每个人物只画一遍，整体移动（呼吸、摇摆、沿路径滑行）。 镜头：一次长而平滑的推进。 对标 J. C. Leyendecker、Norman Rockwell。 避免：僵硬剪纸人物、粗细一样的轮廓、发脏的颜色。",
   },
   {
@@ -3540,6 +3725,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o47.jpg",
     still: true,
+    generated: false,
     guide: "风格：教父2（O47 · 奥斯卡 98 部）\n\n提示词：\n1900 年前后手工上色的棕褐银盐照片。 先做受光的立体形体，柔光从左上来，再“印”出来：柔焦带轻微光晕，颗粒在中间调最重（±5%）；棕褐调从 #281A12 经 #987048 到 #EEE0C2 完整铺开，至少五分之一画面落到最深一端，任何光线下都一样。 人物比例真实（头约七分之一身高），明暗柔和。 透明颜料松松地刷，溢出边缘：唯一的主角最重（比如橙红 #D97757，不透明度六到八成），一两件道具轻点；颜色进暗部就被吞掉。 做旧要轻：暗角、边缘银化（靠边暗部泛灰蓝金属光）、几个小霉点、细划痕，最多一个裂角。 构图正面、纪实，人物静立面对镜头。 镜头缓慢横摇扫过人脸。 对标 Lewis Hine、Augustus Sherman 的埃利斯岛照片。 避免：积木人物、数码填色、低反差雾灰、大片霉斑。",
   },
   {
@@ -3552,6 +3738,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o48.jpg",
     still: true,
+    generated: false,
     guide: "风格：飞越疯人院（O48 · 奥斯卡 98 部）\n\n提示词：\n爱德华·霍珀式美国写实绘画。 大块克制、偏浅的平面色：机构绿 #9EB8A0 和 #5E7C66、灰绿地面 #7E8876、奶油 #ECE6D2，看得见画布纹（±3%），每块拖几笔长笔触，宽约画面宽的 1/80，亮或暗百分之五到十。 低角度阳光从一侧射来，在墙和地上投下硬边暖色平行四边形 #FCE6AC，压着窗框或栏杆的清晰影子，室内户外都一样。 天空浅奶油绿，皮肤是提暖的奶油色，衣服用压暗的绿。 人物由三四块边缘柔和的明暗色块叠成，不勾轮廓，比例写实；几个人时分开站。 大部分时间静止，然后一件不到一秒的突发：甩镜或一阵强光。 招牌镜头：一点透视的静止室内，地上有光块。 对标霍珀《Office in a Small City》（1953）。 避免：粗轮廓、矢量人物、深而饱和的墙、模糊光斑。",
   },
   {
@@ -3564,6 +3751,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o49.jpg",
     still: true,
+    generated: false,
     guide: "风格：洛奇（O49 · 奥斯卡 98 部）\n\n提示词：\n70 年代 35mm 写实，放在细致的 3D 世界里，默认日出（日落同理）。 太阳离地平线五到十度，暖橙 #F0A060，从侧面或前侧方照亮主角，让受光的身体和拉过地面的长影看得清；不要完全逆光。 天空冷蓝 #7FA3CF，云底染粉 #E6B2AE；雾朝太阳一侧发金、背光一侧发蓝紫。 调色：细颗粒（±3%），暗部偏冷、高光偏暖，不过曝；只有太阳入画时才有光晕和鬼影。 镜头：低机位斯坦尼康从背后跟着主角爬上一段坡或台阶，到最高处接一个连续环绕，边转边升边退，六到八秒，转到受光的脸，直到整个地方在下面铺开。 对标 John G. Avildsen《洛奇》（1976）、斯坦尼康操作者 Garrett Brown。 避免：正午平光、没细节的剪影、高潮时机位不动、塑料感反光。",
   },
   {
@@ -3576,6 +3764,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o50.jpg",
     still: true,
+    generated: false,
     guide: "风格：安妮·霍尔（O50 · 奥斯卡 98 部）\n\n提示词：\n《纽约客》单格漫画，满版出血，不画格框。 蘸水笔墨线直线处细到约画面宽的 1/1000，转弯处粗到约 1/300，收笔一甩；方盒子几笔分开画，角上交叉出头。 淡水彩带积色边，铺在大部分物体上，溢出墨线不超过画面宽的 1/150：灰 #9698A0、海蓝 #78A0BE、沙色 #E2CCA0、铁锈 #C45C32，底是冷压纸 #FBF8F1，四边化成白。 人物夸张、有表情、画出五官，周围有日常道具，留白但不空荡。 画面下方一行手写说明，用用户的语言，字高约画面高的 1/30，逐字写出：一句冷面幽默。 画面不动，活物微微颤动。 镜头：轻微漂移和推近；画面可一分为二，左右并排两幅。 对标 James Thurber、William Steig、桑贝。 避免：浓重饱和的颜色、粗细一样的矢量线、白纸中间漂着一个小格子。",
   },
   {
@@ -3588,6 +3777,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o51.jpg",
     still: true,
+    generated: false,
     guide: "风格：猎鹿人（O51 · 奥斯卡 98 部）\n\n提示词：\n安德鲁·怀斯式石膏底板蛋彩画。 干、哑光、极细：颜色全靠密密的交叉短笔叠出来，每笔长约画面宽的 1/400，细如发丝。 低饱和配色：苍白阴天 #D9D5C6、草黄 #CDB27A、赭褐 #6A5234、灰绿远山 #8E938C、铁锈色 #8A4E32；水、石、衣服和皮肤都从这几色调出。 强调色只给唯一的主角（比如一顶红帽）；画里的光源只是一个淡淡的小点，不带光晕。 地面（默认枯草，其他地面同理）先铺大块深浅，再叠细笔、暗色草团，最后是被风梳过的单根草叶；岩石和房屋用短笔顺着各面排。 空间空旷孤独，主体小而偏离中心。 默认阴天软光，其他时段也保持苍白、不要暖光。 镜头缓慢漂移、安静推近；圆形遮罩可作剪切点。 避免：湿水彩晕染、饱和色、厚重发亮的笔触。",
   },
   {
@@ -3600,6 +3790,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o52.jpg",
     still: true,
+    generated: false,
     guide: "风格：克莱默夫妇（O52 · 奥斯卡 98 部）\n\n提示词：\n认真的六到八岁孩子在白纸上画的蜡笔画。 蜡笔只蹭到纸纹凸起；轻涂露出四到六成纸白，用力处填满；叠色时下层透出。 轮廓用黑色或深棕蜡笔，蜡质、发抖，粗约画面宽的 1/300。 填色是来回涂抹，每笔长约画面宽的 1/40、宽约 1/250，一排排涂、冲出轮廓，每块各有方向，间距和角度不均匀，不能排成规整的网。 基础色：红 #E0382C、橙 #F28A1E、黄 #F7D23A、绿 #3AA345、蓝 #2E6BD8。 儿童画惯例：地面线、压扁的透视、带箭头的标注、笑脸太阳、写反一个字母（中文写反一个偏旁）、图案一格格涂。 文字用用户的语言、发抖的蜡笔笔画写，不用字体。 镜头：先晃动近景，再平稳扫过全画。 避免：大人式的工整画法、没细节的乱涂、均匀点状或网状肌理、平滑渐变。",
   },
   {
@@ -3612,6 +3803,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o53.jpg",
     still: true,
+    generated: false,
     guide: "风格：普通人（O53 · 奥斯卡 98 部）\n\n提示词：\n透明水彩，在冷压纸上一层层罩色。 先把形状画清楚，再罩两三层，每层更小更深，干后边缘积成深一点的水渍线；每帧两三处回流花，约画面宽的 1/10，只在大块湿画里，不落在人物上；颗粒轻沉进纸纹（±4%）。 纸是最亮的白，浅色物体和高光留纸。 天空和水面湿画，涟漪干笔。 分工：秋金 #ECAA34、猩红 #E46030、锈色 #B8743C 给树叶和点缀，对着冷灰蓝的雾 #C2C6D2 和紫灰阴影 #8A8496；天空任何时段都浅而冷；地面浅绿赭。 树冠：先铺淡色，叠扇贝边叶团，点深色，甩散叶；树少时暖色给灌木、屋顶、衣服。 光从一侧来。 镜头缓慢横摇、轻推，落叶从镜头前飘过。 对标 Winslow Homer 的水彩。 避免：水粉式覆盖、喷枪模糊、矢量硬边、脏色、饱和晚霞。",
   },
   {
@@ -3624,6 +3816,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o54.jpg",
     still: true,
+    generated: false,
     guide: "风格：烈火战车（O54 · 奥斯卡 98 部）\n\n提示词：\n20 年代石版印刷海报，四色：海蓝 #245A8C、赭黄 #D49640、深棕 #40271B、暖红 #E47E62，印在泛旧的奶油纸 #F1E7D1 上，每色错位约画面宽的 1/700。 所有色调都由油墨颗粒组成，不平涂：颗粒约画面宽的 1/1000，聚成软团，浅色区覆盖两到四成，中间调五到八成，实色几乎满版、留针孔；空白纸上不能有零散孤点。 分工：蓝给天空、水和冷阴影；赭黄给地面和皮肤；深棕给轮廓、暗部和衣服；红少量点缀。 明暗安静偏浅。 人物古典：受光侧赭黄，四肢顺一道深棕明暗交界线，头约身高八分之一；多人排成横列。 动作慢，靠水花、尘土、头发、布料带出。 镜头：长焦正面、贴地低机位；可加衬线字标题横带。 对标 Jean Droit 的 1924 年巴黎奥运海报。 避免：粗噪点、象形小人、矢量平涂。",
   },
   {
@@ -3636,6 +3829,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o55.jpg",
     still: true,
+    generated: false,
     guide: "风格：甘地传（O55 · 奥斯卡 98 部）\n\n提示词：\n拉贾斯坦手工木刻印花布（Bagru、Sanganer）。 本色棉布 #EEE5CF 是主底，占画面一半以上，也是皮肤色；靛蓝 #2A3A68 给水面或天空色带和纹样；茜草红 #AA322A 给边框、衣服和主角；姜黄 #DEA42C 给小纹样；黑色雕版 #281E1C 印轮廓。 按雕版一块块盖（每块约画面高的 1/8），错位二到四像素，大色带也在版缝处轻微跳变；染料顺经纬微渗，上色不匀。 泥防染冰裂纹只在靛蓝里，细而稀疏。 轮廓像刻出来的，略毛糙，粗约画面宽的 1/300。 平铺成横幅，外框是佩斯利和花藤；海浪是扇贝纹；人物取侧面，细密画式的脸，描黑的眼尾。 镜头沿横幅横摇、推近；借转动的纹样转场。 避免：矢量硬边、套色完全对齐、没有五官的人、满屏冰裂纹、靛蓝铺满画面。",
   },
   {
@@ -3648,6 +3842,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o56.jpg",
     still: true,
+    generated: false,
     guide: "风格：母女情深（O56 · 奥斯卡 98 部）\n\n提示词：\n70 到 80 年代的生活快照，摊开在相册里。 照片已褪色：黑色抬成偏青的灰（约 #2F3A3A），高光柔和发奶油色，略暖、略过曝，偏软，细颗粒（±4%），饱和度约正常的六成。 宝丽来白边、照相馆四连拍条、圆珠笔手写说明（用用户的语言）。 相册铺满画面，奶油色页面，从正上方看，光柔和均匀，淡淡塑料膜反光。 照片里有东西在动就用追拍：背景横向拖糊，主体清晰；静止主体用浅景深。 人物像拍的不像画的：比例真实、明暗柔和、轻微虚焦、脸不大。 镜头：俯拍推进一张照片直到铺满（约三秒），切进活起来的场景、颜色恢复，再拉出。 对标宝丽来 SX-70 和柯达彩色照片。 避免：平面卡通造型、干净的现代色彩、光束、饱和的照片。",
   },
   {
@@ -3660,6 +3855,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o57.jpg",
     still: true,
+    generated: false,
     guide: "风格：莫扎特传（O57 · 奥斯卡 98 部）\n\n提示词：\n18 世纪剪纸剪影，放在烛光照亮的洛可可室内。 每个人物是实心黑侧影 #0B0705，各有自己的剪纸细节（发型、鼻子、蕾丝镂空、物件），朝最近烛火的一侧描 2–3px（按 1920×1080）亮金边 #F7E3A0，顺衣褶勾几根细金线。 金色浮雕 #B88A2E 和红丝绒 #6E0F14 像包厢一样框住画面；户外题材画成舞台上被照亮的布景，剪纸人物站在布景前。 红与金占画面大半，夜蓝 #0C1A3A 只用于远处天空。 只有主角侧影里的脸是画出来、有颜色的。 烛火轻微跳动（亮度±5%），暖光晕约五个火苗宽，薄烟、暗角、细颗粒。 招牌镜头：前景剪影框住远处亮着的舞台，慢横移再推进。 对标剪影 Edouart、Miers，摄影师 Miroslav Ondříček（《莫扎特传》，1984）。 避免：没有剪纸细节的黑块；复制粘贴的侧影；蓝色墙面；频闪的烛火。",
   },
   {
@@ -3672,6 +3868,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o58.jpg",
     still: true,
+    generated: false,
     guide: "风格：走出非洲（O58 · 奥斯卡 98 部）\n\n提示词：\n实时 3D，像 80 年代宽银幕实景摄影：模型按真实比例、细节到位（如支柱、拉线、铆钉）；地形平滑，不要低多边形碎面。 默认光：从镜头看，低斜的太阳在主角身后（逆光），奶油色淡天空，琥珀薄雾，远山分三四层渐淡，赭黄大地上长长的柔影。 整体明亮：七成画面在中高调，阴影暖灰不深褐；近白不超过五分之一。 胶片曲线、低饱和、细颗粒、轻暗角。 上千只实例化的鸟或动物（如粉 #F3B3AE 配深红 #DF3F55），主角经过时一波波错开起飞或散开。 招牌镜头：越过移动中主角的肩膀看远景；其次是离地 10–20 米的追拍和一个对着太阳的逆光镜头。 对标摄影师 David Watkin（《走出非洲》，1985）。 避免：冷而干净的 CG 日光；发暗的棕褐调；整齐划一的鸟群。",
   },
   {
@@ -3684,6 +3881,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o59.jpg",
     still: true,
+    generated: false,
     guide: "风格：野战排（O59 · 奥斯卡 98 部）\n\n提示词：\n现场报道式钢笔淡彩速写。 钢笔用暖黑，线宽约画面宽度的 1/600，快而肯定，收笔甩出，转角冲出头；暗部用快速排线和折线，人物和地面都排线。 淡彩透明而大胆：边缘湿软、有回流花、深浅不匀（不要硬边多边形），铺满画面约七成，整体错开线稿 2–4px（按 1920×1080）。 颜色：橄榄绿 #70783E、土黄 #CEA054、烟灰 #706C70，加一个热烈点缀色 #F0822E 给天空和光源；肤色用淡土黄；暖米色速写本纸 #F2ECDE。 只有最亮处、四边窄条和笔刷漏掉处留纸，纸纹很轻。 角落用用户的语言潦草写一句铅笔速记（地点、时间、天气），字高约画面 1/40。 分层便于横移；换视角硬切，像翻页。 对标美国陆军越战战地艺术计划（1966–70）。 避免：插画式精修；空着的纸；发脏的淡彩；重噪点。",
   },
   {
@@ -3696,6 +3894,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o60.jpg",
     still: true,
+    generated: false,
     guide: "风格：末代皇帝（O60 · 奥斯卡 98 部）\n\n提示词：\n绢本工笔重彩（清代宫廷画法）。 由远到近画，每个形：平涂底色 → 分染（沿下缘和被遮处加深）→ 均匀铁线描（深褐，线宽约画面 1/900）→ 提金、提白；最后全画面叠三成浓度的暖赭罩染，线仍清楚。 矿物色：朱砂 #C23A22、石青 #2C5A9A、石绿 #3A8A6A、藤黄 #E8B830、泥金 #CAA04A，被罩染压稳；地面和天空是中等明度的暖赭绢色，不要近白，不画饱和蓝天和橙色落日，时段变化只靠整体冷暖。 不画投影和眩光。 水用细线水纹。 建筑用界画，瓦片一片片画出；有人群时人人不同，单人也行。 绢纹淡（±3%），褐色暗角。 一点透视、左右对称，大人物在前，身后深远规整。 缓推。 对标清代宫廷长卷，如《康熙南巡图》。 避免：复制粘贴人物；不分染的平涂；写意水墨；海报式饱和色。",
   },
   {
@@ -3708,6 +3907,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o61.jpg",
     still: true,
+    generated: false,
     guide: "风格：雨人（O61 · 奥斯卡 98 部）\n\n提示词：\n80 年代喷枪插画，叠一层工程制图标注。 每个形是硬边遮罩里喷出的平滑渐变，边缘 1–2px（按 1920×1080）细飞沫。 明亮高调：薄荷绿 #79BDA6 的墙或天空、奶油白，霓虹粉 #F58CB5 和品红 #C9467F 点缀，地面铺黑白棋盘格；紫色和夜色不超过两成，其他时段仍是薄荷绿奶油底，晚霞用粉色画。 人物学 Patrick Nagel：苍白平整的皮肤、少而利落的线、成块深色头发，粉与薄荷绿轮廓光，但保留本人的年龄衣着。 金属玻璃学空山基镀铬：天空色带、硬地平线、十字星光。 最上层是细青色标注 #56E6FF、白字 #D9FBFF（字高约画面 1/40）：圆点引线、虚线圈组、尺寸线；像《雨人》的雷蒙，等宽数字数故事里要数的东西，圈一组滚一次。 慢推或慢拉。 避免：合成波式的条纹太阳；UI 框；发糊的边。",
   },
   {
@@ -3720,6 +3920,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o62.jpg",
     still: true,
+    generated: false,
     guide: "风格：为黛西小姐开车（O62 · 奥斯卡 98 部）\n\n提示词：\n洛克威尔式 50 年代美国杂志封面油画。 人物接近写实：头约占身高 1/7，脸和手用三四块明暗面塑出、不靠描线，表情读得出。 塑形平滑，笔触隐约：宽约画面 1/150，顺形体走，每笔与底色只差±5%。 默认光：左上方暖色午后阳光，地上有清楚的投影和树影，阴影冷蓝灰；别的光也保持暖主光冷阴影。 中等饱和：奶油天空 #E6DCC2、砖红 #9A4A38、叶绿、瓶绿 #1F3A24、柔和肤色。 光面映出环境。 背景有小故事：有人处路人各忙各的，主角独处就靠物件。 轻画布纹、暖光油、柔和暗角。 镜头：有纵深的四分之三全景缓推，越切越近，落在手或脸上。 对标洛克威尔 1940–50 年代《星期六晚邮报》封面。 避免：卡通脸；重纹理滤镜；无笔触的数码平涂；空背景。",
   },
   {
@@ -3732,6 +3933,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o63.jpg",
     still: true,
+    generated: false,
     guide: "风格：与狼共舞（O63 · 奥斯卡 98 部）\n\n提示词：\n一本活过来的 19 世纪野外日记：看得见铅笔线的满幅透明水彩。 铅笔底稿 #3A363A 有轻重和断笔，暗部轻排线，透过颜色仍读得出。 水彩边缘湿软，有回流花、积色深边和颗粒（不要平涂多边形），铺满约八成画面，浓郁偏暖。 默认魔幻时刻：灰玫瑰色天空 #C88F76 往上转淡紫，玫瑰色条云，低太阳，赭金大地 #DEBE87，远处紫，长投影；朝太阳的边缘点几笔不透明浅金。 泛黄布浆纸 #F0E4C8，淡水渍霉斑，纸色透出来。 铁胆墨水 #34221C 写小字草书标注和箭头。 招牌动作只在开头约两秒：先只有铅笔，镜头推进时颜色从远到近一块块铺上；之后每帧满彩。 对标 Karl Bodmer、George Catlin 的野外速写。 避免：灰脏或发白的淡彩；均匀数码描边；开头后仍只有铅笔。",
   },
   {
@@ -3744,6 +3946,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o64.jpg",
     still: true,
+    generated: false,
     guide: "风格：沉默的羔羊（O64 · 奥斯卡 98 部）\n\n提示词：\n手工上色的博物学铜版画。 所有物体用暖黑褐刻线画：密集平行线和交叉排线（线距约画面宽度 1/400，暗处线更粗），柔和过渡用点刻，物下有排线投影；天空留纸色或只几道稀疏横线。 线内平涂水彩，中等饱和、颜色认得出：纸 #EFE3C4、赭褐 #5A3A22、铁锈红 #B4431E、黄 #E6AD24、灰紫 #7D6F8E。 图版：主体作图 1 居中，约占版面高六成，四周 3–6 个编号小图（局部或相关物件），各约五分之一高；上方字距拉开的小型大写标题，下方编号图注，压印斜边版框，淡霉斑。 默认均匀日光，时段变化只调着色冷暖；暗室内转冷，侧面硬光。 镜头：静止图版里只有一样东西在动（虫、叶、手），再匀速慢推到关键细节。 对标 Moses Harris《The Aurelian》（1766）。 避免：平滑渐变；刺眼的颜色；主体缩成小晕影。",
   },
   {
@@ -3756,6 +3959,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o65.jpg",
     still: true,
+    generated: false,
     guide: "风格：不可饶恕（O65 · 奥斯卡 98 部）\n\n提示词：\n弗雷德里克·雷明顿式西部油画。 主调是晚霞，天黑透之前都用：橙到深红的金红天空用长横笔触，太阳压在地平线上，大地和人物是暗暖剪影，向阳一侧一道细暖轮廓光。 第二种调子只在天黑透后用：蓝绿夜景（天 #17333A，月光边 #9CC4BC），暖黄窗光 #FFCC6A 铺在深色地面 #1E1C16 上，加雨。 先画清楚的大形，再上笔触：每笔宽约画面宽度 1/80、长为宽的三到六倍，颜料饱满、笔端松散；每笔与底色明暗只差±6%，顺着各个面走。 画布纹要轻。 地平线低，天空占五到六成，人物小到中等。 镜头：从剪影大全景慢推到人物。 对标雷明顿晚年夜景画、摄影师 Jack N. Green（《不可饶恕》，1992）。 避免：平滑渐变；硬边色带；打碎形体的满屏笔触；暖场景人物发灰；大幅横摇。",
   },
   {
@@ -3768,6 +3972,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o66.jpg",
     still: true,
+    generated: false,
     guide: "风格：辛德勒的名单（O66 · 奥斯卡 98 部）\n\n提示词：\n黑白电影质感：冷中性灰，强 S 曲线（黑接近 #111，白接近 #EEE），高光在雾里泛光晕，略软的老镜头，逐帧变化的银盐颗粒（±6%），轻微闪烁，偶有灰尘，暗角。 全画面是灰的，只有故事围绕的那个主角是饱和色，以衣服为主（如陶土橙 #D97757）；可再有一个红色故事道具（#A3241F–#C9463C）。 灯和火保持灰色，除非“火苗先灰后转暖”是剧情节点。 长焦压缩空间，前景虚焦树枝；有人群时，体型、衣色和步态人人不同。 默认阴天中间调，暗部不死黑。 招牌镜头：长焦俯看许多走动的小人，带色的那个在其中；没有人群就让主角很小地落在大片灰里。 对标摄影师 Janusz Kamiński（《辛德勒的名单》，1993）。 避免：棕褐或偏蓝调色；无颗粒的干净灰；超过两样有颜色的东西。",
   },
   {
@@ -3780,6 +3985,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o67.jpg",
     still: true,
+    generated: false,
     guide: "风格：阿甘正传（O67 · 奥斯卡 98 部）\n\n提示词：\n一本放在书桌上实拍的立体书。 每个元素是平的模切卡片，靠平行折立在打开成 90° 的背景页前，印着透明水彩和带纸纹的彩铅排线，切口露出白纸芯和灰纸板边。 默认光：左上方窗户进来的明亮日光，层间柔和投影。 卡面（天蓝、暖沙、绿）和房间都保持日光，故事在任何时段都一样；时段只画在印刷画面里（如低太阳、夜空）。 胡桃木书桌 #6B3E1E，后面的房间虚成暖色柔光。 物理景深，焦点在主角那层。 招牌镜头：高机位四分之三角度看整个跨页。 一个连续镜头：钻进一页、拉远到整本书、翻页代替剪辑、再推进下一跨页。 对标 Robert Sabuda、Matthew Reinhart 的立体书。 避免：像实心模型的卡片；昏暗压抑的房间；卡通脸。",
   },
   {
@@ -3792,6 +3998,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o68.jpg",
     still: true,
+    generated: false,
     guide: "风格：勇敢的心（O68 · 奥斯卡 98 部）\n\n提示词：\n一页泥金装饰手抄本，取局部或双页填满画面。 羊皮纸 #ECDCB4、褐色墨线 #2A1A10、青金石蓝 #27469A、朱红 #C43A20，加抛光金箔：石膏底隆起，有打孔小圆点花，一道烛光高光只在金上慢慢扫过。 细密画背景多为金箔（夜景用青金石底加金星），金至少占画面一成。 哥特式人物平涂加墨线。 凯尔特编结纹、常春藤边框、页边怪诞小兽；正文写故事（拉丁文或用户的语言），宽头笔哥特体，红蓝行尾线，一个大金首字母。 版式：细密画如一扇窗，约占半页，旁为文字栏；窗后分层，推进出视差；人物可破框。 左上暖烛光，褐色暗角，淡颜料颗粒。 对标《凯尔经》、摩根圣经、勒特雷尔诗篇。 避免：平涂黄色代替金箔；现代字体；人脸上的高光。",
   },
   {
@@ -3804,6 +4011,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o69.jpg",
     still: true,
+    generated: false,
     guide: "风格：英国病人（O69 · 奥斯卡 98 部）\n\n提示词：\n旅人的剪贴本铺满画面，从边到边挤满 6–10 样互相压叠的东西，有的伸出画框：胶带贴的水彩画（主画面，约占四成）、手绘地图、深褐老照片、印刷页、手写便条、压花；每样带柔影和泛黄胶带。 水彩画：湿中湿铺色，受光面暖赭，暗面是硬边紫玫瑰色，钢笔勾轮廓，积色边，明暗对比清楚。 配色：琥珀纸 #E8D6B0、深褐 #6B4A2E、赭 #D08A3C、紫玫瑰 #9C6A86、墨 #2A1E16。 画里：暗前景里一个暖光源（火把、灯）投下光池，外面是明亮的天。 琥珀调色只轻压书页，画里保持干净不发脏；暗角约两成，纸纹淡。 招牌动作：推进一张画，直到书页边缘从两侧滑出、人已在画里。 对标摄影师 John Seale（《英国病人》，1996）。 避免：平滑数码渐变；稀疏整齐的版面；书页还框着画时横摇。",
   },
   {
@@ -3816,6 +4024,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o70.jpg",
     still: true,
+    generated: false,
     guide: "风格：泰坦尼克号（O70 · 奥斯卡 98 部）\n\n提示词：\n一张工程蓝图变成偏写实的 3D。 蓝图只占开头 1–2 秒、不超过全片 15%：普鲁士蓝晒图纸（#12306B 到 #244D8F）上的白色棱线，线宽约画面 1/800，被挡的线画虚线，人物和地形用等高线；曝光不匀，有折痕、手写标注和图签。 滑动变焦让立面图立成透视，再从主角往外显出全彩，显影边是带暖光的软边，幽灵线一秒内淡掉。 之后是风格主体：黄金时刻的真实 3D，低太阳，暖琥珀高光 #F2B860，深暖阴影 #3A2530，水面阳光碎金，薄雾，浅景深，轻泛光，细颗粒；再到蓝调时刻和夜晚，暖灯亮起。 一个不间断运镜：推近、立起在蓝图段，之后低掠主角、升起环绕、下降平分余下时间。 对标摄影师 Russell Carpenter（《泰坦尼克号》，1997）。 避免：在图上停太久；硬切；平而干净的 CG 光。",
   },
   {
@@ -3828,6 +4037,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o71.jpg",
     still: true,
+    generated: false,
     guide: "风格：莎翁情史（O71 · 奥斯卡 98 部）\n\n提示词：\n伊丽莎白时代宫廷细密画，学尼古拉斯·希利亚德：暖色羊皮纸上平涂不透明水彩，暗面极细排线（线宽约画面宽度的 1/1000），受光边点铅白，红褐轮廓线。 配色：群青底 #203E92、贝壳金 #D6B05C（细颗粒金点加几处抛光高光）、胭脂红 #A8202C、铅白 #F6F2E8、铜绿 #346C40。 招牌画面：主体画在金边椭圆挂坠里，挂坠平放在锈红色锦缎上；一丛开满白花的野蔷薇铺满主体身后和四周，上沿一圈金色罗马大写短铭文。 椭圆底色始终是群青，风景和天空放进去时画成平涂色带。 大场景可离开挂坠，画法不变。 镜头慢推、轻微下摇，只有花、布料和手势在动。 对标希利亚德《玫瑰丛中的青年》（约 1587）。 避免：喷枪渐变；厚油画笔触；平黄色的金。",
   },
   {
@@ -3840,6 +4050,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o72.jpg",
     still: true,
+    generated: false,
     guide: "风格：美国丽人（O72 · 奥斯卡 98 部）\n\n提示词：\n两种画面。 主画面约七成：干净饱和的插画，正面对称，主角居中，身后是它的家或场景；形状有两三层柔和明暗，细节密（灌木、花丛、由许多小叶簇堆成的树冠）。 默认明亮日光；其他光线下也要亮（日落偏金），不发暗。 红门 #C3141F 一类红色点缀，白线脚，饱和的绿，橙红秋树；暖调、轻暗角、细颗粒。 过渡：卷曲的红花瓣或落叶（约画宽 1/60）越积越密，一秒风暴扫过镜头藏住剪切。 副画面约三成：同一世界的 90 年代 DV 家庭录像，发软、低清、色彩渗边、马赛克块、隔行线、噪点、曝光一呼一吸、暗部偏绿，屏显 REC、电量、日期。 每帧只用一种。 镜头缓推。 对标摄影师 Conrad L. Hall（《美国丽人》，1999）。 避免：干净画面带录像瑕疵；真实品牌屏显；扁平矢量形。",
   },
   {
@@ -3852,6 +4063,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o73.jpg",
     still: true,
+    generated: false,
     guide: "风格：角斗士（O73 · 奥斯卡 98 部）\n\n提示词：\n罗马地面马赛克。 先画平涂底稿，再铺小方石子，每粒约画面宽度的 1/150：轮廓边的石子顺着边排两三圈（opus vermiculatum），其余一行行横排；人物外面包一圈深色石子轮廓。 颜色只用天然石头和玻璃，沉稳偏暖：焦金 #E2B24C、赭褐 #5B4332、陶红 #8E3C2B、暖大理石 #E9DDC4，帝王紫玻璃只做一处点缀；天空和水用浅灰蓝、奶油色石头，不要饱和的色带。 每粒切口略不规则，左上受光，往 1–2px 宽的深色灰缝投小影；金箔玻璃片在光源处慢慢闪。 人物正面、略僵，像庞贝马赛克；背景是大片褪色的细碎石子。 镜头只短推短拉，动的是细节：手势、人群、草木、光柱。 对标《亚历山大马赛克》、Zliten 马赛克。 避免：整齐网格变像素画；石子太大；平滑渐变；灰缝太亮。",
   },
   {
@@ -3864,6 +4076,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o74.jpg",
     still: true,
+    generated: false,
     guide: "风格：美丽心灵（O74 · 奥斯卡 98 部）\n\n提示词：\n手写就是画面：半透明白色蜡笔 #F1EFE6（笔画宽约画宽 1/300）在方格铅条窗玻璃上一笔笔写出来，写的是与题材有关的公式、数字或笔记，几小块字只占玻璃约四分之一。 窗外是题材的世界，柔焦虚化，中间调、暖中性（阴天里的秋黄和柔和的绿），亮度不能超过字迹。 暖色室内框住窗子：书架、绿罩台灯、琥珀灯光。 关键时刻，选中的符号变亮，柔和的金线在它们之间连成星形或多边形，小光点沿线走。 变体：深绿石板粉笔，带残影。 配色：石板绿 #2F3E35、粉笔白 #F1EFE6、灯光琥珀 #E0A050、柔金 #D9B45A。 镜头缓推，每次切换都离字更近。 对标摄影师 Roger Deakins（《美丽心灵》，2001）。 避免：HUD 或科幻界面；打字字体；字铺满玻璃；冷蓝色的窗外。",
   },
   {
@@ -3876,6 +4089,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o75.jpg",
     still: true,
+    generated: false,
     guide: "风格：芝加哥（O75 · 奥斯卡 98 部）\n\n提示词：\n鲍勃·福斯式百老汇歌舞舞台。 黑底，但约四成画面发信号红 #D0202A：一排带栏杆的暗色格间，每格在烟雾里从背后打红光，中心最亮、向四周暗到黑，再加红幕；硬边聚光穿过烟雾。 舞者是实心黑剪影，身形饱满、有服装轮廓，外面一圈 2–3px 红色边光。 一个大霓虹字形（字母或图形），橙红 #FF5A3C，白热芯、微闪，要放在黑底上才读得出；黑色亮漆地板倒映它；台边一排跑马灯泡 #FFD9A0。 主角站在暖白追光 #FFF1D6 里，是唯一被照亮、保留自身颜色的人。 点缀：亮片、白手套。 动作踩爵士拍子；灯格一间间啪地亮。 镜头推进，收在追光里。 对标 Rob Marshall《芝加哥》（2002）。 避免：平涂匀光；多余颜色；剪影没有边光。",
   },
   {
@@ -3888,6 +4102,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o76.jpg",
     still: true,
+    generated: false,
     guide: "风格：指环王：王者无敌（O76 · 奥斯卡 98 部）\n\n提示词：\n奇幻概念设计式的水彩加铅笔，暖色纸。 透明水彩要看得出颗粒（细碎颜料斑点，亮度起伏 ±6%），几朵回流花，水迹边缘积色更深；每条轮廓和山脊都有一道深褐铅笔线（约画面宽度的 1/800），暗面短排线。 空气透视要强：3–5 层后退，越远越淡越冷。 光就是主题：每场一个强光源（低太阳、火、灯、熔岩般的光）穿透雾气，余烬色光晕约占画面四分之一，约一半画面压在深褐和紫色暗部里。 旅程题材可插一段托尔金式地图，但不当主画面。 镜头：长横摇扫过大地，缓推到主角。 对标 Alan Lee、John Howe。 避免：平滑的数码渐变；平涂矢量形；发白发灰的画面。",
   },
   {
@@ -3900,6 +4115,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o77.jpg",
     still: true,
+    generated: false,
     guide: "风格：百万美元宝贝（O77 · 奥斯卡 98 部）\n\n提示词：\n原创的 16-bit 街机格斗游戏。 画在 320×180 上，用最近邻放大到输出尺寸的整数倍（1080p 用 6 倍），加轻微 CRT 扫描线（隔行压暗约 15%）。 横版场地取自题材：把题材的地点压成平的台面加一层背景（比如拳台配深紫观众带 #1D1435）。 界面用自绘 5×7 点阵字：两条血条（黄色 #F5C53A，掉血时拖一段红色）、计时、横幅、ROUND 1 / FIGHT! 、连击数。 角色是方块胖像素，高约 50 像素，一像素高光加深色边，全画面约 32 色。 故事改写成主角和一个对手的较量；题材里没有敌人，就把它世界里的阻碍拟人化当对手（风暴、截止期限）。 打中有火花、停顿 3–4 帧、白闪，输家被打飞，然后 K.O. 和 WINNER。 固定横版视角，不剪。 对标 90 年代初街机格斗游戏。 避免：照搬真实游戏的角色或 logo；像素抗锯齿。",
   },
   {
@@ -3912,6 +4128,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o78.jpg",
     still: true,
+    generated: false,
     guide: "风格：撞车（O78 · 奥斯卡 98 部）\n\n提示词：\n长曝光夜景街拍。 钠灯暖橙 #F2A24A 铺满建筑、招牌和湿地面（约一半画面在暖光里），对着青色霓虹 #3FD0D8，偶有红蓝警灯；黑色略偏青，不能发灰。 构图分层：前景人行道有人，中景亮着的店面招牌，上三分之一横过道路或桥（不在城市就用主体所在地一条有路灯的路）。 车灯沿这些路拉成细而连续的光带（约画宽 1/150），白 #FFF4E0 与红 #E0303A，带光晕和发烫的芯。 雪分三层，短而柔的拖影，只在光锥里可见。 收尾：两级泛光、蓝色横向光条、边缘焦外光斑、暗角、动态颗粒。 主角清楚地站在画面中部一盏灯的光锥里，只有车流拖影。 镜头：一个连续运镜，俯仰、横摇加转焦。 对标摄影师 J. Michael Muro（《撞车》，2004）。 避免：雪到处一样亮；大片空黑；光带断成点。",
   },
   {
@@ -3924,6 +4141,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o79.jpg",
     still: true,
+    generated: false,
     guide: "风格：无间行者（O79 · 奥斯卡 98 部）\n\n提示词：\n老红砖墙上的街头模板涂鸦。 每件作品用 3–5 块镂空模板喷成平色块，有照片感（最小镂空约画宽 1/200）：硬切口，模板翘起处有柔喷雾，散落喷点，流挂，以及模板必须留的连接筋。 配色：黑 #151312、中灰 #8C8A85、金 #C99A2E、红 #C3261F；红砖 #7A3224，主要作品喷在刷上去的奶油色补丁上。 砖面凹凸、灰缝阴影和雨痕透过漆显出来，让漆吃进砖缝。 一面墙并排放好几件作品，加关于题材的手喷短标语（用观众的语言）、旧 tag 和一张撕角的半调糊贴海报。 光：柔和的白天光斜扫过墙，反差适中，电线影子轻轻晃；不加重暗角。 镜头：先让作品一层层喷出来，再切近景、横移。 对标班克斯。 避免：边缘干净像矢量；漆浮在砖上；颜色太多；墙面昏暗。",
   },
   {
@@ -3936,6 +4154,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o80.jpg",
     still: true,
+    generated: false,
     guide: "风格：老无所依（O80 · 奥斯卡 98 部）\n\n提示词：\n偏写实的 3D 黄昏旷野（three.js）。 天空很大，约占画面六成，地平线处尘土赭色 #D8A060，往上渐到淡奶油色，几缕细长云被下方照亮。 太阳高出地平线 1–2°，仍能投影，光沿远处坡脊烧成一线亮边。 低饱和：成百丛灰绿小灌木退向地平线，碎石和干草散在暗暖色泥土 #2A2622 上（默认干旱荒地，换别的地貌也保留稀疏成丛的植被）。 主角逆光站在中景，约占画面高度三分之一，长影子朝镜头拉来。 按天空曝光：太阳可以过曝，光晕不超过画面十分之一。 调色：中性色调映射、暖高光、细颗粒、暗角。 招牌镜头：基本固定，低机位广角（约 35mm）。 对标摄影师 Roger Deakins（《老无所依》，2007）。 避免：饱和的橙色晚霞；大片发白眩光；光秃的地面；忙乱的运镜。",
   },
   {
@@ -3948,6 +4167,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o81.jpg",
     still: true,
+    generated: false,
     guide: "风格：贫民窟的百万富翁（O81 · 奥斯卡 98 部）\n\n提示词：\n两种画面。 主画面约占七成：光鲜的插画式答题演播室，明亮饱满，略俯的四分之三视角：底光玻璃圆台和一圈圈蓝光环，背后坐满观众，摇头灯在烟雾里打出蓝紫光束 #5A3FD0，大屏上长六角形答案框，一个锁成琥珀色 #F0A020；加泛光和横向光斑；越紧张四周越暗，最多暗到一半，不全黑。 人物圆润干净，柔和明暗。 第二种画面约占三成，整屏硬切：主题所在地方的黄金时刻景象，饱和橙青，密而热闹（比如铁皮屋顶、晾衣绳、人群）。 点缀：洋红 #E2206B、青 #0F7C7A、橘黄 #F06A14。 镜头推向大屏和座位，光束收到一人身上；其余慢摇。 对标摄影师 Anthony Dod Mantle（《贫民窟的百万富翁》，2008）。 避免：真实节目 logo；大片漆黑的演播室；平均打光；灰暗空荡的场景。",
   },
   {
@@ -3960,6 +4180,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o82.jpg",
     still: true,
+    generated: false,
     guide: "风格：拆弹部队（O82 · 奥斯卡 98 部）\n\n提示词：\n军用技术手册插图。 暖米白纸 #EFEADB 上一层很淡的工程网格，统一黑墨 #1B1A16（轮廓线宽约画面宽度的 1/700，排线更细），明暗只靠排线，地面用点刻，只在两三成的画面上平涂橄榄绿 #6C6D42 和沙色 #D9C79C；灯光画成放射线，不画光晕。 主图：题材场景的一点透视画面，占页面大半，里面有人物和器物；四周是题材关键器物沿点划线轴展开的爆炸图、引线上的带圈数字、零件表、WARNING 和 CAUTION 框、打字机字体的标注（用观众的语言）和 FIG 编号，一块黑底章节卡。 动画一拍二：零件滑开、工具动作、人物走路。 镜头先看整页，再切到放大插图式的细节。 对标美军技术手册，Kathryn Bigelow《拆弹部队》（2008）。 避免：渐变明暗；颜色太多；花哨字体；空荡的页面。",
   },
   {
@@ -3972,6 +4193,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o83.jpg",
     still: true,
+    generated: false,
     guide: "风格：国王的演讲（O83 · 奥斯卡 98 部）\n\n提示词：\n墙面就是画面的油画质感室内（户外题材搬进相关的有窗屋子）。 主调：菱形钉扣软包墙，金 #C9A050 压在深褐 #3A2610 上，扣子带黄铜高光，声源（比如吊着的话筒）后面一团暖金光。 副调用于安静的场景：冷灰绿墙面，局部磨穿露出蓝、粉、赭和灰泥，有潮线和细裂纹；剥落块不规则，最多占墙面三分之一。 形状边缘干净，只罩一层淡淡的笔触纹理（笔触约画宽 1/120，亮度起伏 ±5%）；脸和小物件画清楚。 声音画成 4–8 条细金色示波线，扩过墙面，先带尖刺，后来平滑。 人物偏到角落，留大片墙。 镜头慢推，插一个声源特写。 对标摄影师 Danny Cohen、美术指导 Eve Stewart（《国王的演讲》，2010）。 避免：居中对称；粗糙点戳笔触；地图般的剥落；霓虹般亮的声波。",
   },
   {
@@ -3984,6 +4206,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o84.jpg",
     still: true,
+    generated: false,
     guide: "风格：艺术家（O84 · 奥斯卡 98 部）\n\n提示词：\n致敬 20 年代末默片的现代黑白片。 影调干净：发光的高光、柔和的中灰、深黑；温和的 S 曲线，灯周围有灰色光晕，轻微闪烁（±3%），细颗粒，偶有灰尘，16:9 里加 1.33 的左右黑边。 字幕卡是黑底、装饰艺术风边框、字距拉开的大字，用观众的语言。 场景：把题材的世界布置成宏大规整的室内或舞台布景（比如带铁艺栏杆的楼梯、金色台口、逆光剪影的人群），人物多取优雅侧面。 故事围绕的那个主角是画面里唯一有颜色的东西，整个都用陶土橙 #D97757 的深浅来画；灯和火都保持灰色。 镜头：平滑的推拉，字幕卡闪入，剪辑落在动作上（鞠躬、挥手）。 对标摄影师 Guillaume Schiffman（《艺术家》，2011）。 避免：重划痕；棕褐色调；颜色渗到灰色里。",
   },
   {
@@ -3996,6 +4219,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o85.jpg",
     still: true,
+    generated: false,
     guide: "风格：逃离德黑兰（O85 · 奥斯卡 98 部）\n\n提示词：\n70 年代杰克·柯比漫画页。 粗细变化的毛笔墨线，大块涂黑，透视夸张，黑色柯比能量泡，方块拟声字，手写对白框。 CMYK 平涂用 45° 网点印出：青 #1696CD、品红 #DE2C70、黄 #FFD616、黑 #1C161A，泛黄新闻纸 #EEE2C2，色版错位 1 像素，纸有纤维和中缝阴影。 分格叙事，镜头在格间推进、横移，推近时网点放大成波普圆点。 避免：顺滑数码渐变、雪白的纸、僵硬的管状机械。",
   },
   {
@@ -4008,6 +4232,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o86.jpg",
     still: true,
+    generated: false,
     guide: "风格：为奴十二年（O86 · 奥斯卡 98 部）\n\n提示词：\n1850 年代盒装银版照片在显影。 招牌镜头：银版宽度占画面约 85%，外圈是带珠串的黄铜衬框 #8a6a2c、圆角矩形开口，红丝绒和皮盒只露在边上。 银版是灰阶银色，从近黑 #1c1a18 到浅银 #ecebe6；蓝紫到琥珀的氧化晕只在开口边缘窄窄一圈。 抛光旋纹、发丝划痕和斑点都要轻（亮度 ±4%）。 左上方柔和窗光，主体静止摆姿，背后素色布景，户外地点画在布景上。 一镜到底：前 1 秒左右镜头从打开的盒子推到招牌景别，然后停住；影像从空白的镜面灰开始，暗部先出，显影前沿从左扫到右，约 3 秒显完。 只有故事围绕的那个主角手工上色：一层半透明平涂（如 #D97757），透出底下的明暗；灯保持灰色。 避免：棕褐色、银版太小、快切。",
   },
   {
@@ -4020,6 +4245,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o87.jpg",
     still: true,
+    generated: false,
     guide: "风格：鸟人（O87 · 奥斯卡 98 部）\n\n提示词：\n实时 3D，仿摄影师埃马努埃尔·卢贝兹基（《鸟人》，2014），一条不断的手持长镜头。 主体在窄而旧的通道里（默认后台走廊；户外题材放进最近的室内）：下三分之一是掉漆的血红搪瓷墙裙 #6e2a22，上面是带水渍的烟黄石膏墙 #cdb98e，头顶水管和桥架，墙上有门和告示。 光只来自画内灯具，每两三米一盏：铁笼钨丝灯（暖）、一根在闪的日光灯（冷）、一盏红色出口灯 #ff2a1a；远处门外发亮。 中等曝光：灯旁墙亮，灯间不低于中灰，地面看得清。 广角 18–24 毫米，低频晃动约 ±1°，柔和环境光遮蔽、轻辉光、细颗粒（±3%）。 运镜 20–40 秒，次序不限：倒退领路，甩向一侧的门洞，让主体擦过镜头，再转身跟上。 避免：锁死机位、空白墙面、重复纹理、压得太黑。",
   },
   {
@@ -4032,6 +4258,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o88.jpg",
     still: true,
+    generated: false,
     guide: "风格：聚焦（O88 · 奥斯卡 98 部）\n\n提示词：\n2001 年报纸彩色网点，放在图书馆缩微胶片阅读机上看。 招牌镜头：图片本身铺满画面，不要报头和文字栏；图里的线条和字（招牌、标签）保持实线。 四色网点角度 15°、75°、0°、45°，网点约为画面宽度的 1/250，套色错 1 像素。 整体转成低反差荧光绿单色，网点依然清楚可见：片基 #1b2320，帧间隙 #0c110f，高光不亮过 #a0dcaf。 只有故事的主角整个人保留原色（如 #D97757），照样带网点，反差一样低；光源一律变绿。 每 3 像素一条扫描线，每 4 秒滚过一道淡扫描带，一块柔和灯斑，玻璃上有灰和一根头发，圆角遮光罩只轻压外圈约 5%，一行小等宽胶片编号。 换场把胶片横向滑过暗色帧间隙（0.5 秒）；镜头内慢推。 避免：报纸版面、颜色外漏、硬切。",
   },
   {
@@ -4044,6 +4271,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o89.jpg",
     still: true,
+    generated: false,
     guide: "风格：月光男孩（O89 · 奥斯卡 98 部）\n\n提示词：\n夜色油画肖像。 平滑实心体积上，顺着形体用两遍短笔触重画，笔触反差小（明度 ±8%）：海、天、衣服用宽笔，约为画面宽度的 1/60；脸用细笔 1/150，保持平滑。 按用途分色：天、海、远处陆地用中等明度的蓝紫 #32377a，约占画面六成；受月光的面和沙地提亮成淡薰衣草蓝；青绿 #128a91 用在水里和受光一侧；轮廓光用品红 #7a2f86；最深暗部 #07071c。 任何肤色顶面都受蓝光、带湿亮高光，眼睛睁开有光。 默认夜晚，唯一主光是满月，水面铺出碎光；品红只是远处光源的柔和轮廓光；其他小光源只是一小点青白光。 颗粒 ±3%。 招牌镜头：人物平静，约占画高三分之二。 慢推。 参照巴里·詹金斯《月光男孩》（2016）。 避免：粗块笔触、石膏像小黑眼、发闷的近黑画面。",
   },
   {
@@ -4056,6 +4284,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o90.jpg",
     still: true,
+    generated: false,
     guide: "风格：水形物语（O90 · 奥斯卡 98 部）\n\n提示词：\n实时 3D，全在水下（陆上题材就沉进淹水的屋子或水下遗迹），泡在青绿里：背景 #041414，半球光上方 #5fb3a6、下方 #0c2a24，青绿雾，红色随距离最先消失。 水面上方一个强光源投下流动焦散：近处表面上的亮格子约为画面宽度的 1/20，滑过地面、墙面和主体。 光柱向下散开，画面四边保持暗。 气泡、微粒、从下仰看的波纹水面。 暖金色给一到三处实际灯光，至少一处要大（亮窗或灯，约为画面宽度的 1/10），加青色生物荧光。 平滑着色，环境光遮蔽、浅景深、适度辉光、颗粒（±3%）。 招牌镜头：低机位仰拍，主体约占画面高度一半，偏在光源一侧；慢推。 参照吉尔莫·德尔·托罗《水形物语》（2017）。 避免：平板的水、焦散画成天上的条纹、暖色点缀太小。",
   },
   {
@@ -4068,6 +4297,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o91.jpg",
     still: true,
+    generated: false,
     guide: "风格：绿皮书（O91 · 奥斯卡 98 部）\n\n提示词：\n五六十年代亚麻纹明信片，柯特·泰希出版社那一路。 平纹布纹卡纸：油墨只落在凸起的经纬上，形成约为画面宽度 1/300 的细格纹，凹处露白点。 手工分色的饱和色，喷枪柔和过渡：天蓝 #3fa0dc、草绿 #4fae57、粉红 #f08cb0，主体物或水面用青绿 #2fb5b8，奶油卡纸 #f6e4b8 作底色和白边。 主体物要大，正侧面，约占卡片高度一半。 亮面加四角星闪光；套色错位 1–2 像素。 藏青立体大字带白描边，横在卡片上三分之一，写地名或片名（没有就按题材编一个），每个字母里嵌一小幅风景，上方配红飘带。 开场明信片放在桌上，推进到满屏后画面活过来（水在动、人在走），再侧向横移。 避免：没有布纹的渐变、发灰的颜色、照片式透视。",
   },
   {
@@ -4080,6 +4310,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o92.jpg",
     still: true,
+    generated: false,
     guide: "风格：寄生虫（O92 · 奥斯卡 98 部）\n\n提示词：\n矢量建筑剖面轴测图，用低角度二等角视图：剖切面沿接近水平的 7° 轴正对观众，进深沿 42° 轴、按一半缩短；屋顶和近侧墙剖掉，露出房间。 剖切穿过主体所在之处（房子、塔、船、山坡）。 切面填涂黑：深色混凝土带骨料，土层画 45° 斜线夹小石块。 任何缩放都是 1 像素深灰线。 默认白天、淡色天空：混凝土 #b3ada2、橡木 #d6b58a、炭灰 #3e4146、松绿 #3f6b3e，白墙、绿草坪、半透明蓝水。 房间配家具和简洁的小比例人。 夜景或其他暗光只是变体：叠乘三到四成月光蓝，亮灯的房间涂回暖色。 镜头沿剖面慢慢升降，框住两三个房间，跟主体走一条不断的路线，最后停在占画面约八成的整张图上。 避免：30° 等轴测、粗卡通描边、楼层间切镜头、图太小。",
   },
   {
@@ -4092,6 +4323,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o93.jpg",
     still: true,
+    generated: false,
     guide: "风格：无依之地（O93 · 奥斯卡 98 部）\n\n提示词：\n灰紫色纸 #7d7079 上的软色粉画，纸的齿纹处处透出来，成细密颗粒（亮度 ±8%）。 天空揉开抹平，只有几条细长的横向云带。 质感集中在地面：干草赭色（金黄往纸的灰色压暗），上面铺满直立的细草笔，每笔宽约为画面宽度的 1/400、长约 1/40，明度起伏 ±15%，前景密，往地平线渐稀。 物体用柔和的斜向排笔，边缘软而碎。 按用途分色：地平线金黄 #f6cf7a，下层天空玫瑰 #c9738a，高空、云带和远处陆地用紫 #4b3f78，暗部用暮蓝 #2b2d5c。 地平线长，在画面中线附近，下面是原野或水面；主体和身边的东西中等大小，放在下半幅。 天色从金黄转玫瑰再转紫，越暗暖灯越亮。 一个缓慢横移带轻推的镜头。 避免：油画厚涂感、锐利数码边、光秃平滑的地面。",
   },
   {
@@ -4104,6 +4336,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o94.jpg",
     still: true,
+    generated: false,
     guide: "风格：健听女孩（O94 · 奥斯卡 98 部）\n\n提示词：\n19 世纪水手在抛光鲸牙上的针刻画。 招牌镜头：宽而扁的鲸牙横躺在橡木桌上，占画面宽约 85%、高约 70%，墨水瓶和折刀在边上。 用近黑墨 #17110c 刻：细针排线（线宽约画面宽的 1/800，线距约 1/500）、粗细起伏的轮廓线和点刻。 刻线覆盖牙面约七成：海、主体和陆地密，天空轻排线；海是成排的程式化波浪。 主角要大（约占牙面高三分之一）并上色；此外红 #9a2a22、蓝 #2b4a78、黄 #e9b526 只作点缀。 暖象牙底、淡生长纹、抛光划痕、牙尖蜜黄。 民间朴拙构图：绳纹边框、飘带题词、放射光芒的太阳、主体世界的图案。 弧度靠边缘明暗和一道窗户反光，画面不变形。 先拍整颗牙，推进后慢慢横移，波浪随之动起来。 避免：粗线、实色填涂、细长的牛角形。",
   },
   {
@@ -4116,6 +4349,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o95.jpg",
     still: true,
+    generated: false,
     guide: "风格：瞬息全宇宙（O95 · 奥斯卡 98 部）\n\n提示词：\n实时光线步进 3D 的多元宇宙蒙太奇：主体在三到四个宇宙之间跳转，各有画法，都从主体自己的世界变出来，例如：冷绿日光灯下的写实工作场所，陈设很满；带引力透镜光环的超现实宇宙；配白字幕的安静旷野远景；糖果粉背景、粉青轮廓光的广告产品照。 每个停 2–4 秒，各自调色。 贯穿始终的衔接物：主体身上的一只活动眼贴纸，约占画高十分之一。 跳转 0.5–0.8 秒：推进这只眼睛，拖影、RGB 分离，再炸开一圈彩虹色块环（#e5322d、#f7c928、#1fa39a、#2a6fc0、#e0478f），环上嵌满活动眼和粉珠，扩到画高约八成后白闪。 招牌画面：彩虹环围着主体绽开；第一次跳转在 1 秒左右。 参照丹尼尔斯兄弟《瞬息全宇宙》（2022）。 避免：宇宙都一个样、环太小太素。",
   },
   {
@@ -4128,6 +4362,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o96.jpg",
     still: true,
+    generated: false,
     guide: "风格：奥本海默（O96 · 奥斯卡 98 部）\n\n提示词：\n实时 3D 夜景，主角光是一场巨大的粒子事件：几十万粒子的火球（或照明弹、火山喷发、山火），形状随时间走：白闪（0.5 秒），1 秒成翻滚的斑驳穹顶，再卷成环，尘墙外扫。 在主体正后方像光环，约占画面四成：核心白金，大部分是有纹理的亮橙金火团 #ff9a50，黑烟只做细暗纹和顶边，不超一成半。 火光照亮全场：暖色 #ffd8a0 铺满地面和云底，主体有热轮廓光，脸上仍有半强度暖光；长影子朝镜头拖来，火星飘飞。 其余是黎明前的深蓝 #2a3654 和暗土 #16120e。 只让核心过曝。 IMAX 拷贝调色：细颗粒（±3%）、暖色光晕溢出、暗角、轻微片门晃动。 低机位广角，主体居中，慢推。 参照克里斯托弗·诺兰《奥本海默》（2023）。 避免：光滑的 CG 光球、被黑烟裹住的火。",
   },
   {
@@ -4140,6 +4375,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o97.jpg",
     still: true,
+    generated: false,
     guide: "风格：阿诺拉（O97 · 奥斯卡 98 部）\n\n提示词：\n照片感的 2D 霓虹夜景。 招牌是真实灯管：玻璃管、辉光、亮管、白热管芯，带卡子和深色跳线；轻微起伏，很少抖一下（5–10 秒一次）。 粉 #ff4fa8、青 #4fdcff、橙 #ff9a2e、绿 #3dff9a，加暖色钠灯，压在深紫蓝夜色 #1e1838 上。 霓虹放在主体世界里说得通的地方（店面、港口酒吧、主体自己那栋楼）。 画面下四分之一留给湿地面：招牌拉成长长的竖向倒影，被木板缝、地砖缝或水纹打断；雪在下，边上积成雪堆，被溢光染色。 主体脸上保留暖色主光（来自近处的灯、窗或它自己的灯），两侧各一条窄霓虹轮廓光；远处虚成光斑。 辉光、暗角、颗粒（±3%）。 每个短镜头 2–3 秒，同一地点换角度，各自慢推。 参照肖恩·贝克《阿诺拉》（2024）。 避免：平涂彩字式霓虹、干地面、频闪。",
   },
   {
@@ -4152,6 +4388,7 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     demo: "",
     poster: "/templates/code-animation/o98.jpg",
     still: true,
+    generated: false,
     guide: "风格：一战再战（O98 · 奥斯卡 98 部）\n\n提示词：\n实时 3D，漂白般的沙漠日光。 招牌镜头（3–5 秒）：一条笔直的路在连续起伏的坡谷上，水平视角 2–5°，让坡谷叠成波浪，行进的主体沉下去又冒出来；构图先保坡谷，天空最多留一条窄带。 再接各 1–2 秒的坡顶低机位、车载或骑手机位。 配色：天空 #7fb0e0，雾气 #ece4d2 只在最远的地平线，浅沙色 #d2ae80（不能发橙），硬朗阳光 #fff0d8 从高处侧打，主车是褪色海沫绿 #86b5ad。 反差来自前景：开裂的深色沥青、清晰阴影、茂密的绿灌木、路边桩。 默认正午，其他时段也保持硬光。 热浪扭曲和路面蜃景随距离加重；落地扬尘；车过坡顶腾空、落地弹跳。 大画幅细颗粒（±2%）。 参照保罗·托马斯·安德森《一战再战》（2025）。 避免：广角、发白发灰的画面、粘在路上的车。",
   },
 ]

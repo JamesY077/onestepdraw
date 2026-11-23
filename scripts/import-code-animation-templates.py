@@ -37,6 +37,9 @@ REF = "main"
 LIB = "skills/code-animation-prompts/assets/library/风格提示词"
 WORKDIR = Path(__file__).resolve().parent.parent
 CACHE = WORKDIR / ".cache" / "code-animation-prompts"
+# 示例图清单要跟着代码走：换机器重新导入时靠它区分「原素材静帧」和「AI 示例」。
+GENERATED_MANIFEST = WORKDIR / "scripts" / "template-stills.json"
+LEGACY_MANIFEST = CACHE / "generated.json"
 POSTER_DIR = WORKDIR / "public" / "templates" / "code-animation"
 OUTPUT = WORKDIR / "src" / "features" / "template" / "builtin.ts"
 
@@ -685,10 +688,20 @@ def main() -> int:
             print(f"[{index}/{len(styles)}] {style['code']} · {state}")
 
     POSTER_DIR.mkdir(parents=True, exist_ok=True)
+    generated_codes: set[str] = set()
+    for manifest in (GENERATED_MANIFEST, LEGACY_MANIFEST):
+        if not manifest.exists():
+            continue
+        try:
+            generated_codes = set(json.loads(manifest.read_text(encoding="utf-8")).keys())
+            break
+        except Exception:  # noqa: BLE001
+            continue
+
     rows: list[str] = []
     skipped: list[str] = []
     used_categories: set[str] = set()
-    generated = 0
+    written = 0
 
     for style in styles:
         data = results.get(style["code"], {})
@@ -697,9 +710,10 @@ def main() -> int:
         heading_name = re.sub(rf"^{re.escape(style['code'])}\s*", "", title).strip()
         name = heading_name or style["file_name"] or ""
         name = re.sub(r"\s*[（(].*?[）)]\s*$", "", name).strip()
-        empty = not markdown.strip() or not name
-        if empty:
-            name = "待补充"
+        if not markdown.strip() or not name:
+            # 源素材里 M14 等 8 条只留了编号，没有正文；与其放一张空卡片，不如不收录。
+            skipped.append(style["code"])
+            continue
 
         series = SERIES[style["dir"]]
         category, category_en = series[1], series[2]
@@ -711,19 +725,11 @@ def main() -> int:
                     demo = fill_placeholders(plain(match.group(1)))
                     break
 
-        if empty:
-            # 源素材里 M14 等 8 条只留了编号，没有正文；也保留卡片，但把话说清楚。
-            guide = (
-                f"风格：{style['code']}（{category}）\n\n"
-                "原素材里这一条只留了编号，没有风格描述或提示词。"
-                "用户选中它时要先让用户描述想要的画面，不要凭空编造一种风格。"
-            )
-        else:
-            guide = summarize(markdown, name, style["code"], category)
+        guide = summarize(markdown, name, style["code"], category)
         if not guide:
             skipped.append(style["code"])
             continue
-        if not empty and len(guide) < 160:
+        if len(guide) < 160:
             # 原素材有些条目只有一句母题，补一句用法，避免模型无从下手。
             guide += (
                 "\n\n补充：这是一句母题式的风格提示词，构图、配色和节奏都围绕它展开，"
@@ -731,8 +737,9 @@ def main() -> int:
             )
 
         still = bool(data.get("poster"))
-        used_categories.add(category)
         poster_path = POSTER_DIR / f"{style['code'].lower()}.jpg"
+        generated = (not still) and style["code"].lower() in generated_codes and poster_path.exists()
+        used_categories.add(category)
         if not args.keep_posters or not poster_path.exists():
             if still:
                 poster_path.write_bytes(resize_poster(data["poster"]))  # type: ignore[arg-type]
@@ -740,7 +747,7 @@ def main() -> int:
                 poster_path.write_bytes(
                     placeholder_poster(style["code"], name, category, category_en)
                 )
-            generated += 1
+            written += 1
 
         rows.append(
             "  {\n"
@@ -753,6 +760,7 @@ def main() -> int:
             f"    demo: {json.dumps(demo, ensure_ascii=False)},\n"
             f"    poster: {json.dumps('/templates/code-animation/' + style['code'].lower() + '.jpg', ensure_ascii=False)},\n"
             f"    still: {json.dumps(still)},\n"
+            f"    generated: {json.dumps(generated)},\n"
             f"    guide: {json.dumps(guide, ensure_ascii=False)},\n"
             "  },"
         )
@@ -788,9 +796,10 @@ def main() -> int:
     )
 
     stills = sum(1 for row in rows if "still: true" in row)
+    ai = sum(1 for row in rows if "generated: true" in row)
     print(
-        f"写入 {OUTPUT}：{len(rows)} 个模板（{stills} 张静帧 + {len(rows) - stills} 张文字参考），"
-        f"生成 {generated} 张海报"
+        f"写入 {OUTPUT}：{len(rows)} 个模板（{stills} 张原素材静帧 + {ai} 张 AI 示例），"
+        f"写入 {written} 张海报"
     )
     if skipped:
         print(f"跳过 {len(skipped)} 个空条目：{'、'.join(skipped)}")
