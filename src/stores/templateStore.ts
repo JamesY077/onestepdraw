@@ -69,7 +69,7 @@ function save(key: string, value: unknown) {
 
 export const useTemplateStore = defineStore('template', () => {
   const open = ref(false)
-  const tab = ref<'builtin' | 'custom'>('builtin')
+  const tab = ref<'builtin' | 'custom' | 'skill'>('builtin')
   const groups = ref<UserTemplateGroup[]>(loadGroups())
   const applied = ref<AgentTemplateRef | null>(loadApplied())
   const draftGroupId = ref<string | null>(null)
@@ -78,7 +78,7 @@ export const useTemplateStore = defineStore('template', () => {
     [...groups.value].sort((a, b) => b.updatedAt - a.updatedAt),
   )
 
-  function openLibrary(nextTab: 'builtin' | 'custom' = 'builtin') {
+  function openLibrary(nextTab: 'builtin' | 'custom' | 'skill' = 'builtin') {
     tab.value = nextTab
     open.value = true
   }

@@ -308,6 +308,7 @@ async function handleAgentRun(req, res) {
   const automation = body?.automation === 'auto' ? 'auto' : 'default'
   const projectSummary =
     typeof body?.projectSummary === 'string' ? body.projectSummary.slice(0, 6000) : ''
+  const skills = typeof body?.skills === 'string' ? body.skills.slice(0, 20000) : ''
 
   if (!agentId) {
     sendJson(res, 400, { error: { message: '缺少 agentId。' } })
@@ -344,6 +345,7 @@ async function handleAgentRun(req, res) {
     mode,
     automation,
     projectSummary,
+    skills,
   })
 
   res.writeHead(200, {

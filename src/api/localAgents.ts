@@ -58,6 +58,8 @@ export interface LocalAgentStreamOptions {
   automation?: 'default' | 'auto'
   /** 当前剪辑项目摘要，让 Agent 能做时间轴操作。 */
   projectSummary?: string
+  /** Skill 专区启用的 Skill 正文，会注入本机 Agent 的提示词。 */
+  skills?: string
   custom?: CustomAgentConfig
   signal?: AbortSignal
   onStart?: (agent: { id: string; name: string; vendor: string }) => void
@@ -123,6 +125,7 @@ export async function streamLocalAgent(options: LocalAgentStreamOptions): Promis
       mode: options.mode || 'chat',
       automation: options.automation || 'default',
       projectSummary: options.projectSummary || '',
+      skills: options.skills || '',
       custom: options.custom || null,
     }),
     signal: options.signal,

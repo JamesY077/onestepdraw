@@ -57,6 +57,34 @@
         </button>
       </div>
 
+      <div v-if="skillStore.activeSkills.length" class="applied-skills">
+        <span class="applied-skills-label">Skill</span>
+        <span
+          v-for="(skill, index) in skillStore.activeSkills"
+          :key="`composer-skill-${skill.name}-${index}`"
+          class="applied-skill"
+          :title="skill.description"
+        >
+          <span class="applied-skill-name">{{ skill.name }}</span>
+          <button
+            type="button"
+            class="applied-skill-remove"
+            :aria-label="`移除 Skill ${skill.name}`"
+            @click="skillStore.removeActiveSkill(index)"
+          >
+            ×
+          </button>
+        </span>
+        <button
+          type="button"
+          class="applied-skills-add"
+          title="从模板库的 Skill 专区添加"
+          @click="templateStore.openLibrary('skill')"
+        >
+          +
+        </button>
+      </div>
+
       <div v-if="attachments.length || pendingCount > 0" class="attach-tray" aria-live="polite">
         <div v-for="item in attachments" :key="item.id" class="attach-chip">
           <img
@@ -392,6 +420,7 @@ import { BUILTIN_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useTemplateStore } from '@/stores/templateStore'
+import { useSkillStore } from '@/stores/skillStore'
 import {
   MAX_ATTACHMENTS,
   MAX_ATTACHMENT_BYTES,
@@ -420,6 +449,7 @@ const localAgentStore = useLocalAgentStore()
 const modelStore = useModelStore()
 const chatMode = useChatModeStore()
 const templateStore = useTemplateStore()
+const skillStore = useSkillStore()
 /** tone=auto 跟随模式开关；剪辑台里固定为创作色。 */
 const isCreateTone = computed(() =>
   props.tone === 'auto' ? chatMode.isCreate : props.tone === 'create',
@@ -901,6 +931,96 @@ defineExpose({ focus })
 .template-remove:hover,
 .attach-remove:hover {
   background: rgba(180, 71, 47, 0.08);
+  color: #b4472f;
+}
+
+.applied-skills {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 7px 12px 0;
+  padding: 4px 7px;
+  overflow-x: auto;
+  border: 1px solid #e6e6df;
+  border-radius: 9px;
+  background: #fbfbf8;
+  scrollbar-width: none;
+}
+
+.applied-skills::-webkit-scrollbar {
+  display: none;
+}
+
+.applied-skills-label {
+  flex: none;
+  color: #a3a39b;
+  font-size: 8.5px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.applied-skill {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 3px 2px 7px;
+  border: 1px solid #e4e4dc;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.applied-skill-name {
+  max-width: 150px;
+  overflow: hidden;
+  color: #4a4a44;
+  font-size: 9.5px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.applied-skill-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #b0b0a8;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.applied-skill-remove:hover {
+  background: #fdf2ef;
+  color: #b4472f;
+}
+
+.applied-skills-add {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px dashed #d8d8d0;
+  border-radius: 50%;
+  background: transparent;
+  color: #a3a39b;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.applied-skills-add:hover {
+  border-color: #b4472f;
   color: #b4472f;
 }
 

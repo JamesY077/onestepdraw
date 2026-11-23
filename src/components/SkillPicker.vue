@@ -111,6 +111,9 @@
         <span v-if="!skillStore.enabledDefaultQualitySkills.length" class="skill-defaults-off">
           已全部关闭
         </span>
+        <button class="skill-settings-link" type="button" @click="templateStore.openLibrary('skill')">
+          Skill 专区
+        </button>
         <button class="skill-settings-link" type="button" @click="router.push('/settings')">
           设置
         </button>
@@ -126,6 +129,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { MAX_ACTIVE_SKILLS, useSkillStore } from '@/stores/skillStore'
+import { useTemplateStore } from '@/stores/templateStore'
 import { readSkillFile } from '@/features/skill/parse'
 import { STYLE_SKILL_OPTIONS } from '@/features/skill/builtin'
 import { getSkillPreviewPath } from '@/features/skill/previews'
@@ -147,6 +151,7 @@ const props = withDefaults(defineProps<{
 
 const router = useRouter()
 const skillStore = useSkillStore()
+const templateStore = useTemplateStore()
 const styleSkillOptions = STYLE_SKILL_OPTIONS
 const skillFileInput = ref<HTMLInputElement | null>(null)
 

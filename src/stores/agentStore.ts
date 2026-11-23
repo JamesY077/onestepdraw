@@ -38,6 +38,7 @@ import { generateImage, generateVideo } from '@/api/aiping'
 import { CUSTOM_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useApiStore } from '@/stores/apiStore'
 import { useModelStore } from '@/stores/modelStore'
+import { useSkillStore } from '@/stores/skillStore'
 import { useEditProjectStore } from '@/stores/editProjectStore'
 import type { AutomationMode, ConversationMode } from '@/stores/chatModeStore'
 
@@ -201,10 +202,15 @@ export const useAgentStore = defineStore('agent', () => {
   function systemPromptFor(conversation: AgentConversation): string {
     const projects = useEditProjectStore()
     const project = projects.getProject(conversation.projectId)
+    const skills = useSkillStore().activeSkills.map((skill) => ({
+      name: skill.name,
+      content: skill.content,
+    }))
     return buildAgentSystemPrompt({
       mode: conversation.mode || 'chat',
       automation: conversation.automation || 'default',
       projectSummary: project ? projects.projectSummary(project) : undefined,
+      skills,
     })
   }
 
@@ -524,6 +530,9 @@ export const useAgentStore = defineStore('agent', () => {
     const apiStore = useApiStore()
     const modelStore = useModelStore()
     const engine = localAgentStore.isLocalEngine ? localAgentStore.selectedAgent : null
+    const skillsText = useSkillStore()
+      .activeSkills.map((skill, index) => `### ${index + 1}. ${skill.name}\n${skill.content}`)
+      .join('\n\n')
 
     try {
       if (engine) {
@@ -539,6 +548,7 @@ export const useAgentStore = defineStore('agent', () => {
           mode: conversation.mode || 'chat',
           automation: conversation.automation || 'default',
           projectSummary: project ? projects.projectSummary(project) : '',
+          skills: skillsText,
           custom:
             engine.id === CUSTOM_ENGINE_ID
               ? { name: localAgentStore.custom.name, command: localAgentStore.custom.command }

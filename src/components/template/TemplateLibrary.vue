@@ -7,7 +7,7 @@
             <div class="tpl-heading">
               <span class="tpl-kicker">Template Library</span>
               <h2>模板库</h2>
-              <p>选一组参考，应用到创作对话里，一次只带一个模板。</p>
+              <p>选一组视觉参考，或带一个蒸馏 Skill 进对话与生成页。</p>
             </div>
             <button type="button" class="tpl-close" aria-label="关闭模板库" @click="close">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
@@ -36,6 +36,16 @@
             >
               我的模板
               <span class="tpl-count">{{ templateStore.groups.length }}</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="templateStore.tab === 'skill'"
+              :class="{ active: templateStore.tab === 'skill' }"
+              @click="switchTab('skill')"
+            >
+              Skill 专区
+              <span class="tpl-count">{{ libraryStore.allSkills.length }}</span>
             </button>
           </div>
 
@@ -107,6 +117,8 @@
               · LemoLab（海报 CC BY 4.0 / 说明 CC BY-NC 4.0）
             </p>
           </div>
+
+          <SkillZone v-else-if="templateStore.tab === 'skill'" />
 
           <div v-else class="tpl-body tpl-custom">
             <div v-if="editorOpen" class="tpl-editor">
@@ -233,7 +245,7 @@
             </template>
           </div>
 
-          <footer class="tpl-foot">
+          <footer v-if="templateStore.tab !== 'skill'" class="tpl-foot">
             <div class="tpl-selection">
               <template v-if="selectedTemplate">
                 <span class="tpl-selection-label">已选择</span>
@@ -272,6 +284,8 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTemplateStore } from '@/stores/templateStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
+import { useSkillLibraryStore } from '@/stores/skillLibraryStore'
+import SkillZone from './SkillZone.vue'
 import { confirmDialog } from '@/features/ui/dialog'
 import {
   MAX_ATTACHMENTS,
@@ -284,6 +298,7 @@ import type { BuiltinTemplate, UserTemplateGroup } from '@/features/template/typ
 
 const templateStore = useTemplateStore()
 const chatMode = useChatModeStore()
+const libraryStore = useSkillLibraryStore()
 const router = useRouter()
 
 const query = ref('')
@@ -335,7 +350,7 @@ function selectGroup(group: UserTemplateGroup) {
   selection.id = group.id
 }
 
-function switchTab(tab: 'builtin' | 'custom') {
+function switchTab(tab: 'builtin' | 'custom' | 'skill') {
   templateStore.tab = tab
   selection.id = ''
 }

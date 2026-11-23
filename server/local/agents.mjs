@@ -317,13 +317,17 @@ export async function getInstalledAgent(id) {
 }
 
 /** 读取项目内的视频澄清协议（与前端系统提示词共用同一份 Skill）。 */
-function readVideoInterviewProtocol(rootDir) {
+function readSkillBody(rootDir, relativePath) {
   try {
-    const raw = fs.readFileSync(path.join(rootDir, 'skills/grill-me/SKILL.md'), 'utf8')
+    const raw = fs.readFileSync(path.join(rootDir, relativePath), 'utf8')
     return raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').trim()
   } catch {
     return ''
   }
+}
+
+function readVideoInterviewProtocol(rootDir) {
+  return readSkillBody(rootDir, 'skills/grill-me/SKILL.md')
 }
 
 /** 把前端对话整理成一次性的 CLI 任务提示词。 */
@@ -335,7 +339,11 @@ export function buildRunPrompt({
   mode = 'chat',
   automation = 'default',
   projectSummary = '',
+  skills = '',
 }) {
+  const activeSkills = typeof skills === 'string' ? skills.trim().slice(0, 20000) : ''
+  const videoScriptProtocol =
+    mode === 'create' ? readSkillBody(rootDir, 'skills/video-script/SKILL.md') : ''
   const history = (Array.isArray(messages) ? messages : [])
     .filter(
       (message) =>
@@ -412,11 +420,22 @@ export function buildRunPrompt({
     '- 能直接完成的任务就直接做，不要只给方案。',
     '- 只修改与当前任务相关的文件，不要执行删除类命令，不要提交 git。',
     '- 用中文回答，先说结果，再简要说明改了什么。',
+    ...(activeSkills
+      ? [
+          '',
+          '## 已启用 Skill（高优先级）',
+          '用户从模板库的 Skill 专区带入了以下能力。回答、脚本与提示词都要按这些规范执行；与用户当轮要求冲突时以用户为准。',
+          activeSkills,
+        ]
+      : []),
     ...modeBlock,
     '',
     '## grill-me 视频创作协议',
     readVideoInterviewProtocol(rootDir) || '（协议文件缺失，按上面的工作原则执行。）',
     '',
+    ...(videoScriptProtocol
+      ? ['## 一句话到可执行脚本（创作对话标准流程）', videoScriptProtocol, '']
+      : []),
     '对话记录：',
     history || '（暂无）',
     '',
