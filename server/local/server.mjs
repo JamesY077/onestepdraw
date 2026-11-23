@@ -163,7 +163,7 @@ const server = http.createServer((req, res) => {
 
   const safePath = path.normalize(pathname).replace(/^(\.\.[/\\])+/, '')
 
-  // 本地环境信息：设置页用它展示 MCP server 的真实绝对路径。
+  // 本地环境信息：设置页用它展示项目在磁盘上的真实路径。
   if (pathname === '/local/info') {
     res.writeHead(200, {
       'Content-Type': 'application/json; charset=utf-8',
@@ -173,7 +173,6 @@ const server = http.createServer((req, res) => {
       JSON.stringify({
         name: 'onestep',
         rootDir,
-        mcpServer: path.join(rootDir, 'server', 'mcp', 'server.mjs'),
         platform: process.platform,
       }),
     )

@@ -1,313 +1,326 @@
 <template>
   <div class="settings-page">
-    <header class="topbar">
-      <div class="topbar-inner">
-        <button class="ghost-btn" @click="router.back()">返回工作台</button>
-        <div class="title-block">
-          <span class="kicker">系统</span>
-          <h1>工作台设置</h1>
+    <div class="settings-shell">
+      <header class="settings-header">
+        <button class="back-btn" type="button" @click="router.back()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14.5 6 8.5 12l6 6" />
+          </svg>
+          返回
+        </button>
+
+        <div class="header-title">
+          <h1>设置</h1>
+          <p>全部配置只保存在这台设备上，不会上传到任何服务器。</p>
         </div>
+
+        <span :class="['status-pill', apiStore.isConnected ? 'ok' : 'idle']">
+          <i aria-hidden="true" />
+          {{ apiStore.isConnected ? '已连接' : '未验证' }}
+        </span>
+      </header>
+
+      <div class="settings-body">
+        <aside class="settings-nav" aria-label="设置分区">
+          <span class="nav-label">分区</span>
+          <button
+            v-for="item in navItems"
+            :key="item.id"
+            type="button"
+            :class="['nav-item', { active: activeSection === item.id }]"
+            @click="scrollToSection(item.id)"
+          >
+            {{ item.label }}
+          </button>
+          <div class="nav-foot">
+            <span>OneStep</span>
+            <span>v1.2.0</span>
+          </div>
+        </aside>
+
+        <main class="settings-main">
+          <!-- 账号与连接 -->
+          <section id="account" class="panel">
+            <div class="panel-head">
+              <h2>账号与连接</h2>
+              <p>OneStep 通过 AIPing 调用模型。密钥只存放在当前浏览器会话中。</p>
+            </div>
+
+            <div class="detail-list">
+              <div class="detail-row">
+                <span class="detail-label">服务地址</span>
+                <span class="detail-value mono">{{ settingsApiBaseUrl }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">API 密钥</span>
+                <span class="detail-value mono">{{ maskedKeyText }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">连接状态</span>
+                <span :class="['tag', apiStore.isConnected ? 'ok' : 'idle']">
+                  {{ apiStore.isConnected ? '已连接' : '未验证' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="panel-actions">
+              <button class="btn ghost" type="button" @click="openEditConfig">编辑配置</button>
+              <button class="btn solid" type="button" :disabled="testing" @click="handleTest">
+                {{ testing ? '正在测试…' : '测试连接' }}
+              </button>
+              <a class="text-link" href="https://aiping.cn/user/apikey" target="_blank" rel="noopener">
+                获取 AIPing 密钥 ↗
+              </a>
+            </div>
+
+            <p v-if="testStatus" :class="['notice', testStatusType]">{{ testStatus }}</p>
+          </section>
+
+          <!-- 创作偏好 -->
+          <section id="creation" class="panel">
+            <div class="panel-head">
+              <h2>创作偏好</h2>
+              <p>控制提示词润色与翻译默认使用的模型。</p>
+            </div>
+
+            <div class="switch-row">
+              <div class="switch-copy">
+                <strong>默认开启 AI 润色</strong>
+                <p>图片页与视频页的「AI 润色」可直接使用；已选 Skill 时会按 Skill 规范补齐画面元素。</p>
+              </div>
+              <button
+                class="toggle-switch"
+                :class="{ on: settingsStore.promptPolishEnabled }"
+                type="button"
+                role="switch"
+                :aria-checked="settingsStore.promptPolishEnabled"
+                aria-label="提示词增强开关"
+                @click="togglePromptPolish"
+              >
+                <span class="toggle-knob" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div class="detail-list">
+              <div class="detail-row">
+                <span class="detail-label">润色模型</span>
+                <span class="detail-value mono">{{ settingsStore.promptPolishModel || defaultPolishModel }}</span>
+              </div>
+            </div>
+
+            <details class="advanced-block">
+              <summary>高级：自定义润色模型与系统提示词</summary>
+              <div class="field">
+                <label for="polish-model">润色模型 ID</label>
+                <input
+                  id="polish-model"
+                  v-model.trim="settingsStore.promptPolishModel"
+                  class="text-input"
+                  :placeholder="defaultPolishModel"
+                  @blur="settingsStore.saveToStorage()"
+                />
+                <a href="https://www.aiping.cn/modelList" target="_blank" rel="noopener" class="text-link">
+                  查看官方模型列表 ↗
+                </a>
+              </div>
+              <div class="field">
+                <label for="polish-system-prompt">系统提示词</label>
+                <textarea
+                  id="polish-system-prompt"
+                  v-model.trim="settingsStore.promptPolishSystemPrompt"
+                  class="text-area"
+                  :placeholder="defaultPolishSystemPrompt"
+                  @blur="settingsStore.saveToStorage()"
+                />
+                <p class="field-hint">留空时使用默认优化提示词。</p>
+              </div>
+            </details>
+
+            <div class="panel-actions">
+              <button class="btn ghost" type="button" @click="resetPolishPrompt">恢复默认</button>
+              <button class="btn solid" type="button" @click="savePolishSettings">保存</button>
+            </div>
+            <p v-if="polishStatus" class="notice success">{{ polishStatus }}</p>
+
+            <div class="divider" />
+
+            <div class="sub-block">
+              <div class="sub-head">
+                <h3>翻译模型</h3>
+                <p>配音页点击「翻译」时使用，留空回落到 {{ defaultTranslationModel }}。</p>
+              </div>
+              <div class="field">
+                <label for="translation-model">模型 ID</label>
+                <input
+                  id="translation-model"
+                  v-model.trim="settingsStore.translationModel"
+                  class="text-input"
+                  :placeholder="defaultTranslationModel"
+                  @blur="handleTranslationModelBlur"
+                />
+              </div>
+              <div class="panel-actions">
+                <button class="btn ghost" type="button" @click="resetTranslationModel">恢复默认</button>
+                <button class="btn solid" type="button" @click="saveTranslationSettings">保存</button>
+              </div>
+              <p v-if="translationStatus" class="notice success">{{ translationStatus }}</p>
+            </div>
+          </section>
+
+          <!-- 默认 Skill -->
+          <section id="skills" class="panel">
+            <div class="panel-head">
+              <h2>默认 Skill</h2>
+              <p>这些内置设计规范默认参与每次图片生成，与生图页选中的风格合并下发。</p>
+            </div>
+
+            <div class="skill-list">
+              <div v-for="skill in defaultQualitySkills" :key="skill.id" class="skill-row">
+                <div class="skill-copy">
+                  <strong>{{ skill.name }}</strong>
+                  <small>{{ skill.description }}</small>
+                  <a
+                    v-if="skill.source"
+                    class="text-link"
+                    :href="skill.source"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    原始 Skill 仓库 ↗
+                  </a>
+                </div>
+                <button
+                  class="toggle-switch"
+                  :class="{ on: skillStore.isDefaultQualitySkillEnabled(skill.id) }"
+                  type="button"
+                  role="switch"
+                  :aria-checked="skillStore.isDefaultQualitySkillEnabled(skill.id)"
+                  :aria-label="`${skillStore.isDefaultQualitySkillEnabled(skill.id) ? '关闭' : '开启'} ${skill.name}`"
+                  @click="skillStore.setDefaultQualitySkillEnabled(skill.id, !skillStore.isDefaultQualitySkillEnabled(skill.id))"
+                >
+                  <span class="toggle-knob" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            <div class="panel-actions">
+              <button class="btn ghost" type="button" @click="skillStore.enableAllDefaultQualitySkills()">
+                全部开启
+              </button>
+            </div>
+          </section>
+
+          <!-- 安装到 Agent -->
+          <section id="agent" class="panel">
+            <div class="panel-head">
+              <h2>安装到你的 Agent</h2>
+              <p>OneStep 是纯本地项目，不依赖云端托管。把下面的指令交给你的 Agent，它会自己克隆仓库、安装依赖并启动。</p>
+            </div>
+
+            <div class="repo-bar">
+              <span class="repo-label">GitHub</span>
+              <a class="repo-url" :href="repoUrl" target="_blank" rel="noopener">{{ repoUrlLabel }}</a>
+              <button class="btn tiny" type="button" @click="copyRepo">
+                {{ repoCopied ? '已复制' : '复制地址' }}
+              </button>
+            </div>
+
+            <div class="agent-tabs" role="tablist" aria-label="Agent 客户端">
+              <button
+                v-for="tab in agentTabs"
+                :key="tab.key"
+                type="button"
+                role="tab"
+                class="agent-tab"
+                :class="{ active: agentTab === tab.key }"
+                :aria-selected="agentTab === tab.key"
+                @click="agentTab = tab.key"
+              >
+                {{ tab.label }}
+              </button>
+            </div>
+
+            <p class="agent-hint">{{ activeAgentTab.hint }}</p>
+
+            <pre class="agent-code">{{ activeAgentTab.prompt }}</pre>
+
+            <div class="panel-actions">
+              <button class="btn solid" type="button" @click="copyAgentPrompt">
+                {{ agentCopied ? '已复制指令' : '复制指令' }}
+              </button>
+              <a class="text-link" :href="repoUrl" target="_blank" rel="noopener">打开仓库 ↗</a>
+            </div>
+
+            <ul class="agent-notes">
+              <li>指令里不包含任何 API Key。首次打开页面时，由你自己填入或更换密钥。</li>
+              <li>项目只监听本机地址，数据与生成的素材都留在本机。</li>
+              <li>若端口被占用，启动脚本会自动顺延，终端里会打印实际地址。</li>
+            </ul>
+          </section>
+
+          <!-- 关于 -->
+          <section id="about" class="panel">
+            <div class="panel-head">
+              <h2>关于与数据</h2>
+              <p>版本信息，以及清除本机数据的入口。</p>
+            </div>
+
+            <div class="detail-list">
+              <div class="detail-row">
+                <span class="detail-label">版本</span>
+                <span class="detail-value">v1.2.0</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">仓库</span>
+                <a class="detail-value text-link" :href="repoUrl" target="_blank" rel="noopener">
+                  {{ repoUrlLabel }}
+                </a>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">文档</span>
+                <a class="detail-value text-link" href="https://aiping.cn/docs" target="_blank" rel="noopener">
+                  aiping.cn/docs
+                </a>
+              </div>
+            </div>
+
+            <div class="danger-block">
+              <div>
+                <strong>退出登录并清除本地会话</strong>
+                <p>会移除当前浏览器中的 API 配置与对话记录，不影响已生成的文件。</p>
+              </div>
+              <button class="btn danger" type="button" @click="handleClear">清除并退出</button>
+            </div>
+          </section>
+        </main>
       </div>
-    </header>
-
-    <main class="content">
-      <section class="hero-card">
-        <div>
-          <span class="kicker">控制中心</span>
-          <h2>把生成环境调顺，一次配置，长期可用。</h2>
-        </div>
-        <p>API 访问、提示词增强、翻译模型与默认 Skill 都集中在这里。改动会自动保存在当前浏览器。</p>
-      </section>
-
-      <section class="card">
-        <div class="section-head">
-          <span class="kicker">连接</span>
-          <h3>API 配置</h3>
-        </div>
-        <div class="info-list">
-          <div class="row row-service-url">
-            <div class="service-url-block">
-              <span class="label">服务地址</span>
-              <input
-                v-model="settingsApiBaseUrl"
-                class="text-input service-url-input"
-                placeholder="https://api.openai.com/v1"
-                readonly
-              />
-              <p class="field-hint">如需修改 Base URL 或 API Key，请先点击“编辑配置”。</p>
-              <a
-                class="helper-link"
-                href="https://aiping.cn/user/apikey"
-                target="_blank"
-                rel="noopener"
-              >
-                快速获取AI Ping-APIKEY
-              </a>
-            </div>
-          </div>
-          <div class="row">
-            <span class="label">API 密钥</span>
-            <span class="value">{{ maskedKeyText }}</span>
-          </div>
-          <div class="row">
-            <span class="label">状态</span>
-            <span :class="['status', apiStore.isConnected ? 'connected' : 'unknown']">
-              {{ apiStore.isConnected ? '已连接' : '未验证' }}
-            </span>
-          </div>
-        </div>
-        <div class="btn-row">
-          <button class="ghost-btn" @click="openEditConfig">编辑配置</button>
-          <button class="primary-btn" :disabled="testing" @click="handleTest">
-            {{ testing ? '正在测试...' : '测试连接' }}
-          </button>
-        </div>
-        <div v-if="testStatus" :class="['status-msg', testStatusType]">{{ testStatus }}</div>
-      </section>
-
-      <section class="card polish-card">
-        <div class="section-head">
-          <span class="kicker">提示词优化</span>
-          <h3>提示词增强</h3>
-        </div>
-
-        <div class="setting-toggle-row">
-          <div class="setting-toggle-text">
-            <strong>默认开启 AI 润色</strong>
-            <p class="field-hint">开启后，图片页与视频页的「AI 润色」按钮可直接使用，无需再填写模型 ID。已选 Skill 时，润色会按 Skill 规范改写提示词并补齐必要画面元素。</p>
-          </div>
-          <button
-            class="toggle-switch"
-            :class="{ on: settingsStore.promptPolishEnabled }"
-            type="button"
-            role="switch"
-            :aria-checked="settingsStore.promptPolishEnabled"
-            aria-label="提示词增强开关"
-            @click="togglePromptPolish"
-          >
-            <span class="toggle-knob" aria-hidden="true" />
-          </button>
-        </div>
-
-        <div class="info-list">
-          <div class="row">
-            <span class="label">优化模型</span>
-            <span class="value">{{ settingsStore.promptPolishModel || defaultPolishModel }}</span>
-          </div>
-          <div class="row">
-            <span class="label">调用状态</span>
-            <span :class="['status', settingsStore.promptPolishEnabled ? 'connected' : 'unknown']">
-              {{ settingsStore.promptPolishEnabled ? '已开启' : '已关闭' }}
-            </span>
-          </div>
-        </div>
-        <p class="field-hint">默认使用 {{ defaultPolishModel }}，可直接在前端点击优化，无需任何额外配置。</p>
-
-        <details class="advanced-block">
-          <summary>高级：自定义优化模型与系统提示词</summary>
-          <div class="input-group">
-            <label for="polish-model">优化模型 ID</label>
-            <input
-              id="polish-model"
-              v-model.trim="settingsStore.promptPolishModel"
-              class="text-input"
-              :placeholder="defaultPolishModel"
-              @blur="settingsStore.saveToStorage()"
-            />
-            <a href="https://www.aiping.cn/modelList" target="_blank" rel="noopener" class="helper-link">
-              查看官方模型列表
-            </a>
-          </div>
-          <div class="input-group">
-            <label for="polish-system-prompt">系统提示词</label>
-            <textarea
-              id="polish-system-prompt"
-              v-model.trim="settingsStore.promptPolishSystemPrompt"
-              class="text-area"
-              :placeholder="defaultPolishSystemPrompt"
-              @blur="settingsStore.saveToStorage()"
-            />
-            <p class="field-hint">留空时将使用默认优化提示词。</p>
-          </div>
-        </details>
-
-        <div class="btn-row">
-          <button class="ghost-btn" @click="resetPolishPrompt">恢复默认</button>
-          <button class="primary-btn" @click="savePolishSettings">保存提示词设置</button>
-        </div>
-        <div v-if="polishStatus" class="status-msg success">{{ polishStatus }}</div>
-      </section>
-
-      <section class="card">
-        <div class="section-head">
-          <span class="kicker">文案工具</span>
-          <h3>翻译设置</h3>
-        </div>
-        <div class="input-group">
-          <label for="translation-model">翻译模型 ID</label>
-          <input
-            id="translation-model"
-            v-model.trim="settingsStore.translationModel"
-            class="text-input"
-            :placeholder="defaultTranslationModel"
-            @blur="handleTranslationModelBlur"
-          />
-          <p class="field-hint">
-            配音页点击「翻译」时使用此模型；留空会回落到 {{ defaultTranslationModel }}。
-          </p>
-          <a href="https://www.aiping.cn/modelList" target="_blank" rel="noopener" class="helper-link">
-            查看官方模型列表
-          </a>
-        </div>
-        <div class="btn-row">
-          <button class="ghost-btn" @click="resetTranslationModel">恢复默认</button>
-          <button class="primary-btn" @click="saveTranslationSettings">保存翻译设置</button>
-        </div>
-        <div v-if="translationStatus" class="status-msg success">{{ translationStatus }}</div>
-      </section>
-
-      <section class="card skill-settings-card">
-        <div class="section-head">
-          <span class="kicker">默认 Skill</span>
-          <h3>内置图片设计规范</h3>
-        </div>
-        <p class="field-hint">
-          这三个内置 Skill 默认参与每次图片生成，与生图页多选的风格 Skill 合并后一起下发。
-        </p>
-        <div class="skill-toggle-list">
-          <div v-for="skill in defaultQualitySkills" :key="skill.id" class="skill-toggle-row">
-            <div class="skill-toggle-text">
-              <strong>{{ skill.name }}</strong>
-              <small>{{ skill.description }}</small>
-              <a
-                v-if="skill.source"
-                class="skill-source-link"
-                :href="skill.source"
-                target="_blank"
-                rel="noopener"
-              >
-                原始 Skill 仓库 ↗
-              </a>
-            </div>
-            <button
-              class="toggle-switch"
-              :class="{ on: skillStore.isDefaultQualitySkillEnabled(skill.id) }"
-              type="button"
-              role="switch"
-              :aria-checked="skillStore.isDefaultQualitySkillEnabled(skill.id)"
-              :aria-label="`${skillStore.isDefaultQualitySkillEnabled(skill.id) ? '关闭' : '开启'} ${skill.name}`"
-              @click="skillStore.setDefaultQualitySkillEnabled(skill.id, !skillStore.isDefaultQualitySkillEnabled(skill.id))"
-            >
-              <span class="toggle-knob" aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-        <div class="btn-row">
-          <button class="ghost-btn" type="button" @click="skillStore.enableAllDefaultQualitySkills()">
-            全部开启
-          </button>
-        </div>
-      </section>
-
-      <section class="card mcp-card">
-        <div class="section-head">
-          <span class="kicker">Agent 接入</span>
-          <h3>让外部 Agent 调用 OneStep</h3>
-        </div>
-        <p class="mcp-lead">
-          OneStep 自带一个本地 MCP Server。把下面的配置复制到 Claude Code、Cursor、Codex 或 Claude Desktop，
-          这些 Agent 就能直接调用 OneStep 的图片与视频生成能力。默认使用 Seedream 5.0 Lite 与 MiniMax H3。
-        </p>
-
-        <div class="mcp-tabs" role="tablist" aria-label="Agent 客户端">
-          <button
-            v-for="tab in mcpTabs"
-            :key="tab.key"
-            type="button"
-            role="tab"
-            class="mcp-tab"
-            :class="{ active: mcpTab === tab.key }"
-            :aria-selected="mcpTab === tab.key"
-            @click="mcpTab = tab.key"
-          >
-            {{ tab.label }}
-          </button>
-        </div>
-
-        <pre class="mcp-code">{{ activeMcpTab.snippet }}</pre>
-
-        <div class="mcp-actions">
-          <button class="ghost-btn" type="button" @click="copyMcpSnippet">
-            {{ mcpCopied ? '已复制' : '复制配置' }}
-          </button>
-          <span class="mcp-hint">{{ activeMcpTab.hint }}</span>
-        </div>
-
-        <div class="mcp-notes">
-          <p><strong>可用工具</strong>：generate_image、generate_video、check_video。</p>
-          <p><strong>默认参数</strong>：图片 16:9；视频 16:9、768P、5 秒。Agent 也可以指定比例、2K 分辨率与 4–15 秒时长。</p>
-          <p><strong>自定义接口</strong>：如需改服务地址，在配置的 env 中加入 <code>AIPING_BASE_URL</code>。</p>
-          <p class="mcp-key-hint">配置里的 API Key 来自当前登录账号，请勿把这段配置分享给他人。</p>
-        </div>
-      </section>
-
-      <section class="card about-card">
-        <div class="section-head">
-          <span class="kicker">关于</span>
-          <h3>项目信息</h3>
-        </div>
-        <div class="info-list">
-          <div class="row">
-            <span class="label">版本</span>
-            <span class="value">v1.2.0</span>
-          </div>
-          <div class="row">
-            <span class="label">文档</span>
-            <a href="https://aiping.cn/docs" target="_blank" rel="noopener" class="link">aiping.cn/docs</a>
-          </div>
-        </div>
-      </section>
-
-      <section class="card danger-card">
-        <div class="section-head">
-          <span class="kicker">重置</span>
-          <h3>退出登录并清除本地会话</h3>
-        </div>
-        <p class="danger-copy">这会从当前浏览器中移除 API 配置以及本地会话记录。</p>
-        <button class="danger-btn" @click="handleClear">清除并退出登录</button>
-      </section>
-    </main>
+    </div>
 
     <StudioIsland />
 
     <div v-if="showEditConfig" class="modal-overlay" @click.self="showEditConfig = false">
       <div class="modal">
-        <span class="kicker">编辑配置</span>
         <h3>更新 API 访问信息</h3>
-        <div class="input-group">
+        <p class="modal-lead">密钥只保存在当前浏览器会话中。</p>
+        <div class="field">
           <label for="edit-base-url">服务地址</label>
           <input
             id="edit-base-url"
             v-model="newApiBaseUrl"
             class="text-input"
-            placeholder="https://api.openai.com/v1"
+            placeholder="https://aiping.cn/api/v1"
           />
-          <p class="field-hint">服务地址可自由填写，仅支持 OpenAI baseURL 格式，例如：https://api.openai.com/v1。</p>
+          <p class="field-hint">需要 OpenAI baseURL 格式，例如：https://aiping.cn/api/v1。</p>
         </div>
         <ApiKeyInput v-model="newApiKey" />
-        <a
-          class="helper-link"
-          href="https://aiping.cn/user/apikey"
-          target="_blank"
-          rel="noopener"
-        >
-          快速获取AI Ping-APIKEY
+        <a class="text-link" href="https://aiping.cn/user/apikey" target="_blank" rel="noopener">
+          获取 AIPing 密钥 ↗
         </a>
-        <div v-if="editStatus" :class="['status-msg', editStatusType]">{{ editStatus }}</div>
-        <div class="btn-row">
-          <button class="ghost-btn" @click="showEditConfig = false">取消</button>
-          <button class="primary-btn" :disabled="!newApiBaseUrl || !newApiKey || saving" @click="handleSaveConfig">
-            {{ saving ? '正在保存...' : '保存修改' }}
+        <p v-if="editStatus" :class="['notice', editStatusType]">{{ editStatus }}</p>
+        <div class="panel-actions">
+          <button class="btn ghost" type="button" @click="showEditConfig = false">取消</button>
+          <button class="btn solid" type="button" :disabled="!newApiBaseUrl || !newApiKey || saving" @click="handleSaveConfig">
+            {{ saving ? '正在保存…' : '保存修改' }}
           </button>
         </div>
       </div>
@@ -316,7 +329,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import ApiKeyInput from '@/components/ApiKeyInput.vue'
 import StudioIsland from '@/components/StudioIsland.vue'
@@ -360,87 +373,135 @@ const defaultTranslationModel = DEFAULT_TRANSLATION_MODEL
 
 const maskedKeyText = computed(() => (apiStore.apiKey ? maskApiKey(apiStore.apiKey) : '未设置'))
 
-type McpTabKey = 'claude-code' | 'cursor' | 'codex' | 'claude-desktop'
-const mcpTab = ref<McpTabKey>('claude-code')
-const mcpCopied = ref(false)
-const mcpServerPath = ref('<OneStep 项目目录>/server/mcp/server.mjs')
+/* ---------------------------------- 分区导航 ---------------------------------- */
 
-const mcpApiKey = computed(() => apiStore.apiKey || 'sk-你的AIPing密钥')
+const navItems = [
+  { id: 'account', label: '账号与连接' },
+  { id: 'creation', label: '创作偏好' },
+  { id: 'skills', label: '默认 Skill' },
+  { id: 'agent', label: '安装到 Agent' },
+  { id: 'about', label: '关于与数据' },
+]
+const activeSection = ref('account')
+let observer: IntersectionObserver | null = null
 
-const mcpTabs = computed<Array<{ key: McpTabKey; label: string; hint: string; snippet: string }>>(() => {
-  const serverPath = mcpServerPath.value
-  const key = mcpApiKey.value
+function scrollToSection(id: string) {
+  activeSection.value = id
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
-  return [
-    {
-      key: 'claude-code',
-      label: 'Claude Code',
-      hint: '在终端执行一次，之后可在任意目录使用。',
-      snippet: `claude mcp add onestep -e AIPING_API_KEY=${key} -- node "${serverPath}"`,
+function setupSectionObserver() {
+  if (typeof IntersectionObserver === 'undefined') return
+  observer = new IntersectionObserver(
+    (entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+      if (visible?.target?.id) activeSection.value = visible.target.id
     },
-    {
-      key: 'cursor',
-      label: 'Cursor',
-      hint: '写入项目根目录 .cursor/mcp.json，或在 Cursor 设置的 MCP 面板中添加。',
-      snippet: JSON.stringify(
-        {
-          mcpServers: {
-            onestep: {
-              command: 'node',
-              args: [serverPath],
-              env: { AIPING_API_KEY: key },
-            },
-          },
-        },
-        null,
-        2,
-      ),
-    },
-    {
-      key: 'codex',
-      label: 'Codex',
-      hint: '写入 ~/.codex/config.toml，重启 Codex 后生效。',
-      snippet: [
-        '[mcp_servers.onestep]',
-        'command = "node"',
-        `args = [${JSON.stringify(serverPath)}]`,
-        `env = { AIPING_API_KEY = ${JSON.stringify(key)} }`,
-      ].join('\n'),
-    },
-    {
-      key: 'claude-desktop',
-      label: 'Claude Desktop',
-      hint: '写入 claude_desktop_config.json，重启 Claude Desktop 后生效。',
-      snippet: JSON.stringify(
-        {
-          mcpServers: {
-            onestep: {
-              command: 'node',
-              args: [serverPath],
-              env: { AIPING_API_KEY: key },
-            },
-          },
-        },
-        null,
-        2,
-      ),
-    },
-  ]
-})
+    { rootMargin: '-12% 0px -55% 0px', threshold: [0.05, 0.3, 0.6] },
+  )
+  navItems.forEach((item) => {
+    const element = document.getElementById(item.id)
+    if (element) observer?.observe(element)
+  })
+}
 
-const activeMcpTab = computed(
-  () => mcpTabs.value.find((tab) => tab.key === mcpTab.value) || mcpTabs.value[0],
+/* ---------------------------------- Agent 安装 ---------------------------------- */
+
+const repoUrl = 'https://github.com/JamesY077/onestepdraw'
+const repoUrlLabel = 'github.com/JamesY077/onestepdraw'
+const localRootDir = ref('<OneStep 项目目录>')
+
+type AgentTabKey = 'claude-code' | 'cursor' | 'codex' | 'local'
+const agentTab = ref<AgentTabKey>('claude-code')
+const agentCopied = ref(false)
+const repoCopied = ref(false)
+
+const installPrompt = computed(() =>
+  [
+    '请帮我在这台电脑上安装并运行 OneStep：',
+    '',
+    `1. 克隆仓库：git clone ${repoUrl}.git ~/onestepdraw`,
+    '2. 进入目录后运行 npm install',
+    '3. 运行 npm start，完成后把访问地址告诉我（默认 http://127.0.0.1:5500，端口被占用会自动顺延）',
+    '4. 打开页面后，由我自己填写 AIPing API Key：https://aiping.cn/user/apikey',
+    '',
+    '注意：这是纯本地离线项目，不需要你读取、写入或向我索要任何密钥，也不要把项目内容上传到第三方服务。',
+  ].join('\n'),
 )
 
-async function copyMcpSnippet() {
+const localPrompt = computed(() =>
+  [
+    'OneStep 已经安装在这台电脑上：',
+    '',
+    `项目目录：${localRootDir.value}`,
+    '',
+    '请进入这个目录并完成以下事情：',
+    '1. 先阅读 README.md 了解项目结构与启动方式',
+    '2. 运行 npm install（依赖已存在可跳过）',
+    '3. 运行 npm start，完成后把访问地址告诉我',
+    '4. 后续改代码时直接修改 src/ 下的文件，改完运行 npm run build',
+    '',
+    '注意：这是纯本地离线项目，AIPing API Key 由我在页面里自行填写，不需要你处理任何密钥。',
+  ].join('\n'),
+)
+
+const agentTabs = computed<Array<{ key: AgentTabKey; label: string; hint: string; prompt: string }>>(() => [
+  {
+    key: 'claude-code',
+    label: 'Claude Code',
+    hint: '在任意目录运行 claude，然后把指令发给它。',
+    prompt: installPrompt.value,
+  },
+  {
+    key: 'cursor',
+    label: 'Cursor',
+    hint: '在 Cursor 中新开一个对话，把指令粘贴给 Agent。',
+    prompt: installPrompt.value,
+  },
+  {
+    key: 'codex',
+    label: 'Codex',
+    hint: '在终端运行 codex，把指令粘贴进去。',
+    prompt: installPrompt.value,
+  },
+  {
+    key: 'local',
+    label: '本地已安装',
+    hint: '已经下载过本项目时，让 Agent 直接基于本地目录工作。',
+    prompt: localPrompt.value,
+  },
+])
+
+const activeAgentTab = computed(
+  () => agentTabs.value.find((tab) => tab.key === agentTab.value) || agentTabs.value[0],
+)
+
+async function copyText(text: string) {
   try {
-    await navigator.clipboard.writeText(activeMcpTab.value.snippet)
-    mcpCopied.value = true
-    window.setTimeout(() => {
-      mcpCopied.value = false
-    }, 1600)
+    await navigator.clipboard.writeText(text)
+    return true
   } catch {
-    // 剪贴板不可用时忽略，用户仍可手动选中复制。
+    return false
+  }
+}
+
+async function copyAgentPrompt() {
+  if (await copyText(activeAgentTab.value.prompt)) {
+    agentCopied.value = true
+    window.setTimeout(() => {
+      agentCopied.value = false
+    }, 1600)
+  }
+}
+
+async function copyRepo() {
+  if (await copyText(repoUrl)) {
+    repoCopied.value = true
+    window.setTimeout(() => {
+      repoCopied.value = false
+    }, 1600)
   }
 }
 
@@ -449,8 +510,8 @@ async function loadLocalInfo() {
     const response = await fetch('/local/info', { cache: 'no-store' })
     if (!response.ok) return
     const data = await response.json()
-    if (typeof data?.mcpServer === 'string' && data.mcpServer) {
-      mcpServerPath.value = data.mcpServer
+    if (typeof data?.rootDir === 'string' && data.rootDir) {
+      localRootDir.value = data.rootDir
     }
   } catch {
     // 静态托管环境下保留占位路径。
@@ -461,7 +522,15 @@ onMounted(() => {
   settingsStore.loadFromStorage()
   skillStore.loadFromStorage()
   void loadLocalInfo()
+  setupSectionObserver()
 })
+
+onUnmounted(() => {
+  observer?.disconnect()
+  observer = null
+})
+
+/* ---------------------------------- 账号操作 ---------------------------------- */
 
 function openEditConfig() {
   newApiBaseUrl.value = apiStore.apiBaseUrl || AIPING_PUBLIC_API_BASE_URL
@@ -489,7 +558,7 @@ async function handleTest() {
 async function handleSaveConfig() {
   if (!newApiBaseUrl.value.trim() || !newApiKey.value.trim()) return
   if (!isOpenAiBaseUrlFormat(newApiBaseUrl.value)) {
-    editStatus.value = '服务地址格式不正确，请填写 OpenAI baseURL 格式，例如：https://api.openai.com/v1。'
+    editStatus.value = '服务地址格式不正确，请填写 OpenAI baseURL 格式，例如：https://aiping.cn/api/v1。'
     editStatusType.value = 'error'
     return
   }
@@ -519,6 +588,8 @@ function handleClear() {
     router.replace('/setup')
   }
 }
+
+/* ---------------------------------- 创作偏好 ---------------------------------- */
 
 function savePolishSettings() {
   settingsStore.saveToStorage()
@@ -574,400 +645,466 @@ function resetTranslationModel() {
 <style scoped>
 .settings-page {
   min-height: 100dvh;
-  padding: 20px;
-  color: rgba(29, 29, 27, 0.92);
-  background: #ffffff;
+  padding: 28px 24px 48px;
+  color: #1d1d1b;
+  background: #fbfbf9;
 }
 
-/* 为右侧悬浮岛留出通道，避免遮住卡片操作区 */
 @media (min-width: 901px) {
   .settings-page {
-    padding-right: 86px;
+    padding-right: 104px;
   }
 }
 
-.settings-page::before {
-  display: none;
-}
-
-.topbar-inner,
-.content,
-.modal {
-  width: min(100%, var(--page-max-width, 1480px));
+.settings-shell {
+  width: min(100%, 1180px);
   margin: 0 auto;
 }
 
-.topbar {
-  padding-bottom: 18px;
-}
+/* ---------------------------------- 顶部 ---------------------------------- */
 
-.topbar-inner {
+.settings-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 18px;
-  padding: 20px 24px;
-  border: 1px solid var(--color-border);
-  border-radius: 28px;
+  padding: 4px 2px 26px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 34px;
+  padding: 0 12px 0 8px;
+  border: 1px solid #e7e7e0;
+  border-radius: 999px;
   background: #ffffff;
-  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.04);
+  color: #55554f;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease;
 }
 
-.title-block {
+.back-btn:hover {
+  border-color: #c9c9c1;
+  color: #111111;
+}
+
+.back-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.header-title {
   flex: 1;
+  min-width: 0;
 }
 
-.kicker {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--color-text-hint);
+.header-title h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
 }
 
-h1,
-h2,
-h3 {
-  color: var(--color-text);
-  letter-spacing: -0.04em;
+.header-title p {
+  margin: 4px 0 0;
+  color: #8a8a82;
+  font-size: 12.5px;
+  line-height: 1.6;
 }
 
-h1 {
-  font-size: 28px;
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border: 1px solid #e7e7e0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #6d6d65;
+  font-size: 12px;
+  font-weight: 600;
 }
 
-.content {
+.status-pill i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b6b6ae;
+}
+
+.status-pill.ok i {
+  background: #1f9d63;
+}
+
+/* ---------------------------------- 布局 ---------------------------------- */
+
+.settings-body {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: 196px minmax(0, 1fr);
+  gap: 36px;
+  align-items: start;
+}
+
+.settings-nav {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-label {
+  padding: 0 10px 8px;
+  color: #a4a49c;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.nav-item {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #77776f;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.nav-item:hover {
+  background: #f1f1ec;
+  color: #1d1d1b;
+}
+
+.nav-item.active {
+  background: #f0f0ea;
+  color: #111111;
+  font-weight: 600;
+}
+
+.nav-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18px;
+  padding: 14px 10px 0;
+  border-top: 1px solid #ecece7;
+  color: #b0b0a8;
+  font-size: 11px;
+}
+
+.settings-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
   padding-bottom: 24px;
 }
 
-.hero-card,
-.card {
-  border: 1px solid var(--color-border);
-  border-radius: 28px;
+/* ---------------------------------- 面板 ---------------------------------- */
+
+.panel {
+  scroll-margin-top: 20px;
+  padding: 24px 26px;
+  border: 1px solid #eaeae3;
+  border-radius: 18px;
   background: #ffffff;
-  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.04);
 }
 
-.hero-card {
-  grid-column: 1 / -1;
-  padding: 34px 32px;
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  gap: 18px;
-  align-items: end;
-  background: #fafaf8;
-}
-
-.hero-card h2 {
-  max-width: 12ch;
-  margin-top: 10px;
-  font-size: clamp(34px, 4.4vw, 56px);
-  line-height: 0.98;
-}
-
-.hero-card p,
-.danger-copy {
-  color: var(--color-text-secondary);
-  line-height: 1.8;
-}
-
-.card {
-  padding: 28px;
-}
-
-.section-head {
+.panel-head {
   margin-bottom: 18px;
 }
 
-.section-head h3 {
-  margin-top: 8px;
-  font-size: 24px;
+.panel-head h2 {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
 
-.info-list {
+.panel-head p {
+  max-width: 68ch;
+  margin: 6px 0 0;
+  color: #8a8a82;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.detail-list {
   overflow: hidden;
-  border: 1px solid #e8e8e2;
-  border-radius: 22px;
-  background: #ffffff;
+  border: 1px solid #eeeee8;
+  border-radius: 12px;
 }
 
-.row,
-.btn-row {
+.detail-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 20px;
+  min-height: 46px;
+  padding: 10px 14px;
+  background: #fcfcfa;
 }
 
-.row {
-  padding: 16px 18px;
+.detail-row + .detail-row {
+  border-top: 1px solid #f0f0ea;
 }
 
-.row + .row {
-  border-top: 1px solid #ecece7;
+.detail-label {
+  flex: 0 0 auto;
+  color: #77776f;
+  font-size: 12.5px;
 }
 
-.row-service-url {
-  align-items: stretch;
+.detail-value {
+  min-width: 0;
+  color: #2b2b27;
+  font-size: 12.5px;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
-.service-url-block {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
 }
 
-.label,
-.field-hint,
-.helper-link {
-  color: var(--color-text-secondary);
-  font-size: 13px;
-}
-
-.value,
-.link {
-  color: var(--color-text);
-}
-
-.service-url-value {
-  display: block;
-  width: 100%;
-  padding: 14px 16px;
-  border: 1px solid rgba(17, 17, 16, 0.10);
-  border-radius: 16px;
-  background: #fafaf8;
-  color: #4a4a44;
-  font-size: 13px;
-  line-height: 1.6;
-  word-break: break-all;
-}
-
-.status {
+.tag {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
-  padding: 0 12px;
-  border-radius: var(--radius-pill);
-  font-size: 12px;
-  font-weight: 700;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
 }
 
-.status.connected {
-  background: var(--color-success-soft);
-  color: var(--color-success);
+.tag.ok {
+  background: #edf7f0;
+  color: #1f7a4d;
 }
 
-.status.unknown {
-  background: #f5f5f1;
-  color: var(--color-text-secondary);
+.tag.idle {
+  background: #f4f4ef;
+  color: #77776f;
 }
 
-.ghost-btn,
-.primary-btn,
-.danger-btn {
-  min-height: 44px;
-  padding: 0 18px;
-  border-radius: var(--radius-pill);
-  font-size: 14px;
-  font-weight: 700;
-  transition:
-    transform var(--transition-base),
-    background var(--transition-base),
-    border-color var(--transition-base),
-    opacity var(--transition-base);
-}
-
-.ghost-btn {
-  border: 1px solid var(--color-border);
-  background: rgba(17, 17, 16, 0.08);
-  color: var(--color-text);
-}
-
-.primary-btn {
-  border: 1px solid var(--color-action-border);
-  background: var(--color-action-bg);
-  color: var(--color-action-text);
-  box-shadow: 0 8px 18px rgba(17, 17, 16, 0.16);
-}
-
-.danger-btn {
-  margin-top: 18px;
-  border: 1px solid var(--color-danger-border);
-  background: var(--color-danger-bg);
-  color: var(--color-danger-text);
-}
-
-.ghost-btn:hover,
-.primary-btn:hover,
-.danger-btn:hover {
-  transform: translateY(-1px);
-}
-
-.primary-btn:hover {
-  background: var(--color-action-bg-hover);
-}
-
-.danger-btn:hover {
-  background: #f3c9c6;
-}
-
-.btn-row {
-  margin-top: 18px;
+.panel-actions {
+  display: flex;
+  align-items: center;
   flex-wrap: wrap;
-}
-
-.status-msg {
+  gap: 10px;
   margin-top: 16px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  font-size: 14px;
 }
 
-.status-msg.success {
-  background: var(--color-success-soft);
-  color: var(--color-success);
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 15px;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
-.status-msg.error {
-  background: var(--color-danger-soft);
-  color: var(--color-danger);
+.btn.ghost {
+  border: 1px solid #e7e7e0;
+  background: #ffffff;
+  color: #3d3d38;
 }
 
-.input-group {
-  margin-bottom: 18px;
+.btn.ghost:hover {
+  border-color: #c9c9c1;
+  background: #fafaf7;
+}
+
+.btn.solid {
+  border: 1px solid #111111;
+  background: #111111;
+  color: #ffffff;
+}
+
+.btn.solid:hover {
+  background: #2b2b27;
+}
+
+.btn.solid:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn.danger {
+  border: 1px solid #efd5d2;
+  background: #fdf4f3;
+  color: #b4342c;
+}
+
+.btn.danger:hover {
+  background: #fbe9e7;
+}
+
+.btn.tiny {
+  min-height: 28px;
+  padding: 0 11px;
+  border: 1px solid #e7e7e0;
+  background: #ffffff;
+  color: #55554f;
+  font-size: 11.5px;
+}
+
+.btn.tiny:hover {
+  border-color: #c9c9c1;
+}
+
+.text-link {
+  color: #6d6d65;
+  font-size: 12.5px;
+  text-decoration: none;
+  text-underline-offset: 3px;
+}
+
+.text-link:hover {
+  color: #111111;
+  text-decoration: underline;
+}
+
+.notice {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.notice.success {
+  background: #edf7f0;
+  color: #1f7a4d;
+}
+
+.notice.error {
+  background: #fdf1ef;
+  color: #b4342c;
+}
+
+.divider {
+  height: 1px;
+  margin: 24px 0;
+  background: #f0f0ea;
+}
+
+/* ---------------------------------- 表单 ---------------------------------- */
+
+.field {
+  margin-top: 14px;
 }
 
 label {
   display: block;
-  margin-bottom: 10px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--color-text-secondary);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  margin-bottom: 7px;
+  color: #77776f;
+  font-size: 11.5px;
+  font-weight: 600;
 }
 
 .text-input,
 .text-area {
   width: 100%;
-  border: 1px solid var(--color-border);
-  border-radius: 18px;
+  border: 1px solid #e7e7e0;
+  border-radius: 10px;
   background: #ffffff;
-  color: var(--color-text);
-  transition:
-    border-color var(--transition-base),
-    box-shadow var(--transition-base),
-    background var(--transition-base);
+  color: #1d1d1b;
+  font: inherit;
+  font-size: 13px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .text-input {
-  min-width: 0;
-  padding: 14px 16px;
+  min-height: 40px;
+  padding: 0 12px;
 }
 
 .text-area {
-  min-height: 132px;
-  padding: 16px 18px;
-  line-height: 1.72;
+  min-height: 116px;
+  padding: 11px 12px;
+  line-height: 1.7;
   resize: vertical;
-  outline: none;
-}
-
-.text-input:read-only {
-  color: var(--color-text-secondary);
 }
 
 .text-input:focus,
 .text-area:focus {
   outline: none;
-  border-color: rgba(29, 29, 27, 0.24);
-  box-shadow: 0 0 0 4px rgba(17, 17, 16, 0.06);
-  background: #ffffff;
+  border-color: #b9b9b0;
+  box-shadow: 0 0 0 3px rgba(17, 17, 16, 0.05);
 }
 
-.helper-link {
+.field-hint {
+  margin: 6px 0 0;
+  color: #9d9d95;
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.field .text-link {
   display: inline-block;
-  margin-top: 10px;
-  color: var(--color-accent);
+  margin-top: 8px;
 }
 
-.about-card,
-.danger-card {
-  grid-column: span 1;
-}
+/* ---------------------------------- 开关 ---------------------------------- */
 
-/* ---------- 内置默认 Skill ---------- */
-
-.skill-settings-card {
-  grid-column: 1 / -1;
-}
-
-.skill-toggle-list {
-  display: grid;
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.skill-toggle-row {
+.switch-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
+  gap: 20px;
   padding: 14px 16px;
-  border: 1px solid rgba(17, 17, 16, 0.1);
-  border-radius: 18px;
-  background: rgba(17, 17, 16, 0.04);
+  border: 1px solid #eeeee8;
+  border-radius: 12px;
+  background: #fcfcfa;
 }
 
-.skill-toggle-text {
-  display: grid;
-  gap: 5px;
+.switch-copy {
   min-width: 0;
 }
 
-.skill-toggle-text strong {
-  color: rgba(29, 29, 27, 0.94);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+.switch-copy strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.skill-toggle-text small {
-  color: rgba(29, 29, 27, 0.5);
+.switch-copy p {
+  max-width: 62ch;
+  margin: 4px 0 0;
+  color: #8a8a82;
   font-size: 12px;
-  line-height: 1.55;
-}
-
-.skill-source-link {
-  justify-self: start;
-  color: #66665f;
-  font-size: 10.5px;
-  text-decoration: none;
-}
-
-.skill-source-link:hover {
-  color: #111110;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  line-height: 1.65;
 }
 
 .toggle-switch {
   position: relative;
   flex: 0 0 auto;
-  width: 46px;
-  height: 27px;
+  width: 42px;
+  height: 24px;
+  margin-top: 2px;
   padding: 0;
-  border: 1px solid rgba(17, 17, 16, 0.16);
+  border: 1px solid #deded7;
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.14);
+  background: #e7e7e0;
   cursor: pointer;
-  transition: background 0.25s ease, border-color 0.25s ease;
+  transition: background 200ms ease, border-color 200ms ease;
 }
 
 .toggle-switch.on {
@@ -977,208 +1114,33 @@ label {
 
 .toggle-knob {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 19px;
-  height: 19px;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 1px 3px rgba(17, 17, 16, 0.18);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.18);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .toggle-switch.on .toggle-knob {
-  transform: translateX(19px);
-  background: #fff;
+  transform: translateX(18px);
 }
 
-@media (max-width: 1023px) {
-  .skill-settings-card {
-    grid-column: 1 / -1;
-  }
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: rgba(17, 17, 16, 0.28);
-  backdrop-filter: blur(6px);
-}
-
-.modal {
-  padding: 28px;
-  border: 1px solid var(--color-border);
-  border-radius: 28px;
-  background: #ffffff;
-  box-shadow: 0 24px 80px rgba(17, 17, 16, 0.16);
-}
-
-.modal h3 {
-  margin-top: 8px;
-  margin-bottom: 18px;
-  font-size: 30px;
-}
-
-@media (max-width: 1023px) {
-  .content {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-card,
-  .about-card,
-  .danger-card {
-    grid-column: 1 / -1;
-  }
-
-  .hero-card {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 767px) {
-  .settings-page {
-    padding: 12px;
-  }
-
-  .topbar-inner,
-  .hero-card,
-  .card,
-  .modal {
-    padding: 20px 16px;
-    border-radius: 22px;
-  }
-
-  .topbar-inner,
-  .row,
-  .btn-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .topbar {
-    padding-bottom: 12px;
-  }
-
-  .topbar-inner {
-    gap: 12px;
-  }
-
-  .hero-card h2 {
-    max-width: 100%;
-    font-size: clamp(30px, 9vw, 42px);
-  }
-
-  h1 {
-    font-size: 24px;
-  }
-
-  .ghost-btn,
-  .primary-btn,
-  .danger-btn {
-    width: 100%;
-  }
-
-  .topbar-inner .ghost-btn {
-    width: auto;
-    align-self: flex-start;
-    min-height: 38px;
-    padding: 0 16px;
-  }
-
-  .modal-overlay {
-    padding: 12px;
-    align-items: flex-end;
-  }
-
-  .modal {
-    width: 100%;
-    max-height: min(88dvh, 720px);
-    overflow-y: auto;
-  }
-}
-
-/* ---------- 紧凑布局与提示词增强开关 ---------- */
-
-.hero-card {
-  padding: 24px 26px;
-  align-items: center;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-}
-
-.hero-card h2 {
-  max-width: 30ch;
-  margin-top: 8px;
-  font-size: clamp(22px, 2.4vw, 30px);
-  line-height: 1.24;
-  letter-spacing: -0.02em;
-}
-
-.hero-card p {
-  font-size: 13.5px;
-}
-
-.card {
-  padding: 24px;
-}
-
-.section-head {
-  margin-bottom: 14px;
-}
-
-.section-head h3 {
-  margin-top: 6px;
-  font-size: 20px;
-}
-
-.setting-toggle-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
-  margin-bottom: 12px;
-  border: 1px solid rgba(17, 17, 16, 0.10);
-  border-radius: 18px;
-  background: rgba(17, 17, 16, 0.05);
-}
-
-.setting-toggle-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.setting-toggle-text strong {
-  color: var(--color-text);
-  font-size: 13.5px;
-}
-
-.setting-toggle-text .field-hint {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.polish-card .info-list {
-  margin-bottom: 10px;
-}
+/* ---------------------------------- 高级 / 翻译 ---------------------------------- */
 
 .advanced-block {
   margin-top: 12px;
-  border: 1px dashed rgba(17, 17, 16, 0.14);
-  border-radius: 18px;
-  background: rgba(17, 17, 16, 0.025);
+  border: 1px solid #eeeee8;
+  border-radius: 12px;
+  background: #fcfcfa;
 }
 
 .advanced-block > summary {
-  padding: 12px 16px;
-  color: var(--color-text-secondary);
-  font-size: 12.5px;
+  padding: 11px 14px;
+  color: #6d6d65;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   list-style: none;
@@ -1189,132 +1151,389 @@ label {
 }
 
 .advanced-block[open] > summary {
-  border-bottom: 1px dashed rgba(17, 17, 16, 0.12);
+  border-bottom: 1px solid #eeeee8;
 }
 
-.advanced-block .input-group {
-  padding: 14px 16px 0;
+.advanced-block .field {
+  margin: 0;
+  padding: 12px 14px;
 }
 
-.advanced-block .input-group:last-child {
-  padding-bottom: 14px;
+.advanced-block .field + .field {
+  border-top: 1px solid #f0f0ea;
 }
 
-@media (max-width: 900px) {
-  .settings-page {
-    padding-right: 66px;
-  }
-
-  .hero-card {
-    grid-template-columns: 1fr;
-    padding: 20px;
-  }
+.sub-head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
 }
 
-/* ---------- MCP / Agent 接入 ---------- */
-
-.mcp-card {
-  grid-column: 1 / -1;
+.sub-head p {
+  margin: 4px 0 0;
+  color: #8a8a82;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
-.mcp-lead {
-  max-width: 72ch;
-  margin: 0 0 16px;
-  color: var(--color-text-secondary);
+.sub-block > .field:first-of-type {
+  margin-top: 14px;
+}
+
+/* ---------------------------------- Skill ---------------------------------- */
+
+.skill-list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #eeeee8;
+  border-radius: 12px;
+}
+
+.skill-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 16px;
+  background: #fcfcfa;
+}
+
+.skill-row + .skill-row {
+  border-top: 1px solid #f0f0ea;
+}
+
+.skill-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.skill-copy strong {
   font-size: 13px;
-  line-height: 1.75;
+  font-weight: 600;
 }
 
-.mcp-tabs {
+.skill-copy small {
+  color: #8a8a82;
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.skill-copy .text-link {
+  align-self: flex-start;
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+/* ---------------------------------- Agent ---------------------------------- */
+
+.repo-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #eeeee8;
+  border-radius: 11px;
+  background: #fcfcfa;
+}
+
+.repo-label {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: #efefe9;
+  color: #77776f;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.repo-url {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: #2b2b27;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.repo-url:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.agent-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-top: 16px;
 }
 
-.mcp-tab {
-  min-height: 32px;
-  padding: 0 14px;
-  border: 1px solid #e8e8e2;
+.agent-tab {
+  min-height: 30px;
+  padding: 0 13px;
+  border: 1px solid #e7e7e0;
   border-radius: 999px;
   background: #ffffff;
   color: #6d6d65;
   font: inherit;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
-.mcp-tab:hover {
-  border-color: #d2d2ca;
+.agent-tab:hover {
+  border-color: #c9c9c1;
   color: #1d1d1b;
 }
 
-.mcp-tab.active {
+.agent-tab.active {
   border-color: #111111;
   background: #111111;
   color: #ffffff;
 }
 
-.mcp-code {
-  margin: 0;
-  padding: 16px 18px;
-  overflow-x: auto;
-  border: 1px solid #e8e8e2;
-  border-radius: 16px;
-  background: #fafaf8;
-  color: #2b2b27;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.7;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.mcp-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.mcp-hint {
-  color: #9a9a92;
-  font-size: 12px;
-}
-
-.mcp-notes {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid #f0f0ea;
-}
-
-.mcp-notes p {
-  margin: 0;
-  color: #6d6d65;
-  font-size: 12.5px;
-  line-height: 1.7;
-}
-
-.mcp-notes strong {
-  color: #2b2b27;
-  font-weight: 600;
-}
-
-.mcp-notes code {
-  padding: 1px 5px;
-  border-radius: 5px;
-  background: #f2f2ee;
+.agent-hint {
+  margin: 10px 0 0;
+  color: #9d9d95;
   font-size: 11.5px;
 }
 
-.mcp-key-hint {
-  color: #a4a49c !important;
-  font-size: 11.5px !important;
+.agent-code {
+  max-height: 340px;
+  margin: 10px 0 0;
+  padding: 14px 16px;
+  overflow: auto;
+  border: 1px solid #eeeee8;
+  border-radius: 12px;
+  background: #fcfcfa;
+  color: #3d3d38;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.agent-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 16px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid #f0f0ea;
+  list-style: none;
+}
+
+.agent-notes li {
+  position: relative;
+  padding-left: 14px;
+  color: #8a8a82;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.agent-notes li::before {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #c9c9c1;
+  content: '';
+}
+
+/* ---------------------------------- 危险操作 ---------------------------------- */
+
+.danger-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid #f2e3e1;
+  border-radius: 12px;
+  background: #fffbfa;
+}
+
+.danger-block strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.danger-block p {
+  margin: 4px 0 0;
+  color: #9a8b88;
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+/* ---------------------------------- 弹窗 ---------------------------------- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(17, 17, 16, 0.26);
+  backdrop-filter: blur(6px);
+}
+
+.modal {
+  width: min(100%, 520px);
+  padding: 26px;
+  border: 1px solid #eaeae3;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(17, 17, 16, 0.14);
+}
+
+.modal h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.modal-lead {
+  margin: 6px 0 4px;
+  color: #8a8a82;
+  font-size: 12.5px;
+}
+
+/* ---------------------------------- 响应式 ---------------------------------- */
+
+@media (max-width: 1023px) {
+  .settings-body {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .settings-nav {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    overflow: visible;
+    padding-bottom: 4px;
+  }
+
+  .nav-label,
+  .nav-foot {
+    display: none;
+  }
+
+  .nav-item {
+    flex: 0 0 auto;
+    padding: 7px 12px;
+    border: 1px solid #e7e7e0;
+    border-radius: 999px;
+    background: #ffffff;
+    white-space: nowrap;
+  }
+
+  .nav-item.active {
+    border-color: #111111;
+    background: #111111;
+    color: #ffffff;
+  }
+}
+
+@media (max-width: 767px) {
+  .settings-page {
+    padding: 16px 64px 36px 14px;
+  }
+
+  .settings-header {
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    padding-bottom: 18px;
+  }
+
+  .header-title {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .header-title h1 {
+    font-size: 21px;
+  }
+
+  .status-pill {
+    margin-left: auto;
+  }
+
+  .panel {
+    padding: 20px 18px;
+    border-radius: 16px;
+  }
+
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 11px 12px;
+  }
+
+  .detail-value {
+    text-align: left;
+  }
+
+  .panel-actions .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .switch-row,
+  .skill-row,
+  .danger-block {
+    align-items: flex-start;
+  }
+
+  .switch-row,
+  .danger-block {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .skill-row {
+    gap: 14px;
+  }
+
+  .repo-bar {
+    flex-wrap: wrap;
+  }
+
+  .repo-url {
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .danger-block .btn {
+    width: 100%;
+  }
+
+  .modal-overlay {
+    padding: 12px;
+    align-items: flex-end;
+  }
+
+  .modal {
+    max-height: min(88dvh, 720px);
+    overflow-y: auto;
+    padding: 22px 18px;
+  }
 }
 </style>

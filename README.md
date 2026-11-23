@@ -19,7 +19,7 @@
   - 图片默认 `Seedream 5.0 Lite` + `16:9`；
   - 视频默认 `MiniMax H3` + `16:9` + `768P` + `5s`。
 - **右侧悬浮导航**：对话、Skill、图片、视频、配音、3D、设置固定在页面右侧；移动端折叠为一个按钮。
-- **MCP 接入**：内置零依赖 MCP Server，可让 Claude Code、Cursor、Codex、Claude Desktop 直接调用 OneStep 的图片 / 视频生成能力。
+- **Agent 一键安装**：设置页提供可复制的安装指令，让 Claude Code、Cursor、Codex 自行克隆仓库、安装依赖并启动，指令中不包含任何密钥。
 - **简约白色调**：无首页、无多余入口，整体为浅色界面。
 - **可恢复的登录态**：API Key 保存在 `sessionStorage`，浏览器会话结束时自动清除；登录周期按自然周轮换。
 
@@ -94,50 +94,22 @@ Agent 会先确认缺失的关键参数，然后调用本机模型。生成结�
 | 图片 | Doubao-Seedream-5.0-lite | 16:9（可选 4:3 / 3:4 / 1:1 / 9:16） |
 | 视频 | MiniMax-H3 | 16:9 / 768P / 5 秒（4–15 秒，可选 2K） |
 
-## 接入外部 Agent（MCP）
+## 安装到你的 Agent
 
-项目内置一个零依赖的 MCP Server，通过 stdio 暴露三个工具：
+OneStep 是纯本地项目，不需要云端托管，也不需要在任何平台注册应用。把下面这段指令交给 Claude Code、Cursor 或 Codex，它会自己完成克隆、安装与启动：
 
-- `generate_image`：文生图，返回图片 URL；
-- `generate_video`：创建视频任务，可等待完成或立即返回 `task_id`；
-- `check_video`：查询视频任务状态。
+```text
+请帮我在这台电脑上安装并运行 OneStep：
 
-设置页「Agent 接入」会根据当前账号生成可直接复制的配置。也可以手动运行：
+1. 克隆仓库：git clone https://github.com/JamesY077/onestepdraw.git ~/onestepdraw
+2. 进入目录后运行 npm install
+3. 运行 npm start，完成后把访问地址告诉我（默认 http://127.0.0.1:5500，端口被占用会自动顺延）
+4. 打开页面后，由我自己填写 AIPing API Key：https://aiping.cn/user/apikey
 
-```bash
-AIPING_API_KEY=sk-xxxx node server/mcp/server.mjs
+注意：这是纯本地离线项目，不需要你读取、写入或向我索要任何密钥，也不要把项目内容上传到第三方服务。
 ```
 
-Claude Code：
-
-```bash
-claude mcp add onestep -e AIPING_API_KEY=sk-xxxx -- node "/绝对路径/onestepdraw/server/mcp/server.mjs"
-```
-
-Cursor / Claude Desktop（`mcpServers` 配置）：
-
-```json
-{
-  "mcpServers": {
-    "onestep": {
-      "command": "node",
-      "args": ["/绝对路径/onestepdraw/server/mcp/server.mjs"],
-      "env": { "AIPING_API_KEY": "sk-xxxx" }
-    }
-  }
-}
-```
-
-Codex（`~/.codex/config.toml`）：
-
-```toml
-[mcp_servers.onestep]
-command = "node"
-args = ["/绝对路径/onestepdraw/server/mcp/server.mjs"]
-env = { AIPING_API_KEY = "sk-xxxx" }
-```
-
-可选环境变量：`AIPING_BASE_URL`、`ONESTEP_IMAGE_MODEL`、`ONESTEP_VIDEO_MODEL`。
+首次打开页面时由你自己输入 AIPing 密钥，项目不会把密钥写进仓库或任何配置文件。仓库地址：<https://github.com/JamesY077/onestepdraw>。
 
 ## 技术栈
 
@@ -160,7 +132,6 @@ src/
   views/ApiKeySetup.vue   # 登录页
   views/ChatAgent.vue     # 对话主页
 server/local/server.mjs   # 本地静态服务 + API 代理
-server/mcp/server.mjs     # 零依赖 MCP Server（stdio）
 start-macos.command       # macOS 一键启动
 start-windows.bat         # Windows 一键启动
 ```
