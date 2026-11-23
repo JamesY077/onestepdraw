@@ -218,6 +218,8 @@ function openBrowser(url) {
   })
 }
 
+let started = false
+
 function listen(port, remainingAttempts = 20) {
   server.once('error', (error) => {
     if (error.code === 'EADDRINUSE' && remainingAttempts > 0) {
@@ -229,21 +231,30 @@ function listen(port, remainingAttempts = 20) {
   })
 
   server.listen(port, host, () => {
-    const url = `http://${host}:${port}`
+    if (started) return
+    started = true
+    const address = server.address()
+    const actualPort = typeof address === 'object' && address ? address.port : port
+    const url = `http://${host}:${actualPort}`
     console.log('')
     console.log('  OneStep · 本地 AI 创作助手')
     console.log(`  已启动：${url}`)
+    if (actualPort !== startPort) {
+      console.log(`  端口 ${startPort} 已被占用，已自动切换到 ${actualPort}`)
+    }
     console.log('  按 Ctrl+C 停止服务')
     console.log('')
     openBrowser(url)
   })
 }
 
+const startPort = Number.isFinite(requestedPort) ? requestedPort : 5500
+
 if (!fs.existsSync(distDir)) {
   console.warn('提示：dist 目录不存在，页面会提示先运行 npm run build。')
 }
 
-listen(Number.isFinite(requestedPort) ? requestedPort : 5500)
+listen(startPort)
 
 function shutdown() {
   console.log('\n正在停止 OneStep 本地服务…')
