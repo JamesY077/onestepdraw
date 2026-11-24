@@ -2813,10 +2813,22 @@ onBeforeUnmount(() => {
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   width: min(100% - 48px, var(--studio-max-width));
+  height: calc(100dvh - 128px);
+  min-height: 0;
   margin: 0 auto;
-  padding: 18px 0 80px;
+  padding: 12px 0 16px;
+  overflow: hidden;
+}
+
+/* 两栏区占满剩余高度，各自在栏内滚动 */
+.voice-main > .speech-layout,
+.voice-main > .clone-layout,
+.voice-main > .design-layout {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* ========================= 分区切换 ========================= */
@@ -2906,7 +2918,19 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 400px;
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 左栏自身滚动 */
+.speech-col {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .speech-col {
@@ -3559,9 +3583,12 @@ onBeforeUnmount(() => {
 /* ========================= 参数面板 ========================= */
 
 .control-panel {
-  position: sticky;
-  top: 16px;
-  max-height: calc(100dvh - 200px);
+  position: relative;
+  top: auto;
+  /* 跟随两栏区高度，栏内自己滚动 */
+  height: 100%;
+  max-height: none;
+  min-height: 0;
   overflow: hidden;
 }
 

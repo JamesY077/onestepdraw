@@ -33,6 +33,7 @@
 .studio-page {
   position: relative;
   display: flex;
+  /* 默认纵向：头部一行 + 主体自适应。横向页面（如对话页）在各自样式里覆盖。 */
   flex-direction: column;
   /*
    * 桌面 App 规范：页面占满窗口，滚动只发生在内容区内部，
@@ -51,12 +52,22 @@
   isolation: isolate;
 }
 
-/* 页面主体：占满剩余高度，内部滚动 */
+/* 页面主体：占满剩余高度；默认自身内部滚动 */
 .studio-page > main {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* 横向页面（对话页）：侧栏与主区并排，主区自己管滚动，不要整体再滚一层 */
+.studio-page.is-row {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.studio-page.is-row > main {
+  overflow: hidden;
 }
 
 .studio-page > header,

@@ -1,5 +1,5 @@
 <template>
-  <div class="studio-page chat-page" :class="chatMode.isCreate ? 'is-create' : 'is-chat'">
+  <div class="studio-page is-row chat-page" :class="chatMode.isCreate ? 'is-create' : 'is-chat'">
     <div v-if="sidebarOpen" class="sidebar-backdrop" aria-hidden="true" @click="sidebarOpen = false" />
 
     <AgentSidebar
@@ -566,7 +566,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .chat-page {
-  display: flex;
+  /* 横向页面：左侧会话列表 + 右侧主区 */
+  flex-direction: row;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
@@ -574,9 +575,13 @@ onBeforeUnmount(() => {
   color: var(--sf-ink);
 }
 
-/* 侧栏 + 主区横向排布，右侧导航由 studio-page 统一留白 */
+/* 主区占满剩余宽度并自己滚动，页面本身不滚动 */
 .chat-page > .chat-main {
+  display: flex;
+  flex: 1 1 auto;
   min-width: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .sidebar-slot {
