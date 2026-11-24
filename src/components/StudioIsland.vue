@@ -188,17 +188,16 @@ function go(item: { path: string; key?: string }) {
   align-self: stretch;
   flex-direction: column;
   align-items: center;
+  /* 胶囊固定在容器内垂直居中，并留出与内容区的呼吸边距 */
   justify-content: center;
   gap: 4px;
-  width: 70px;
-  padding: 14px 6px;
+  width: 76px;
+  padding: 16px 8px;
   /* 不能裁剪：气泡要溢出到胶囊左侧 */
   overflow: visible;
 }
 
 .island-shell {
-  position: sticky;
-  top: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;

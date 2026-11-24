@@ -32,10 +32,6 @@
         <span class="mode-tip">{{ modeTip }}</span>
       </div>
 
-      <div v-if="mentionChips.length" class="composer-mentions" aria-label="本条消息引用的内容">
-        <span v-for="chip in mentionChips" :key="chip.key" class="composer-mention-chip">{{ chip.label }}</span>
-      </div>
-
       <div v-if="templateStore.applied.length" class="applied-templates" aria-label="已引用模板">
         <span class="applied-templates-label">模板</span>
         <span
@@ -158,18 +154,18 @@
       <p v-if="attachNotice" class="attach-notice" role="status">{{ attachNotice }}</p>
 
       <div class="composer-field">
-        <textarea
-          ref="textareaRef"
+        <MentionInput
+          ref="mentionInputRef"
           v-model="text"
           class="composer-input"
-          rows="1"
           :placeholder="placeholderText"
-          :disabled="false"
-          @focus="focused = true"
-          @blur="handleBlur"
+          :tokens="mentionTokens"
           @keydown="handleKeydown"
           @input="handleInput"
           @paste="handlePaste"
+          @focus="focused = true"
+          @blur="focused = false"
+          @scroll="syncMentionScroll"
         />
         <MentionMenu
           :open="mention.open.value"
@@ -445,6 +441,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AgentMark from '@/components/agent/AgentMark.vue'
 import MentionMenu, { type MentionGroup, type MentionItem } from '@/components/agent/MentionMenu.vue'
+import MentionInput from '@/components/agent/MentionInput.vue'
 import { useMentionRefs } from '@/composables/useMentionRefs'
 import { BUILTIN_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
@@ -503,8 +500,12 @@ const modelMenuOpen = ref(false)
 const modelQuery = ref('')
 const modelSearchRef = ref<HTMLInputElement | null>(null)
 const text = defineModel<string>({ default: '' })
-const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const mentionInputRef = ref<InstanceType<typeof MentionInput> | null>(null)
+const textareaRef = computed(() => mentionInputRef.value?.getTextarea() || null)
 const mention = useMentionRefs(textareaRef)
+
+/** 输入框里可高亮的引用标记。 */
+const mentionTokens = computed(() => mentionGroups.value.flatMap((group) => group.items.map((item) => item.token)))
 const mentionPosition = computed<Record<string, string> | undefined>(() => ({
   position: 'absolute',
   left: '0',
@@ -570,15 +571,10 @@ const mentionGroups = computed<MentionGroup[]>(() => {
 
 const mentionFlat = computed(() => mentionGroups.value.flatMap((group) => group.items))
 
-/** 输入框里实际出现的 @引用，提交前给用户一个可见的确认。 */
-const mentionChips = computed(() => {
-  const tokens = new Set(mentionGroups.value.flatMap((group) => group.items.map((item) => item.token)))
-  const found: { key: string; label: string }[] = []
-  for (const token of tokens) {
-    if (text.value.includes(token)) found.push({ key: token, label: token })
-  }
-  return found
-})
+/**
+ * 输入框里实际出现的 @引用。
+ * 引用已经用强调色直接标在文字上，这里不再额外占用一行高度。
+ */
 
 function insertMention(item: MentionItem) {
   mention.insert(item.token)
@@ -594,9 +590,6 @@ function handleInput() {
   mention.onInput()
 }
 
-function handleBlur() {
-  focused.value = false
-}
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const focused = ref(false)
 const dragging = ref(false)
@@ -726,11 +719,10 @@ onBeforeUnmount(() => {
 })
 
 function resize() {
-  const textarea = textareaRef.value
-  if (!textarea) return
-  textarea.style.height = 'auto'
-  textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`
+  mentionInputRef.value?.resize()
 }
+
+function syncMentionScroll() {}
 
 watch(text, () => nextTick(resize))
 
@@ -848,7 +840,7 @@ function submit() {
   mention.close()
   nextTick(() => {
     resize()
-    textareaRef.value?.focus()
+    mentionInputRef.value?.focus()
   })
 }
 
@@ -896,7 +888,7 @@ function handleKeydown(event: KeyboardEvent) {
 }
 
 function focus() {
-  textareaRef.value?.focus()
+  mentionInputRef.value?.focus()
 }
 
 defineExpose({ focus })
@@ -1900,6 +1892,17 @@ defineExpose({ focus })
 .composer-field {
   position: relative;
   width: 100%;
+  min-width: 0;
+}
+
+/* 输入框本身由 MentionInput 绘制，这里只保证不撑破容器 */
+.composer-field .composer-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 /* 插入后的 @引用 用主题色标出，便于确认它落在哪一句里 */
@@ -1907,10 +1910,13 @@ defineExpose({ focus })
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 2px 0 8px;
+  max-height: 60px;
+  overflow-y: auto;
 }
 
 .composer-mention-chip {
+  max-width: 180px;
+  overflow: hidden;
   padding: 2px 8px;
   border: 1px solid var(--sf-terra-soft);
   border-radius: 999px;
@@ -1918,5 +1924,7 @@ defineExpose({ focus })
   color: var(--sf-terra);
   font-size: 11.5px;
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>
