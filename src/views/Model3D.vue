@@ -1494,6 +1494,9 @@ const assemblySteps = computed(() => {
 /* ------------------------------------------------------------- 生命周期 */
 
 onMounted(async () => {
+  // 从对话里带过来的建模需求：预填描述
+  const incoming = route.query.prompt
+  if (typeof incoming === 'string' && incoming.trim()) prompt.value = incoming.trim()
   await nextTick()
   if (stageRef.value) {
     viewer = new HologramViewer(stageRef.value)

@@ -712,7 +712,26 @@ export const useAgentStore = defineStore('agent', () => {
     }
 
     // 文本流结束后再执行生成，避免长时间任务占住输入框。
-    if (pendingTool) void runGeneration(conversation, assistant, pendingTool)
+    if (pendingTool) {
+      // 配音 / 3D：本地没有对应的生成卡片，转到对应工作台并把参数填好，
+      // 用户在确认过细节后直接就能开始，不必再复述一遍需求。
+      if (pendingTool.name === 'open_voice' || pendingTool.name === 'open_3d') {
+        routeToStudio(pendingTool)
+        return
+      }
+      void runGeneration(conversation, assistant, pendingTool)
+    }
+  }
+
+  /** 把配音 / 3D 的请求带到对应工作台，参数预先填好。 */
+  function routeToStudio(call: AgentToolCall) {
+    const text = typeof call.args.text === 'string' ? call.args.text : ''
+    const prompt = typeof call.args.prompt === 'string' ? call.args.prompt : ''
+    const target =
+      call.name === 'open_voice'
+        ? { path: '/voice', query: text ? { text } : {} }
+        : { path: '/model3d', query: prompt ? { prompt } : {} }
+    void import('@/router').then(({ default: router }) => router.push(target))
   }
 
   async function sendMessage(rawContent: string, options: AgentSendOptions = {}) {

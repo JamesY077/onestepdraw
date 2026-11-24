@@ -15,7 +15,7 @@ export const AGENT_VIDEO_DEFAULT_DURATION = 5
 export const AGENT_VIDEO_MIN_DURATION = 4
 export const AGENT_VIDEO_MAX_DURATION = 15
 
-export type AgentToolName = 'generate_image' | 'generate_video'
+export type AgentToolName = 'generate_image' | 'generate_video' | 'open_voice' | 'open_3d'
 
 export interface AgentToolCall {
   name: AgentToolName
@@ -31,7 +31,7 @@ export interface AgentTimelineOp {
   value?: number
 }
 
-export const AGENT_TOOL_NAMES: AgentToolName[] = ['generate_image', 'generate_video']
+export const AGENT_TOOL_NAMES: AgentToolName[] = ['generate_image', 'generate_video', 'open_voice', 'open_3d']
 
 const TIMELINE_FENCE = /```onestep-timeline[ \t]*\r?\n([\s\S]*?)```/g
 

@@ -1526,6 +1526,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { confirmDialog, alertDialog } from '@/features/ui/dialog'
 import StudioHeader from '@/components/StudioHeader.vue'
 import AppTopNav from '@/components/AppTopNav.vue'
@@ -1651,6 +1652,7 @@ const CONTROL_TABS = [
 ]
 /** 当前生成结果的显示名，可在结果头部直接修改。 */
 const resultTitle = ref('')
+const route = useRoute()
 const text = ref('')
 const speed = ref(saved.speed)
 const pitch = ref(saved.pitch)
@@ -2898,6 +2900,9 @@ function formatDate(timestamp: number): string {
 
 onMounted(() => {
   settingsStore.loadFromStorage()
+  // 从对话里带过来的配音需求：直接填进文本框，省去复述
+  const incoming = route.query.text
+  if (typeof incoming === 'string' && incoming.trim()) text.value = incoming.trim()
   void loadCatalog()
   void loadHistoryFromLibrary()
 })

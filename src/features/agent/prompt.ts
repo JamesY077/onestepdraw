@@ -44,6 +44,8 @@ function modeBlock(mode: ConversationMode, automation: AutomationMode): string {
       '### 先判断这次到底要什么，再动手',
       '- 要一张图 / 海报 / 封面 / 单帧画面 → 用 generate_image。',
       '- 要一段动态画面 / 镜头 / 分镜成片 → 用 generate_video。',
+      '- 要配音 / 朗读 / 旁白 → 用 open_voice，把要念的文本放进 text 参数。',
+      '- 要 3D 模型 / 建模 / 手办 / 立体物件 → 用 open_3d，把要建的物体写进 prompt 参数。',
       '- 要改已有时间轴上的东西 → 用「时间轴操作」。',
       '- 判断有冲突时，按用户最近一句里的动词与名词决定，不要反复追问同一件事。',
       '',
