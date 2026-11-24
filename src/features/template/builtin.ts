@@ -1,4 +1,5 @@
 import type { BuiltinTemplate, TemplateCategory } from './types'
+import { EXTRA_CATEGORIES, EXTRA_TEMPLATES } from './extra'
 
 /**
  * 内置模板来自 code-animation-prompts（https://github.com/XiaoyeCodes/code-animation-prompts）。
@@ -59,6 +60,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
     label: "奥斯卡 98 部",
     labelEn: "Oscars",
   },
+  ...EXTRA_CATEGORIES,
 ]
 
 export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
@@ -4391,4 +4393,5 @@ export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
     generated: false,
     guide: "风格：一战再战（O98 · 奥斯卡 98 部）\n\n提示词：\n实时 3D，漂白般的沙漠日光。 招牌镜头（3–5 秒）：一条笔直的路在连续起伏的坡谷上，水平视角 2–5°，让坡谷叠成波浪，行进的主体沉下去又冒出来；构图先保坡谷，天空最多留一条窄带。 再接各 1–2 秒的坡顶低机位、车载或骑手机位。 配色：天空 #7fb0e0，雾气 #ece4d2 只在最远的地平线，浅沙色 #d2ae80（不能发橙），硬朗阳光 #fff0d8 从高处侧打，主车是褪色海沫绿 #86b5ad。 反差来自前景：开裂的深色沥青、清晰阴影、茂密的绿灌木、路边桩。 默认正午，其他时段也保持硬光。 热浪扭曲和路面蜃景随距离加重；落地扬尘；车过坡顶腾空、落地弹跳。 大画幅细颗粒（±2%）。 参照保罗·托马斯·安德森《一战再战》（2025）。 避免：广角、发白发灰的画面、粘在路上的车。",
   },
+  ...EXTRA_TEMPLATES,
 ]

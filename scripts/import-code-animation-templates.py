@@ -778,6 +778,7 @@ def main() -> int:
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(
         "import type { BuiltinTemplate, TemplateCategory } from './types'\n\n"
+        "import { EXTRA_CATEGORIES, EXTRA_TEMPLATES } from './extra'\n\n"
         "/**\n"
         f" * 内置模板来自 code-animation-prompts（https://github.com/{REPO}）。\n"
         " * 由 scripts/import-code-animation-templates.py 生成：\n"
@@ -788,9 +789,11 @@ def main() -> int:
         " */\n"
         "export const TEMPLATE_CATEGORIES: TemplateCategory[] = [\n"
         f"{category_rows}\n"
+        "  ...EXTRA_CATEGORIES,\n"
         "]\n\n"
         "export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [\n"
         f"{chr(10).join(rows)}\n"
+        "  ...EXTRA_TEMPLATES,\n"
         "]\n",
         encoding="utf-8",
     )

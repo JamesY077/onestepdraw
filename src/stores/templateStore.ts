@@ -144,7 +144,9 @@ export const useTemplateStore = defineStore('template', () => {
       guide: template.guide,
       // 原素材静帧与 AI 示例图都能当视觉参考；纯占位图不带。
       images:
-        template.still || template.generated ? [templatePosterUrl(template.poster)] : [],
+        template.still || template.generated
+          ? [templatePosterUrl(template.poster), ...(template.references || []).map(templatePosterUrl)]
+          : [],
       source: 'builtin',
     })
   }

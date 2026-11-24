@@ -32,7 +32,7 @@
   - 视频默认 `MiniMax H3` + `16:9` + `768P` + `5s`。
 - **对话模型可选**：选择内置 AIPing 时，输入框会同时出现模型选择器；从 AIPing 模型列表实时拉取对话模型，支持关键字搜索与切换，默认 `DeepSeek-V4.1-Flash-1017`。
 - **参考素材**：普通对话与创作对话都能一次带最多 8 个图片、视频、音频或文本文件；图片直接交给多模态模型看，视频自动抽关键帧，纯文本模型会先做一次视觉分析，本机 Agent 则拿到原文件路径。
-- **模板库**：独立页面 `/templates` 按 10 个系列收录 [code-animation-prompts](https://github.com/XiaoyeCodes/code-animation-prompts) 的 333 种代码动画风格，196 种带参考静帧、137 种由 Seedream 5.0 Lite 生成示例图；可以多选，选中的模板会带着参考图与风格说明一起进入创作对话，也能把常用的参考素材按「一组」存成自己的模板。
+- **模板库**：独立页面 `/templates` 按 11 个系列收录 334 种风格，197 种带参考静帧、137 种由 Seedream 5.0 Lite 生成示例图；主体是 [code-animation-prompts](https://github.com/XiaoyeCodes/code-animation-prompts) 的 333 种代码动画风格，另融合 [wallstreet-explainer](https://github.com/HeyChengC/wallstreet-explainer) 的「华尔街财经解读」；可以多选，选中的模板会带着参考图与风格说明一起进入创作对话，也能把常用的参考素材按「一组」存成自己的模板。
 - **Skill 专区**：模板库第三个页签，内置 10 个从书、长视频、播客、课程里蒸馏出的 Agent Skill；每个都能一键带入创作对话，或带着它跳到图片 / 视频生成。还能粘贴原文现场蒸馏新的 Skill。
 - **右侧悬浮导航**：对话、Skill、图片、视频、配音、3D、设置固定在页面右侧；移动端折叠为一个按钮。
 - **本机 Agent 自动检测**：启动后扫描 PATH、常见安装目录，以及 macOS 桌面应用包内置的命令行入口（例如 `DeepSeek Harness.app` 自带的 `dsh`）；在对话输入框左下角直接切换，选中后由它来执行创作。
@@ -154,17 +154,19 @@ Agent 会先确认缺失的关键参数，然后调用本机模型。生成结�
 
 文件会先传到本机 `generated/uploads/`，返回可访问地址与绝对路径；本机 Agent 拿到的就是这些绝对路径，可以自己用命令行工具读取原文件。如果当前选的是纯文本模型，前端会自动用列表里的多模态模型做一次视觉分析，再把描述交给它；一个多模态模型都没有时会明确说明，而不是假装看过图。
 
-模板库是一个独立页面 `/templates`，对话页顶栏、剪辑台顶栏和输入框的模板按钮都会跳到这里，选完「引用选中模板」再回到进来时的页面。页面内置 [code-animation-prompts](https://github.com/XiaoyeCodes/code-animation-prompts) 的 333 种风格提示词，按原素材的系列分成 10 类：代码样片 26、动态风格 32、卡通画风 38、中国风 15、现成版式 12、参考学习 7、Lemo-Opuscar 59、MG 风格 15、Code Video 31、奥斯卡 98 部 98。原素材 341 条里有 8 条只留了编号、没有正文，没有收录。
+模板库是一个独立页面 `/templates`，对话页顶栏、剪辑台顶栏和输入框的模板按钮都会跳到这里，选完「引用选中模板」再回到进来时的页面。页面内置 334 种风格提示词，按系列分成 11 类：代码样片 26、动态风格 32、卡通画风 38、中国风 15、现成版式 12、参考学习 7、Lemo-Opuscar 59、MG 风格 15、Code Video 31、奥斯卡 98 部 98、财经解读 1。前 10 类来自 [code-animation-prompts](https://github.com/XiaoyeCodes/code-animation-prompts)（原素材 341 条里有 8 条只留了编号、没有正文，没有收录）。
+
+「财经解读」是融合 [wallstreet-explainer](https://github.com/HeyChengC/wallstreet-explainer) 得到的一类：深蓝织物舞台、奶油金大数字、镜头持续慢推，图形只演钱和关系，新闻原文与当事人实拍占四成以上。应用时会同时带上 5 张参考静帧（大数字 / 片名 / 算账 / 原文刷黄 / 图表），风格说明见 `src/features/template/guides/wallstreet-explainer.md`；完整方法论（硬规则、动效、竖屏 29 个组件）留档在 `docs/wallstreet-explainer/`。
 
 - 196 种带原素材的参考静帧，卡片直接显示真实画面；
 - 其余 137 种只有文字提示词，用 Seedream 5.0 Lite 按各自的风格说明生成 16:9 示例图，卡片右上角标「AI 示例」，和原素材静帧区分开；
-- 每个模板都带一份压缩到 2100 字以内的风格说明（画面规则、颜色、字体、版式、动效、避免项），应用时和预览图一起带进对话；
+- 每个模板都带一份压缩过的风格说明（约 2000–2600 字：画面规则、颜色、字体、版式、动效、避免项），应用时和预览图一起带进对话；
 - 模板可以同时引用多个，没有数量上限；应用后自动切回创作对话，输入框上方按 @模板1 / @模板2 排成小组件，参考图与风格说明一起带进这一轮消息；
 - 「我的模板」可以新建分组，每组最多 8 个参考素材并写一句用法说明，保存在本机 `localStorage`（`onestep_template_groups_v1`）；
 - 引用的模板会显示在输入框上方，可单独点 × 移除或一次清空；发完消息后自动清空，已发送的消息里保留模板引用；
 - 搜索覆盖风格名、编号（如 `B3`）和分类；
-- 素材来自 `code-animation-prompts`（原素材整理：哔哩哔哩「俯仰观照」），免费使用与转发，禁止包装成付费课程或付费 skill 销售；Lemo-Opuscar / mg-styles-15 / code-video 三个来源保留原 MIT 许可与署名；
-- 更新风格数据：`python3 scripts/import-code-animation-templates.py` 从镜像拉取提示词与静帧，压成 `src/features/template/builtin.ts`，并把 560px 宽的预览图写到 `public/templates/code-animation/`；`--source <仓库路径>` 改用本地克隆，`--keep-posters` 复用已有图片；
+- 素材来自 `code-animation-prompts`（原素材整理：哔哩哔哩「俯仰观照」），免费使用与转发，禁止包装成付费课程或付费 skill 销售；Lemo-Opuscar / mg-styles-15 / code-video 三个来源保留原 MIT 许可与署名；「财经解读」融合自 `wallstreet-explainer`（MIT），示例静帧只作风格参考；
+- 更新风格数据：`python3 scripts/import-code-animation-templates.py` 从镜像拉取提示词与静帧，压成 `src/features/template/builtin.ts`，并把 560px 宽的预览图写到 `public/templates/code-animation/`；`--source <仓库路径>` 改用本地克隆，`--keep-posters` 复用已有图片；手工维护的风格（如「财经解读」）放在 `src/features/template/extra.ts`，脚本重写 `builtin.ts` 时会自动合并，不会被覆盖；
 - 补生成示例图：`AIPING_API_KEY=... python3 scripts/generate-template-stills.py` 只处理没有静帧、也还没有 AI 示例的条目；`--only K4,Z1` 指定编号，`--force` 重新生成，`--workers` 控制并发。
 
 ### Skill 专区与内容蒸馏

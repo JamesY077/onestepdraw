@@ -136,7 +136,9 @@
       <p v-else class="tpl-credit">
         风格提示词来自
         <a href="https://github.com/XiaoyeCodes/code-animation-prompts" target="_blank" rel="noreferrer">code-animation-prompts</a>
-        （原素材整理 俯仰观照）· 没有静帧的条目由 Seedream 5.0 Lite 生成示例图 · 免费分享，请勿转售
+        （原素材整理 俯仰观照）· 「华尔街财经解读」融合自
+        <a href="https://github.com/HeyChengC/wallstreet-explainer" target="_blank" rel="noreferrer">wallstreet-explainer</a>
+        （MIT，示例静帧仅作风格参考）· 没有静帧的条目由 Seedream 5.0 Lite 生成示例图 · 免费分享，请勿转售
       </p>
     </div>
 
