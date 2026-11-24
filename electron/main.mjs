@@ -30,6 +30,14 @@ let mainWindow = null
 let serverHandle = null
 let quitting = false
 
+/**
+ * 固定端口。
+ * 渲染进程的数据（localStorage / sessionStorage / IndexedDB）按 scheme+host+port 隔离，
+ * 所以 App 必须每次都用同一个端口，否则每次启动都会像是「数据丢了」。
+ * 41739 是随手挑的不常用端口，避开浏览器版默认的 5500。
+ */
+const APP_PORT = Number(process.env.ONESTEP_APP_PORT || 41739)
+
 /** 记住上次的窗口位置和尺寸，重开 App 回到原来的样子。 */
 const windowStateFile = () => path.join(app.getPath('userData'), 'window-state.json')
 
@@ -73,8 +81,15 @@ function openExternal(url) {
 
 async function createWindow() {
   const { startServer } = await import('../server/local/server.mjs')
-  serverHandle = await startServer({ port: 0, open: false, quiet: true })
+  // 端口必须固定：localStorage / IndexedDB 都按 origin 隔离，
+  // 端口一变（随机端口）对话记录和项目就会「消失」。
+  serverHandle = await startServer({ port: APP_PORT, open: false, quiet: true })
   console.log(`[stepframe] ${serverHandle.url}`)
+  if (serverHandle.port !== APP_PORT) {
+    console.warn(
+      `[stepframe] 端口 ${APP_PORT} 被占用，已改用 ${serverHandle.port}；本次启动看不到历史项目与对话。`,
+    )
+  }
 
   const saved = readWindowState()
   mainWindow = new BrowserWindow({

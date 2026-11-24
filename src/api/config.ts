@@ -1,3 +1,5 @@
+import { IS_DESKTOP_APP } from '@/utils/platform'
+
 export const AIPING_PUBLIC_API_BASE_URL = 'https://aiping.cn/api/v1'
 export const DEFAULT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 
@@ -6,6 +8,13 @@ const API_AUTH_STORAGE_KEY = 'aiping_api_auth'
 /** 新版 sessionStorage 凭据 key：浏览器会话结束即自动清除，降低凭据落盘暴露面。 */
 const API_AUTH_SESSION_STORAGE_KEY = 'aiping_api_auth_session'
 const API_SESSION_READY_STORAGE_KEY = 'aiping_api_session_ready'
+
+/**
+ * 浏览器里凭据只放 sessionStorage，关掉页面就没了；
+ * 桌面 App 是一个会长期打开的应用，放进 localStorage，
+ * 下次启动不用重新贴一遍 Key（仍然保留「跨周失效」的规则）。
+ */
+const authStore: Storage = IS_DESKTOP_APP ? localStorage : sessionStorage
 
 type StoredApiAuth = {
   apiKey: string
@@ -93,8 +102,8 @@ function createSessionId(): string {
 }
 
 function parseStoredApiAuth(): StoredApiAuth | null {
-  // 优先读 sessionStorage；无则尝试迁移旧版 localStorage 中的凭据。
-  const sessionRaw = sessionStorage.getItem(API_AUTH_SESSION_STORAGE_KEY)
+  // 优先读当前会话存储；无则尝试迁移旧版 localStorage 中的凭据。
+  const sessionRaw = authStore.getItem(API_AUTH_SESSION_STORAGE_KEY)
   const legacyRaw = !sessionRaw ? localStorage.getItem(API_AUTH_STORAGE_KEY) : null
   const raw = sessionRaw || legacyRaw
 
@@ -107,7 +116,7 @@ function parseStoredApiAuth(): StoredApiAuth | null {
     }
 
     if (legacyRaw) {
-      sessionStorage.setItem(API_AUTH_SESSION_STORAGE_KEY, legacyRaw)
+      authStore.setItem(API_AUTH_SESSION_STORAGE_KEY, legacyRaw)
       localStorage.removeItem(API_AUTH_STORAGE_KEY)
     }
 
@@ -124,11 +133,12 @@ function parseStoredApiAuth(): StoredApiAuth | null {
 }
 
 function getSessionReadyToken(): string | null {
-  return sessionStorage.getItem(API_SESSION_READY_STORAGE_KEY)
+  return authStore.getItem(API_SESSION_READY_STORAGE_KEY)
 }
 
 function clearStoredAuthData(): void {
   localStorage.removeItem(API_AUTH_STORAGE_KEY)
+  localStorage.removeItem(API_AUTH_SESSION_STORAGE_KEY)
   sessionStorage.removeItem(API_AUTH_SESSION_STORAGE_KEY)
 }
 
@@ -195,7 +205,7 @@ export function saveApiBaseUrl(baseUrl: string): void {
   const current = parseStoredApiAuth()
   const normalizedBaseUrl = baseUrl.trim().replace(/\/+$/, '')
 
-  sessionStorage.setItem(
+  authStore.setItem(
     API_AUTH_SESSION_STORAGE_KEY,
     JSON.stringify({
       apiKey: current?.apiKey || '',
@@ -211,7 +221,7 @@ export function saveApiBaseUrl(baseUrl: string): void {
 export function saveApiAuth(apiKey: string, baseUrl: string): void {
   const normalizedBaseUrl = baseUrl.trim().replace(/\/+$/, '')
 
-  sessionStorage.setItem(
+  authStore.setItem(
     API_AUTH_SESSION_STORAGE_KEY,
     JSON.stringify({
       apiKey: apiKey.trim(),
@@ -235,10 +245,11 @@ export function hasApiConfig(): boolean {
 export function markApiSessionReady(): void {
   const auth = parseStoredApiAuth()
   if (!auth) return
-  sessionStorage.setItem(API_SESSION_READY_STORAGE_KEY, auth.sessionId)
+  authStore.setItem(API_SESSION_READY_STORAGE_KEY, auth.sessionId)
 }
 
 export function clearApiSessionReady(): void {
+  localStorage.removeItem(API_SESSION_READY_STORAGE_KEY)
   sessionStorage.removeItem(API_SESSION_READY_STORAGE_KEY)
 }
 

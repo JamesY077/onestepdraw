@@ -93,7 +93,7 @@ npm run app:dmg         # 打包成 release/Stepframe-<version>-arm64.dmg
 - **窗口按 macOS 习惯排布**：顶部给红绿灯留出安全区，顶栏可以拖动窗口，侧栏/顶栏不参与文字选择；窗口大小和位置会被记住。
 - **导出走系统「另存为」**：导出视频、导出工程都会弹保存面板，不会悄悄落到下载目录。
 
-素材与生成结果都在 `~/Library/Application Support/Stepframe/data/`；聊天记录、项目结构这类小数据仍在 localStorage 里。
+素材与生成结果都在 `~/Library/Application Support/Stepframe/data/`；聊天记录、项目结构这类小数据仍在 localStorage 里。桌面版固定监听 `127.0.0.1:41739`（可用 `ONESTEP_APP_PORT` 改），因为浏览器数据按 origin 隔离，端口一变项目就会看起来「消失」。
 
 ### 本地服务做了什么
 
