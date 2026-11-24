@@ -201,8 +201,12 @@ async function handleDelete(conversation: AgentConversation) {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  /* 左边线与「新对话」按钮的文字起点对齐，顶部留出呼吸空间 */
-  padding: 44px 14px 14px 18px;
+  /*
+   * 左边距与新对话、搜索框同为 14px：
+   * 品牌图标与下方卡片的左边缘在同一条线上，这是视觉上「左对齐」的基准。
+   * 顶部 44px 让品牌区离开窗口标题栏。
+   */
+  padding: 44px 14px 14px 14px;
 }
 
 .sidebar-brand {

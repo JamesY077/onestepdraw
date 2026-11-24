@@ -1,5 +1,7 @@
 <template>
   <div class="studio-page tpl-page">
+    <StudioIsland />
+
     <header class="tpl-head">
       <div class="tpl-head-row">
         <button type="button" class="tpl-back" aria-label="返回上一页" @click="goBack">
@@ -305,6 +307,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import StudioIsland from '@/components/StudioIsland.vue'
 import { useTemplateStore } from '@/stores/templateStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useSkillLibraryStore } from '@/stores/skillLibraryStore'
@@ -577,10 +580,19 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
 <style scoped>
 .tpl-page {
   display: flex;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100dvh;
   flex-direction: column;
+  overflow: hidden;
   background: var(--sf-surface-2);
+}
+
+/* 卡片区自己滚动，页面不产生滚动条 */
+.tpl-body,
+.tpl-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .tpl-head {

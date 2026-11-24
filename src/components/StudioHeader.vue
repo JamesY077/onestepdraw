@@ -18,13 +18,6 @@
       </div>
     </div>
 
-    <p class="studio-save-notice" role="note">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="8.2" />
-        <path d="M12 8.2v.02M12 11.2v5" />
-      </svg>
-      温馨提示：生成结果仅保留在当前页面，请及时下载或另存；刷新、关闭页面后可能无法恢复。
-    </p>
   </header>
 </template>
 
@@ -52,7 +45,7 @@ const router = useRouter()
   display: flex;
   flex: 0 0 auto;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
   padding: 18px 28px 12px;
 }
 
@@ -60,31 +53,6 @@ const router = useRouter()
   display: flex;
   align-items: center;
   gap: 20px;
-}
-
-/* 顶部居中的保存提醒：所有创作页共用，语言保持克制不抢主操作 */
-.studio-save-notice {
-  display: inline-flex;
-  align-self: center;
-  align-items: center;
-  gap: 6px;
-  max-width: min(100%, 720px);
-  padding: 4px 14px;
-  border: 1px solid var(--sf-line-soft);
-  border-radius: 999px;
-  background: var(--sf-surface-2);
-  color: var(--sf-ink-3);
-  font-size: 11px;
-  line-height: 1.6;
-  letter-spacing: 0.01em;
-  text-align: center;
-}
-
-.studio-save-notice svg {
-  flex: none;
-  width: 12px;
-  height: 12px;
-  opacity: 0.75;
 }
 
 .studio-brand {
@@ -214,14 +182,7 @@ const router = useRouter()
     flex: 1 1 200px;
   }
 
-  .studio-save-notice {
-    width: 100%;
-    padding: 6px 10px;
-    border-radius: 12px;
-    font-size: 10.5px;
-  }
-
-  .studio-brand-name {
+    .studio-brand-name {
     display: none;
   }
 

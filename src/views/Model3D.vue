@@ -2401,6 +2401,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   position: relative;
   z-index: 1;
   display: grid;
+  /* 主区固定视口高度，内部各栏自己滚动，页面不产生下拉 */
+  height: calc(100dvh - 176px);
+  min-height: 0;
   /* 右栏放宽：窄的 320px 会把参数卡压成两行文字，视觉上像被挤变形 */
   grid-template-columns: minmax(300px, 340px) minmax(420px, 1fr) minmax(320px, 372px);
   gap: 16px;
@@ -2414,8 +2417,11 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: calc(100dvh - 118px);
+  /* 与舞台同高，栏内自己滚动，不撑高主区 */
+  height: calc(100dvh - 236px);
+  max-height: calc(100dvh - 236px);
   min-height: 0;
+  overflow: hidden;
 }
 
 /* 右栏（任务 / 产物 / 历史）内容较高时在栏内滚动，避免最后一页被页面裁掉 */
@@ -3235,9 +3241,13 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 560px;
-  height: calc(100dvh - 210px);
-  max-height: 880px;
+  /*
+   * 桌面 App 规范：三栏在视口内完整放下，不产生页面级下拉。
+   * 高度按「视口 - 顶栏 - 底部步骤条 - 边距」算，最小 480 兜底。
+   */
+  min-height: 480px;
+  height: calc(100dvh - 236px);
+  max-height: calc(100dvh - 236px);
   border: 1px solid rgba(125, 211, 252, 0.16);
   border-radius: 26px;
   background:
@@ -4497,7 +4507,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   }
 
   .stage-shell {
-    height: calc(100dvh - 220px);
+    height: calc(100dvh - 246px);
     min-height: 520px;
   }
 }
