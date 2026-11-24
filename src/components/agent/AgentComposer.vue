@@ -438,6 +438,7 @@ import { useSkillStore } from '@/stores/skillStore'
 import {
   MAX_ATTACHMENTS,
   MAX_ATTACHMENT_BYTES,
+  MAX_ATTACHMENT_LABEL,
   attachmentKindLabel,
   formatBytes,
   formatDuration,
@@ -679,7 +680,7 @@ async function addFiles(files: File[]) {
 
   const notes: string[] = []
   if (skippedByCount > 0) notes.push(`最多 ${MAX_ATTACHMENTS} 个，已跳过 ${skippedByCount} 个`)
-  if (skippedBySize > 0) notes.push(`${skippedBySize} 个文件超过 80MB，已跳过`)
+  if (skippedBySize > 0) notes.push(`${skippedBySize} 个文件超过 ${MAX_ATTACHMENT_LABEL}，已跳过`)
   if (failed > 0) notes.push(`${failed} 个文件读取失败`)
   if (notes.length) notify(notes.join('；'))
 }

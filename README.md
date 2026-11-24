@@ -12,9 +12,9 @@
 
 ![步帧 Stepframe 图标](design/app-icon/app-icon.preview.png)
 
-三段立柱从低到高、等距上升，代表「一步一帧」；最高的一段用赤陶色 `#C2532F` 点亮，表示正在生成的那一帧。深色 `#101114` 底加纯白几何体，不用渐变、阴影和材质特效，保持科技感与极简。
+赤陶色 `#B4553A` 的圆角底上放一个奶油色画框，框里是从低到高逐级抬升的台阶：画框是「帧」，台阶是「步」，抬升的那一端表示下一步正在生成。实底加线条，不用渐变、阴影和材质特效，缩到 32px 仍然认得出来。
 
-图标源文件在 `design/app-icon/`（SVG / PNG / 分层 SVG / 校验报告）；网页侧使用 `public/favicon.svg`、`public/icon-192.png`、`public/icon-512.png`、`public/apple-touch-icon.png` 与 `public/site.webmanifest`。
+图标源文件在 `design/app-icon/`（SVG / PNG / 分层 SVG / 预览）。桌面版用的 `build/icon.icns` 由 `bash scripts/make-icon.sh` 从 `build/icon.png` 生成；网页侧使用 `public/favicon.svg`、`public/icon-192.png`、`public/icon-512.png`、`public/apple-touch-icon.png` 与 `public/site.webmanifest`。
 
 ## 特性
 
@@ -76,6 +76,24 @@ npm start               # 构建并启动本地服务
 ```bash
 npm run dev             # Vite 开发服务器，默认 http://127.0.0.1:5500
 ```
+
+### 方式四：桌面 App（macOS）
+
+不想在浏览器里用，可以打包成原生窗口：
+
+```bash
+npm run app             # 构建后在独立窗口里打开（开发用）
+npm run app:pack        # 打包成 release/mac-arm64/Stepframe.app
+npm run app:dmg         # 打包成 release/Stepframe-<version>-arm64.dmg
+```
+
+桌面版把同一套本地服务跑在 Electron 主进程里，窗口打开的是 `http://127.0.0.1:<随机端口>`，所以 `/api` 反代、对话、剪辑台和网页版完全一致。区别有三处：
+
+- **素材不再经过浏览器存储**：上传的原文件直接写进 `~/Library/Application Support/Stepframe/data/generated/uploads/`，项目里只记地址，因此没有体积门槛，只受磁盘空间限制（`ONESTEP_UPLOAD_LIMIT_BYTES` 可以按需设上限）。
+- **窗口按 macOS 习惯排布**：顶部给红绿灯留出安全区，顶栏可以拖动窗口，侧栏/顶栏不参与文字选择；窗口大小和位置会被记住。
+- **导出走系统「另存为」**：导出视频、导出工程都会弹保存面板，不会悄悄落到下载目录。
+
+素材与生成结果都在 `~/Library/Application Support/Stepframe/data/`；聊天记录、项目结构这类小数据仍在 localStorage 里。
 
 ### 本地服务做了什么
 

@@ -99,7 +99,7 @@
             <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
             <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
           </svg>
-          API Key 只保存在当前浏览器会话中，不会上传到第三方服务器。
+          API Key 只保存在{{ SESSION_SCOPE }}，不会上传到第三方服务器。
         </p>
       </section>
     </main>
@@ -118,6 +118,7 @@ import { useRoute, useRouter } from 'vue-router'
 import BrandMark from '@/components/agent/BrandMark.vue'
 import { useApiStore } from '@/stores/apiStore'
 import { AIPING_PUBLIC_API_BASE_URL, isOpenAiBaseUrlFormat } from '@/api/config'
+import { SESSION_SCOPE } from '@/utils/platform'
 
 const router = useRouter()
 const route = useRoute()

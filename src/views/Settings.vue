@@ -45,7 +45,7 @@
           <section id="account" class="panel">
             <div class="panel-head">
               <h2>账号与连接</h2>
-              <p>步帧通过 AIPing 调用模型。密钥只存放在当前浏览器会话中。</p>
+              <p>步帧通过 AIPing 调用模型。密钥只存放在{{ SESSION_SCOPE }}。</p>
             </div>
 
             <div class="detail-list">
@@ -107,7 +107,7 @@
             <div class="danger-block">
               <div>
                 <strong>退出登录并清除本地会话</strong>
-                <p>会移除当前浏览器中的 API 配置与对话记录，不影响已生成的文件。</p>
+                <p>会移除{{ STORAGE_SCOPE }}的 API 配置与对话记录，不影响已生成的文件。</p>
               </div>
               <button class="btn danger" type="button" @click="handleClear">清除并退出</button>
             </div>
@@ -473,7 +473,7 @@
     <div v-if="showEditConfig" class="modal-overlay" @click.self="showEditConfig = false">
       <div class="modal">
         <h3>更新 API 访问信息</h3>
-        <p class="modal-lead">密钥只保存在当前浏览器会话中。</p>
+        <p class="modal-lead">密钥只保存在{{ SESSION_SCOPE }}。</p>
         <div class="field">
           <label for="edit-base-url">服务地址</label>
           <input
@@ -518,6 +518,7 @@ import { useSkillStore } from '@/stores/skillStore'
 import { useLocalAgentStore } from '@/stores/localAgentStore'
 import { DEFAULT_QUALITY_SKILLS } from '@/features/skill/builtin'
 import { maskApiKey } from '@/utils/format'
+import { SESSION_SCOPE, STORAGE_SCOPE } from '@/utils/platform'
 import { testConnectionWithDetail } from '@/api/aiping'
 import { AIPING_PUBLIC_API_BASE_URL, isOpenAiBaseUrlFormat } from '@/api/config'
 

@@ -16,6 +16,16 @@
       content="步帧（Stepframe）是一个运行在本地的 AI 创作助手：一句话生成图片与视频，在剪辑台里完成成片。"
     />
     <title>步帧 Stepframe · 本地 AI 创作助手</title>
+    <script>
+      // Electron 里给 <html> 打标记，桌面端的窗口适配样式只在 App 内生效。
+      ;(function () {
+        var ua = navigator.userAgent || ''
+        if (!/Electron\//.test(ua)) return
+        document.documentElement.classList.add('is-desktop-app')
+        if (/Mac OS X/.test(ua)) document.documentElement.classList.add('mac-app')
+        else document.documentElement.classList.add('win-app')
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

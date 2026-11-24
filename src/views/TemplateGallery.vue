@@ -203,7 +203,7 @@
               accept="image/*,video/*,audio/*,.txt,.md,.json,.csv,.srt,.pdf"
               @change="handleDraftInput"
             />
-            <p class="tpl-editor-hint">图片、视频、音频、文本都可以，最多 8 个，单个不超过 80MB。</p>
+            <p class="tpl-editor-hint">图片、视频、音频、文本都可以，最多 8 个，单个体积只受磁盘空间限制。</p>
           </div>
 
           <p v-if="draftError" class="tpl-error">{{ draftError }}</p>
@@ -311,6 +311,7 @@ import { confirmDialog } from '@/features/ui/dialog'
 import {
   MAX_ATTACHMENTS,
   MAX_ATTACHMENT_BYTES,
+  MAX_ATTACHMENT_LABEL,
   readAttachment,
 } from '@/features/agent/attachments'
 import { BUILTIN_TEMPLATES, TEMPLATE_CATEGORIES } from '@/features/template/builtin'
@@ -497,7 +498,7 @@ async function handleDraftInput(event: Event) {
   }
   const accepted = files.slice(0, room).filter((file) => file.size <= MAX_ATTACHMENT_BYTES)
   if (!accepted.length) {
-    draftError.value = '文件超过 80MB，换一个小一点的再试。'
+    draftError.value = `文件超过 ${MAX_ATTACHMENT_LABEL}，换一个小一点的再试。`
     return
   }
   draftError.value = ''

@@ -1,0 +1,125 @@
+/* =========================================================================
+ * Stepframe 桌面端窗口适配（Electron / macOS）
+ *
+ * 只在 html.mac-app 下生效，浏览器访问完全不受影响。
+ * 目标：给系统红绿灯留出干净的区域，顶栏可以拖动窗口，
+ * 同时让滚动、留白、窗口圆角这些细节更像原生 App。
+ * ========================================================================= */
+
+html.mac-app {
+  /* 三个红绿灯 + 左右留白所需宽度 */
+  --mac-traffic-space: 84px;
+  /* 顶部无内容但可拖动的空白高度 */
+  --mac-titlebar-inset: 38px;
+}
+
+html.mac-app body {
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- 拖动窗口 ---------- */
+
+html.mac-app .es-topbar,
+html.mac-app .chat-header,
+html.mac-app .tpl-head,
+html.mac-app .studio-header,
+html.mac-app .settings-header,
+html.mac-app .login-header,
+html.mac-app .sidebar-head {
+  -webkit-app-region: drag;
+}
+
+html.mac-app button,
+html.mac-app input,
+html.mac-app textarea,
+html.mac-app select,
+html.mac-app a,
+html.mac-app label,
+html.mac-app summary,
+html.mac-app [role='button'],
+html.mac-app [role='tab'],
+html.mac-app .no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* 顶栏和侧栏属于窗口外壳，不参与文字选择 */
+html.mac-app .es-topbar,
+html.mac-app .chat-header,
+html.mac-app .sidebar-head,
+html.mac-app .rail-tabs,
+html.mac-app .tpl-head-row,
+html.mac-app .settings-header {
+  user-select: none;
+}
+
+/* ---------- 剪辑台：顶栏与红绿灯同排 ---------- */
+
+html.mac-app .edit-page {
+  --es-topbar-height: 58px;
+}
+
+html.mac-app .es-topbar {
+  padding-left: var(--mac-traffic-space);
+  padding-right: 16px;
+}
+
+/* 侧栏顶部是红绿灯的位置，第一块内容整体下移 */
+html.mac-app .sidebar-head {
+  padding-top: 46px;
+}
+
+/* 窄屏对话浮层时，顶栏直接顶到窗口左边，需要让开红绿灯 */
+@media (max-width: 900px) {
+  html.mac-app .chat-header {
+    padding-left: var(--mac-traffic-space);
+  }
+}
+
+/* ---------- 创作页 / 模板库 / 设置：内容整体下移到红绿灯下方 ---------- */
+
+html.mac-app .studio-header {
+  padding-top: calc(18px + var(--mac-titlebar-inset) / 2);
+}
+
+html.mac-app .tpl-head-row {
+  padding-top: calc(20px + var(--mac-titlebar-inset) / 2);
+}
+
+html.mac-app .tpl-tabs {
+  padding-left: max(28px, var(--mac-traffic-space));
+}
+
+html.mac-app .settings-page {
+  padding-top: 46px;
+}
+
+html.mac-app .login-header {
+  padding-top: 46px;
+}
+
+/* ---------- 原生 App 的滚动条：细、浮在内容上 ---------- */
+
+html.mac-app ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html.mac-app ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html.mac-app ::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+  background-color: rgba(29, 29, 27, 0.18);
+}
+
+html.mac-app ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(29, 29, 27, 0.32);
+}
+
+html.mac-app ::-webkit-scrollbar-corner {
+  background: transparent;
+}

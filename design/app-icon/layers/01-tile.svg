@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="solid" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#C0603F"/><stop offset="0.5" stop-color="#B4553A"/><stop offset="1" stop-color="#943E27"/>
+    </linearGradient>
+    <filter id="drop" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#3A2118" flood-opacity="0.24"/>
+    </filter>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="0.42" stop-color="#FFFFFF" stop-opacity="0.03"/>
+      <stop offset="0.75" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="tileClip"><rect x="102" y="102" width="820" height="820" rx="186"/></clipPath>
+  </defs>
+  <g filter="url(#drop)"><rect x="102" y="102" width="820" height="820" rx="186" fill="url(#solid)"/></g>
+  <g clip-path="url(#tileClip)">
+    <rect x="102" y="102" width="820" height="820" fill="url(#sheen)"/>
+    <rect x="103" y="103" width="818" height="818" rx="185" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="3"/>
+  </g>
+</svg>

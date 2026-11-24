@@ -23,6 +23,10 @@ import { buildCustomAgent, buildRunPrompt, detectAgents, getInstalledAgent, runA
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '../..')
 const distDir = path.join(rootDir, 'dist')
+/** App 模式下素材写到用户数据目录，避免写进 .app 包体（升级会被覆盖）。 */
+const dataDir = process.env.ONESTEP_DATA_DIR
+  ? path.resolve(process.env.ONESTEP_DATA_DIR)
+  : rootDir
 
 const args = process.argv.slice(2)
 const noOpen = args.includes('--no-open')
@@ -222,7 +226,7 @@ function handleUpload(req, res) {
     if (extension) fileName = `${fileName}${extension}`
   }
 
-  const uploadDir = path.join(rootDir, 'generated', 'uploads')
+  const uploadDir = path.join(dataDir, 'generated', 'uploads')
   try {
     fs.mkdirSync(uploadDir, { recursive: true })
   } catch (error) {
@@ -232,7 +236,8 @@ function handleUpload(req, res) {
 
   const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   const target = path.join(uploadDir, `${unique}-${fileName}`)
-  const limit = 80 * 1024 * 1024
+  // 默认不设上限：长录音、多机位素材都是正常需求，只受磁盘空间限制。
+  const limit = Number(process.env.ONESTEP_UPLOAD_LIMIT_BYTES || 0)
   const output = fs.createWriteStream(target)
   let size = 0
   let failed = false
@@ -248,8 +253,8 @@ function handleUpload(req, res) {
   req.on('data', (chunk) => {
     if (failed) return
     size += chunk.length
-    if (size > limit) {
-      abort('单个参考素材不能超过 80MB。')
+    if (limit > 0 && size > limit) {
+      abort(`单个素材超过 ${Math.round(limit / 1024 / 1024)}MB 上限。`)
       req.destroy()
     }
   })
@@ -490,7 +495,7 @@ const server = http.createServer((req, res) => {
 
   if (pathname.startsWith('/generated/')) {
     const relative = path.normalize(pathname.slice('/generated/'.length)).replace(/^(\.\.[/\\])+/, '')
-    const generatedRoot = path.join(rootDir, 'generated')
+    const generatedRoot = path.join(dataDir, 'generated')
     const filePath = path.join(generatedRoot, relative)
     if (filePath.startsWith(generatedRoot) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       sendFile(res, filePath)
@@ -559,47 +564,90 @@ function openBrowser(url) {
 
 let started = false
 
-function listen(port, remainingAttempts = 20) {
-  server.once('error', (error) => {
-    if (error.code === 'EADDRINUSE' && remainingAttempts > 0) {
-      listen(port + 1, remainingAttempts - 1)
-      return
-    }
-    console.error(`步帧本地服务启动失败：${error.message}`)
-    process.exit(1)
-  })
+/**
+ * 启动本地服务。
+ * Electron 主进程直接复用这个函数，用 port=0 让系统分配端口。
+ */
+export function startServer({
+  port = startPort,
+  open = !noOpen,
+  quiet = false,
+  remainingAttempts = 20,
+} = {}) {
+  return new Promise((resolve, reject) => {
+    const attempt = (candidate, left) => {
+      const onError = (error) => {
+        server.removeListener('listening', onListening)
+        if (error.code === 'EADDRINUSE' && left > 0) {
+          attempt(candidate + 1, left - 1)
+          return
+        }
+        started = false
+        reject(error)
+      }
 
-  server.listen(port, host, () => {
-    if (started) return
-    started = true
-    const address = server.address()
-    const actualPort = typeof address === 'object' && address ? address.port : port
-    const url = `http://${host}:${actualPort}`
-    console.log('')
-    console.log('  步帧 Stepframe · 本地 AI 创作助手')
-    console.log(`  已启动：${url}`)
-    if (actualPort !== startPort) {
-      console.log(`  端口 ${startPort} 已被占用，已自动切换到 ${actualPort}`)
+      const onListening = () => {
+        server.removeListener('error', onError)
+        if (started) return
+        started = true
+        const address = server.address()
+        const actualPort = typeof address === 'object' && address ? address.port : candidate
+        const url = `http://${host}:${actualPort}`
+        if (!quiet) {
+          console.log('')
+          console.log('  步帧 Stepframe · 本地 AI 创作助手')
+          console.log(`  已启动：${url}`)
+          if (actualPort !== startPort) {
+            console.log(`  端口 ${startPort} 已被占用，已自动切换到 ${actualPort}`)
+          }
+          console.log('  按 Ctrl+C 停止服务')
+          console.log('')
+        }
+        if (open) openBrowser(url)
+        resolve({
+          url,
+          port: actualPort,
+          close: () => new Promise((done) => server.close(() => done())),
+        })
+      }
+
+      server.once('error', onError)
+      server.once('listening', onListening)
+      server.listen(candidate, host)
     }
-    console.log('  按 Ctrl+C 停止服务')
-    console.log('')
-    openBrowser(url)
+
+    attempt(port, remainingAttempts)
   })
 }
 
 const startPort = Number.isFinite(requestedPort) ? requestedPort : 5500
 
-if (!fs.existsSync(distDir)) {
-  console.warn('提示：dist 目录不存在，页面会提示先运行 npm run build。')
+const isMain = (() => {
+  const entry = process.argv[1]
+  if (!entry) return false
+  try {
+    return path.resolve(entry) === fileURLToPath(import.meta.url)
+  } catch {
+    return false
+  }
+})()
+
+if (isMain) {
+  if (!fs.existsSync(distDir)) {
+    console.warn('提示：dist 目录不存在，页面会提示先运行 npm run build。')
+  }
+
+  startServer().catch((error) => {
+    console.error(`步帧本地服务启动失败：${error.message}`)
+    process.exit(1)
+  })
+
+  const shutdown = () => {
+    console.log('\n正在停止步帧本地服务…')
+    server.close(() => process.exit(0))
+    setTimeout(() => process.exit(0), 1500).unref()
+  }
+
+  process.on('SIGINT', shutdown)
+  process.on('SIGTERM', shutdown)
 }
-
-listen(startPort)
-
-function shutdown() {
-  console.log('\n正在停止步帧本地服务…')
-  server.close(() => process.exit(0))
-  setTimeout(() => process.exit(0), 1500).unref()
-}
-
-process.on('SIGINT', shutdown)
-process.on('SIGTERM', shutdown)

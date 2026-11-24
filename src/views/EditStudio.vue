@@ -311,6 +311,7 @@ import { exportProjectVideo } from '@/features/edit/exportVideo'
 import { confirmDialog } from '@/features/ui/dialog'
 import { consumeTemplatesFlash, describeTemplatesFlash } from '@/features/template/navigation'
 import type { AgentClipRef } from '@/types/agent'
+import { uploadAttachment } from '@/features/agent/attachments'
 import {
   MAX_PROJECT_SECONDS,
   PROJECT_ASPECT_RATIOS,
@@ -1042,11 +1043,9 @@ async function handleUpload(event: Event) {
   input.value = ''
   if (!project.value || !files.length) return
 
+  let skipped = 0
+  let needsLocalServer = 0
   for (const file of files) {
-    if (file.size > 1.2 * 1024 * 1024) {
-      showToast(`${file.name} 超过 1.2MB，浏览器本地项目暂不支持这么大的文件`)
-      continue
-    }
     const kind = file.type.startsWith('video/')
       ? 'video'
       : file.type.startsWith('audio/')
@@ -1055,8 +1054,17 @@ async function handleUpload(event: Event) {
           ? 'image'
           : ''
     if (!kind) continue
-    const url = await readFileAsDataUrl(file)
-    if (!url) continue
+    // 有本地服务时把原文件写到磁盘，项目里只存地址，大素材不再受浏览器存储限制。
+    const uploaded = await uploadAttachment(file)
+    if (!uploaded && file.size > DATA_URL_FALLBACK_MAX) {
+      needsLocalServer += 1
+      continue
+    }
+    const url = uploaded?.url || (await readFileAsDataUrl(file))
+    if (!url) {
+      skipped += 1
+      continue
+    }
     const duration = kind === 'image' ? undefined : await probeDuration(url, kind)
     const asset: ProjectAsset = {
       id: `ast_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -1064,15 +1072,28 @@ async function handleUpload(event: Event) {
       kind,
       url,
       duration,
+      path: uploaded?.path,
       source: 'upload',
       createdAt: Date.now(),
     }
     projectStore.appendAsset(project.value.id, asset)
   }
+  if (needsLocalServer) {
+    showToast(`${needsLocalServer} 个大文件需要 App 或本地服务才能导入`)
+  } else if (skipped) {
+    showToast(`${skipped} 个文件读取失败，请重试或换一个文件`)
+  }
   railTab.value = 'assets'
 }
 
+/**
+ * 本地服务不可用时退回 data URL。
+ * 只接受浏览器存储扛得住的小文件，避免把项目存档撑爆。
+ */
+const DATA_URL_FALLBACK_MAX = 2 * 1024 * 1024
+
 function readFileAsDataUrl(file: File): Promise<string | null> {
+  if (file.size > DATA_URL_FALLBACK_MAX) return Promise.resolve(null)
   return new Promise((resolve) => {
     const reader = new FileReader()
     reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null)
@@ -1365,6 +1386,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .edit-page {
+  --es-topbar-height: 52px;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -1379,7 +1401,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  height: 52px;
+  height: var(--es-topbar-height);
   flex: none;
   padding: 0 12px;
   border-bottom: 1px solid #ecece6;
@@ -2174,7 +2196,7 @@ onBeforeUnmount(() => {
   }
   .es-chat {
     position: fixed;
-    top: 52px;
+    top: var(--es-topbar-height);
     right: 0;
     bottom: 0;
     z-index: 70;

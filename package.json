@@ -1,15 +1,20 @@
 {
-  "name": "onestepdraw",
+  "name": "stepframe",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "步帧 Stepframe — 本地化 AI 创作助手，基于 AIPing 与 DeepSeek V4.1 Flash",
+  "description": "Stepframe — 本地化 AI 创作助手，基于 AIPing 与 DeepSeek V4.1 Flash",
+  "main": "electron/main.mjs",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "serve": "node server/local/server.mjs",
-    "start": "npm run build && npm run serve"
+    "start": "npm run build && npm run serve",
+    "app": "npm run build && electron .",
+    "app:run": "electron .",
+    "app:pack": "npm run build && electron-builder --mac --dir",
+    "app:dmg": "npm run build && electron-builder --mac"
   },
   "dependencies": {
     "@sparkjsdev/spark": "^2.4.0",
@@ -29,6 +34,8 @@
     "@types/node": "^24.12.2",
     "@vitejs/plugin-vue": "^6.0.6",
     "@vue/tsconfig": "^0.9.1",
+    "electron": "^38.8.6",
+    "electron-builder": "^26.18.0",
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.2",
     "vite": "^8.0.9",
@@ -37,5 +44,45 @@
   },
   "engines": {
     "node": ">=20.19.0"
+  },
+  "build": {
+    "appId": "com.stepframe.app",
+    "productName": "Stepframe",
+    "asar": false,
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "server/**/*",
+      "skills/**/*",
+      "electron/**/*",
+      "package.json",
+      "!node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.video",
+      "icon": "build/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "dmg": {
+      "title": "Stepframe"
+    },
+    "electronDist": "node_modules/electron/dist",
+    "npmRebuild": false,
+    "artifactName": "${productName}-${version}-${arch}.${ext}"
+  },
+  "author": "Stepframe",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JamesY077/onestepdraw.git"
   }
 }

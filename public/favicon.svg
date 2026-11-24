@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#101114"/>
-  <rect x="8.05" y="16.31" width="3.9" height="8.25" rx="1.95" fill="#ffffff"/>
-  <rect x="14.05" y="11.81" width="3.9" height="12.75" rx="1.95" fill="#ffffff"/>
-  <rect x="20.05" y="7.31" width="3.9" height="17.25" rx="1.95" fill="#C2532F"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="130 130 764 764">
+  <!-- 步帧 Stepframe 标记：画框里的阶梯 -->
+  <rect x="272" y="272" width="480" height="480" rx="112" fill="none" stroke="#B4553A" stroke-width="44"/>
+  <path d="M361 631 H462 V531 H562 V431 H663" fill="none" stroke="#B4553A" stroke-width="44"
+        stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

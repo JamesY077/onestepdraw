@@ -12,6 +12,8 @@ export interface ProjectAsset {
   /** 秒；图片可为空，入轨时给默认时长。 */
   duration?: number
   source: 'chat' | 'library' | 'upload'
+  /** App / 本地服务模式下原文件在磁盘上的路径。 */
+  path?: string
   createdAt: number
 }
 

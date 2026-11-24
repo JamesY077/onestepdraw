@@ -8,24 +8,14 @@
     role="img"
     aria-label="步帧 Stepframe"
   >
-    <rect width="32" height="32" rx="8" :fill="inverted ? '#ffffff' : '#101114'" />
-    <rect
-      x="8.05"
-      y="16.31"
-      width="3.9"
-      height="8.25"
-      rx="1.95"
-      :fill="inverted ? '#101114' : '#ffffff'"
+    <rect width="32" height="32" rx="8" :fill="inverted ? '#FCF7F2' : '#B4553A'" />
+    <path
+      d="M9 23H13.7V18.3H18.4V13.6H23"
+      :stroke="inverted ? '#B4553A' : '#FCF5EE'"
+      stroke-width="3.1"
+      stroke-linecap="round"
+      stroke-linejoin="round"
     />
-    <rect
-      x="14.05"
-      y="11.81"
-      width="3.9"
-      height="12.75"
-      rx="1.95"
-      :fill="inverted ? '#101114' : '#ffffff'"
-    />
-    <rect x="20.05" y="7.31" width="3.9" height="17.25" rx="1.95" fill="#C2532F" />
   </svg>
 </template>
 

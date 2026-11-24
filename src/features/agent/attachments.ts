@@ -3,8 +3,9 @@ import { getAudioDurationMs } from '@/features/voice/audio'
 
 /** 一轮消息最多带 8 个参考素材。 */
 export const MAX_ATTACHMENTS = 8
-/** 单个参考素材上限 80MB。 */
-export const MAX_ATTACHMENT_BYTES = 80 * 1024 * 1024
+/** 单个参考素材的兜底上限：2GB，实际只受磁盘空间限制。 */
+export const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024 * 1024
+export const MAX_ATTACHMENT_LABEL = '2GB'
 /** 文本类文件最多读取这么多字符，避免把提示词撑爆。 */
 const MAX_TEXT_CHARS = 16_000
 /** 视频最多抽 4 张关键帧。 */
