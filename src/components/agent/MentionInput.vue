@@ -1,7 +1,8 @@
 <template>
   <div class="mention-input" :class="{ 'is-placeholder': isEmpty && !focused }">
-    <!-- 高亮层：只负责显示，@引用用强调色标出 -->
-    <div ref="mirrorRef" class="mi-mirror" aria-hidden="true">
+    <div class="mi-stack">
+      <!-- 高亮层：只负责显示，@引用用强调色标出 -->
+      <div ref="mirrorRef" class="mi-mirror" aria-hidden="true">
       <template v-if="isEmpty && placeholder">
         <span class="mi-placeholder">{{ placeholder }}</span>
       </template>
@@ -13,8 +14,8 @@
       </template>
     </div>
 
-    <!-- 真正可编辑的输入层：文字透明，只显示光标，避免两层重影 -->
-    <textarea
+      <!-- 真正可编辑的输入层：文字透明，只显示光标，避免两层重影 -->
+      <textarea
       ref="textareaRef"
       v-model="model"
       class="mi-input"
@@ -24,9 +25,10 @@
       @blur="focused = false"
       @keydown="$emit('keydown', $event)"
       @input="handleInput"
-      @scroll="handleScroll"
-      @paste="$emit('paste', $event)"
-    />
+        @scroll="handleScroll"
+        @paste="$emit('paste', $event)"
+      />
+    </div>
   </div>
 </template>
 
@@ -112,13 +114,23 @@ defineExpose({ focus, resize, getTextarea, setCaret })
   min-width: 0;
 }
 
+/*
+ * 镜像层与输入层必须共用同一个盒子：
+ * 外层无论怎么加内边距（剪辑页会把 padding 加在输入框外壳上），
+ * 两者都同时内缩，文字与光标才不会错位。
+ */
+.mi-stack {
+  position: relative;
+  width: 100%;
+}
+
 .mi-mirror,
 .mi-input {
   width: 100%;
   padding: 0;
   border: 0;
   font: inherit;
-  font-size: 14px;
+  font-size: inherit;
   line-height: 1.65;
   letter-spacing: inherit;
   white-space: pre-wrap;
