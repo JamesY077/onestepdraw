@@ -154,7 +154,9 @@ defineExpose({ focus, resize, getTextarea, setCaret })
   position: absolute;
   inset: 0;
   overflow: hidden;
-  color: var(--sf-ink);
+  /* 固定用墨色，避免被外层深色主题的 --sf-ink 改写成白字 */
+  color: var(--sf-ink, #241f19);
+  -webkit-text-fill-color: currentColor;
   pointer-events: none;
 }
 
@@ -188,8 +190,10 @@ defineExpose({ focus, resize, getTextarea, setCaret })
   resize: none;
   outline: none;
   background: transparent;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+  /* 输入层只留光标：文字完全透明，显示交给下面的高亮层 */
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none;
   caret-color: var(--sf-ink);
 }
 

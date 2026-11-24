@@ -159,6 +159,8 @@ import { computed, nextTick, ref, watch } from 'vue'
 import AgentComposer from '@/components/agent/AgentComposer.vue'
 import AgentMessage from '@/components/agent/AgentMessage.vue'
 import { useAgentStore } from '@/stores/agentStore'
+import { useEditProjectStore, projectDuration } from '@/stores/editProjectStore'
+import { parseTimeRanges, resolveRevisionTargets } from '@/features/edit/revisionIntent'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
@@ -194,6 +196,7 @@ const emit = defineEmits<{
 }>()
 
 const agentStore = useAgentStore()
+const projectStore = useEditProjectStore()
 const chatMode = useChatModeStore()
 const localAgentStore = useLocalAgentStore()
 const modelStore = useModelStore()
@@ -278,9 +281,38 @@ watch(
   () => nextTick(scrollToBottom),
 )
 
+/**
+ * 用户没手动选片段时，从文里识别「第 X 秒到第 Y 秒」这类范围，
+ * 自动对应到项目里真实存在的片段，连同范围内的偏移一起交给模型。
+ */
+function detectTargetsFromText(text: string) {
+  const project = projectStore.getProject(props.projectId)
+  if (!project) return []
+  const total = projectDuration(project)
+  const ranges = parseTimeRanges(text, total)
+  if (!ranges.length) return []
+  return resolveRevisionTargets(project, ranges).map(({ clip, innerStart, innerEnd }) => ({
+    id: clip.id,
+    name: clip.name,
+    kind: clip.kind,
+    trackId: '',
+    trackName: '',
+    trackKind: 'video' as const,
+    start: clip.start,
+    duration: clip.duration,
+    url: clip.url,
+    thumbnail: clip.thumbnail,
+    assetName: clip.name,
+    note: `用户指的是这支片里 ${(clip.start + innerStart).toFixed(1)}s–${(clip.start + innerEnd).toFixed(1)}s 这一段（片段内 ${innerStart.toFixed(1)}s–${innerEnd.toFixed(1)}s）`,
+  }))
+}
+
 function send(payload: ComposerSubmit) {
   const text = payload.content.trim()
-  const { clips, queued, directNote } = resolveSendClips()
+  const { clips: pickedClips, queued, directNote } = resolveSendClips()
+  // 没手动选片段时，按文字里的时间范围自动定位
+  const detected = pickedClips.length ? [] : detectTargetsFromText(text)
+  const clips = pickedClips.length ? pickedClips : detected
   if (
     (!text && !payload.attachments.length && !payload.templates?.length && !clips.length) ||
     agentStore.isStreaming
