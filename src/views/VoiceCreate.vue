@@ -218,14 +218,25 @@
         <!-- 声音与参数 -->
         <aside class="studio-panel control-panel">
           <header class="studio-panel-head control-head">
-            <div class="studio-panel-headings">
-              <span class="studio-kicker">Voice &amp; Params</span>
-              <h2 class="studio-panel-title">声音与参数</h2>
+            <div class="control-tabs" role="tablist" aria-label="声音与参数 / 生成结果">
+              <button
+                v-for="tab in CONTROL_TABS"
+                :key="tab.value"
+                class="control-tab"
+                :class="{ active: controlTab === tab.value }"
+                type="button"
+                role="tab"
+                :aria-selected="controlTab === tab.value"
+                @click="controlTab = tab.value"
+              >
+                {{ tab.label }}
+              </button>
             </div>
-            <button class="ghost-btn" type="button" @click="resetParams">重置</button>
+            <button v-if="controlTab === 'params'" class="ghost-btn" type="button" @click="resetParams">重置</button>
           </header>
 
-          <div class="control-result">
+          <!-- 生成结果（含历史记录） -->
+          <div v-show="controlTab === 'result'" class="control-result">
             <header class="control-result-head">
               <div class="result-title-line">
                 <input
@@ -297,7 +308,7 @@
             </div>
           </div>
 
-          <div v-if="showHistory" class="control-history">
+          <div v-if="showHistory" v-show="controlTab === 'result'" class="control-history">
             <header class="control-result-head">
               <span class="studio-kicker">History</span>
               <span class="studio-panel-meta">{{ history.length ? `共 ${history.length} 条` : '暂无记录' }}</span>
@@ -380,7 +391,7 @@
             </div>
           </div>
 
-          <div class="control-body studio-scroll">
+          <div v-show="controlTab === 'params'" class="control-body studio-scroll">
             <!-- 01 声音 -->
             <section class="side-card">
               <header class="side-card-head">
@@ -1624,6 +1635,12 @@ const saved = loadVoiceSettings()
 const activeTab = ref<'speech' | 'design' | 'clone'>('speech')
 /** 结果区里的历史面板默认收起，需要时展开。 */
 const showHistory = ref(false)
+/** 右栏卡片页签：声音与参数 / 生成结果。 */
+const controlTab = ref<'params' | 'result'>('params')
+const CONTROL_TABS = [
+  { value: 'params' as const, label: '声音与参数' },
+  { value: 'result' as const, label: '生成结果' },
+]
 /** 当前生成结果的显示名，可在结果头部直接修改。 */
 const resultTitle = ref('')
 const text = ref('')
@@ -2377,6 +2394,8 @@ async function handleGenerate() {
     resultTitle.value = clean ? `${voice.name} · ${clean.slice(0, 16)}${clean.length > 16 ? '…' : ''}` : `${voice.name} 配音`
 
     await pushHistory(generated, voice.name, sourceText)
+    // 生成完直接把右栏切到结果页签，省掉一次点击
+    controlTab.value = 'result'
 
     // 设计音色只要真正用于合成一次，就会长期保留在账号里。
     if (designedVoices.value.some((item) => item.voiceId === voice.voiceId)) {
@@ -3755,28 +3774,22 @@ onBeforeUnmount(() => {
   text-align: center;
 }
 
-/* 右栏：上面参数，下面结果；历史在结果内部展开，不单独占位 */
+/* 右栏：卡片页签切换（声音与参数 / 生成结果），历史在结果内展开 */
 .control-panel {
-  display: grid;
-  /* 显式三行：参数占主空间，结果靠下，历史嵌在结果之后 */
-  grid-template-rows: minmax(0, 1fr) auto auto;
-  gap: 0;
-}
-
-.control-panel > .control-body {
-  grid-row: 1;
+  display: flex;
   min-height: 0;
+  flex-direction: column;
 }
 
+.control-panel > .control-body,
 .control-panel > .control-result {
-  grid-row: 2;
-  max-height: 44%;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
 }
 
 .control-panel > .control-history {
-  grid-row: 3;
-  /* 历史收起时不占空间，展开后嵌在结果下方 */
+  flex: none;
   max-height: 240px;
   overflow-y: auto;
 }
