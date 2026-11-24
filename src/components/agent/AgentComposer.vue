@@ -617,7 +617,7 @@ const placeholderText = computed(() => {
   if (chatMode.isCreate) {
     return chatMode.isAuto
       ? '直接说需求，模型会自己定下镜头与节奏…'
-      : '先说说你想拍什么，步帧会问清镜头与节奏…'
+      : '先说说你想拍什么，赭墨会问清镜头与节奏…'
   }
   return `给 ${localAgentStore.selectedLabel} 发消息…`
 })

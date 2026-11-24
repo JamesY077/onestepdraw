@@ -21,7 +21,7 @@
     <header class="login-header">
       <div class="login-brand">
         <BrandMark :size="28" />
-        <span class="sf-brand-name">Stepframe</span>
+        <span class="sf-brand-name">{{ BRAND_NAME_EN }}</span>
       </div>
       <span class="local-pill">
         <i class="pill-dot" aria-hidden="true" />
@@ -43,7 +43,7 @@
           trigger="load"
         />
         <p class="login-lede">
-          对话、生成、剪辑，都在同一张桌上完成。Stepframe 在这台电脑上工作，
+          对话、生成、剪辑，都在同一张桌上完成。Sable 在这台电脑上工作，
           素材与对话只留在本地。
         </p>
 
@@ -173,7 +173,7 @@
     </main>
 
     <footer class="login-footer">
-      <span class="sf-mono">Stepframe 1.0</span>
+      <span class="sf-mono">Sable 1.0</span>
       <span class="footer-dot" aria-hidden="true">·</span>
       <span>Local AI Creative Agent</span>
       <span class="footer-dot" aria-hidden="true">·</span>
@@ -191,6 +191,7 @@ import TextReveal from '@/components/ui/TextReveal.vue'
 import { useReducedMotion } from '@/composables/useReducedMotion'
 import { useApiStore } from '@/stores/apiStore'
 import { AIPING_PUBLIC_API_BASE_URL, isOpenAiBaseUrlFormat } from '@/api/config'
+import { BRAND_NAME_EN } from '@/features/brand'
 import { SESSION_SCOPE } from '@/utils/platform'
 
 const router = useRouter()
@@ -285,6 +286,7 @@ async function handleSubmit() {
 }
 
 .login-brand {
+  align-items: flex-end;
   display: flex;
   align-items: center;
   gap: 10px;

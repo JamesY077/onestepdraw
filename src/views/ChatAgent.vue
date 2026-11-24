@@ -105,8 +105,8 @@
           <p class="welcome-copy">
             {{
               chatMode.isCreate
-                ? '先说说你想拍什么。步帧会问清镜头、光线与节奏，再带你进剪辑台，把它慢慢剪成一支片。'
-                : '步帧是你的本地 AI 创作助手。写东西、想点子、做分镜、推敲提示词，都可以从这里开始。'
+                ? '先说说你想拍什么。赭墨会问清镜头、光线与节奏，再带你进剪辑台，把它慢慢剪成一支片。'
+                : '赭墨是你的本地 AI 创作助手。写东西、想点子、做分镜、推敲提示词，都可以从这里开始。'
             }}
           </p>
 
@@ -496,7 +496,7 @@ watch(
 watch(
   () => store.activeConversation?.title,
   (title) => {
-    document.title = title ? `${title} · 步帧` : '步帧'
+    document.title = title ? `${title} · 赭墨` : '赭墨'
   },
   { immediate: true },
 )

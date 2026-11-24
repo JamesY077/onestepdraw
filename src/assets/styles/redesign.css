@@ -143,10 +143,10 @@ samp {
 
 .sf-brand-name {
   font-family: var(--sf-font-brand);
-  font-size: 18px;
-  font-weight: 680;
-  letter-spacing: -0.022em;
-  line-height: 1;
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  line-height: 0.9;
 }
 
 /* ---------- 表面 ---------- */

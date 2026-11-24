@@ -2,8 +2,8 @@
   <aside class="agent-sidebar">
     <header class="sidebar-head">
       <div class="sidebar-brand">
-        <BrandMark :size="26" />
-        <span class="brand-text">Stepframe</span>
+        <BrandMark :size="34" />
+        <span class="brand-text">{{ BRAND_NAME_EN }}</span>
       </div>
       <button type="button" class="icon-button close-button" aria-label="收起侧栏" @click="$emit('close')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
@@ -12,10 +12,6 @@
       </button>
     </header>
 
-    <div class="sidebar-workspace">
-      <WorkspacePicker />
-    </div>
-
     <button type="button" class="new-chat-button" @click="$emit('new')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
         <path d="M12 5v14M5 12h14" />
@@ -23,6 +19,10 @@
       <span>新对话</span>
       <kbd>⌘K</kbd>
     </button>
+
+    <div class="sidebar-workspace">
+      <WorkspacePicker />
+    </div>
 
     <label class="search-box">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
@@ -86,6 +86,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import BrandMark from './BrandMark.vue'
+import { BRAND_NAME_EN } from '@/features/brand'
 import WorkspacePicker from '@/components/workspace/WorkspacePicker.vue'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
 import type { AgentConversation } from '@/types/agent'
@@ -203,24 +204,27 @@ async function handleDelete(conversation: AgentConversation) {
 
 .sidebar-head {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  padding: 18px 16px 12px 18px;
+  padding: 16px 16px 10px 18px;
 }
 
+/* 图标与字标左对齐，基线对齐：图标底边压住字标基线下沿 */
 .sidebar-brand {
   display: flex;
-  align-items: center;
-  gap: 9px;
+  align-items: flex-end;
+  gap: 10px;
+  line-height: 1;
 }
 
 .brand-text {
   color: var(--sf-ink);
   font-family: var(--sf-font-brand);
-  font-size: 18px;
-  font-weight: 680;
-  letter-spacing: -0.022em;
-  line-height: 1;
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  line-height: 0.85;
+  padding-bottom: 2px;
 }
 
 .close-button {
@@ -228,7 +232,8 @@ async function handleDelete(conversation: AgentConversation) {
 }
 
 .sidebar-workspace {
-  padding: 0 12px 8px;
+  padding: 0 12px 10px;
+  margin-top: 2px;
 }
 
 .new-chat-button {

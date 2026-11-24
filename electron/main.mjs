@@ -13,10 +13,10 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-app.setName('Stepframe')
+app.setName('Sable')
 
 app.setAboutPanelOptions({
-  applicationName: 'Stepframe',
+  applicationName: 'Sable',
   applicationVersion: app.getVersion(),
   copyright: '本地 AI 创作助手',
   credits: '素材与项目只保存在这台设备上',
@@ -102,7 +102,7 @@ async function createWindow() {
     y: saved?.y,
     minWidth: 1200,
     minHeight: 680,
-    title: 'Stepframe',
+    title: 'Sable',
     backgroundColor: '#faf9f5',
     // 内容延伸到标题栏下，红绿灯由前端留出的顶栏区域承接。
     titleBarStyle: 'hiddenInset',
@@ -123,7 +123,7 @@ async function createWindow() {
   // 页面自己的 title 会把窗口标题改回中文项目名，这里锁成 App 名。
   mainWindow.on('page-title-updated', (event) => {
     event.preventDefault()
-    mainWindow?.setTitle('Stepframe')
+    mainWindow?.setTitle('Sable')
   })
 
   mainWindow.once('ready-to-show', () => mainWindow?.show())
@@ -243,7 +243,7 @@ if (!gotLock) {
     try {
       await createWindow()
     } catch (error) {
-      dialog.showErrorBox('Stepframe 启动失败', String(error?.message || error))
+      dialog.showErrorBox('Sable 启动失败', String(error?.message || error))
       app.quit()
     }
 

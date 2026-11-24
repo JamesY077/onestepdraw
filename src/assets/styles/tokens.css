@@ -11,9 +11,12 @@
     'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
   --sf-font-editorial:
     'Instrument Serif', 'Songti SC', 'STSong', 'Noto Serif SC', 'Times New Roman', serif;
-  /* 品牌字标：现代无衬线，字距收紧，区别于正文与衬线标题 */
+  /*
+   * 品牌字标：高对比度的衬线体，字距收紧，
+   * 与无衬线的正文、等宽的数据形成三层区分。
+   */
   --sf-font-brand:
-    'Inter Variable', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    'Instrument Serif', 'Didot', 'Playfair Display', Georgia, 'Songti SC', serif;
   --sf-font-mono:
     'JetBrains Mono Variable', 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
 

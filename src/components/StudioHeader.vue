@@ -1,9 +1,9 @@
 <template>
   <header class="studio-header" :style="{ '--studio-accent': accent }">
     <div class="studio-header-main">
-      <button class="studio-brand" type="button" aria-label="返回步帧对话" @click="router.push('/chat')">
+      <button class="studio-brand" type="button" aria-label="返回赭墨对话" @click="router.push('/chat')">
         <BrandMark :size="26" />
-        <span class="studio-brand-name">Stepframe</span>
+        <span class="studio-brand-name">{{ BRAND_NAME_EN }}</span>
       </button>
 
       <div class="studio-heading">
@@ -32,6 +32,7 @@
 import { useRouter } from 'vue-router'
 import BrandMark from '@/components/agent/BrandMark.vue'
 import ShinyLabel from '@/components/ui/ShinyLabel.vue'
+import { BRAND_NAME_EN } from '@/features/brand'
 
 withDefaults(
   defineProps<{
@@ -116,9 +117,9 @@ const router = useRouter()
 
 .studio-brand-name {
   font-family: var(--sf-font-brand);
-  font-size: 16px;
-  font-weight: 680;
-  letter-spacing: -0.022em;
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
   line-height: 1;
 }
 

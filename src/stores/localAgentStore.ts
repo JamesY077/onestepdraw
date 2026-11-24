@@ -63,7 +63,7 @@ export const useLocalAgentStore = defineStore('localAgent', () => {
         id: CUSTOM_ENGINE_ID,
         name: custom.value.name.trim() || '自定义 Agent',
         vendor: '自定义命令',
-        description: '由你填写的本地命令，步帧会把对话作为提示词传给它。',
+        description: '由你填写的本地命令，赭墨会把对话作为提示词传给它。',
         commands: [],
         installCommand: '',
         installUrl: '',
