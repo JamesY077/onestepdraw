@@ -2401,25 +2401,27 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   position: relative;
   z-index: 1;
   display: grid;
-  /* 主区固定视口高度，内部各栏自己滚动，页面不产生下拉 */
-  height: calc(100dvh - 176px);
-  min-height: 0;
-  /* 右栏放宽：窄的 320px 会把参数卡压成两行文字，视觉上像被挤变形 */
-  grid-template-columns: minmax(300px, 340px) minmax(420px, 1fr) minmax(320px, 372px);
-  gap: 16px;
-  align-items: start;
-  padding: 0 18px 26px 10px;
+  /*
+   * 桌面 App 单屏工作区：
+   * 顶栏之外只剩这一块主区，三栏同高、左右栏自己滚动，
+   * 中间舞台永远固定，不跟随侧栏内容上下移动。
+   */
   flex: 1 1 auto;
+  height: 0;
   min-height: 0;
+  grid-template-columns: 320px minmax(0, 1fr) 320px;
+  gap: 16px;
+  align-items: stretch;
+  padding: 8px 16px 16px 10px;
+  overflow: hidden;
 }
 
 .model3d-rail {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  /* 与舞台同高，栏内自己滚动，不撑高主区 */
-  height: calc(100dvh - 236px);
-  max-height: calc(100dvh - 236px);
+  /* 与主区同高，内容在栏内滚动 */
+  height: 100%;
   min-height: 0;
   overflow: hidden;
 }
@@ -3233,21 +3235,20 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   flex-direction: column;
   gap: 12px;
   min-width: 0;
-  position: sticky;
-  top: 8px;
+  min-height: 0;
+  height: 100%;
+  /* 中央舞台不参与侧栏滚动，固定在主区内 */
+  position: relative;
 }
 
 .stage-shell {
   position: relative;
   display: flex;
   flex-direction: column;
-  /*
-   * 桌面 App 规范：三栏在视口内完整放下，不产生页面级下拉。
-   * 高度按「视口 - 顶栏 - 底部步骤条 - 边距」算，最小 480 兜底。
-   */
-  min-height: 480px;
-  height: calc(100dvh - 236px);
-  max-height: calc(100dvh - 236px);
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  max-height: none;
   border: 1px solid rgba(125, 211, 252, 0.16);
   border-radius: 26px;
   background:
@@ -3890,6 +3891,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 
 .stage-steps {
   display: grid;
+  flex: none;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
@@ -4507,34 +4509,42 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   }
 
   .stage-shell {
-    height: calc(100dvh - 246px);
-    min-height: 520px;
+    min-height: 0;
   }
 }
 
 @media (max-width: 1180px) {
+  /* 桌面最小窗口：保持单屏三栏，只把栏宽收紧，不退回整页下拉 */
   .model3d-main {
-    grid-template-columns: 1fr;
-    padding: 0 16px 28px;
+    grid-template-columns: 280px minmax(0, 1fr) 280px;
+    gap: 12px;
+    padding: 6px 12px 12px 8px;
+  }
+}
+
+@media (max-width: 900px) {
+  /* 窄屏：中央舞台在上、参数在下，允许内容区内部滚动 */
+  .model3d-main {
+    display: flex;
+    height: auto;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .stage-column {
+    order: -1;
+    height: 58dvh;
+    min-height: 380px;
   }
 
   .model3d-rail {
-    max-height: none;
+    height: auto;
+    overflow: visible;
   }
 
   .rail-scroll {
     overflow: visible;
     padding-right: 0;
-  }
-
-  .stage-column {
-    position: static;
-    order: -1;
-  }
-
-  .stage-shell {
-    height: 62dvh;
-    min-height: 460px;
   }
 
   .stage-steps {
@@ -4544,12 +4554,11 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 
 @media (max-width: 720px) {
   .model3d-main {
-    padding: 0 12px 24px;
+    padding: 0 12px 16px;
   }
 
   .stage-shell {
-    height: 56dvh;
-    min-height: 400px;
+    min-height: 0;
   }
 
   .stage-toolbar {

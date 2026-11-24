@@ -2812,13 +2812,13 @@ onBeforeUnmount(() => {
   position: relative;
   z-index: 2;
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
-  gap: 12px;
-  width: min(100% - 48px, var(--studio-max-width));
-  height: calc(100dvh - 128px);
+  gap: 10px;
+  width: min(100% - 40px, 1440px);
   min-height: 0;
   margin: 0 auto;
-  padding: 12px 0 16px;
+  padding: 8px 0 14px;
   overflow: hidden;
 }
 
@@ -2916,28 +2916,62 @@ onBeforeUnmount(() => {
 .speech-layout,
 .clone-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 400px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 14px;
   align-items: stretch;
   min-height: 0;
   overflow: hidden;
 }
 
-/* 左栏自身滚动 */
+/* 左栏：脚本为主，结果和历史按内容占小比例，整体不再翻页 */
 .speech-col {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.speech-col > .script-panel {
   display: flex;
   min-height: 0;
   flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: hidden;
 }
 
-.speech-col {
+.speech-col > .result-panel {
+  /* 结果面板只占一小块，脚本编辑占主空间；需要查看时内部滚动 */
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.speech-col > .history-panel {
+  max-height: 170px;
+  overflow-y: auto;
+}
+
+.speech-col > .history-panel:only-of-type {
+  max-height: 160px;
+}
+
+/* 脚本内部：文本区占满剩余高度，快捷插入在下方，不用长滚动 */
+.speech-col .script-body {
   display: flex;
-  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.speech-col .script-input {
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 14px 16px;
+  font-size: 15px;
+  line-height: 1.8;
+  resize: none;
 }
 
 /* 用头部色带强化每个分区的起点，避免几块面板糊成一片 */
@@ -3598,6 +3632,8 @@ onBeforeUnmount(() => {
   flex: 1 1 auto;
   flex-direction: column;
   gap: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 12px 14px 14px;
   overflow-y: auto;
   overscroll-behavior: contain;
