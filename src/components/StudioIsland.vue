@@ -197,6 +197,24 @@ function go(item: { path: string; key?: string }) {
   overflow: visible;
 }
 
+/*
+ * 桌面端：导航停在页面右侧、滚动条所在的同一条背景带内。
+ * 垂直用 50% 居中，水平贴在右侧留白里，不再压到内容区。
+ */
+@media (min-width: 901px) and (hover: hover) {
+  .studio-island {
+    width: 64px;
+    padding: 0 8px 0 6px;
+  }
+
+  .island-shell {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+  }
+}
+
 .island-shell {
   display: flex;
   flex-direction: column;

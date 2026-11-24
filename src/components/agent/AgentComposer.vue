@@ -1380,8 +1380,8 @@ defineExpose({ focus })
   display: block;
   width: 100%;
   max-height: 200px;
-  min-height: 48px;
-  padding: 14px 16px 6px;
+  min-height: 24px;
+  padding: 0;
   border: 0;
   outline: none;
   background: transparent;
@@ -1889,20 +1889,19 @@ defineExpose({ focus })
 
 /* ---------------- @ 引用 ---------------- */
 
+/* 输入区：内边距统一加在外壳上，文字层自身零内边距，避免顶到边框 */
 .composer-field {
   position: relative;
   width: 100%;
   min-width: 0;
+  padding: 12px 16px 4px;
 }
 
-/* 输入框本身由 MentionInput 绘制，这里只保证不撑破容器 */
+/* 输入框本身由 MentionInput 绘制 */
 .composer-field .composer-input {
   display: block;
   width: 100%;
   min-width: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
 }
 
 /* 插入后的 @引用 用主题色标出，便于确认它落在哪一句里 */
