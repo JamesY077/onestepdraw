@@ -2,7 +2,7 @@
   <aside class="agent-sidebar">
     <header class="sidebar-head">
       <div class="sidebar-brand">
-        <BrandMark :size="34" />
+        <BrandMark :size="26" />
         <span class="brand-text">{{ BRAND_NAME_EN }}</span>
       </div>
       <button type="button" class="icon-button close-button" aria-label="收起侧栏" @click="$emit('close')">
@@ -19,10 +19,6 @@
       <span>新对话</span>
       <kbd>⌘K</kbd>
     </button>
-
-    <div class="sidebar-workspace">
-      <WorkspacePicker />
-    </div>
 
     <label class="search-box">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
@@ -87,7 +83,6 @@
 import { computed, ref } from 'vue'
 import BrandMark from './BrandMark.vue'
 import { BRAND_NAME_EN } from '@/features/brand'
-import WorkspacePicker from '@/components/workspace/WorkspacePicker.vue'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
 import type { AgentConversation } from '@/types/agent'
 import { confirmDialog } from '@/features/ui/dialog'
@@ -204,36 +199,30 @@ async function handleDelete(conversation: AgentConversation) {
 
 .sidebar-head {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  padding: 16px 16px 10px 18px;
+  /* 向下让出顶部留白，与内容区同一条左边线对齐 */
+  padding: 30px 16px 12px 20px;
 }
 
-/* 图标与字标左对齐，基线对齐：图标底边压住字标基线下沿 */
 .sidebar-brand {
   display: flex;
-  align-items: flex-end;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
   line-height: 1;
 }
 
 .brand-text {
   color: var(--sf-ink);
   font-family: var(--sf-font-brand);
-  font-size: 30px;
+  font-size: 22px;
   font-weight: 400;
-  letter-spacing: -0.012em;
-  line-height: 0.85;
-  padding-bottom: 2px;
+  letter-spacing: -0.01em;
+  line-height: 1;
 }
 
 .close-button {
   display: none;
-}
-
-.sidebar-workspace {
-  padding: 0 12px 10px;
-  margin-top: 2px;
 }
 
 .new-chat-button {
