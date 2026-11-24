@@ -1,22 +1,31 @@
 <template>
   <div class="login-page">
+    <!-- 背景：ASCII 渐隐层，鼠标掠过时字符会被打散重排 -->
     <div class="login-ambient" aria-hidden="true">
-      <DotGrid
-        :dot-size="1.8"
-        :gap="26"
-        base-color="#d8cdbb"
-        active-color="#b4553a"
-        :proximity="130"
-        :strength="0.55"
-        :glow="0.08"
-        :opacity="0.62"
-        :fade="16"
-        shape="circle"
+      <GradientASCII
+        :colors="['#3a322a', '#b4553a', '#8a7358', '#d8c3a5']"
+        shape="horizon"
+        characters=" .:-=+*x#%@"
+        :cell-size="14"
+        :density="0.92"
+        :glyph-opacity="0.7"
+        :glow="0.14"
+        :flicker="0.08"
+        :softness="0.66"
+        :flow="0.45"
+        :speed="0.7"
+        :gradient-opacity="0.85"
+        :grain="0.05"
+        :variation="0.26"
         :mouse-interaction="!reduced"
-        :click-shock="false"
-        :intro="false"
+        :scramble-radius="0.16"
+        click-effect="wave"
+        :intro="true"
+        font-family="'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace"
+        light-mode
       />
     </div>
+    <div class="login-veil" aria-hidden="true" />
 
     <header class="login-header">
       <div class="login-brand">
@@ -97,6 +106,7 @@
                 placeholder="sk-..."
                 autocomplete="off"
                 spellcheck="false"
+                @paste="handleKeyPaste"
               />
               <button
                 type="button"
@@ -186,7 +196,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BrandMark from '@/components/agent/BrandMark.vue'
-import DotGrid from '@/components/bits/DotGrid.vue'
+import GradientASCII from '@/components/bits/GradientASCII.vue'
 import TextReveal from '@/components/ui/TextReveal.vue'
 import { useReducedMotion } from '@/composables/useReducedMotion'
 import { useApiStore } from '@/stores/apiStore'
@@ -214,6 +224,18 @@ onMounted(() => {
   }
   apiKeyInputRef.value?.focus()
 })
+
+/**
+ * 粘贴时清掉换行与首尾空白：
+ * 从网页/文档复制 Key 经常带换行，直接提交会验证失败。
+ */
+function handleKeyPaste(event: ClipboardEvent) {
+  const raw = event.clipboardData?.getData('text') ?? ''
+  const cleaned = raw.replace(/\s+/g, '')
+  if (!cleaned || cleaned === raw) return
+  event.preventDefault()
+  apiKey.value = cleaned
+}
 
 function resolveRedirectTarget(): string {
   const raw = typeof route.query.redirect === 'string' ? route.query.redirect.trim() : ''
@@ -259,18 +281,35 @@ async function handleSubmit() {
   color: var(--sf-ink);
 }
 
+/* ASCII 背景铺满整页，越靠近边缘越淡，保证正文可读 */
 .login-ambient {
   position: absolute;
   inset: 0;
   z-index: 0;
-  opacity: 0.55;
-  mask-image: radial-gradient(120% 90% at 50% 30%, #000 30%, transparent 78%);
+  opacity: 1;
+  /*
+   * 中央留白给正文与表单，ASCII 只在四周成纹：
+   * 中间完全透明 → 越靠边越实，形成一圈颗粒边框。
+   */
+  mask-image: radial-gradient(104% 92% at 44% 30%, transparent 0 20%, rgba(0, 0, 0, 0.5) 44%, rgba(0, 0, 0, 1) 82%);
   pointer-events: none;
 }
 
-.login-ambient :deep(.dot-grid) {
+.login-ambient :deep(.gradient-ascii-container) {
   width: 100%;
   height: 100%;
+}
+
+/* 一层极浅的纸色罩，把 ASCII 压成底纹，正文仍然清楚 */
+.login-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  /* 只在正文与卡片位置铺亮底，其余留给 ASCII 纹理 */
+  background:
+    radial-gradient(560px 300px at 24% 40%, rgba(252, 248, 241, 0.9), rgba(252, 248, 241, 0) 76%),
+    radial-gradient(460px 380px at 78% 44%, rgba(252, 248, 241, 0.86), rgba(252, 248, 241, 0) 78%);
 }
 
 .login-header {
@@ -405,11 +444,36 @@ async function handleSubmit() {
 /* ---------- 右侧登录卡 ---------- */
 
 .login-card {
+  position: relative;
+  z-index: 3;
+  animation: login-card-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
   width: 100%;
   padding: 28px 28px 22px;
   border: 1px solid var(--sf-line);
   border-radius: 24px;
-  box-shadow: var(--sf-shadow-md);
+  /* 实底卡片：ASCII 底纹不穿透，表单始终清楚 */
+  background: rgba(255, 253, 249, 0.96);
+  backdrop-filter: blur(18px) saturate(1.1);
+  box-shadow:
+    0 30px 70px -40px rgba(50, 38, 25, 0.45),
+    0 2px 10px rgba(50, 38, 25, 0.05);
+}
+
+@keyframes login-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card {
+    animation: none;
+  }
 }
 
 .card-head {
