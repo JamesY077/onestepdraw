@@ -148,6 +148,8 @@ export interface VoicePreview {
 /** 配音生成记录。 */
 export interface VoiceHistoryItem {
   id: string
+  /** 用户给这条配音起的名字；没有时按音色名兜底显示。 */
+  title?: string
   text: string
   voiceId: string
   voiceName: string
@@ -171,6 +173,8 @@ export interface VoiceHistoryItem {
  */
 export interface VoiceLibraryItem {
   id: string
+  /** 用户给这条配音起的名字；没有时按音色名显示。 */
+  title?: string
   text: string
   voiceId: string
   voiceName: string

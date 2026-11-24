@@ -218,28 +218,33 @@
         <!-- 声音与参数 -->
         <aside class="studio-panel control-panel">
           <header class="studio-panel-head control-head">
-            <div class="control-tabs" role="tablist" aria-label="结果与参数">
-              <button
-                v-for="tab in CONTROL_TABS"
-                :key="tab.value"
-                class="control-tab"
-                :class="{ active: controlTab === tab.value }"
-                type="button"
-                role="tab"
-                :aria-selected="controlTab === tab.value"
-                @click="controlTab = tab.value"
-              >
-                {{ tab.label }}
-                <span v-if="tab.value === 'history' && history.length" class="tab-count">{{ history.length }}</span>
-              </button>
+            <div class="studio-panel-headings">
+              <span class="studio-kicker">Voice &amp; Params</span>
+              <h2 class="studio-panel-title">声音与参数</h2>
             </div>
-            <button v-if="controlTab === 'params'" class="ghost-btn" type="button" @click="resetParams">重置</button>
-            <button v-else-if="controlTab === 'history' && history.length" class="ghost-btn" type="button" @click="clearHistory">清空</button>
+            <button class="ghost-btn" type="button" @click="resetParams">重置</button>
           </header>
 
-          <div v-if="controlTab === 'result'" class="control-result">
+          <div class="control-result">
             <header class="control-result-head">
-              <span class="studio-kicker">Output</span>
+              <div class="result-title-line">
+                <input
+                  v-model="resultTitle"
+                  class="result-title-input"
+                  aria-label="配音名称"
+                  maxlength="40"
+                  placeholder="给这段配音起个名字"
+                  @change="renameCurrentResult"
+                />
+                <button
+                  class="ghost-btn"
+                  type="button"
+                  :title="showHistory ? '收起历史记录' : '查看历史记录'"
+                  @click="showHistory = !showHistory"
+                >
+                  {{ showHistory ? '收起历史' : '历史记录' }}
+                </button>
+              </div>
               <span class="studio-panel-meta">{{ result ? resultMeta : '等待生成' }}</span>
             </header>
             <div class="result-body">
@@ -292,10 +297,11 @@
             </div>
           </div>
 
-          <div v-else-if="controlTab === 'history'" class="control-history">
+          <div v-if="showHistory" class="control-history">
             <header class="control-result-head">
               <span class="studio-kicker">History</span>
               <span class="studio-panel-meta">{{ history.length ? `共 ${history.length} 条` : '暂无记录' }}</span>
+              <button v-if="history.length" class="ghost-btn" type="button" @click="clearHistory">清空</button>
             </header>
             <div class="result-body">
               <div v-if="!history.length" class="result-empty">
@@ -310,7 +316,13 @@
               <ul v-else class="history-list">
               <li v-for="item in pagedHistory" :key="item.id" class="history-item">
                 <div class="history-top">
-                  <span class="history-voice">{{ item.voiceName }}</span>
+                  <input
+                class="history-title-input"
+                :value="item.title || item.voiceName"
+                :aria-label="`配音名称：${item.title || item.voiceName}`"
+                maxlength="40"
+                @change="renameHistoryItem(item, ($event.target as HTMLInputElement).value)"
+              />
                   <span class="history-tags">
                     <span v-if="historyParamHint(item)" class="history-param">{{ historyParamHint(item) }}</span>
                     <span class="history-time">{{ formatClock(item.createdAt) }}</span>
@@ -368,7 +380,7 @@
             </div>
           </div>
 
-          <div v-show="controlTab === 'params'" class="control-body studio-scroll">
+          <div class="control-body studio-scroll">
             <!-- 01 声音 -->
             <section class="side-card">
               <header class="side-card-head">
@@ -1610,13 +1622,10 @@ const saved = loadVoiceSettings()
 /* ---------------- 基础状态 ---------------- */
 
 const activeTab = ref<'speech' | 'design' | 'clone'>('speech')
-/** 右栏页签：默认看生成结果，可切到历史或参数。 */
-const controlTab = ref<'result' | 'history' | 'params'>('result')
-const CONTROL_TABS = [
-  { value: 'result' as const, label: '生成结果' },
-  { value: 'history' as const, label: '历史记录' },
-  { value: 'params' as const, label: '声音与参数' },
-]
+/** 结果区里的历史面板默认收起，需要时展开。 */
+const showHistory = ref(false)
+/** 当前生成结果的显示名，可在结果头部直接修改。 */
+const resultTitle = ref('')
 const text = ref('')
 const speed = ref(saved.speed)
 const pitch = ref(saved.pitch)
@@ -2363,6 +2372,9 @@ async function handleGenerate() {
     resultWaveform.value = await computeWaveform(generated.blob, 160)
     resultVoiceName.value = voice.name
     resultText.value = sourceText
+    // 默认名字 = 音色名 + 文本前缀，用户随后可自行修改
+    const clean = sourceText.replace(/\s+/g, ' ').trim()
+    resultTitle.value = clean ? `${voice.name} · ${clean.slice(0, 16)}${clean.length > 16 ? '…' : ''}` : `${voice.name} 配音`
 
     await pushHistory(generated, voice.name, sourceText)
 
@@ -2383,6 +2395,7 @@ async function handleGenerate() {
 async function pushHistory(generated: SpeechResult, voiceName: string, sourceText: string): Promise<boolean> {
   const item: VoiceHistoryItem & { blob: Blob } = {
     id: `${generated.createdAt}-${Math.random().toString(36).slice(2, 6)}`,
+    title: resultTitle.value || voiceName,
     text: sourceText,
     voiceId: selectedVoiceId.value,
     voiceName,
@@ -2407,6 +2420,7 @@ async function pushHistory(generated: SpeechResult, voiceName: string, sourceTex
   // 写入共享音频库，供「图片视频生成」的多模态参考选择。
   const saved = await saveVoiceLibraryItem({
     id: item.id,
+    title: item.title,
     text: item.text,
     voiceId: item.voiceId,
     voiceName: item.voiceName,
@@ -2440,11 +2454,15 @@ async function clearHistory() {
   void clearVoiceLibrary()
 }
 
-function downloadBlob(blob: Blob, extension: string) {
+function downloadBlob(blob: Blob, extension: string, title?: string) {
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = `artrealm-voice-${Date.now()}.${extension}`
+  const safe = (title || resultTitle.value || 'voice')
+    .replace(/[\\/:*?"<>|]/g, '-')
+    .trim()
+    .slice(0, 60)
+  anchor.download = `${safe || 'voice'}-${Date.now()}.${extension}`
   anchor.click()
   window.setTimeout(() => URL.revokeObjectURL(url), 2000)
 }
@@ -2455,7 +2473,7 @@ function downloadResult() {
 }
 
 function downloadHistory(item: VoiceHistoryItem & { blob: Blob }) {
-  downloadBlob(item.blob, item.format)
+  downloadBlob(item.blob, item.format, item.title || item.voiceName)
 }
 
 /** 配音是 blob 地址，转成 data URL 才能跨刷新保存在项目里。 */
@@ -2490,6 +2508,59 @@ async function removeHistory(item: VoiceHistoryItem & { blob: Blob }) {
   history.value = history.value.filter((entry) => entry.id !== item.id)
   if (historyPage.value > historyPageCount.value) historyPage.value = Math.max(1, historyPageCount.value)
   await deleteVoiceLibraryItems([item.id])
+}
+
+/**
+ * 修改当前配音的名字：同步更新内存里的历史条目与 IndexedDB 元数据。
+ * 只改名字，不动音频本身。
+ */
+async function renameCurrentResult() {
+  const title = resultTitle.value.trim().slice(0, 40)
+  resultTitle.value = title
+  const latest = history.value[0]
+  if (!latest) return
+  latest.title = title || latest.voiceName
+  try {
+    await saveVoiceLibraryItem({
+      id: latest.id,
+      title: latest.title,
+      text: latest.text,
+      voiceId: latest.voiceId,
+      voiceName: latest.voiceName,
+      model: latest.model,
+      createdAt: latest.createdAt,
+      durationMs: latest.durationMs,
+      usageCharacters: latest.usageCharacters,
+      format: latest.format,
+      size: latest.size,
+      blob: latest.blob,
+    })
+  } catch {
+    // 元数据写失败不影响当前编辑，下次进入会回退到音色名。
+  }
+}
+
+/** 修改任意一条历史配音的名字，写回 IndexedDB。 */
+async function renameHistoryItem(item: VoiceHistoryItem & { blob: Blob }, title: string) {
+  item.title = title.trim().slice(0, 40) || item.voiceName
+  try {
+    await saveVoiceLibraryItem({
+      id: item.id,
+      title: item.title,
+      text: item.text,
+      voiceId: item.voiceId,
+      voiceName: item.voiceName,
+      model: item.model,
+      createdAt: item.createdAt,
+      durationMs: item.durationMs,
+      usageCharacters: item.usageCharacters,
+      format: item.format,
+      size: item.size,
+      blob: item.blob,
+    })
+  } catch {
+    // 元数据写失败不影响当前编辑。
+  }
 }
 
 /** 历史记录的演绎参数提示；全默认时不显示，避免每条都挂一串 1.0×。 */
@@ -3684,6 +3755,32 @@ onBeforeUnmount(() => {
   text-align: center;
 }
 
+/* 右栏：上面参数，下面结果；历史在结果内部展开，不单独占位 */
+.control-panel {
+  display: grid;
+  /* 显式三行：参数占主空间，结果靠下，历史嵌在结果之后 */
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: 0;
+}
+
+.control-panel > .control-body {
+  grid-row: 1;
+  min-height: 0;
+}
+
+.control-panel > .control-result {
+  grid-row: 2;
+  max-height: 44%;
+  overflow-y: auto;
+}
+
+.control-panel > .control-history {
+  grid-row: 3;
+  /* 历史收起时不占空间，展开后嵌在结果下方 */
+  max-height: 240px;
+  overflow-y: auto;
+}
+
 .control-result,
 .control-history {
   display: flex;
@@ -3695,10 +3792,40 @@ onBeforeUnmount(() => {
 
 .control-result-head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 4px;
   padding: 10px 14px 8px;
   border-bottom: 1px solid var(--studio-panel-border);
+}
+
+.result-title-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.result-title-input,
+.history-title-input {
+  min-width: 0;
+  flex: 1;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sf-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.result-title-input:hover,
+.result-title-input:focus,
+.history-title-input:hover,
+.history-title-input:focus {
+  border-color: var(--sf-line-strong);
+  background: var(--sf-surface);
+  outline: none;
 }
 
 .control-body {
