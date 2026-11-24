@@ -31,9 +31,16 @@
         <button type="button" class="pl-btn is-primary" @click="handleNew">新建第一个项目</button>
       </div>
 
-      <section v-else class="pl-grid" aria-label="项目列表">
+      <template v-else>
+        <section v-for="group in groupedProjects" :key="group.id" class="pl-group">
+          <header class="pl-group-head">
+            <h2>{{ group.title }}</h2>
+            <span class="pl-group-path">{{ group.path }}</span>
+            <span class="pl-group-count">{{ group.items.length }} 个</span>
+          </header>
+          <div class="pl-grid">
         <article
-          v-for="item in projects"
+          v-for="item in group.items"
           :key="item.id"
           class="pl-card"
           tabindex="0"
@@ -61,7 +68,9 @@
             <button type="button" class="pl-link is-danger" @click.stop="handleDelete(item)">删除</button>
           </div>
         </article>
-      </section>
+          </div>
+        </section>
+      </template>
     </main>
   </div>
 </template>
@@ -72,12 +81,35 @@ import { useRouter } from 'vue-router'
 import StudioIsland from '@/components/StudioIsland.vue'
 import { confirmDialog } from '@/features/ui/dialog'
 import { projectDuration, useEditProjectStore } from '@/stores/editProjectStore'
+import { useWorkspaceStore } from '@/stores/workspaceStore'
 import type { EditProject } from '@/types/edit'
 
 const router = useRouter()
 const projectStore = useEditProjectStore()
 
 const projects = computed(() => projectStore.sortedProjects)
+const workspaceStore = useWorkspaceStore()
+
+/** 项目按工作区分组：当前工作区在前，未归属的落到「未分类」。 */
+const groupedProjects = computed(() => {
+  const known = workspaceStore.sortedWorkspaces.map((item, index) => ({ ...item, order: index }))
+  const buckets = new Map<string, { id: string; title: string; path: string; order: number; items: typeof projects.value }>()
+  for (const project of projects.value) {
+    const matched = known.find((item) => item.id === project.workspaceId)
+    const id = matched?.id || ''
+    if (!buckets.has(id)) {
+      buckets.set(id, {
+        id: id || 'unassigned',
+        title: matched?.title || '未分类',
+        path: matched?.path || '没有归属工作区的旧项目',
+        order: matched?.order ?? 999,
+        items: [],
+      })
+    }
+    buckets.get(id)!.items.push(project)
+  }
+  return [...buckets.values()].sort((a, b) => a.order - b.order)
+})
 
 function cover(item: EditProject): string {
   for (const track of item.tracks) {
@@ -193,6 +225,43 @@ async function handleDelete(item: EditProject) {
   border-color: var(--sf-ink);
   background: var(--sf-ink);
   color: var(--sf-surface);
+}
+
+.pl-group {
+  max-width: 1180px;
+  margin: 0 auto 26px;
+}
+
+.pl-group-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--sf-line-soft);
+}
+
+.pl-group-head h2 {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 660;
+}
+
+.pl-group-path {
+  overflow: hidden;
+  max-width: 46ch;
+  color: var(--sf-ink-3);
+  font-family: var(--sf-font-mono);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pl-group-count {
+  margin-left: auto;
+  color: var(--sf-ink-3);
+  font-size: 11px;
 }
 
 .pl-empty {

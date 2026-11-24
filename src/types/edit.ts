@@ -48,6 +48,8 @@ export interface EditProject {
   id: string
   name: string
   conversationId?: string
+  /** 归属的工作区（本地目录）。缺省表示未分类。 */
+  workspaceId?: string
   aspectRatio: string
   resolution: '768P' | '2K'
   fps: number

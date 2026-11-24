@@ -160,6 +160,8 @@ export interface AgentConversation {
   messages: AgentMessage[]
   /** 创作对话关联的剪辑项目。 */
   projectId?: string
+  /** 归属的工作区（本地目录）。缺省表示未分类。 */
+  workspaceId?: string
   mode?: AgentConversationMode
   automation?: AgentAutomationMode
 }

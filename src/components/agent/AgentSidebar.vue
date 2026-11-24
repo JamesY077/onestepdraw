@@ -12,6 +12,10 @@
       </button>
     </header>
 
+    <div class="sidebar-workspace">
+      <WorkspaceSwitcher />
+    </div>
+
     <button type="button" class="new-chat-button" @click="$emit('new')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
         <path d="M12 5v14M5 12h14" />
@@ -82,6 +86,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import BrandMark from './BrandMark.vue'
+import WorkspaceSwitcher from '@/components/workspace/WorkspaceSwitcher.vue'
+import { useWorkspaceStore } from '@/stores/workspaceStore'
 import type { AgentConversation } from '@/types/agent'
 import { confirmDialog } from '@/features/ui/dialog'
 import { getApiKey } from '@/api/config'
@@ -100,6 +106,7 @@ const emit = defineEmits<{
 }>()
 
 const query = ref('')
+const workspaceStore = useWorkspaceStore()
 
 const maskedKey = computed(() => {
   const key = getApiKey()
@@ -114,9 +121,13 @@ function startOfDay(timestamp: number): number {
   return date.getTime()
 }
 
+/**
+ * 会话按工作区分组，组内仍按时间分成今天 / 昨天 / 近 7 天 / 更早。
+ * 当前工作区排在最前，没有归属的旧会话落到「未分类」。
+ */
 const filteredGroups = computed(() => {
   const keyword = query.value.trim().toLowerCase()
-  const items = props.conversations.filter((conversation) =>
+  const matched = props.conversations.filter((conversation) =>
     keyword ? conversation.title.toLowerCase().includes(keyword) : true,
   )
 
@@ -124,22 +135,48 @@ const filteredGroups = computed(() => {
   const yesterday = today - 24 * 60 * 60 * 1000
   const lastWeek = today - 6 * 24 * 60 * 60 * 1000
 
-  const groups: Array<{ label: string; items: AgentConversation[] }> = [
-    { label: '今天', items: [] },
-    { label: '昨天', items: [] },
-    { label: '近 7 天', items: [] },
-    { label: '更早', items: [] },
-  ]
+  const buckets = new Map<string, { label: string; order: number; items: AgentConversation[] }>()
+  const workspaceOrder = workspaceStore.sortedWorkspaces.map((item, index) => ({
+    id: item.id,
+    title: item.title,
+    order: index,
+  }))
 
-  for (const conversation of items) {
-    const day = startOfDay(conversation.updatedAt)
-    if (day >= today) groups[0].items.push(conversation)
-    else if (day >= yesterday) groups[1].items.push(conversation)
-    else if (day >= lastWeek) groups[2].items.push(conversation)
-    else groups[3].items.push(conversation)
+  for (const conversation of matched) {
+    const workspaceId = conversation.workspaceId || ''
+    const known = workspaceOrder.find((item) => item.id === workspaceId)
+    const key = known ? known.id : ''
+    if (!buckets.has(key)) {
+      buckets.set(key, {
+        label: known ? known.title : '未分类',
+        order: known ? known.order : 999,
+        items: [],
+      })
+    }
+    buckets.get(key)!.items.push(conversation)
   }
 
-  return groups.filter((group) => group.items.length > 0)
+  const result: Array<{ label: string; items: AgentConversation[] }> = []
+  for (const bucket of [...buckets.values()].sort((a, b) => a.order - b.order)) {
+    const timeGroups: Array<{ label: string; items: AgentConversation[] }> = [
+      { label: '今天', items: [] },
+      { label: '昨天', items: [] },
+      { label: '近 7 天', items: [] },
+      { label: '更早', items: [] },
+    ]
+    for (const conversation of bucket.items) {
+      const day = startOfDay(conversation.updatedAt)
+      if (day >= today) timeGroups[0].items.push(conversation)
+      else if (day >= yesterday) timeGroups[1].items.push(conversation)
+      else if (day >= lastWeek) timeGroups[2].items.push(conversation)
+      else timeGroups[3].items.push(conversation)
+    }
+    for (const group of timeGroups) {
+      if (!group.items.length) continue
+      result.push({ label: `${bucket.label} · ${group.label}`, items: group.items })
+    }
+  }
+  return result
 })
 
 async function handleDelete(conversation: AgentConversation) {
@@ -188,6 +225,10 @@ async function handleDelete(conversation: AgentConversation) {
 
 .close-button {
   display: none;
+}
+
+.sidebar-workspace {
+  padding: 0 12px 8px;
 }
 
 .new-chat-button {

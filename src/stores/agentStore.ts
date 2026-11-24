@@ -46,6 +46,7 @@ import { CUSTOM_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useApiStore } from '@/stores/apiStore'
 import { useModelStore } from '@/stores/modelStore'
 import { useSkillStore } from '@/stores/skillStore'
+import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { createFlowSystemPrompt } from '@/features/agent/createSkill'
 import { useEditProjectStore } from '@/stores/editProjectStore'
 import type { AutomationMode, ConversationMode } from '@/stores/chatModeStore'
@@ -196,6 +197,8 @@ export const useAgentStore = defineStore('agent', () => {
       createdAt: now,
       updatedAt: now,
       messages: [],
+      // 新对话落到当前选中的工作区，便于按项目目录分组。
+      workspaceId: useWorkspaceStore().activeId || undefined,
     }
     conversations.value.unshift(conversation)
     if (select) activeId.value = conversation.id

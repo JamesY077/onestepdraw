@@ -16,6 +16,7 @@ import http from 'node:http'
 import https from 'node:https'
 import fs from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 import { exec } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { buildCustomAgent, buildRunPrompt, detectAgents, getInstalledAgent, runAgent } from './agents.mjs'
@@ -35,6 +36,8 @@ const requestedPort = Number(
   portFlagIndex >= 0 ? args[portFlagIndex + 1] : process.env.PORT || process.env.ONESTEP_PORT || 5500,
 )
 const host = process.env.ONESTEP_HOST || '127.0.0.1'
+/** 默认工作区目录名：与前端 DEFAULT_WORKSPACE_FOLDER 保持一致。 */
+const DEFAULT_WORKSPACE_FOLDER = 'stepframe'
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -420,7 +423,60 @@ async function handleAgentRun(req, res) {
   })
 }
 
+async function handleWorkspaceRoute(req, res) {
+  const url = new URL(req.url || '/', 'http://127.0.0.1')
+  const pathname = url.pathname
+
+// 工作区目录：创建默认目录，或校验用户指定的目录是否可以登记。
+if (pathname === '/local/workspace/ensure' && req.method === 'POST') {
+  const body = await readJsonBody(req)
+  const requested = typeof body?.path === 'string' && body.path.trim()
+    ? path.resolve(body.path.trim())
+    : path.join(os.homedir(), 'Documents', DEFAULT_WORKSPACE_FOLDER)
+  try {
+    fs.mkdirSync(requested, { recursive: true })
+    const stat = fs.statSync(requested)
+    if (!stat.isDirectory()) throw new Error('目标不是目录')
+    sendJson(res, 200, { ok: true, path: requested, created: true })
+  } catch (error) {
+    sendJson(res, 400, { ok: false, path: requested, error: String(error?.message || error) })
+  }
+  return
+}
+
+// 目录选择：校验 + 列出子目录，供「指定本地工作目录」使用。
+if (pathname === '/local/workspace/list' && req.method === 'POST') {
+  const body = await readJsonBody(req)
+  const requested = typeof body?.path === 'string' && body.path.trim()
+    ? path.resolve(body.path)
+    : os.homedir()
+  try {
+    const stat = fs.statSync(requested)
+    if (!stat.isDirectory()) throw new Error('目标不是目录')
+    const entries = fs
+      .readdirSync(requested, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+      .slice(0, 200)
+      .map((entry) => ({ name: entry.name, path: path.join(requested, entry.name) }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+    sendJson(res, 200, { ok: true, path: requested, parent: path.dirname(requested), entries })
+  } catch (error) {
+    sendJson(res, 400, { ok: false, path: requested, error: String(error?.message || error) })
+  }
+  return
+}
+
+}
+
 const server = http.createServer((req, res) => {
+  // 工作区目录接口需要读请求体，交给异步处理，避免在执行器里 await。
+  if ((req.url || '').startsWith('/local/workspace/')) {
+    void handleWorkspaceRoute(req, res).catch((error) => {
+      sendJson(res, 500, { ok: false, error: String(error?.message || error) })
+    })
+    return
+  }
+
   const requestUrl = req.url || '/'
 
   for (const proxy of proxies) {
@@ -479,6 +535,9 @@ const server = http.createServer((req, res) => {
 
   // 本地环境信息：设置页用它展示项目在磁盘上的真实路径。
   if (pathname === '/local/info') {
+    const homeDir = os.homedir()
+    const documentsDir = path.join(homeDir, 'Documents')
+    const defaultWorkspacePath = path.join(documentsDir, DEFAULT_WORKSPACE_FOLDER)
     res.writeHead(200, {
       'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': 'no-store',
@@ -488,6 +547,10 @@ const server = http.createServer((req, res) => {
         name: 'onestep',
         rootDir,
         platform: process.platform,
+        homeDir,
+        documentsDir,
+        defaultWorkspacePath,
+        defaultWorkspaceExists: fs.existsSync(defaultWorkspacePath),
       }),
     )
     return

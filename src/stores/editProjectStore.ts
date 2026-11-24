@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
+import { useWorkspaceStore } from '@/stores/workspaceStore'
 import {
   AUDIO_CLIP_SECONDS,
   IMAGE_CLIP_SECONDS,
@@ -237,6 +238,8 @@ export const useEditProjectStore = defineStore('editProject', () => {
       id: makeId('prj'),
       name: name.trim().slice(0, 60) || '未命名项目',
       conversationId,
+      // 新项目与当前工作区关联，项目列表按工作区分组。
+      workspaceId: useWorkspaceStore().activeId || undefined,
       aspectRatio: '16:9',
       resolution: size.height > 800 ? '2K' : '768P',
       fps: 30,
