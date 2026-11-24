@@ -978,10 +978,15 @@ onBeforeUnmount(() => {
   padding: 38px 26px 40px;
 }
 
+/*
+ * 输入区不再叠一层横向渐隐：那条渐变只铺在内容列上，到右侧导航条就断开，
+ * 视觉上会出现一条硬边。现在让页面自身的背景直接延续到底部，
+ * 与普通对话保持同一条背景带。
+ */
 .composer-area {
   flex: none;
   padding: 10px 24px 18px;
-  background: linear-gradient(180deg, rgba(247, 243, 236, 0) 0%, var(--sf-paper) 30%);
+  background: transparent;
 }
 
 .composer-inner {
