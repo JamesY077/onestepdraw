@@ -98,6 +98,19 @@ html.mac-app .login-header {
   padding-top: 46px;
 }
 
+/*
+ * 侧栏品牌区：给左上角三个红绿灯让出空间。
+ * 红绿灯中心在 x=18、y=22，占位约 78×32；这里再加一段呼吸留白，
+ * 让字标和按钮之间不像贴着。
+ */
+html.mac-app .sidebar-head {
+  padding: 40px 16px 12px 92px;
+}
+
+html.mac-app .login-header {
+  padding-left: 92px;
+}
+
 /* ---------- 原生 App 的滚动条：细、浮在内容上 ---------- */
 
 html.mac-app ::-webkit-scrollbar {

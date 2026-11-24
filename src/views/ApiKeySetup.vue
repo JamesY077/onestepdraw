@@ -22,7 +22,6 @@
       <div class="login-brand">
         <BrandMark :size="28" />
         <span class="sf-brand-name">Stepframe</span>
-        <span class="sf-brand-cn">步帧</span>
       </div>
       <span class="local-pill">
         <i class="pill-dot" aria-hidden="true" />

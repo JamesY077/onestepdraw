@@ -142,22 +142,10 @@ samp {
 }
 
 .sf-brand-name {
-  font-family: var(--sf-font-display);
-  font-size: 21px;
-  font-weight: 400;
-  letter-spacing: -0.012em;
-  line-height: 1;
-}
-
-.sf-brand-cn {
-  margin-left: 2px;
-  padding-left: 8px;
-  border-left: 1px solid var(--sf-line-strong);
-  color: var(--sf-ink-3);
-  font-family: var(--sf-font-ui);
-  font-size: 10.5px;
-  font-weight: 620;
-  letter-spacing: 0.16em;
+  font-family: var(--sf-font-brand);
+  font-size: 18px;
+  font-weight: 680;
+  letter-spacing: -0.022em;
   line-height: 1;
 }
 

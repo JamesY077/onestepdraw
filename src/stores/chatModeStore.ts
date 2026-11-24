@@ -16,14 +16,15 @@ interface StoredMode {
 function load(): StoredMode {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { conversation: 'chat', automation: 'default' }
+    // 默认直接进入创作对话 + 默认模式：先问清楚，再做片。
+    if (!raw) return { conversation: 'create', automation: 'default' }
     const parsed = JSON.parse(raw)
     return {
-      conversation: parsed?.conversation === 'create' ? 'create' : 'chat',
+      conversation: parsed?.conversation === 'chat' ? 'chat' : 'create',
       automation: parsed?.automation === 'auto' ? 'auto' : 'default',
     }
   } catch {
-    return { conversation: 'chat', automation: 'default' }
+    return { conversation: 'create', automation: 'default' }
   }
 }
 

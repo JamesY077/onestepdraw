@@ -4,7 +4,6 @@
       <div class="sidebar-brand">
         <BrandMark :size="26" />
         <span class="brand-text">Stepframe</span>
-        <span class="brand-cn">步帧</span>
       </div>
       <button type="button" class="icon-button close-button" aria-label="收起侧栏" @click="$emit('close')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
@@ -180,21 +179,10 @@ async function handleDelete(conversation: AgentConversation) {
 
 .brand-text {
   color: var(--sf-ink);
-  font-family: var(--sf-font-display);
-  font-size: 20px;
-  font-weight: 400;
-  letter-spacing: -0.012em;
-  line-height: 1;
-}
-
-.brand-cn {
-  margin-left: 1px;
-  padding-left: 8px;
-  border-left: 1px solid var(--sf-line-strong);
-  color: var(--sf-ink-3);
-  font-size: 10px;
-  font-weight: 620;
-  letter-spacing: 0.14em;
+  font-family: var(--sf-font-brand);
+  font-size: 18px;
+  font-weight: 680;
+  letter-spacing: -0.022em;
   line-height: 1;
 }
 

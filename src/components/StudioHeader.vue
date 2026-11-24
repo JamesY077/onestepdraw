@@ -4,7 +4,6 @@
       <button class="studio-brand" type="button" aria-label="返回步帧对话" @click="router.push('/chat')">
         <BrandMark :size="26" />
         <span class="studio-brand-name">Stepframe</span>
-        <span class="studio-brand-cn">步帧</span>
       </button>
 
       <div class="studio-heading">
@@ -116,21 +115,10 @@ const router = useRouter()
 }
 
 .studio-brand-name {
-  font-family: var(--sf-font-display);
-  font-size: 17px;
-  font-weight: 400;
-  letter-spacing: -0.012em;
-  line-height: 1;
-}
-
-.studio-brand-cn {
-  margin-left: 1px;
-  padding-left: 8px;
-  border-left: 1px solid var(--sf-line-strong);
-  color: var(--sf-ink-3);
-  font-size: 9.5px;
-  font-weight: 620;
-  letter-spacing: 0.14em;
+  font-family: var(--sf-font-brand);
+  font-size: 16px;
+  font-weight: 680;
+  letter-spacing: -0.022em;
   line-height: 1;
 }
 
@@ -232,8 +220,7 @@ const router = useRouter()
     font-size: 10.5px;
   }
 
-  .studio-brand-name,
-  .studio-brand-cn {
+  .studio-brand-name {
     display: none;
   }
 

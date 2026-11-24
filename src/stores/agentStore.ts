@@ -46,6 +46,7 @@ import { CUSTOM_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useApiStore } from '@/stores/apiStore'
 import { useModelStore } from '@/stores/modelStore'
 import { useSkillStore } from '@/stores/skillStore'
+import { createFlowSystemPrompt } from '@/features/agent/createSkill'
 import { useEditProjectStore } from '@/stores/editProjectStore'
 import type { AutomationMode, ConversationMode } from '@/stores/chatModeStore'
 
@@ -230,10 +231,19 @@ export const useAgentStore = defineStore('agent', () => {
       name: skill.name,
       content: skill.content,
     }))
+    const projectSummary = project ? projects.projectSummary(project) : undefined
+    const automation = conversation.automation || 'default'
+
+    // 创作对话固定带上「短视频脚本导演」（grill-me + video-director）：
+    // 任何一次发送都会先按协议问清创作者，再动手做片。
+    if ((conversation.mode || 'chat') === 'create') {
+      return createFlowSystemPrompt({ automation, projectSummary, extraSkills: skills })
+    }
+
     return buildAgentSystemPrompt({
-      mode: conversation.mode || 'chat',
-      automation: conversation.automation || 'default',
-      projectSummary: project ? projects.projectSummary(project) : undefined,
+      mode: 'chat',
+      automation,
+      projectSummary,
       skills,
     })
   }
