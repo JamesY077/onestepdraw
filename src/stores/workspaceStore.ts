@@ -26,11 +26,22 @@ function loadState(): StoredState {
             Boolean(item && typeof item.id === 'string' && typeof item.path === 'string'),
         )
       : []
+    // 历史版本可能因为并发初始化登记了多个默认工作区；这里只保留第一个，
+    // 其余同路径的条目并进默认项，避免下拉里出现两个「默认工作区」。
+    const seen = new Set<string>()
+    const deduped: Workspace[] = []
+    for (const item of workspaces) {
+      const key = item.path.replace(/[\\/]+$/, '').toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      deduped.push(item)
+    }
+
     const activeId =
-      typeof parsed.activeId === 'string' && workspaces.some((item) => item.id === parsed.activeId)
+      typeof parsed.activeId === 'string' && deduped.some((item) => item.id === parsed.activeId)
         ? parsed.activeId
         : null
-    return { workspaces, activeId }
+    return { workspaces: deduped, activeId }
   } catch {
     return { workspaces: [], activeId: null }
   }
@@ -57,6 +68,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const activeId = ref<string | null>(initial.activeId)
   const localInfo = ref<LocalInfo | null>(null)
   const infoError = ref('')
+  /** 目录信息与默认工作区初始化的并发句柄。 */
+  let infoPromise: Promise<LocalInfo | null> | null = null
+  let defaultPromise: Promise<Workspace | null> | null = null
 
   const activeWorkspace = computed(
     () => workspaces.value.find((item) => item.id === activeId.value) || null,
@@ -86,9 +100,19 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     persist()
   }
 
-  /** 读取本机目录信息（文档目录、默认工作区路径）。 */
+  /** 读取本机目录信息（文档目录、默认工作区路径）。并发调用共用一个请求。 */
   async function loadLocalInfo(): Promise<LocalInfo | null> {
     if (localInfo.value) return localInfo.value
+    if (infoPromise) return infoPromise
+    infoPromise = fetchLocalInfo()
+    try {
+      return await infoPromise
+    } finally {
+      infoPromise = null
+    }
+  }
+
+  async function fetchLocalInfo(): Promise<LocalInfo | null> {
     try {
       const response = await fetch('/local/info', { cache: 'no-store' })
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
@@ -115,9 +139,35 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   async function initializeDefault(): Promise<Workspace | null> {
     const existing = workspaces.value.find((item) => item.isDefault)
     if (existing) return existing
+    // 并发保护：页面里多个入口同时触发时，只允许一次登记。
+    if (defaultPromise) return defaultPromise
+    defaultPromise = createDefaultWorkspace()
+    try {
+      return await defaultPromise
+    } finally {
+      defaultPromise = null
+    }
+  }
 
+  async function createDefaultWorkspace(): Promise<Workspace | null> {
     const info = await loadLocalInfo()
     const path = info?.defaultWorkspacePath || ''
+
+    // 已有同路径的工作区（哪怕没标记 isDefault）就直接复用，不再新增。
+    const samePath = path
+      ? workspaces.value.find((item) => sameWorkspacePath(item.path, path))
+      : null
+    if (samePath) {
+      if (!samePath.isDefault) samePath.isDefault = true
+      if (!activeId.value) activeId.value = samePath.id
+      persist()
+      return samePath
+    }
+
+    // 已经登记过默认项（路径可能拿不到）就不再重复创建。
+    const existingDefault = workspaces.value.find((item) => item.isDefault)
+    if (existingDefault) return existingDefault
+
     try {
       await fetch('/local/workspace/ensure', {
         method: 'POST',

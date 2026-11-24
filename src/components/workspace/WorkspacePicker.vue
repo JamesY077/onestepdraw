@@ -1,6 +1,7 @@
 <template>
   <div ref="rootRef" class="wsp">
     <button
+      ref="triggerRef"
       type="button"
       class="wsp-trigger"
       :aria-expanded="open"
@@ -19,23 +20,33 @@
       </svg>
     </button>
 
-    <div v-if="open" class="wsp-panel" role="listbox" aria-label="选择工作区">
-      <button
-        v-for="item in workspaces"
-        :key="item.id"
-        type="button"
-        class="wsp-option"
-        :class="{ active: item.id === store.activeId }"
-        role="option"
-        :aria-selected="item.id === store.activeId"
-        @click="choose(item.id)"
-      >
-        <span class="wsp-option-copy">
-          <strong>{{ item.title }}</strong>
-          <small>{{ shorten(item.path) }}</small>
-        </span>
-        <span v-if="item.isDefault" class="wsp-tag">默认</span>
-      </button>
+    <div
+      v-if="open"
+      class="wsp-panel"
+      :class="{ 'is-up': openUp, 'is-right': alignRight }"
+      role="listbox"
+      aria-label="选择工作区"
+    >
+      <div class="wsp-list">
+        <button
+          v-for="item in workspaces"
+          :key="item.id"
+          type="button"
+          class="wsp-option"
+          :class="{ active: item.id === store.activeId }"
+          role="option"
+          :aria-selected="item.id === store.activeId"
+          @click="choose(item.id)"
+        >
+          <span class="wsp-option-copy">
+            <strong>{{ item.title }}</strong>
+            <small>{{ shorten(item.path) }}</small>
+          </span>
+          <span v-if="item.isDefault" class="wsp-tag">默认</span>
+        </button>
+
+        <p v-if="!workspaces.length" class="wsp-hint">还没有工作区</p>
+      </div>
 
       <div class="wsp-actions">
         <button type="button" class="wsp-action" @click="pickDirectory">
@@ -63,6 +74,24 @@ import { chooseDirectoryNative, ensureDirectory, hasNativeDirectoryPicker } from
 
 const store = useWorkspaceStore()
 const open = ref(false)
+const triggerRef = ref<HTMLButtonElement | null>(null)
+/** 面板默认向下展开；下方空间不足时改成向上，避免被窗口裁掉。 */
+const openUp = ref(false)
+/** 靠近窗口右侧时改为右对齐，避免横向溢出。 */
+const alignRight = ref(false)
+
+/** 面板大概需要的高度（含「选择本地目录」与手动输入）。 */
+const PANEL_ESTIMATED_HEIGHT = 340
+
+function measurePlacement() {
+  const el = triggerRef.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  const spaceBelow = window.innerHeight - rect.bottom
+  const spaceAbove = rect.top
+  openUp.value = spaceBelow < PANEL_ESTIMATED_HEIGHT && spaceAbove > spaceBelow
+  alignRight.value = rect.left + 280 > window.innerWidth - 12
+}
 const error = ref('')
 const manualPath = ref('')
 const manualOpen = ref(false)
@@ -82,6 +111,7 @@ function toggle() {
   open.value = !open.value
   error.value = ''
   if (open.value) {
+    measurePlacement()
     void store.initializeDefault()
     void store.loadLocalInfo()
   }
@@ -133,15 +163,23 @@ function handleEscape(event: KeyboardEvent) {
   if (event.key === 'Escape') open.value = false
 }
 
+function handleViewportChange() {
+  if (open.value) measurePlacement()
+}
+
 onMounted(() => {
   void store.initializeDefault()
   document.addEventListener('pointerdown', handleOutside)
   document.addEventListener('keydown', handleEscape)
+  window.addEventListener('resize', handleViewportChange)
+  window.addEventListener('scroll', handleViewportChange, true)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', handleOutside)
   document.removeEventListener('keydown', handleEscape)
+  window.removeEventListener('resize', handleViewportChange)
+  window.removeEventListener('scroll', handleViewportChange, true)
 })
 </script>
 
@@ -200,12 +238,38 @@ onBeforeUnmount(() => {
   top: calc(100% + 6px);
   left: 0;
   z-index: 60;
+  display: flex;
   width: 280px;
+  /* 永远不超过窗口可用高度，内容超出时面板内部滚动 */
+  max-height: min(360px, calc(100vh - 120px));
+  flex-direction: column;
+  overflow: hidden;
   padding: 6px;
   border: 1px solid var(--sf-line);
   border-radius: 12px;
   background: var(--sf-surface);
   box-shadow: var(--sf-shadow-md);
+}
+
+/* 下方空间不足时向上展开 */
+.wsp-panel.is-up {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+/* 靠近窗口右侧时右对齐 */
+.wsp-panel.is-right {
+  left: auto;
+  right: 0;
+}
+
+/* 列表区自己滚动，底部操作区保持可见 */
+.wsp-list {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
 .wsp-option {
@@ -260,6 +324,7 @@ onBeforeUnmount(() => {
 }
 
 .wsp-actions {
+  flex: none;
   margin-top: 4px;
   padding-top: 6px;
   border-top: 1px solid var(--sf-line-soft);
@@ -293,6 +358,7 @@ onBeforeUnmount(() => {
 
 .wsp-manual {
   display: flex;
+  flex: none;
   gap: 6px;
   margin-top: 6px;
 }
@@ -324,7 +390,14 @@ onBeforeUnmount(() => {
   cursor: not-allowed;
 }
 
+.wsp-hint {
+  margin: 8px;
+  color: var(--sf-ink-3);
+  font-size: 12px;
+}
+
 .wsp-error {
+  flex: none;
   margin: 6px 2px 0;
   color: var(--sf-danger);
   font-size: 11px;
