@@ -277,7 +277,27 @@ export const useEditProjectStore = defineStore('editProject', () => {
 
   function touch(project: EditProject) {
     project.updatedAt = Date.now()
+    // 每次改动推进 revision：导出和并发写入用它判断自己是否落后于最新状态。
+    project.revision = (project.revision || 0) + 1
     persist()
+  }
+
+  /** 读取项目的当前版本号（旧数据没有时按 0 处理）。 */
+  function revisionOf(id: string): number {
+    return getProject(id)?.revision || 0
+  }
+
+  /**
+   * 带上版本的写入：只有版本仍等于调用方看到的版本才执行，
+   * 否则返回 false，由调用方提示「内容已更新，请重新操作」。
+   */
+  function writeIfCurrent(id: string, expectedRevision: number, patch: Partial<EditProject>): boolean {
+    const project = getProject(id)
+    if (!project) return false
+    if ((project.revision || 0) !== expectedRevision) return false
+    Object.assign(project, patch)
+    touch(project)
+    return true
   }
 
   function nextTrackName(project: EditProject): string {
@@ -631,10 +651,21 @@ export const useEditProjectStore = defineStore('editProject', () => {
   }
 
   /** 对话式时间轴操作。 */
-  function applyTimelineOps(projectId: string, ops: unknown[]): { applied: number; skipped: number } {
+  /**
+   * Agent 要求改时间轴时带上它看到的版本号（expectedRevision）。
+   * 版本落后说明期间有人手动改过，此时不再覆盖，返回 stale 让调用方提示刷新。
+   */
+  function applyTimelineOps(
+    projectId: string,
+    ops: unknown[],
+    expectedRevision?: number,
+  ): { applied: number; skipped: number; stale?: boolean } {
     const project = getProject(projectId)
     if (!project) return { applied: 0, skipped: ops.length }
     if (!ops.length) return { applied: 0, skipped: 0 }
+    if (expectedRevision !== undefined && (project.revision || 0) !== expectedRevision) {
+      return { applied: 0, skipped: ops.length, stale: true }
+    }
     recordHistory(project)
     let applied = 0
     let skipped = 0
@@ -749,6 +780,8 @@ export const useEditProjectStore = defineStore('editProject', () => {
     setTrackMuted,
     applyTimelineOps,
     projectSummary,
+    revisionOf,
+    writeIfCurrent,
     persist,
     recordHistory,
     canUndo,

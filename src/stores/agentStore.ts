@@ -419,13 +419,25 @@ export const useAgentStore = defineStore('agent', () => {
     void sendMessage(text, { conversationId: conversation.id })
   }
 
-  /** 模型输出的时间轴操作直接落到项目里，并把操作块从正文去掉。 */
-  function applyTimelineOpsFromReply(conversation: AgentConversation, message: AgentMessage) {
+  /**
+   * 模型输出的时间轴操作直接落到项目里，并把操作块从正文去掉。
+   * 带上发起时的项目版本：期间有人手动改过时间轴，就不再覆盖，
+   * 并在回复里明确说明这次改动没有落盘。
+   */
+  function applyTimelineOpsFromReply(
+    conversation: AgentConversation,
+    message: AgentMessage,
+    expectedRevision?: number,
+  ) {
     const ops = extractAgentTimelineOps(message.content)
     if (!ops.length) return
     if (conversation.mode === 'create' && conversation.projectId) {
       const projects = useEditProjectStore()
-      projects.applyTimelineOps(conversation.projectId, ops)
+      const result = projects.applyTimelineOps(conversation.projectId, ops, expectedRevision)
+      if (result.stale) {
+        message.content = `${stripAgentTimelineBlocks(message.content)}\n\n> 时间轴在你生成这段回复期间被改动过，这次修改没有覆盖到项目，请确认后让我再改一次。`
+        return
+      }
     }
     message.content = stripAgentTimelineBlocks(message.content)
   }
@@ -554,6 +566,11 @@ export const useAgentStore = defineStore('agent', () => {
 
   async function requestAssistant(conversation: AgentConversation, assistant: AgentMessage) {
     const controller = new AbortController()
+    // 记下发起时的项目版本：模型回复期间若有人手动改时间轴，落盘前会发现并放弃覆盖。
+    const startRevision =
+      conversation.mode === 'create' && conversation.projectId
+        ? useEditProjectStore().revisionOf(conversation.projectId)
+        : undefined
     abortController = controller
     streamingId.value = assistant.id
     authExpired.value = false
@@ -610,7 +627,7 @@ export const useAgentStore = defineStore('agent', () => {
                 }`
         } else {
           assistant.status = 'done'
-          applyTimelineOpsFromReply(conversation, assistant)
+          applyTimelineOpsFromReply(conversation, assistant, startRevision)
           applyAskFromReply(assistant)
           attachLocalMediaToProject(conversation, assistant.content)
         }
@@ -635,7 +652,7 @@ export const useAgentStore = defineStore('agent', () => {
         const raw = assistant.content
         const toolCalls = extractAgentToolCalls(raw)
         assistant.content = raw
-        applyTimelineOpsFromReply(conversation, assistant)
+        applyTimelineOpsFromReply(conversation, assistant, startRevision)
         applyAskFromReply(assistant)
         assistant.content = stripAgentControlBlocks(assistant.content)
         const visible = assistant.content

@@ -277,6 +277,18 @@
       </div>
     </div>
 
+    <div v-if="!exporting && exportIssues.length" class="export-issues" role="status">
+      <div class="export-issues-head">
+        <strong>{{ summarizeIssues(exportIssues) }}</strong>
+        <button type="button" aria-label="关闭校验结果" @click="exportIssues = []">✕</button>
+      </div>
+      <ul>
+        <li v-for="issue in exportIssues" :key="issue.code" :class="`is-${issue.level}`">
+          {{ issue.message }}
+        </li>
+      </ul>
+    </div>
+
     <div v-if="shortcutsOpen" class="shortcuts-backdrop" @click.self="shortcutsOpen = false">
       <section class="shortcuts-panel" role="dialog" aria-modal="true" aria-label="剪辑快捷键">
         <header>
@@ -305,7 +317,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, toRaw, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BrandMark from '@/components/agent/BrandMark.vue'
 import StudioPreview from '@/components/edit/StudioPreview.vue'
@@ -316,6 +328,7 @@ import { useAgentStore } from '@/stores/agentStore'
 import { useEditProjectStore, projectDuration } from '@/stores/editProjectStore'
 import { playhead, setPlayhead } from '@/features/edit/playhead'
 import { exportProjectVideo } from '@/features/edit/exportVideo'
+import { summarizeIssues, verifyExport, type ExportIssue } from '@/features/edit/exportVerification'
 import { confirmDialog } from '@/features/ui/dialog'
 import { consumeTemplatesFlash, describeTemplatesFlash } from '@/features/template/navigation'
 import type { AgentClipRef } from '@/types/agent'
@@ -361,6 +374,8 @@ const mobileChatOpen = ref(false)
 const toast = ref('')
 const clipboard = ref<{ trackId: string; clip: TimelineClip } | null>(null)
 const exporting = ref(false)
+/** 最近一次导出的规格校验结果，有问题时在导出面板里列出。 */
+const exportIssues = ref<ExportIssue[]>([])
 const exportRatio = ref(0)
 const exportNote = ref('准备素材')
 let exportAbort: AbortController | null = null
@@ -918,12 +933,16 @@ async function startExport() {
     return
   }
   playing.value = false
-  const projectValue = project.value
+  // 导出使用「点击导出那一刻」的项目快照：导出过程中再改时间轴，
+  // 不会混进这一版文件；结果始终对应一个确定的版本。
+  const projectValue = structuredClone(toRaw(project.value)) as typeof project.value
+  const revision = projectStore.revisionOf(projectValue.id)
   const controller = new AbortController()
   exportAbort = controller
   exporting.value = true
   exportRatio.value = 0
   exportNote.value = '读取素材'
+  exportIssues.value = []
   try {
     const result = await exportProjectVideo(projectValue, {
       signal: controller.signal,
@@ -932,6 +951,19 @@ async function startExport() {
         exportNote.value = note
       },
     })
+    // 规格校验：核对分辨率、时长、音轨，问题直接暴露出来而不是静默成功。
+    const issues = verifyExport(
+      projectValue,
+      {
+        width: result.width,
+        height: result.height,
+        duration: result.duration,
+        hasAudio: result.hasAudio,
+        bytes: result.blob.size,
+      },
+      { width: result.width, height: result.height, duration: result.duration, hasAudio: result.hasAudio },
+    )
+    exportIssues.value = issues
     const link = document.createElement('a')
     link.href = URL.createObjectURL(result.blob)
     link.download = `${projectValue.name || 'onestep'}.mp4`
@@ -941,7 +973,7 @@ async function startExport() {
       ? `${Math.round(result.blob.size / 1024)}KB`
       : `${(result.blob.size / 1024 / 1024).toFixed(1)}MB`
     showToast(
-      `已导出 ${result.width}×${result.height} · ${size}${result.hasAudio ? '' : ' · 无音轨'}`,
+      `已导出 ${result.width}×${result.height} · ${size}${result.hasAudio ? '' : ' · 无音轨'} · v${revision} · ${summarizeIssues(issues)}`,
     )
   } catch (error) {
     if ((error as DOMException)?.name === 'AbortError') showToast('已取消导出')
@@ -2066,6 +2098,49 @@ onBeforeUnmount(() => {
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.export-issues {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 60;
+  width: min(380px, calc(100vw - 40px));
+  padding: 12px 14px;
+  border: 1px solid var(--sf-line-strong);
+  border-radius: 12px;
+  background: var(--sf-surface);
+  box-shadow: var(--sf-shadow-md);
+  font-size: 12px;
+}
+
+.export-issues-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.export-issues-head button {
+  border: 0;
+  background: transparent;
+  color: var(--sf-ink-3);
+  cursor: pointer;
+}
+
+.export-issues ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding-left: 16px;
+  color: var(--sf-ink-2);
+  line-height: 1.6;
+}
+
+.export-issues li.is-error {
+  color: var(--sf-danger);
 }
 
 .export-bar {

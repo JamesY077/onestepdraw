@@ -53,6 +53,11 @@ export interface EditProject {
   fps: number
   createdAt: number
   updatedAt: number
+  /**
+   * 并发保护版本号：每次写入递增。
+   * 导出/Agent 改动前带上下文的版本，落后就说明别处已经改过，避免互相覆盖。
+   */
+  revision?: number
   tracks: EditTrack[]
   assets: ProjectAsset[]
 }
