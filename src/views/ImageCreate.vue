@@ -1,7 +1,7 @@
 <template>
   <div class="studio-page image-page" :style="{ height: appHeight, '--app-height': appHeight }">
     <!-- 参数抽屉打开时收起悬浮岛，避免图标压在抽屉上层。 -->
-    <StudioIsland v-show="!paramsOpen" />
+    <AppTopNav />
     <div class="image-shell">
       <StudioHeader
         kicker="Image Studio"
@@ -420,7 +420,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import StudioHeader from '@/components/StudioHeader.vue'
-import StudioIsland from '@/components/StudioIsland.vue'
+import AppTopNav from '@/components/AppTopNav.vue'
 import AddToProjectButton from '@/components/common/AddToProjectButton.vue'
 import ModelSelector from '@/components/ModelSelector.vue'
 import SkillPicker from '@/components/SkillPicker.vue'

@@ -10,7 +10,7 @@ import { useGenerate } from '@/composables/useGenerate'
 import { useChatStore } from '@/stores/chatStore'
 import { imageModelModules, videoModelModules } from '@/models'
 import StudioHeader from '@/components/StudioHeader.vue'
-import StudioIsland from '@/components/StudioIsland.vue'
+import AppTopNav from '@/components/AppTopNav.vue'
 import AddToProjectButton from '@/components/common/AddToProjectButton.vue'
 
 const skillStore = useSkillStore()
@@ -155,7 +155,7 @@ async function runTest() {
 
 <template>
   <div class="studio-page skill-create" :style="{ '--studio-accent': accent }">
-    <StudioIsland />
+    <AppTopNav />
 
     <StudioHeader
       kicker="Skill Studio"

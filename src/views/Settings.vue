@@ -468,7 +468,7 @@
       </div>
     </div>
 
-    <StudioIsland />
+    <AppTopNav />
 
     <div v-if="showEditConfig" class="modal-overlay" @click.self="showEditConfig = false">
       <div class="modal">
@@ -505,7 +505,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { confirmDialog } from '@/features/ui/dialog'
 import ApiKeyInput from '@/components/ApiKeyInput.vue'
-import StudioIsland from '@/components/StudioIsland.vue'
+import AppTopNav from '@/components/AppTopNav.vue'
 import { useApiStore } from '@/stores/apiStore'
 import { useChatStore } from '@/stores/chatStore'
 import {

@@ -5,7 +5,6 @@
 
 :root {
   /* 右侧固定导航占位宽度：胶囊 58 + 两侧留白 */
-  --studio-nav-width: 78px;
   --studio-gutter: 24px;
   --studio-accent: var(--sf-ink);
   --studio-accent-skill: var(--sf-ink);
@@ -46,7 +45,6 @@
    * 导航不参与内容流，内容在该区域内独立滚动。
    * 页面自己不要再改这个 padding，需要留白时用内部容器的 max-width。
    */
-  padding-right: var(--studio-nav-width);
   color: var(--studio-text);
   background: transparent;
   isolation: isolate;
@@ -76,14 +74,6 @@
   z-index: 1;
 }
 
-/* 导航统一固定在右侧，垂直居中，高度不超过视口 */
-.studio-page > .studio-island {
-  position: fixed;
-  top: 50%;
-  right: 10px;
-  z-index: 90;
-  transform: translateY(-50%);
-}
 
 
 @media (max-width: 900px) {

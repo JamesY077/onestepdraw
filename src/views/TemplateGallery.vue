@@ -1,6 +1,6 @@
 <template>
   <div class="studio-page tpl-page">
-    <StudioIsland />
+    <AppTopNav />
 
     <header class="tpl-head">
       <div class="tpl-head-row">
@@ -307,7 +307,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import StudioIsland from '@/components/StudioIsland.vue'
+import AppTopNav from '@/components/AppTopNav.vue'
 import { useTemplateStore } from '@/stores/templateStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useSkillLibraryStore } from '@/stores/skillLibraryStore'

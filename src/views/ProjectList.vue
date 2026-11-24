@@ -1,6 +1,6 @@
 <template>
   <div class="studio-page pl-page">
-    <StudioIsland />
+    <AppTopNav />
 
     <main class="pl-main">
       <header class="pl-head">
@@ -78,7 +78,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import StudioIsland from '@/components/StudioIsland.vue'
+import AppTopNav from '@/components/AppTopNav.vue'
 import { confirmDialog } from '@/features/ui/dialog'
 import { projectDuration, useEditProjectStore } from '@/stores/editProjectStore'
 import { useWorkspaceStore } from '@/stores/workspaceStore'

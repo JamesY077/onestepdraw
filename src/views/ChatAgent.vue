@@ -1,5 +1,8 @@
 <template>
-  <div class="studio-page is-row chat-page" :class="chatMode.isCreate ? 'is-create' : 'is-chat'">
+  <div class="studio-page chat-page" :class="chatMode.isCreate ? 'is-create' : 'is-chat'">
+    <AppTopNav />
+
+    <div class="chat-body">
     <div v-if="sidebarOpen" class="sidebar-backdrop" aria-hidden="true" @click="sidebarOpen = false" />
 
     <AgentSidebar
@@ -191,8 +194,7 @@
         </div>
       </div>
     </main>
-
-    <StudioIsland />
+    </div>
   </div>
 </template>
 
@@ -204,7 +206,7 @@ import AgentSidebar from '@/components/agent/AgentSidebar.vue'
 import AgentComposer from '@/components/agent/AgentComposer.vue'
 import AgentMessage from '@/components/agent/AgentMessage.vue'
 import BrandMark from '@/components/agent/BrandMark.vue'
-import StudioIsland from '@/components/StudioIsland.vue'
+import AppTopNav from '@/components/AppTopNav.vue'
 import SpotlightSurface from '@/components/ui/SpotlightSurface.vue'
 import TextReveal from '@/components/ui/TextReveal.vue'
 import { useAgentStore } from '@/stores/agentStore'
@@ -566,17 +568,25 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .chat-page {
-  /* 横向页面：左侧会话列表 + 右侧主区 */
-  flex-direction: row;
+  display: flex;
   height: 100vh;
   height: 100dvh;
+  flex-direction: column;
   overflow: hidden;
   background: transparent;
   color: var(--sf-ink);
 }
 
+/* 导航之下：左侧会话列表 + 右侧主区 */
+.chat-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: row;
+}
+
 /* 主区占满剩余宽度并自己滚动，页面本身不滚动 */
-.chat-page > .chat-main {
+.chat-body > .chat-main {
   display: flex;
   flex: 1 1 auto;
   min-width: 0;

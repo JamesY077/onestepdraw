@@ -1,6 +1,6 @@
 <template>
   <div class="studio-page voice-page" :style="{ '--studio-accent': accent }">
-    <StudioIsland />
+    <AppTopNav />
 
     <StudioHeader
       kicker="Voice Studio"
@@ -1528,7 +1528,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { confirmDialog, alertDialog } from '@/features/ui/dialog'
 import StudioHeader from '@/components/StudioHeader.vue'
-import StudioIsland from '@/components/StudioIsland.vue'
+import AppTopNav from '@/components/AppTopNav.vue'
 import VoicePlayer from '@/components/VoicePlayer.vue'
 import { useAssetInboxStore } from '@/stores/assetInboxStore'
 import { chatCompletion } from '@/api/aiping'

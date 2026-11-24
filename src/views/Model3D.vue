@@ -1,6 +1,6 @@
 <template>
   <div class="studio-page model3d-page" :style="{ '--studio-accent': 'var(--sf-ink)' }">
-    <StudioIsland />
+    <AppTopNav />
 
     <StudioHeader
       kicker="3D Studio"
@@ -1050,7 +1050,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import StudioHeader from '@/components/StudioHeader.vue'
-import StudioIsland from '@/components/StudioIsland.vue'
+import AppTopNav from '@/components/AppTopNav.vue'
 import RailPager from '@/components/RailPager.vue'
 import {
   DEFAULT_MODEL3D_ID,

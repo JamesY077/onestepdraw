@@ -1,6 +1,6 @@
 <template>
   <div class="studio-page video-page" :style="{ height: appHeight, '--app-height': appHeight, '--studio-accent': 'var(--sf-ink)' }">
-    <StudioIsland v-show="!paramsOpen" />
+    <AppTopNav />
     <div class="video-shell">
       <StudioHeader
         kicker="Video Studio"
@@ -922,7 +922,7 @@ import ModelSelector from '@/components/ModelSelector.vue'
 import CameraMovementGuide from '@/components/CameraMovementGuide.vue'
 import AudioLibraryPicker from '@/components/AudioLibraryPicker.vue'
 import StudioHeader from '@/components/StudioHeader.vue'
-import StudioIsland from '@/components/StudioIsland.vue'
+import AppTopNav from '@/components/AppTopNav.vue'
 import AddToProjectButton from '@/components/common/AddToProjectButton.vue'
 import SkillPicker from '@/components/SkillPicker.vue'
 import { useSettingsStore } from '@/stores/settingsStore'
