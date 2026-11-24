@@ -146,8 +146,8 @@ function submitCustom() {
   padding: 14px 15px 13px;
   border: 1px solid #e6e4dc;
   border-radius: 14px;
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.03);
+  background: var(--sf-surface);
+  box-shadow: 0 1px 2px rgba(36, 31, 25, 0.03);
 }
 
 .ask-head {
@@ -161,7 +161,7 @@ function submitCustom() {
   padding: 2px 8px;
   border-radius: 999px;
   background: #fbeee8;
-  color: #a8422b;
+  color: var(--sf-terra-strong);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -187,7 +187,7 @@ function submitCustom() {
 
 .ask-question {
   margin: 0 0 11px;
-  color: #1d1d1b;
+  color: var(--sf-ink);
   font-size: 14.5px;
   font-weight: 600;
   line-height: 1.6;
@@ -208,7 +208,7 @@ function submitCustom() {
   padding: 9px 11px;
   border: 1px solid #ecebe4;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--sf-surface);
   color: #24241f;
   font-family: inherit;
   text-align: left;
@@ -232,7 +232,7 @@ function submitCustom() {
 
 .ask-option.is-recommended {
   border-color: #e3b7a7;
-  background: #fdf7f4;
+  background: var(--sf-terra-wash);
 }
 
 .ask-option.is-recommended:hover:not(:disabled) {
@@ -251,7 +251,7 @@ function submitCustom() {
 
 .ask-option.is-custom {
   border-style: dashed;
-  background: #fcfcfa;
+  background: var(--sf-surface);
 }
 
 .ask-index {
@@ -271,7 +271,7 @@ function submitCustom() {
 
 .ask-option.is-recommended .ask-index {
   background: #f5ded4;
-  color: #a8422b;
+  color: var(--sf-terra-strong);
 }
 
 .ask-copy {
@@ -300,7 +300,7 @@ function submitCustom() {
   padding: 1px 7px;
   border-radius: 999px;
   background: #f7e2d9;
-  color: #a8422b;
+  color: var(--sf-terra-strong);
   font-size: 10px;
   font-weight: 600;
 }
@@ -319,7 +319,7 @@ function submitCustom() {
   padding: 6px 8px 6px 9px;
   border: 1px solid #d8d3c4;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--sf-surface);
 }
 
 .ask-input {

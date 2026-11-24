@@ -1,0 +1,152 @@
+/* =========================================================================
+ * Stepframe Design Tokens
+ * 一套「纸感工作台」：暖纸底、墨色文字、赤陶强调色。
+ * 所有新组件只从这里取值；旧组件通过 global.css 的别名逐步迁移。
+ * ========================================================================= */
+
+:root {
+  /* ---------- 字体 ---------- */
+  --sf-font-ui:
+    'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  --sf-font-editorial:
+    'Instrument Serif', 'Songti SC', 'STSong', 'Noto Serif SC', 'Times New Roman', serif;
+  --sf-font-mono:
+    'JetBrains Mono Variable', 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  --sf-text-xs: 0.75rem;
+  --sf-text-sm: 0.8125rem;
+  --sf-text-base: 0.875rem;
+  --sf-text-lg: 1rem;
+  --sf-tracking-wide: 0.14em;
+
+  --sf-space-1: 4px;
+  --sf-space-2: 8px;
+  --sf-space-3: 12px;
+  --sf-space-4: 16px;
+  --sf-space-5: 20px;
+  --sf-space-6: 24px;
+  --sf-space-8: 32px;
+  --sf-control-sm: 32px;
+  --sf-control-md: 38px;
+  --sf-control-touch: 44px;
+
+  --sf-focus-ring: 0 0 0 3px rgba(180, 85, 58, 0.14);
+
+  /* ---------- 色彩 ---------- */
+  --sf-paper: #f5f0e7;
+  --sf-paper-2: #faf6ee;
+  --sf-paper-3: #efe8dc;
+  --sf-paper-4: #e7dfd1;
+
+  --sf-surface: #fffdf8;
+  --sf-surface-2: #fbf7ef;
+  --sf-surface-3: #f6f1e7;
+  --sf-surface-inverse: #211d18;
+
+  --sf-ink: #241f19;
+  --sf-ink-2: #655b4e;
+  --sf-ink-3: #817565;
+  --sf-ink-4: #998a78;
+
+  --sf-line: #e2d9cb;
+  --sf-line-soft: #ece4d7;
+  --sf-line-strong: #cfc3b2;
+
+  --sf-terra: #b4553a;
+  --sf-terra-strong: #96422b;
+  --sf-terra-soft: #f2ded3;
+  --sf-terra-wash: #fbf1ea;
+
+  --sf-olive: #5c6247;
+  --sf-olive-soft: #ecefe1;
+  --sf-amber: #b98532;
+  --sf-amber-soft: #f8edd7;
+
+  --sf-success: #3f7a56;
+  --sf-success-soft: #edf5ee;
+  --sf-danger: #a04444;
+  --sf-danger-soft: #fbefee;
+
+  /* ---------- 圆角 ---------- */
+  --sf-r-xs: 8px;
+  --sf-r-sm: 12px;
+  --sf-r-md: 16px;
+  --sf-r-lg: 22px;
+  --sf-r-xl: 28px;
+  --sf-r-pill: 999px;
+
+  /* ---------- 阴影 ---------- */
+  --sf-shadow-xs: 0 1px 2px rgba(50, 38, 25, 0.05);
+  --sf-shadow-sm: 0 6px 18px -8px rgba(50, 38, 25, 0.14);
+  --sf-shadow-md: 0 18px 40px -20px rgba(50, 38, 25, 0.22), 0 2px 6px rgba(50, 38, 25, 0.04);
+  --sf-shadow-lg: 0 32px 80px -32px rgba(50, 38, 25, 0.28);
+  --sf-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+
+  /* ---------- 动效 ---------- */
+  --sf-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --sf-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --sf-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --sf-dur-1: 140ms;
+  --sf-dur-2: 220ms;
+  --sf-dur-3: 380ms;
+  --sf-dur-4: 560ms;
+
+  /* ---------- 布局 ---------- */
+  --sf-gutter: 28px;
+  --sf-max-page: 1480px;
+  --sf-font-display: var(--sf-font-editorial);
+  --sf-content: 1240px;
+  --sf-reading: 66ch;
+}
+
+/* 旧变量别名：让既有页面在不改结构的情况下先换上新皮肤 */
+:root {
+  --font-family: var(--sf-font-ui);
+  --font-family-display: var(--sf-font-ui);
+  --font-family-mono: var(--sf-font-mono);
+
+  --transition-base: var(--sf-dur-2) var(--sf-ease-out);
+  --transition-slow: var(--sf-dur-3) var(--sf-ease-out);
+
+  --color-bg: var(--sf-surface);
+  --color-bg-elevated: var(--sf-surface);
+  --color-surface: var(--sf-surface-2);
+  --color-surface-strong: var(--sf-surface-3);
+  --color-surface-subtle: var(--sf-surface-2);
+  --color-surface-muted: var(--sf-surface-3);
+  --color-surface-inverse: var(--sf-surface-inverse);
+  --color-text: var(--sf-ink);
+  --color-text-secondary: var(--sf-ink-2);
+  --color-text-hint: var(--sf-ink-3);
+  --color-text-inverse: var(--sf-surface);
+  --color-border: var(--sf-line);
+  --color-border-strong: var(--sf-line-strong);
+  --color-accent: var(--sf-ink);
+  --color-accent-strong: var(--sf-ink);
+  --color-accent-soft: var(--sf-surface-3);
+  --color-success: var(--sf-success);
+  --color-success-soft: var(--sf-success-soft);
+  --color-danger: var(--sf-danger);
+  --color-danger-soft: var(--sf-danger-soft);
+  --color-shadow: var(--sf-shadow-md);
+  --color-shadow-soft: var(--sf-shadow-sm);
+  --color-user-bubble: var(--sf-surface-3);
+  --color-theme-gradient: var(--sf-surface-2);
+  --color-theme-gradient-hover: var(--sf-surface-3);
+  --color-theme-gradient-active: var(--sf-paper-3);
+  --color-action-bg: var(--sf-ink);
+  --color-action-bg-hover: #35302a;
+  --color-action-bg-active: #14110d;
+  --color-action-border: var(--sf-ink);
+  --color-action-text: var(--sf-surface);
+  --color-danger-bg: var(--sf-danger-soft);
+  --color-danger-border: #efd9d6;
+  --color-danger-text: var(--sf-danger);
+
+  --radius-xs: var(--sf-r-xs);
+  --radius-sm: var(--sf-r-sm);
+  --radius-md: var(--sf-r-md);
+  --radius-lg: var(--sf-r-lg);
+  --radius-pill: var(--sf-r-pill);
+}

@@ -3,7 +3,8 @@
     <header class="sidebar-head">
       <div class="sidebar-brand">
         <BrandMark :size="26" />
-        <span class="brand-text">步帧</span>
+        <span class="brand-text">Stepframe</span>
+        <span class="brand-cn">步帧</span>
       </div>
       <button type="button" class="icon-button close-button" aria-label="收起侧栏" @click="$emit('close')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
@@ -160,8 +161,8 @@ async function handleDelete(conversation: AgentConversation) {
   flex-direction: column;
   width: 272px;
   height: 100%;
-  border-right: 1px solid #e8e8e2;
-  background: #f7f7f4;
+  border-right: 1px solid var(--sf-line);
+  background: var(--sf-surface-2);
 }
 
 .sidebar-head {
@@ -178,10 +179,23 @@ async function handleDelete(conversation: AgentConversation) {
 }
 
 .brand-text {
-  color: #161614;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  color: var(--sf-ink);
+  font-family: var(--sf-font-display);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  line-height: 1;
+}
+
+.brand-cn {
+  margin-left: 1px;
+  padding-left: 8px;
+  border-left: 1px solid var(--sf-line-strong);
+  color: var(--sf-ink-3);
+  font-size: 10px;
+  font-weight: 620;
+  letter-spacing: 0.14em;
+  line-height: 1;
 }
 
 .close-button {
@@ -194,10 +208,10 @@ async function handleDelete(conversation: AgentConversation) {
   gap: 8px;
   margin: 2px 14px 12px;
   padding: 9px 12px;
-  border: 1px solid #e1e1db;
+  border: 1px solid var(--sf-line);
   border-radius: 11px;
-  background: #ffffff;
-  color: #232320;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
   font-size: 13px;
   font-weight: 600;
   text-align: left;
@@ -208,21 +222,21 @@ async function handleDelete(conversation: AgentConversation) {
 .new-chat-button svg {
   width: 15px;
   height: 15px;
-  color: #6b6b64;
+  color: var(--sf-ink-2);
 }
 
 .new-chat-button kbd {
   margin-left: auto;
-  color: #aaa9a1;
+  color: var(--sf-ink-3);
   font-family: inherit;
   font-size: 10.5px;
   font-weight: 500;
 }
 
 .new-chat-button:hover {
-  border-color: #cfcfc8;
-  background: #ffffff;
-  box-shadow: 0 2px 10px rgba(17, 17, 16, 0.04);
+  border-color: var(--sf-line-strong);
+  background: var(--sf-surface);
+  box-shadow: 0 2px 10px rgba(36, 31, 25, 0.04);
 }
 
 .search-box {
@@ -233,14 +247,14 @@ async function handleDelete(conversation: AgentConversation) {
   padding: 7px 10px;
   border: 1px solid transparent;
   border-radius: 9px;
-  background: #efefeb;
-  color: #96968e;
+  background: var(--sf-surface-3);
+  color: var(--sf-ink-3);
   transition: background 150ms ease, border-color 150ms ease;
 }
 
 .search-box:focus-within {
-  border-color: #dcdcd5;
-  background: #ffffff;
+  border-color: var(--sf-line-strong);
+  background: var(--sf-surface);
 }
 
 .search-box svg {
@@ -255,13 +269,13 @@ async function handleDelete(conversation: AgentConversation) {
   border: 0;
   outline: none;
   background: transparent;
-  color: #2a2a26;
+  color: var(--sf-ink);
   font: inherit;
   font-size: 12.5px;
 }
 
 .search-box input::placeholder {
-  color: #9c9c94;
+  color: var(--sf-ink-3);
 }
 
 .conversation-list {
@@ -270,7 +284,7 @@ async function handleDelete(conversation: AgentConversation) {
   padding: 4px 10px 12px;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #d8d8d1 transparent;
+  scrollbar-color: var(--sf-line-strong) transparent;
 }
 
 .conversation-list::-webkit-scrollbar {
@@ -279,12 +293,12 @@ async function handleDelete(conversation: AgentConversation) {
 
 .conversation-list::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: #d8d8d1;
+  background: var(--sf-line-strong);
 }
 
 .group-label {
   padding: 12px 8px 5px;
-  color: #a09f97;
+  color: var(--sf-ink-3);
   font-size: 10.5px;
   font-weight: 650;
   letter-spacing: 0.05em;
@@ -299,7 +313,7 @@ async function handleDelete(conversation: AgentConversation) {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #4f4f49;
+  color: var(--sf-ink-2);
   font-size: 12.8px;
   line-height: 1.45;
   text-align: left;
@@ -308,13 +322,13 @@ async function handleDelete(conversation: AgentConversation) {
 }
 
 .conversation-item:hover {
-  background: #ecece7;
+  background: var(--sf-line-soft);
   color: #1d1d1a;
 }
 
 .conversation-item.active {
-  background: #e8e8e2;
-  color: #161614;
+  background: var(--sf-line);
+  color: var(--sf-ink);
   font-weight: 600;
 }
 
@@ -351,13 +365,13 @@ async function handleDelete(conversation: AgentConversation) {
 }
 
 .delete-button:hover {
-  background: #deded7;
+  background: var(--sf-line);
   color: #8d3f3f;
 }
 
 .empty-history {
   padding: 26px 10px;
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 12px;
   text-align: center;
 }
@@ -367,7 +381,7 @@ async function handleDelete(conversation: AgentConversation) {
   align-items: center;
   gap: 8px;
   padding: 10px 12px 12px 18px;
-  border-top: 1px solid #e8e8e2;
+  border-top: 1px solid var(--sf-line);
 }
 
 .account-row {
@@ -430,14 +444,14 @@ async function handleDelete(conversation: AgentConversation) {
 }
 
 .logout-button:hover {
-  background: #ecece7;
+  background: var(--sf-line-soft);
   color: #8d3f3f;
 }
 
 @media (max-width: 900px) {
   .agent-sidebar {
     width: 284px;
-    box-shadow: 18px 0 48px rgba(17, 17, 16, 0.08);
+    box-shadow: 18px 0 48px rgba(36, 31, 25, 0.08);
   }
 
   .close-button {
@@ -449,7 +463,7 @@ async function handleDelete(conversation: AgentConversation) {
     border: 0;
     border-radius: 7px;
     background: transparent;
-    color: #8d8d85;
+    color: var(--sf-ink-3);
     cursor: pointer;
   }
 
@@ -459,7 +473,7 @@ async function handleDelete(conversation: AgentConversation) {
   }
 
   .close-button:hover {
-    background: #ecece7;
+    background: var(--sf-line-soft);
   }
 }
 </style>

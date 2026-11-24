@@ -763,18 +763,18 @@ defineExpose({ focus })
 .composer {
   border: 1px solid #e2e2dc;
   border-radius: 18px;
-  background: #ffffff;
+  background: var(--sf-surface);
   box-shadow:
-    0 1px 2px rgba(17, 17, 16, 0.03),
-    0 8px 30px rgba(17, 17, 16, 0.05);
+    0 1px 2px rgba(36, 31, 25, 0.03),
+    0 8px 30px rgba(36, 31, 25, 0.05);
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .composer.is-focused {
-  border-color: #c9c9c1;
+  border-color: var(--sf-line-strong);
   box-shadow:
-    0 1px 2px rgba(17, 17, 16, 0.03),
-    0 10px 34px rgba(17, 17, 16, 0.07);
+    0 1px 2px rgba(36, 31, 25, 0.03),
+    0 10px 34px rgba(36, 31, 25, 0.07);
 }
 
 .composer-modes {
@@ -789,9 +789,9 @@ defineExpose({ focus })
   display: inline-flex;
   align-items: center;
   padding: 2px;
-  border: 1px solid #ecece6;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 8px;
-  background: #fafaf7;
+  background: var(--sf-surface-2);
 }
 
 .mode-switch button {
@@ -802,7 +802,7 @@ defineExpose({ focus })
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-family: inherit;
   font-size: 11px;
   font-weight: 550;
@@ -821,25 +821,25 @@ defineExpose({ focus })
 }
 
 .mode-switch button:hover {
-  color: #4a4a44;
+  color: var(--sf-ink-2);
 }
 
 .mode-switch button.active {
-  background: #ffffff;
-  color: #1d1d1b;
-  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.07);
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  box-shadow: 0 1px 2px rgba(36, 31, 25, 0.07);
 }
 
 .mode-switch button.auto-switch.active {
-  background: #111110;
-  color: #fafaf7;
+  background: var(--sf-ink);
+  color: var(--sf-surface-2);
   box-shadow: none;
 }
 
 .mode-tip {
   min-width: 0;
   overflow: hidden;
-  color: #b0b0a8;
+  color: var(--sf-ink-4);
   font-size: 10.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -857,7 +857,7 @@ defineExpose({ focus })
 .composer.is-dragging {
   border-color: #c78a76;
   box-shadow:
-    0 1px 2px rgba(17, 17, 16, 0.03),
+    0 1px 2px rgba(36, 31, 25, 0.03),
     0 0 0 3px rgba(180, 71, 47, 0.08);
 }
 
@@ -870,7 +870,7 @@ defineExpose({ focus })
   justify-content: center;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.86);
-  color: #b4472f;
+  color: var(--sf-terra);
   font-size: 13px;
   font-weight: 600;
   pointer-events: none;
@@ -893,7 +893,7 @@ defineExpose({ focus })
 
 .applied-templates-label {
   flex: none;
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -906,8 +906,8 @@ defineExpose({ focus })
   max-width: 260px;
   padding: 3px 4px 3px 9px;
   border-radius: 999px;
-  background: #111110;
-  color: #ffffff;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
 }
 
 .applied-template-ref {
@@ -945,7 +945,7 @@ defineExpose({ focus })
   border: 0;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.14);
-  color: #ffffff;
+  color: var(--sf-surface);
   cursor: pointer;
 }
 
@@ -966,18 +966,18 @@ defineExpose({ focus })
   height: 20px;
   flex: none;
   padding: 0;
-  border: 1px dashed #d8d8d0;
+  border: 1px dashed var(--sf-line-strong);
   border-radius: 999px;
-  background: #ffffff;
-  color: #8c8c84;
+  background: var(--sf-surface);
+  color: var(--sf-ink-3);
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
 }
 
 .applied-templates-add:hover {
-  border-color: #b9b9b1;
-  color: #1d1d1b;
+  border-color: var(--sf-line-strong);
+  color: var(--sf-ink);
 }
 
 .attach-remove {
@@ -1003,7 +1003,7 @@ defineExpose({ focus })
 
 .attach-remove:hover {
   background: rgba(180, 71, 47, 0.08);
-  color: #b4472f;
+  color: var(--sf-terra);
 }
 
 .applied-skills {
@@ -1013,9 +1013,9 @@ defineExpose({ focus })
   margin: 7px 12px 0;
   padding: 4px 7px;
   overflow-x: auto;
-  border: 1px solid #e6e6df;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 9px;
-  background: #fbfbf8;
+  background: var(--sf-surface-2);
   scrollbar-width: none;
 }
 
@@ -1025,7 +1025,7 @@ defineExpose({ focus })
 
 .applied-skills-label {
   flex: none;
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 8.5px;
   font-weight: 650;
   letter-spacing: 0.08em;
@@ -1038,15 +1038,15 @@ defineExpose({ focus })
   align-items: center;
   gap: 3px;
   padding: 2px 3px 2px 7px;
-  border: 1px solid #e4e4dc;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 999px;
-  background: #ffffff;
+  background: var(--sf-surface);
 }
 
 .applied-skill-name {
   max-width: 150px;
   overflow: hidden;
-  color: #4a4a44;
+  color: var(--sf-ink-2);
   font-size: 9.5px;
   font-weight: 550;
   text-overflow: ellipsis;
@@ -1063,7 +1063,7 @@ defineExpose({ focus })
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #b0b0a8;
+  color: var(--sf-ink-4);
   font-size: 11px;
   line-height: 1;
   cursor: pointer;
@@ -1071,7 +1071,7 @@ defineExpose({ focus })
 
 .applied-skill-remove:hover {
   background: #fdf2ef;
-  color: #b4472f;
+  color: var(--sf-terra);
 }
 
 .applied-skills-add {
@@ -1082,18 +1082,18 @@ defineExpose({ focus })
   width: 18px;
   height: 18px;
   padding: 0;
-  border: 1px dashed #d8d8d0;
+  border: 1px dashed var(--sf-line-strong);
   border-radius: 50%;
   background: transparent;
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
 }
 
 .applied-skills-add:hover {
-  border-color: #b4472f;
-  color: #b4472f;
+  border-color: var(--sf-terra);
+  color: var(--sf-terra);
 }
 
 .attach-tray {
@@ -1110,9 +1110,9 @@ defineExpose({ focus })
   min-width: 0;
   max-width: 220px;
   padding: 4px 5px 4px 4px;
-  border: 1px solid #ecece6;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 9px;
-  background: #fbfbf8;
+  background: var(--sf-surface-2);
 }
 
 .attach-thumb {
@@ -1121,7 +1121,7 @@ defineExpose({ focus })
   flex: none;
   border-radius: 6px;
   object-fit: cover;
-  background: #f0f0ea;
+  background: var(--sf-surface-3);
 }
 
 .attach-icon {
@@ -1132,8 +1132,8 @@ defineExpose({ focus })
   height: 30px;
   flex: none;
   border-radius: 6px;
-  background: #f3f3ed;
-  color: #8a8a82;
+  background: var(--sf-surface-3);
+  color: var(--sf-ink-3);
 }
 
 .attach-icon svg {
@@ -1162,22 +1162,22 @@ defineExpose({ focus })
 .attach-copy small {
   overflow: hidden;
   max-width: 130px;
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 9.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .attach-chip.is-reading {
-  color: #8d8d85;
+  color: var(--sf-ink-3);
 }
 
 .attach-spinner {
   width: 14px;
   height: 14px;
   margin: 0 8px;
-  border: 1.5px solid #e0e0d8;
-  border-top-color: #b4472f;
+  border: 1.5px solid var(--sf-line);
+  border-top-color: var(--sf-terra);
   border-radius: 50%;
   animation: attach-spin 700ms linear infinite;
 }
@@ -1190,7 +1190,7 @@ defineExpose({ focus })
 
 .attach-notice {
   margin: 7px 14px 0;
-  color: #b4472f;
+  color: var(--sf-terra);
   font-size: 10.5px;
   line-height: 1.5;
 }
@@ -1210,7 +1210,7 @@ defineExpose({ focus })
   border: 1px solid transparent;
   border-radius: 7px;
   background: transparent;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   cursor: pointer;
   transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
 }
@@ -1221,15 +1221,15 @@ defineExpose({ focus })
 }
 
 .composer-icon:hover:not(:disabled) {
-  border-color: #e9e9e3;
-  background: #fafaf8;
-  color: #4a4a44;
+  border-color: var(--sf-line-soft);
+  background: var(--sf-surface-2);
+  color: var(--sf-ink-2);
 }
 
 .composer-icon.active {
-  border-color: #ecdcd3;
-  background: #fdf7f4;
-  color: #b4472f;
+  border-color: var(--sf-terra-soft);
+  background: var(--sf-terra-wash);
+  color: var(--sf-terra);
 }
 
 .composer-icon:disabled {
@@ -1246,7 +1246,7 @@ defineExpose({ focus })
   border: 0;
   outline: none;
   background: transparent;
-  color: #1d1d1b;
+  color: var(--sf-ink);
   font-family: inherit;
   font-size: 14.5px;
   line-height: 1.65;
@@ -1280,7 +1280,7 @@ defineExpose({ focus })
 
 .model-button {
   max-width: 190px;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
 }
 
 .model-button .engine-label {
@@ -1301,16 +1301,16 @@ defineExpose({ focus })
   flex: none;
   margin: 1px 2px 5px;
   padding: 0 9px;
-  border: 1px solid #ecece6;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 8px;
-  background: #fafaf7;
+  background: var(--sf-surface-2);
 }
 
 .model-search-icon {
   width: 14px;
   height: 14px;
   flex: none;
-  color: #b0b0a8;
+  color: var(--sf-ink-4);
 }
 
 .model-search {
@@ -1319,13 +1319,13 @@ defineExpose({ focus })
   border: 0;
   outline: none;
   background: transparent;
-  color: #2c2c28;
+  color: var(--sf-ink);
   font-family: inherit;
   font-size: 12px;
 }
 
 .model-search::placeholder {
-  color: #b3b3ab;
+  color: var(--sf-ink-4);
 }
 
 .model-list {
@@ -1367,9 +1367,9 @@ defineExpose({ focus })
 }
 
 .engine-button:hover {
-  border-color: #e9e9e3;
-  background: #fafaf8;
-  color: #4a4a44;
+  border-color: var(--sf-line-soft);
+  background: var(--sf-surface-2);
+  color: var(--sf-ink-2);
 }
 
 .engine-label {
@@ -1393,12 +1393,12 @@ defineExpose({ focus })
   max-height: min(58vh, 380px);
   overflow-y: auto;
   padding: 6px;
-  border: 1px solid #e6e6df;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--sf-surface);
   box-shadow:
-    0 1px 2px rgba(17, 17, 16, 0.04),
-    0 14px 40px rgba(17, 17, 16, 0.12);
+    0 1px 2px rgba(36, 31, 25, 0.04),
+    0 14px 40px rgba(36, 31, 25, 0.12);
 }
 
 /* 模型选择在发送按钮左边，菜单要向右对齐，避免超出视口。 */
@@ -1414,14 +1414,14 @@ defineExpose({ focus })
   justify-content: space-between;
   gap: 8px;
   padding: 5px 8px 7px;
-  color: #8d8d85;
+  color: var(--sf-ink-3);
   font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
 .engine-count {
-  color: #b3b3ab;
+  color: var(--sf-ink-4);
   font-size: 9.5px;
   font-weight: 500;
   letter-spacing: 0;
@@ -1444,7 +1444,7 @@ defineExpose({ focus })
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #2c2c28;
+  color: var(--sf-ink);
   text-align: left;
   cursor: pointer;
   transition: background 120ms ease;
@@ -1476,7 +1476,7 @@ defineExpose({ focus })
 
 .option-copy small {
   overflow: hidden;
-  color: #96968e;
+  color: var(--sf-ink-3);
   font-size: 10.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1492,8 +1492,8 @@ defineExpose({ focus })
   margin: 4px 8px 8px;
   padding: 10px 8px;
   border-radius: 8px;
-  background: #fafaf7;
-  color: #9c9c94;
+  background: var(--sf-surface-2);
+  color: var(--sf-ink-3);
   font-size: 11px;
   line-height: 1.6;
 }
@@ -1505,7 +1505,7 @@ defineExpose({ focus })
   gap: 8px;
   margin-top: 6px;
   padding: 7px 6px 2px;
-  border-top: 1px solid #f0f0ea;
+  border-top: 1px solid var(--sf-surface-3);
 }
 
 .engine-link {
@@ -1520,7 +1520,7 @@ defineExpose({ focus })
 }
 
 .engine-link:hover:not(:disabled) {
-  background: #f4f4ef;
+  background: var(--sf-surface-3);
   color: #33332e;
 }
 
@@ -1549,8 +1549,8 @@ defineExpose({ focus })
 }
 
 .send-button {
-  background: #111111;
-  color: #ffffff;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
 }
 
 .send-button svg {
@@ -1564,7 +1564,7 @@ defineExpose({ focus })
 }
 
 .send-button:disabled {
-  background: #ecece7;
+  background: var(--sf-line-soft);
   color: #b7b7af;
   cursor: not-allowed;
 }
@@ -1694,14 +1694,14 @@ defineExpose({ focus })
 /* ── 创作对话：保持白色，只留陶土色发送键与更强的模式胶囊 ── */
 .composer.is-create {
   border-color: #e8e4da;
-  background: #ffffff;
+  background: var(--sf-surface);
 }
 
 .composer.is-create.is-focused {
   border-color: #cfc7b8;
   box-shadow:
-    0 1px 2px rgba(17, 17, 16, 0.03),
-    0 10px 34px rgba(17, 17, 16, 0.07);
+    0 1px 2px rgba(36, 31, 25, 0.03),
+    0 10px 34px rgba(36, 31, 25, 0.07);
 }
 
 .composer.is-create .conversation-switch {
@@ -1710,8 +1710,8 @@ defineExpose({ focus })
 }
 
 .composer.is-create .conversation-switch button.active {
-  background: #141412;
-  color: #fafaf7;
+  background: var(--sf-ink);
+  color: var(--sf-surface-2);
   box-shadow: none;
 }
 
@@ -1724,19 +1724,19 @@ defineExpose({ focus })
 }
 
 .composer.is-create .automation-switch {
-  border-color: #ecece6;
-  background: #fafaf7;
+  border-color: var(--sf-line-soft);
+  background: var(--sf-surface-2);
 }
 
 .composer.is-create .automation-switch button.auto-switch.active {
-  background: #141412;
-  color: #fafaf7;
+  background: var(--sf-ink);
+  color: var(--sf-surface-2);
   box-shadow: none;
 }
 
 .composer.is-create .send-button {
-  background: #b4472f;
-  color: #fff8f2;
+  background: var(--sf-terra);
+  color: var(--sf-surface);
 }
 
 .composer.is-create .send-button:hover:not(:disabled) {

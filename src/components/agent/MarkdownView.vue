@@ -105,7 +105,7 @@ async function handleClick(event: MouseEvent) {
 .markdown-body {
   font-size: 14.5px;
   line-height: 1.75;
-  color: #1d1d1b;
+  color: var(--sf-ink);
   overflow-wrap: anywhere;
 }
 
@@ -126,7 +126,7 @@ async function handleClick(event: MouseEvent) {
 .markdown-body :deep(h3),
 .markdown-body :deep(h4) {
   margin: 1.3em 0 0.55em;
-  color: #111110;
+  color: var(--sf-ink);
   font-weight: 650;
   line-height: 1.35;
   letter-spacing: -0.015em;
@@ -173,7 +173,7 @@ async function handleClick(event: MouseEvent) {
   padding: 0.5px 7px;
   border-radius: 999px;
   background: #fbeee8;
-  color: #a8422b;
+  color: var(--sf-terra-strong);
   font-size: 11px;
   font-weight: 600;
   line-height: 1.7;
@@ -190,21 +190,21 @@ async function handleClick(event: MouseEvent) {
 }
 
 .markdown-body :deep(a) {
-  color: #111110;
+  color: var(--sf-ink);
   text-decoration: underline;
   text-decoration-color: #c9c9c3;
   text-underline-offset: 3px;
 }
 
 .markdown-body :deep(a:hover) {
-  text-decoration-color: #111110;
+  text-decoration-color: var(--sf-ink);
 }
 
 .markdown-body :deep(code) {
   padding: 0.16em 0.4em;
   border-radius: 5px;
   background: #f1f1ed;
-  color: #2b2b27;
+  color: var(--sf-ink);
   font-family: 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
   font-size: 0.88em;
 }
@@ -214,9 +214,9 @@ async function handleClick(event: MouseEvent) {
   width: 100%;
   max-width: 620px;
   margin: 12px 0;
-  border: 1px solid #e9e9e3;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 12px;
-  background: #000000;
+  background: var(--sf-ink);
 }
 
 .markdown-body :deep(.md-code) {
@@ -251,8 +251,8 @@ async function handleClick(event: MouseEvent) {
 }
 
 .markdown-body :deep(.md-code-copy:hover) {
-  background: #ecece7;
-  color: #111110;
+  background: var(--sf-line-soft);
+  color: var(--sf-ink);
 }
 
 .markdown-body :deep(.md-code pre) {
@@ -266,7 +266,7 @@ async function handleClick(event: MouseEvent) {
   padding: 0;
   border-radius: 0;
   background: transparent;
-  color: #2b2b27;
+  color: var(--sf-ink);
   font-size: 12.8px;
   line-height: 1.65;
 }
@@ -286,14 +286,14 @@ async function handleClick(event: MouseEvent) {
 }
 
 .markdown-body :deep(th) {
-  background: #f7f7f4;
+  background: var(--sf-surface-2);
   font-weight: 650;
 }
 
 .markdown-body :deep(hr) {
   margin: 1.4em 0;
   border: 0;
-  border-top: 1px solid #ecece7;
+  border-top: 1px solid var(--sf-line-soft);
 }
 
 .markdown-body :deep(img) {

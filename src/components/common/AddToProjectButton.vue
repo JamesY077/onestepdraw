@@ -50,9 +50,9 @@ function openInbox() {
 }
 
 .add-to-project:hover {
-  border-color: #c9c9c1;
-  background: #ffffff;
-  color: #1d1d1b;
+  border-color: var(--sf-line-strong);
+  background: var(--sf-surface);
+  color: var(--sf-ink);
 }
 
 .add-to-project.compact {

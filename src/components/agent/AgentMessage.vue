@@ -1,5 +1,12 @@
 <template>
-  <article class="agent-message" :class="[`is-${message.role}`, `status-${message.status}`]">
+  <FadeContent
+    class="agent-message"
+    :class="[`is-${message.role}`, `status-${message.status}`]"
+    trigger="mount"
+    :duration="380"
+    :initial-opacity="0.6"
+    effect="fade"
+  >
     <div v-if="message.role === 'assistant'" class="message-avatar" aria-hidden="true">
       <BrandMark :size="24" />
     </div>
@@ -147,11 +154,12 @@
         </div>
       </footer>
     </div>
-  </article>
+  </FadeContent>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import FadeContent from '@/components/bits/FadeContent.vue'
 import BrandMark from './BrandMark.vue'
 import MarkdownView from './MarkdownView.vue'
 import AgentGenerationCard from './AgentGenerationCard.vue'
@@ -200,7 +208,6 @@ async function copyContent() {
   display: flex;
   gap: 12px;
   width: 100%;
-  animation: message-in 180ms ease-out;
 }
 
 .agent-message.is-user {
@@ -236,9 +243,9 @@ async function copyContent() {
   align-items: center;
   gap: 7px;
   padding: 4px 9px 4px 4px;
-  border: 1px solid #ecdcd3;
+  border: 1px solid var(--sf-terra-soft);
   border-radius: 9px;
-  background: #fdf7f4;
+  background: var(--sf-terra-wash);
 }
 
 .ref-template img,
@@ -248,14 +255,14 @@ async function copyContent() {
   flex: none;
   border-radius: 6px;
   object-fit: cover;
-  background: #ffffff;
+  background: var(--sf-surface);
 }
 
 .ref-template-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #b4472f;
+  color: var(--sf-terra);
 }
 
 .ref-template-icon svg {
@@ -297,15 +304,15 @@ async function copyContent() {
   align-items: center;
   gap: 5px;
   padding: 3px 7px 3px 3px;
-  border: 1px solid #ecece6;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 8px;
-  background: #fbfbf8;
-  color: #6b6b63;
+  background: var(--sf-surface-2);
+  color: var(--sf-ink-2);
   text-decoration: none;
 }
 
 .ref-asset:hover {
-  border-color: #d8d8d0;
+  border-color: var(--sf-line-strong);
 }
 
 .ref-asset img {
@@ -325,7 +332,7 @@ async function copyContent() {
   flex: none;
   border-radius: 5px;
   background: #f2f2ec;
-  color: #8a8a82;
+  color: var(--sf-ink-3);
 }
 
 .ref-asset-icon svg {
@@ -355,9 +362,9 @@ async function copyContent() {
   align-items: center;
   gap: 5px;
   padding: 3px 8px 3px 3px;
-  border: 1px solid #ecdcd3;
+  border: 1px solid var(--sf-terra-soft);
   border-radius: 8px;
-  background: #fdf8f5;
+  background: var(--sf-terra-wash);
 }
 
 .ref-clip img,
@@ -374,7 +381,7 @@ async function copyContent() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #b4553a;
+  color: var(--sf-terra);
 }
 
 .ref-clip-icon svg {
@@ -407,7 +414,7 @@ async function copyContent() {
 .ref-clip-note {
   max-width: 156px;
   overflow: hidden;
-  color: #9c4a30;
+  color: var(--sf-terra-strong);
   font-size: 9px;
   font-style: normal;
   line-height: 1.35;
@@ -419,7 +426,7 @@ async function copyContent() {
   padding: 10px 14px;
   border-radius: 16px 16px 4px 16px;
   background: #f2f2ef;
-  color: #1d1d1b;
+  color: var(--sf-ink);
   font-size: 14.5px;
   line-height: 1.7;
   white-space: pre-wrap;
@@ -431,14 +438,14 @@ async function copyContent() {
   padding: 9px 12px;
   border: 1px solid #ebebe6;
   border-radius: 10px;
-  background: #fafaf8;
+  background: var(--sf-surface-2);
 }
 
 .reasoning-block summary {
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #77776f;
+  color: var(--sf-ink-2);
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -453,7 +460,7 @@ async function copyContent() {
 .reasoning-block summary::after {
   content: '▾';
   margin-left: auto;
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 10px;
   transition: transform 160ms ease;
 }
@@ -466,19 +473,19 @@ async function copyContent() {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #b9b9b1;
+  background: var(--sf-line-strong);
 }
 
 .reasoning-running {
-  color: #8a8a82;
+  color: var(--sf-ink-3);
   font-weight: 500;
 }
 
 .reasoning-text {
   margin: 9px 0 0;
   padding-top: 9px;
-  border-top: 1px solid #efefe9;
-  color: #6d6d65;
+  border-top: 1px solid var(--sf-surface-3);
+  color: var(--sf-ink-2);
   font-family: inherit;
   font-size: 12.5px;
   line-height: 1.7;
@@ -521,14 +528,14 @@ async function copyContent() {
 }
 
 .message-error {
-  border: 1px solid #f0dede;
-  background: #fdf6f6;
-  color: #a04444;
+  border: 1px solid var(--sf-danger-soft);
+  background: var(--sf-danger-soft);
+  color: var(--sf-danger);
 }
 
 .message-stopped {
-  border: 1px solid #ecece7;
-  background: #fafaf8;
+  border: 1px solid var(--sf-line-soft);
+  background: var(--sf-surface-2);
   color: #7c7c74;
 }
 
@@ -550,7 +557,7 @@ async function copyContent() {
 .message-engine {
   max-width: 180px;
   overflow: hidden;
-  color: #b0b0a8;
+  color: var(--sf-ink-4);
   font-size: 10.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -579,8 +586,8 @@ async function copyContent() {
 }
 
 .text-action:hover {
-  background: #f2f2ee;
-  color: #1d1d1b;
+  background: var(--sf-surface-3);
+  color: var(--sf-ink);
 }
 
 @keyframes message-in {

@@ -3,6 +3,7 @@
     <Transition name="app-dialog">
       <div v-if="dialogState.open" class="dlg-backdrop" @click.self="cancel">
         <section
+          ref="dialogRef"
           class="dlg"
           :class="{ 'is-danger': dialogState.danger }"
           role="dialog"
@@ -42,6 +43,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { dialogState, settleDialog } from '@/features/ui/dialog'
 
+const dialogRef = ref<HTMLElement | null>(null)
 const confirmRef = ref<HTMLButtonElement | null>(null)
 const cancelRef = ref<HTMLButtonElement | null>(null)
 let previousOverflow = ''
@@ -57,6 +59,18 @@ function cancel() {
 
 function handleKeydown(event: KeyboardEvent) {
   if (!dialogState.open) return
+  if (event.key === 'Tab') {
+    const buttons = [cancelRef.value, confirmRef.value].filter((button): button is HTMLButtonElement =>
+      Boolean(button && !button.disabled && button.offsetParent !== null),
+    )
+    const index = buttons.indexOf(document.activeElement as HTMLButtonElement)
+    event.preventDefault()
+    const next = event.shiftKey
+      ? buttons[(index <= 0 ? buttons.length : index) - 1]
+      : buttons[(index + 1 + buttons.length) % buttons.length]
+    ;(next || dialogRef.value)?.focus()
+    return
+  }
   if (event.key === 'Escape') {
     event.preventDefault()
     cancel()
@@ -114,17 +128,17 @@ onBeforeUnmount(() => {
 .dlg {
   width: min(380px, 100%);
   padding: 20px 20px 16px;
-  border: 1px solid #e7e7e1;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 16px;
-  background: #ffffff;
+  background: var(--sf-surface);
   box-shadow:
-    0 1px 2px rgba(17, 17, 16, 0.04),
-    0 24px 70px rgba(17, 17, 16, 0.18);
+    0 1px 2px rgba(36, 31, 25, 0.04),
+    0 24px 70px rgba(36, 31, 25, 0.18);
 }
 
 .dlg-title {
   margin: 0;
-  color: #1d1d1b;
+  color: var(--sf-ink);
   font-size: 14.5px;
   font-weight: 650;
   letter-spacing: -0.01em;
@@ -133,7 +147,7 @@ onBeforeUnmount(() => {
 
 .dlg-message {
   margin: 8px 0 0;
-  color: #6b6b63;
+  color: var(--sf-ink-2);
   font-size: 12px;
   line-height: 1.75;
   white-space: pre-line;
@@ -160,40 +174,40 @@ onBeforeUnmount(() => {
 }
 
 .dlg-cancel {
-  border: 1px solid #e7e7e1;
-  background: #ffffff;
-  color: #6b6b63;
+  border: 1px solid var(--sf-line-soft);
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
 }
 
 .dlg-cancel:hover {
-  border-color: #d4d4cc;
-  color: #1d1d1b;
+  border-color: var(--sf-line-strong);
+  color: var(--sf-ink);
 }
 
 .dlg-confirm {
-  border: 1px solid #111110;
-  background: #111110;
-  color: #ffffff;
+  border: 1px solid var(--sf-ink);
+  background: var(--sf-ink);
+  color: var(--sf-surface);
 }
 
 .dlg-confirm:hover {
-  background: #2c2c28;
-  border-color: #2c2c28;
+  background: var(--sf-ink);
+  border-color: var(--sf-ink);
 }
 
 .dlg-confirm.danger {
-  border-color: #b4472f;
-  background: #b4472f;
+  border-color: var(--sf-terra);
+  background: var(--sf-terra);
 }
 
 .dlg-confirm.danger:hover {
-  border-color: #9c3b26;
-  background: #9c3b26;
+  border-color: var(--sf-terra-strong);
+  background: var(--sf-terra-strong);
 }
 
 .dlg-confirm:focus-visible,
 .dlg-cancel:focus-visible {
-  outline: 2px solid rgba(17, 17, 16, 0.18);
+  outline: 2px solid rgba(36, 31, 25, 0.18);
   outline-offset: 2px;
 }
 

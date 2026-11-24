@@ -306,9 +306,9 @@ onBeforeUnmount(clearGenerationTimers)
 }
 
 .message.user .bubble {
-  border-color: #e8e8e2;
-  background: #f5f5f1;
-  color: #1d1d1b;
+  border-color: var(--sf-line);
+  background: var(--sf-surface-3);
+  color: var(--sf-ink);
   box-shadow: none;
 }
 
@@ -327,7 +327,7 @@ onBeforeUnmount(clearGenerationTimers)
 
 .message.user .content p,
 .message.user .time {
-  color: rgba(29, 29, 27, 0.96);
+  color: rgba(36, 31, 25, 0.96);
 }
 
 .expand-mode-chip {
@@ -336,10 +336,10 @@ onBeforeUnmount(clearGenerationTimers)
   min-height: 22px;
   margin-top: 6px;
   padding: 0 9px;
-  border: 1px solid rgba(17, 17, 16, 0.30);
+  border: 1px solid rgba(36, 31, 25, 0.30);
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.12);
-  color: #1d1d1b;
+  background: rgba(36, 31, 25, 0.12);
+  color: var(--sf-ink);
   font-size: 10.5px;
   font-weight: 650;
   letter-spacing: 0.02em;
@@ -357,8 +357,8 @@ onBeforeUnmount(clearGenerationTimers)
   position: relative;
   overflow: hidden;
   border-radius: 12px;
-  background: rgba(17, 17, 16, 0.06);
-  border: 1px solid rgba(17, 17, 16, 0.12);
+  background: rgba(36, 31, 25, 0.06);
+  border: 1px solid rgba(36, 31, 25, 0.12);
 }
 
 .frame-badge {
@@ -369,8 +369,8 @@ onBeforeUnmount(clearGenerationTimers)
   padding: 3px 7px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.94);
-  color: #1d1d1b;
-  box-shadow: 0 2px 6px rgba(17, 17, 16, 0.08);
+  color: var(--sf-ink);
+  box-shadow: 0 2px 6px rgba(36, 31, 25, 0.08);
   font-size: 10px;
   font-weight: 700;
 }
@@ -387,8 +387,8 @@ onBeforeUnmount(clearGenerationTimers)
   display: block;
   padding: 6px 10px;
   font-size: 11px;
-  color: rgba(29, 29, 27, 0.62);
-  border-top: 1px solid rgba(17, 17, 16, 0.08);
+  color: rgba(36, 31, 25, 0.62);
+  border-top: 1px solid rgba(36, 31, 25, 0.08);
 }
 
 .generate-result {
@@ -409,10 +409,10 @@ onBeforeUnmount(clearGenerationTimers)
 .batch-note {
   grid-column: 1 / -1;
   padding: 6px 10px;
-  border: 1px solid rgba(17, 17, 16, 0.16);
+  border: 1px solid rgba(36, 31, 25, 0.16);
   border-radius: 10px;
-  background: #fafaf8;
-  color: #1d1d1b;
+  background: var(--sf-surface-2);
+  color: var(--sf-ink);
   font-size: 11px;
   font-weight: 700;
 }
@@ -423,9 +423,9 @@ onBeforeUnmount(clearGenerationTimers)
   gap: 9px;
   margin-top: 4px;
   padding: 11px 12px;
-  border: 1px solid rgba(17, 17, 16, 0.20);
+  border: 1px solid rgba(36, 31, 25, 0.20);
   border-radius: 14px;
-  background: #fafaf8;
+  background: var(--sf-surface-2);
   box-shadow: none;
 }
 
@@ -440,9 +440,9 @@ onBeforeUnmount(clearGenerationTimers)
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid rgba(17, 17, 16, 0.18);
-  border-top-color: #111111;
-  box-shadow: 0 0 10px rgba(17, 17, 16, 0.18);
+  border: 2px solid rgba(36, 31, 25, 0.18);
+  border-top-color: var(--sf-ink);
+  box-shadow: 0 0 10px rgba(36, 31, 25, 0.18);
   animation: spin 0.75s linear infinite;
 }
 
@@ -450,11 +450,11 @@ onBeforeUnmount(clearGenerationTimers)
 .time,
 .progress-text {
   font-size: 11px;
-  color: rgba(29, 29, 27, 0.62);
+  color: rgba(36, 31, 25, 0.62);
 }
 
 .loading-text {
-  color: rgba(29, 29, 27, 0.78);
+  color: rgba(36, 31, 25, 0.78);
   font-weight: 600;
 }
 
@@ -462,15 +462,15 @@ onBeforeUnmount(clearGenerationTimers)
   position: relative;
   height: 7px;
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.08);
+  background: rgba(36, 31, 25, 0.08);
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #c9c9c1 0%, #8f8f88 55%, #1d1d1b 100%);
-  box-shadow: 0 0 12px rgba(17, 17, 16, 0.38);
+  background: linear-gradient(90deg, var(--sf-line-strong) 0%, #8f8f88 55%, var(--sf-ink) 100%);
+  box-shadow: 0 0 12px rgba(36, 31, 25, 0.38);
   transition: width 0.9s linear;
 }
 
@@ -487,14 +487,14 @@ onBeforeUnmount(clearGenerationTimers)
   overflow: hidden;
   font-size: 11px;
   font-weight: 600;
-  color: rgba(29, 29, 27, 0.72);
+  color: rgba(36, 31, 25, 0.72);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .progress-text {
   flex-shrink: 0;
-  color: #66665f;
+  color: var(--sf-ink-2);
   font-variant-numeric: tabular-nums;
 }
 
@@ -502,16 +502,16 @@ onBeforeUnmount(clearGenerationTimers)
   min-height: 18px;
   padding: 5px 8px;
   overflow: hidden;
-  border: 1px solid rgba(17, 17, 16, 0.05);
+  border: 1px solid rgba(36, 31, 25, 0.05);
   border-radius: 8px;
-  background: rgba(17, 17, 16, 0.035);
+  background: rgba(36, 31, 25, 0.035);
 }
 
 .generation-tip {
   display: block;
   font-size: 11px;
   line-height: 1.55;
-  color: rgba(29, 29, 27, 0.5);
+  color: rgba(36, 31, 25, 0.5);
 }
 
 .tip-slide-enter-active,
@@ -550,10 +550,10 @@ onBeforeUnmount(clearGenerationTimers)
   justify-content: center;
   width: 22px;
   height: 22px;
-  border: 1px solid rgba(17, 17, 16, 0.24);
+  border: 1px solid rgba(36, 31, 25, 0.24);
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.10);
-  color: rgba(29, 29, 27, 0.8);
+  background: rgba(36, 31, 25, 0.10);
+  color: rgba(36, 31, 25, 0.8);
   font-size: 12px;
 }
 
@@ -564,21 +564,21 @@ onBeforeUnmount(clearGenerationTimers)
 }
 
 .icon-btn:hover {
-  border-color: rgba(29, 29, 27, 0.38);
-  background: rgba(17, 17, 16, 0.18);
-  color: #1d1d1b;
+  border-color: rgba(36, 31, 25, 0.38);
+  background: rgba(36, 31, 25, 0.18);
+  color: var(--sf-ink);
 }
 
 .message.user .icon-btn {
-  border-color: rgba(29, 29, 27, 0.42);
-  background: rgba(17, 17, 16, 0.14);
-  color: rgba(29, 29, 27, 0.94);
+  border-color: rgba(36, 31, 25, 0.42);
+  background: rgba(36, 31, 25, 0.14);
+  color: rgba(36, 31, 25, 0.94);
 }
 
 .message.user .icon-btn:hover {
-  border-color: rgba(29, 29, 27, 0.6);
-  background: rgba(17, 17, 16, 0.24);
-  color: #1d1d1b;
+  border-color: rgba(36, 31, 25, 0.6);
+  background: rgba(36, 31, 25, 0.24);
+  color: var(--sf-ink);
 }
 
 .error {
@@ -600,9 +600,9 @@ onBeforeUnmount(clearGenerationTimers)
   border-radius: 8px;
   font-size: 11px;
   line-height: 1.5;
-  background: #fdf9ee;
-  border: 1px solid #efe4c6;
-  color: #8a6d1f;
+  background: var(--sf-surface-2);
+  border: 1px solid var(--sf-amber-soft);
+  color: var(--sf-amber);
 }
 
 .retry-btn {
@@ -611,7 +611,7 @@ onBeforeUnmount(clearGenerationTimers)
   font-size: 11px;
   border: none;
   border-radius: 999px;
-  background: #fff;
+  background: var(--sf-surface);
   color: var(--color-text);
 }
 

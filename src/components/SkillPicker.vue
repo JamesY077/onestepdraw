@@ -259,9 +259,9 @@ async function handleSkillFileChange(e: Event) {
   /* 横向 chip 列表不能把父级 grid 列撑宽 */
   contain: inline-size;
   padding: 10px;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 16px;
-  background: #fafaf8;
+  background: var(--sf-surface-2);
 }
 
 .skill-picker-head {
@@ -276,29 +276,29 @@ async function handleSkillFileChange(e: Event) {
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #4a4a44;
+  color: var(--sf-ink-2);
 }
 
 .skill-picker-meta {
   font-size: 10.5px;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
 }
 
 .skill-picker-clear {
   margin-left: auto;
   padding: 2px 8px;
-  border: 1px solid #e0e0d9;
+  border: 1px solid var(--sf-line);
   border-radius: 999px;
-  background: #ffffff;
-  color: #66665f;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
   font-size: 10px;
   cursor: pointer;
   transition: color 0.2s ease, border-color 0.2s ease;
 }
 
 .skill-picker-clear:hover {
-  border-color: #c9c9c1;
-  color: #111110;
+  border-color: var(--sf-line-strong);
+  color: var(--sf-ink);
 }
 
 .skill-picker-rail {
@@ -310,7 +310,7 @@ async function handleSkillFileChange(e: Event) {
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: thin;
-  scrollbar-color: #dcdcd5 transparent;
+  scrollbar-color: var(--sf-line-strong) transparent;
 }
 
 .skill-picker-rail::-webkit-scrollbar {
@@ -319,7 +319,7 @@ async function handleSkillFileChange(e: Event) {
 
 .skill-picker-rail::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: #dcdcd5;
+  background: var(--sf-line-strong);
 }
 
 .skill-picker-rail::-webkit-scrollbar-track {
@@ -344,7 +344,7 @@ async function handleSkillFileChange(e: Event) {
   border-radius: 11px;
   object-fit: cover;
   filter: none;
-  outline: 1px solid #ecece7;
+  outline: 1px solid var(--sf-line-soft);
   outline-offset: -1px;
   transition:
     filter 0.3s ease,
@@ -359,7 +359,7 @@ async function handleSkillFileChange(e: Event) {
 
 .skill-chip.active .skill-chip-thumb {
   filter: none;
-  outline: 2px solid #111111;
+  outline: 2px solid var(--sf-ink);
   outline-offset: -2px;
 }
 
@@ -367,7 +367,7 @@ async function handleSkillFileChange(e: Event) {
   display: block;
   margin-top: 5px;
   overflow: hidden;
-  color: #66665f;
+  color: var(--sf-ink-2);
   font-size: 10.5px;
   font-weight: 600;
   line-height: 1.3;
@@ -378,7 +378,7 @@ async function handleSkillFileChange(e: Event) {
 }
 
 .skill-chip.active .skill-chip-name {
-  color: #111110;
+  color: var(--sf-ink);
   font-weight: 700;
 }
 
@@ -391,11 +391,11 @@ async function handleSkillFileChange(e: Event) {
   width: 17px;
   height: 17px;
   border-radius: 50%;
-  background: #111111;
-  color: #ffffff;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
   font-size: 10px;
   font-weight: 800;
-  box-shadow: 0 0 0 1.5px rgba(17, 17, 16, 0.12);
+  box-shadow: 0 0 0 1.5px rgba(36, 31, 25, 0.12);
   opacity: 0;
   transform: scale(0.6);
   transition:
@@ -424,8 +424,8 @@ async function handleSkillFileChange(e: Event) {
 .skill-chip-placeholder {
   display: grid;
   place-items: center;
-  background: #f0f0ec;
-  color: #66665f;
+  background: var(--sf-surface-3);
+  color: var(--sf-ink-2);
   font-size: 20px;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -445,10 +445,10 @@ async function handleSkillFileChange(e: Event) {
   width: 18px;
   height: 18px;
   padding: 0;
-  border: 1px solid #e0e0d9;
+  border: 1px solid var(--sf-line);
   border-radius: 50%;
-  background: #ffffff;
-  color: #1d1d1b;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
@@ -456,9 +456,9 @@ async function handleSkillFileChange(e: Event) {
 }
 
 .skill-chip-remove:hover {
-  border-color: #f0d3d0;
-  background: #fdf4f3;
-  color: #b4342c;
+  border-color: var(--sf-danger-soft);
+  background: var(--sf-terra-wash);
+  color: var(--sf-terra-strong);
 }
 
 /* 上传入口：与 sample skill 同尺寸的虚线卡。 */
@@ -472,15 +472,15 @@ async function handleSkillFileChange(e: Event) {
   align-items: center;
   justify-content: center;
   gap: 3px;
-  border: 1px dashed #d2d2ca;
-  background: #ffffff;
-  color: #9a9a92;
+  border: 1px dashed var(--sf-line-strong);
+  background: var(--sf-surface);
+  color: var(--sf-ink-3);
 }
 
 .skill-chip-add:hover .skill-add-thumb {
-  border-color: #b9b9b1;
-  background: #f5f5f1;
-  color: #111110;
+  border-color: var(--sf-line-strong);
+  background: var(--sf-surface-3);
+  color: var(--sf-ink);
   filter: none;
 }
 
@@ -490,9 +490,9 @@ async function handleSkillFileChange(e: Event) {
 
 .skill-chip-add.is-full .skill-add-thumb {
   border-style: solid;
-  border-color: #ecece7;
-  background: #fafaf8;
-  color: #c4c4bc;
+  border-color: var(--sf-line-soft);
+  background: var(--sf-surface-2);
+  color: var(--sf-line-strong);
 }
 
 .skill-add-plus {
@@ -529,20 +529,20 @@ async function handleSkillFileChange(e: Event) {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
 }
 
 .skill-default-tag {
   padding: 2px 7px;
   border-radius: 999px;
-  background: #f0f0ec;
-  color: #66665f;
+  background: var(--sf-surface-3);
+  color: var(--sf-ink-2);
   font-size: 9.5px;
   white-space: nowrap;
 }
 
 .skill-defaults-off {
-  color: #8a6d1f;
+  color: var(--sf-amber);
   font-size: 10px;
 }
 
@@ -550,7 +550,7 @@ async function handleSkillFileChange(e: Event) {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-size: 10px;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -558,12 +558,12 @@ async function handleSkillFileChange(e: Event) {
 }
 
 .skill-settings-link:hover {
-  color: #111110;
+  color: var(--sf-ink);
 }
 
 .skill-upload-count {
   margin-left: auto;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-size: 10px;
   white-space: nowrap;
 }

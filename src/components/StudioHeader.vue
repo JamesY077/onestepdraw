@@ -3,11 +3,12 @@
     <div class="studio-header-main">
       <button class="studio-brand" type="button" aria-label="返回步帧对话" @click="router.push('/chat')">
         <BrandMark :size="26" />
-        <span class="studio-brand-name">步帧</span>
+        <span class="studio-brand-name">Stepframe</span>
+        <span class="studio-brand-cn">步帧</span>
       </button>
 
       <div class="studio-heading">
-        <span class="studio-kicker">{{ kicker }}</span>
+        <ShinyLabel class="studio-kicker" :text="kicker" />
         <h1 class="studio-heading-title">{{ title }}</h1>
         <p v-if="subtitle" class="studio-heading-sub">{{ subtitle }}</p>
       </div>
@@ -31,6 +32,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import BrandMark from '@/components/agent/BrandMark.vue'
+import ShinyLabel from '@/components/ui/ShinyLabel.vue'
 
 withDefaults(
   defineProps<{
@@ -39,7 +41,7 @@ withDefaults(
     subtitle?: string
     accent?: string
   }>(),
-  { accent: '#111111', subtitle: '' },
+  { accent: 'var(--sf-ink)', subtitle: '' },
 )
 
 const router = useRouter()
@@ -68,10 +70,10 @@ const router = useRouter()
   gap: 6px;
   max-width: min(100%, 720px);
   padding: 4px 14px;
-  border: 1px solid #ecece7;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 999px;
-  background: #fafaf8;
-  color: #9a9a92;
+  background: var(--sf-surface-2);
+  color: var(--sf-ink-3);
   font-size: 11px;
   line-height: 1.6;
   letter-spacing: 0.01em;
@@ -90,10 +92,10 @@ const router = useRouter()
   align-items: center;
   gap: 9px;
   padding: 5px 12px 5px 5px;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 999px;
-  background: #ffffff;
-  color: #1d1d1b;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
   font: inherit;
   cursor: pointer;
   transition:
@@ -102,8 +104,8 @@ const router = useRouter()
 }
 
 .studio-brand:hover {
-  background: #fafaf8;
-  border-color: #d2d2ca;
+  background: var(--sf-surface-2);
+  border-color: var(--sf-line-strong);
 }
 
 .studio-brand-logo {
@@ -114,10 +116,31 @@ const router = useRouter()
 }
 
 .studio-brand-name {
-  font-family: var(--font-family-display);
-  font-size: 13.5px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-family: var(--sf-font-display);
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  line-height: 1;
+}
+
+.studio-brand-cn {
+  margin-left: 1px;
+  padding-left: 8px;
+  border-left: 1px solid var(--sf-line-strong);
+  color: var(--sf-ink-3);
+  font-size: 9.5px;
+  font-weight: 620;
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
+
+.studio-kicker {
+  align-self: flex-start;
+  color: var(--sf-terra);
+  font-size: 9.5px;
+  font-weight: 680;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 .studio-heading {
@@ -129,18 +152,18 @@ const router = useRouter()
 }
 
 .studio-heading-title {
-  font-family: var(--font-family-display);
-  font-size: clamp(18px, 1.5vw, 22px);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  color: #111110;
+  font-family: var(--sf-font-ui);
+  font-size: clamp(21px, 1.9vw, 27px);
+  font-weight: 690;
+  letter-spacing: -0.038em;
+  line-height: 1.16;
+  color: var(--sf-ink);
 }
 
 .studio-heading-sub {
   margin-top: 2px;
   font-size: 12.5px;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -160,10 +183,10 @@ const router = useRouter()
   gap: 6px;
   min-height: 36px;
   padding: 0 15px;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 999px;
-  background: #ffffff;
-  color: #4a4a44;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
   font: inherit;
   font-size: 12.5px;
   font-weight: 600;
@@ -175,9 +198,9 @@ const router = useRouter()
 }
 
 .studio-action:hover {
-  background: #f5f5f1;
-  border-color: #d2d2ca;
-  color: #111110;
+  background: var(--sf-surface-3);
+  border-color: var(--sf-line-strong);
+  color: var(--sf-ink);
 }
 
 @media (max-width: 1080px) {
@@ -209,7 +232,8 @@ const router = useRouter()
     font-size: 10.5px;
   }
 
-  .studio-brand-name {
+  .studio-brand-name,
+  .studio-brand-cn {
     display: none;
   }
 

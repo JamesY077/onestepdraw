@@ -343,8 +343,8 @@ defineExpose({ focusComposer })
   height: 100%;
   min-width: 0;
   min-height: 0;
-  border-left: 1px solid #ecece6;
-  background: #ffffff;
+  border-left: 1px solid var(--sf-line-soft);
+  background: var(--sf-surface);
 }
 
 .sc-head {
@@ -354,7 +354,7 @@ defineExpose({ focusComposer })
   gap: 8px;
   flex: none;
   padding: 9px 12px 9px 14px;
-  border-bottom: 1px solid #f0f0ea;
+  border-bottom: 1px solid var(--sf-surface-3);
 }
 
 .sc-title {
@@ -370,9 +370,9 @@ defineExpose({ focusComposer })
   flex: none;
   align-items: center;
   padding: 2px;
-  border: 1px solid #ecece6;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 7px;
-  background: #fafaf7;
+  background: var(--sf-surface-2);
 }
 
 .sc-auto button {
@@ -380,7 +380,7 @@ defineExpose({ focusComposer })
   border: 0;
   border-radius: 5px;
   background: transparent;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-family: inherit;
   font-size: 9.5px;
   font-weight: 550;
@@ -389,18 +389,18 @@ defineExpose({ focusComposer })
 }
 
 .sc-auto button:hover {
-  color: #4a4a44;
+  color: var(--sf-ink-2);
 }
 
 .sc-auto button.active {
-  background: #ffffff;
-  color: #1d1d1b;
-  box-shadow: 0 1px 2px rgba(17, 17, 16, 0.07);
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  box-shadow: 0 1px 2px rgba(36, 31, 25, 0.07);
 }
 
 .sc-auto button:last-child.active {
-  background: #111110;
-  color: #fafaf7;
+  background: var(--sf-ink);
+  color: var(--sf-surface-2);
   box-shadow: none;
 }
 
@@ -413,7 +413,7 @@ defineExpose({ focusComposer })
 }
 
 .sc-title strong {
-  color: #2a2a26;
+  color: var(--sf-ink);
   font-size: 11.5px;
   font-weight: 650;
   white-space: nowrap;
@@ -422,7 +422,7 @@ defineExpose({ focusComposer })
 .sc-engine {
   overflow: hidden;
   max-width: 120px;
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -438,14 +438,14 @@ defineExpose({ focusComposer })
 
 .sc-empty {
   padding: 10px 4px;
-  color: #8c8c84;
+  color: var(--sf-ink-3);
   font-size: 11.5px;
   line-height: 1.7;
 }
 
 .sc-empty p {
   margin: 0 0 4px;
-  color: #2a2a26;
+  color: var(--sf-ink);
   font-size: 12.5px;
   font-weight: 600;
 }
@@ -459,18 +459,18 @@ defineExpose({ focusComposer })
 
 .sc-chips button {
   padding: 4px 9px;
-  border: 1px solid #e7e7e1;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 999px;
-  background: #ffffff;
-  color: #5f5f57;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
   font-family: inherit;
   font-size: 10.5px;
   cursor: pointer;
 }
 
 .sc-chips button:hover {
-  border-color: #c9c9c1;
-  color: #111110;
+  border-color: var(--sf-line-strong);
+  color: var(--sf-ink);
 }
 
 .sc-messages {
@@ -507,7 +507,7 @@ defineExpose({ focusComposer })
 .sc-composer {
   flex: none;
   padding: 8px 10px 10px;
-  border-top: 1px solid #f3f3ed;
+  border-top: 1px solid var(--sf-surface-3);
 }
 
 .sc-selection {
@@ -515,7 +515,7 @@ defineExpose({ focusComposer })
   padding: 6px 7px 7px;
   border: 1px solid #f0e3dc;
   border-radius: 8px;
-  background: #fdf8f5;
+  background: var(--sf-terra-wash);
 }
 
 .sc-selection-head {
@@ -530,7 +530,7 @@ defineExpose({ focusComposer })
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #9c4a30;
+  color: var(--sf-terra-strong);
   font-size: 9.5px;
   font-weight: 600;
   white-space: nowrap;
@@ -540,7 +540,7 @@ defineExpose({ focusComposer })
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #b4553a;
+  background: var(--sf-terra);
 }
 
 .sc-selection-head button {
@@ -549,7 +549,7 @@ defineExpose({ focusComposer })
   border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
-  color: #a3867a;
+  color: var(--sf-ink-3);
   font-family: inherit;
   font-size: 9px;
   cursor: pointer;
@@ -557,7 +557,7 @@ defineExpose({ focusComposer })
 
 .sc-selection-head button:hover {
   border-color: #ecd9cf;
-  color: #8f3d26;
+  color: var(--sf-terra-strong);
 }
 
 .sc-queue {
@@ -579,7 +579,7 @@ defineExpose({ focusComposer })
   padding: 4px 5px;
   border: 1px solid #f0e5df;
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--sf-surface);
 }
 
 .sc-queue-thumbs {
@@ -599,7 +599,7 @@ defineExpose({ focusComposer })
   flex: none;
   border-radius: 3px;
   background: #f2ece7;
-  color: #a3867a;
+  color: var(--sf-ink-3);
   font-size: 8.5px;
   object-fit: cover;
 }
@@ -610,7 +610,7 @@ defineExpose({ focusComposer })
 
 .sc-queue-more {
   flex: none;
-  color: #b0a8a0;
+  color: var(--sf-ink-4);
   font-size: 8.5px;
 }
 
@@ -633,7 +633,7 @@ defineExpose({ focusComposer })
 
 .sc-queue-note {
   overflow: hidden;
-  color: #9c4a30;
+  color: var(--sf-terra-strong);
   font-size: 9px;
   line-height: 1.4;
   text-overflow: ellipsis;
@@ -641,7 +641,7 @@ defineExpose({ focusComposer })
 }
 
 .sc-queue-note.is-empty {
-  color: #b3a49b;
+  color: var(--sf-ink-4);
   font-style: italic;
 }
 
@@ -656,7 +656,7 @@ defineExpose({ focusComposer })
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #b3a49b;
+  color: var(--sf-ink-4);
   font-size: 13px;
   line-height: 1;
   cursor: pointer;
@@ -664,12 +664,12 @@ defineExpose({ focusComposer })
 
 .sc-queue-remove:hover {
   background: #f7ece6;
-  color: #9c4a30;
+  color: var(--sf-terra-strong);
 }
 
 .sc-queue-live {
   margin: 5px 0 0;
-  color: #a3867a;
+  color: var(--sf-ink-3);
   font-size: 9px;
   line-height: 1.4;
 }
@@ -696,7 +696,7 @@ defineExpose({ focusComposer })
   padding: 0 5px 0 3px;
   border: 1px solid #eadfd8;
   border-radius: 5px;
-  background: #ffffff;
+  background: var(--sf-surface);
 }
 
 .sc-selection-chip img,
@@ -713,13 +713,13 @@ defineExpose({ focusComposer })
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #a3867a;
+  color: var(--sf-ink-3);
   font-size: 8.5px;
 }
 
 .sc-selection-name {
   overflow: hidden;
-  color: #4a4a44;
+  color: var(--sf-ink-2);
   font-size: 9.5px;
   font-weight: 550;
   text-overflow: ellipsis;
@@ -728,7 +728,7 @@ defineExpose({ focusComposer })
 
 .sc-selection-time {
   flex: none;
-  color: #b0a8a0;
+  color: var(--sf-ink-4);
   font-size: 8.5px;
   font-variant-numeric: tabular-nums;
 }
@@ -741,14 +741,14 @@ defineExpose({ focusComposer })
   padding: 0;
   border: 0;
   background: transparent;
-  color: #a3867a;
+  color: var(--sf-ink-3);
   font-family: inherit;
   font-size: 9px;
   cursor: pointer;
 }
 
 .sc-preview-toggle:hover {
-  color: #8f3d26;
+  color: var(--sf-terra-strong);
 }
 
 .sc-preview-toggle svg {
@@ -767,7 +767,7 @@ defineExpose({ focusComposer })
   padding: 6px 7px;
   border: 1px solid #f0e5df;
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--sf-surface);
 }
 
 .sc-preview-list {
@@ -800,7 +800,7 @@ defineExpose({ focusComposer })
 
 .sc-preview-time {
   flex: none;
-  color: #b0a8a0;
+  color: var(--sf-ink-4);
   font-size: 8.5px;
   font-variant-numeric: tabular-nums;
 }
@@ -808,12 +808,12 @@ defineExpose({ focusComposer })
 .sc-preview-note {
   flex: 1;
   min-width: 0;
-  color: #9c4a30;
+  color: var(--sf-terra-strong);
   overflow-wrap: anywhere;
 }
 
 .sc-preview-note.is-empty {
-  color: #b3a49b;
+  color: var(--sf-ink-4);
   font-style: italic;
 }
 
@@ -827,7 +827,7 @@ defineExpose({ focusComposer })
 
 .sc-preview-draft span {
   margin-right: 4px;
-  color: #a3867a;
+  color: var(--sf-ink-3);
   font-size: 8.5px;
 }
 
@@ -836,14 +836,14 @@ defineExpose({ focusComposer })
 }
 
 .sc-preview-raw summary {
-  color: #a3867a;
+  color: var(--sf-ink-3);
   font-size: 8.5px;
   cursor: pointer;
   user-select: none;
 }
 
 .sc-preview-raw summary:hover {
-  color: #8f3d26;
+  color: var(--sf-terra-strong);
 }
 
 .sc-preview-raw pre {

@@ -229,7 +229,7 @@ function blurTarget(event: KeyboardEvent) {
   flex: none;
   align-self: stretch;
   margin: 10px 14px 8px 0;
-  border: 1px solid #ece7e1;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.97);
   box-shadow: 0 8px 22px rgba(38, 28, 22, 0.08);
@@ -254,14 +254,14 @@ function blurTarget(event: KeyboardEvent) {
 }
 
 .ci-title strong {
-  color: #2a2a26;
+  color: var(--sf-ink);
   font-size: 11.5px;
   font-weight: 650;
 }
 
 .ci-title span {
   overflow: hidden;
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 9.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -275,7 +275,7 @@ function blurTarget(event: KeyboardEvent) {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-family: inherit;
   font-size: 15px;
   line-height: 1;
@@ -284,7 +284,7 @@ function blurTarget(event: KeyboardEvent) {
 
 .ci-close:hover {
   background: #f4f2ee;
-  color: #3b3b36;
+  color: var(--sf-ink);
 }
 
 .ci-body {
@@ -335,13 +335,13 @@ function blurTarget(event: KeyboardEvent) {
 }
 
 .ci-hero-copy strong {
-  color: #2a2a26;
+  color: var(--sf-ink);
   font-size: 11.5px;
   font-weight: 600;
 }
 
 .ci-hero-copy small {
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 9.5px;
   font-variant-numeric: tabular-nums;
 }
@@ -353,7 +353,7 @@ function blurTarget(event: KeyboardEvent) {
   border: 1px solid transparent;
   border-radius: 5px;
   background: transparent;
-  color: #2a2a26;
+  color: var(--sf-ink);
   font-family: inherit;
   font-size: 11.5px;
   font-weight: 600;
@@ -384,10 +384,10 @@ function blurTarget(event: KeyboardEvent) {
   width: 100%;
   height: 27px;
   padding: 0 7px;
-  border: 1px solid #ece7e1;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 6px;
-  background: #ffffff;
-  color: #3b3b36;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
   font-family: inherit;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
@@ -406,7 +406,7 @@ function blurTarget(event: KeyboardEvent) {
   max-height: 132px;
   overflow-y: auto;
   padding: 3px;
-  border: 1px solid #f0ece7;
+  border: 1px solid var(--sf-surface-3);
   border-radius: 8px;
   background: #fcfaf7;
 }
@@ -446,7 +446,7 @@ function blurTarget(event: KeyboardEvent) {
 
 .ci-list-copy strong {
   overflow: hidden;
-  color: #4a4a44;
+  color: var(--sf-ink-2);
   font-size: 10px;
   font-weight: 550;
   text-overflow: ellipsis;
@@ -454,7 +454,7 @@ function blurTarget(event: KeyboardEvent) {
 }
 
 .ci-list-copy small {
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 9px;
   font-variant-numeric: tabular-nums;
 }
@@ -482,7 +482,7 @@ function blurTarget(event: KeyboardEvent) {
 .ci-slider input {
   width: 100%;
   height: 4px;
-  accent-color: #b4553a;
+  accent-color: var(--sf-terra);
 }
 
 .ci-meta {
@@ -516,10 +516,10 @@ function blurTarget(event: KeyboardEvent) {
   justify-content: center;
   gap: 6px;
   height: 31px;
-  border: 1px solid #b4553a;
+  border: 1px solid var(--sf-terra);
   border-radius: 7px;
-  background: #b4553a;
-  color: #fffaf7;
+  background: var(--sf-terra);
+  color: var(--sf-surface);
   font-family: inherit;
   font-size: 11px;
   font-weight: 600;
@@ -544,9 +544,9 @@ function blurTarget(event: KeyboardEvent) {
 .ci-subactions button {
   height: 26px;
   padding: 0;
-  border: 1px solid #ece7e1;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--sf-surface);
   color: #6b635c;
   font-family: inherit;
   font-size: 10px;
@@ -555,18 +555,18 @@ function blurTarget(event: KeyboardEvent) {
 
 .ci-subactions button:hover {
   border-color: #d5cdc5;
-  color: #2a2a26;
+  color: var(--sf-ink);
 }
 
 .ci-subactions button.danger:hover {
   border-color: #efd7d1;
   background: #fdf7f5;
-  color: #b4472f;
+  color: var(--sf-terra);
 }
 
 .ci-hint {
   margin: 0;
-  color: #b0a8a0;
+  color: var(--sf-ink-4);
   font-size: 9px;
   line-height: 1.55;
 }

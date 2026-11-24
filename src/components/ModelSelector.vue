@@ -199,14 +199,14 @@ select {
   font-size: 14px;
   border: 1px solid var(--color-border);
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.08);
+  background: rgba(36, 31, 25, 0.08);
   color: var(--color-text);
   outline: none;
 }
 
 select option {
-  background: #ffffff;
-  color: #1d1d1b;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
 }
 
 .compact select {
@@ -214,7 +214,7 @@ select option {
   padding: 0 26px 0 8px;
   border-radius: 10px;
   font-size: 11px;
-  background: rgba(17, 17, 16, 0.06);
+  background: rgba(36, 31, 25, 0.06);
 }
 
 select:focus {
@@ -264,7 +264,7 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(17, 17, 16, 0.28);
+  background: rgba(36, 31, 25, 0.28);
   padding: 20px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -273,24 +273,24 @@ select:focus {
 .seedance-modal {
   width: 100%;
   max-width: 380px;
-  background: #ffffff;
-  border: 1px solid rgba(17, 17, 16, 0.10);
+  background: var(--sf-surface);
+  border: 1px solid rgba(36, 31, 25, 0.10);
   border-radius: 18px;
   padding: 24px;
-  box-shadow: 0 24px 70px rgba(17, 17, 16, 0.16);
+  box-shadow: 0 24px 70px rgba(36, 31, 25, 0.16);
 }
 
 .seedance-modal-title {
   font-size: 16px;
   font-weight: 700;
-  color: rgba(29, 29, 27, 0.94);
+  color: rgba(36, 31, 25, 0.94);
   margin-bottom: 12px;
 }
 
 .seedance-modal-text {
   font-size: 14px;
   line-height: 1.7;
-  color: rgba(29, 29, 27, 0.66);
+  color: rgba(36, 31, 25, 0.66);
   margin: 0 0 20px;
 }
 
@@ -309,7 +309,7 @@ select:focus {
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 18px rgba(17, 17, 16, 0.14);
+  box-shadow: 0 8px 18px rgba(36, 31, 25, 0.14);
 }
 
 .seedance-modal-btn:hover {

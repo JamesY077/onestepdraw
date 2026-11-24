@@ -59,14 +59,14 @@ const boxStyle = computed(() => ({
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: #f3f3ed;
-  color: #6b6b63;
+  background: var(--sf-surface-3);
+  color: var(--sf-ink-2);
   line-height: 1;
 }
 
 .agent-mark.has-image {
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px rgba(17, 17, 16, 0.08);
+  background: var(--sf-surface);
+  box-shadow: inset 0 0 0 1px rgba(36, 31, 25, 0.08);
 }
 
 .agent-mark.is-builtin {

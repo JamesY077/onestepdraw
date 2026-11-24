@@ -8,10 +8,10 @@
     role="img"
     aria-label="步帧 Stepframe"
   >
-    <rect width="32" height="32" rx="8" :fill="inverted ? '#FCF7F2' : '#B4553A'" />
+    <rect width="32" height="32" rx="8" :fill="inverted ? '#FCF7F2' : 'var(--sf-terra)'" />
     <path
       d="M9 23H13.7V18.3H18.4V13.6H23"
-      :stroke="inverted ? '#B4553A' : '#FCF5EE'"
+      :stroke="inverted ? 'var(--sf-terra)' : '#FCF5EE'"
       stroke-width="3.1"
       stroke-linecap="round"
       stroke-linejoin="round"

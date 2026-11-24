@@ -3,7 +3,7 @@
     <button
       class="island-toggle"
       type="button"
-      aria-label="打开创作导航"
+      :aria-label="expanded ? '收起创作导航' : '打开创作导航'"
       :aria-expanded="expanded"
       @click="expanded = !expanded"
     >
@@ -15,7 +15,8 @@
       </svg>
     </button>
 
-    <div class="island-list">
+    <Transition name="island-menu">
+      <div v-show="desktop || expanded" class="island-list">
     <button
       class="island-item island-home"
       type="button"
@@ -92,12 +93,13 @@
       </span>
       <span class="island-tip" aria-hidden="true">设置</span>
     </button>
-    </div>
+      </div>
+    </Transition>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEditProjectStore } from '@/stores/editProjectStore'
 
@@ -107,6 +109,29 @@ const router = useRouter()
 const route = useRoute()
 const projectStore = useEditProjectStore()
 const expanded = ref(false)
+const desktop = ref(false)
+let media: MediaQueryList | null = null
+
+function handleDesktopChange(event: MediaQueryListEvent | MediaQueryList) {
+  desktop.value = event.matches
+  if (desktop.value) expanded.value = false
+}
+
+function handleEscape(event: KeyboardEvent) {
+  if (event.key === 'Escape') expanded.value = false
+}
+
+onMounted(() => {
+  media = window.matchMedia('(min-width: 901px) and (hover: hover)')
+  handleDesktopChange(media)
+  media.addEventListener('change', handleDesktopChange)
+  document.addEventListener('keydown', handleEscape)
+})
+
+onBeforeUnmount(() => {
+  media?.removeEventListener('change', handleDesktopChange)
+  document.removeEventListener('keydown', handleEscape)
+})
 
 const items = [
   { path: '/edit', key: 'project', label: '剪辑项目' },
@@ -153,10 +178,10 @@ function go(item: { path: string; key?: string }) {
   transform: translateY(-50%);
   /* 不能裁剪：气泡要溢出到胶囊左侧 */
   overflow: visible;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 28px;
-  background: #ffffff;
-  box-shadow: 0 8px 24px rgba(17, 17, 16, 0.06);
+  background: var(--sf-surface);
+  box-shadow: 0 8px 24px rgba(36, 31, 25, 0.06);
 }
 
 .island-toggle {
@@ -182,14 +207,14 @@ function go(item: { path: string; key?: string }) {
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #8a8a82;
+  color: var(--sf-ink-3);
   cursor: pointer;
   transition: background 180ms ease, color 180ms ease;
 }
 
 .island-item:hover {
-  background: #f5f5f1;
-  color: #111110;
+  background: var(--sf-surface-3);
+  color: var(--sf-ink);
 }
 
 .island-icon {
@@ -209,19 +234,19 @@ function go(item: { path: string; key?: string }) {
 
 /* 当前所在分区 */
 .island-item.active .island-icon {
-  background: #111111;
-  color: #ffffff;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
 }
 
 .island-item.active {
-  color: #111110;
+  color: var(--sf-ink);
 }
 
 .island-divider {
   width: 22px;
   height: 1px;
   margin: 5px 0;
-  background: #ecece7;
+  background: var(--sf-line-soft);
 }
 
 /* 悬停时在左侧弹出的单项气泡 */
@@ -231,11 +256,11 @@ function go(item: { path: string; key?: string }) {
   top: 50%;
   z-index: 1;
   padding: 6px 12px;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 999px;
-  background: #ffffff;
-  color: #1d1d1b;
-  box-shadow: 0 8px 20px rgba(17, 17, 16, 0.08);
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  box-shadow: 0 8px 20px rgba(36, 31, 25, 0.08);
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.2;
@@ -246,6 +271,25 @@ function go(item: { path: string; key?: string }) {
   transition:
     opacity 150ms ease,
     transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.island-list-enter-active,
+.island-list-leave-active {
+  transition: opacity var(--sf-dur-2) var(--sf-ease-out), transform var(--sf-dur-2) var(--sf-ease-out);
+  transform-origin: top right;
+}
+
+.island-list-enter-from,
+.island-list-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .island-list-enter-active,
+  .island-list-leave-active {
+    transition: none;
+  }
 }
 
 .island-item:hover .island-tip,
@@ -274,7 +318,7 @@ function go(item: { path: string; key?: string }) {
     border: 0;
     border-radius: 50%;
     background: transparent;
-    color: #6d6d65;
+    color: var(--sf-ink-2);
     cursor: pointer;
   }
 
@@ -284,21 +328,20 @@ function go(item: { path: string; key?: string }) {
   }
 
   .studio-island.is-expanded .island-toggle {
-    background: #111111;
-    color: #ffffff;
+    background: var(--sf-ink);
+    color: var(--sf-surface);
   }
 
   .island-list {
-    display: none;
     position: absolute;
     right: 0;
     top: calc(100% + 8px);
     width: 52px;
     padding: 8px 6px;
-    border: 1px solid #e8e8e2;
+    border: 1px solid var(--sf-line);
     border-radius: 26px;
-    background: #ffffff;
-    box-shadow: 0 12px 34px rgba(17, 17, 16, 0.12);
+    background: var(--sf-surface);
+    box-shadow: 0 12px 34px rgba(36, 31, 25, 0.12);
   }
 
   .studio-island.is-expanded .island-list {
@@ -306,8 +349,8 @@ function go(item: { path: string; key?: string }) {
   }
 
   .island-item {
-    width: 40px;
-    height: 40px;
+    width: var(--sf-control-touch);
+    height: var(--sf-control-touch);
   }
 
   /* 触屏没有 hover，气泡常驻反而是噪音，直接隐藏 */

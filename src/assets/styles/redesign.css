@@ -1,0 +1,274 @@
+/* =========================================================================
+ * Stepframe Redesign Layer
+ * 「纸感工作台」：暖纸画布 + 奶油卡片 + 墨色文字 + 赤陶强调。
+ * 这里只放跨页面共享的排版、表面、动效与细节；
+ * 单个页面的布局仍然留在各自的组件里。
+ * ========================================================================= */
+
+
+
+html {
+  background: var(--sf-paper);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: var(--sf-paper);
+  background-image:
+    radial-gradient(1200px 640px at 8% -12%, rgba(180, 85, 58, 0.09), transparent 62%),
+    radial-gradient(1000px 560px at 96% -4%, rgba(92, 98, 71, 0.08), transparent 58%),
+    linear-gradient(180deg, rgba(255, 253, 248, 0.55), rgba(245, 240, 231, 0) 46%),
+    radial-gradient(rgba(36, 31, 25, 0.05) 0.5px, transparent 0.5px);
+  background-size: auto, auto, auto, 22px 22px;
+  background-attachment: fixed;
+  color: var(--sf-ink);
+  font-family: var(--sf-font-ui);
+  font-feature-settings:
+    'ss01' 1,
+    'cv05' 1,
+    'cv11' 1;
+  letter-spacing: -0.006em;
+}
+
+::selection {
+  background: rgba(180, 85, 58, 0.22);
+  color: var(--sf-ink);
+}
+
+:focus-visible {
+  outline: 2px solid rgba(180, 85, 58, 0.55);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: rgba(36, 31, 25, 0.16);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(36, 31, 25, 0.3);
+  background-clip: content-box;
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(36, 31, 25, 0.2) transparent;
+}
+
+/* ---------- 排版 ---------- */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--sf-ink);
+  font-weight: 640;
+  letter-spacing: -0.026em;
+  text-wrap: balance;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--sf-font-mono);
+}
+
+/* 英文标题 / 数字用的编辑感衬线 */
+.sf-display,
+.sf-serif {
+  font-family: var(--sf-font-display);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.sf-serif-italic {
+  font-family: var(--sf-font-display);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+.sf-kicker {
+  font-family: var(--sf-font-ui);
+  font-size: 10.5px;
+  font-weight: 680;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sf-ink-3);
+}
+
+.sf-mono {
+  font-family: var(--sf-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.sf-num {
+  font-family: var(--sf-font-display);
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: 0;
+}
+
+/* 正文段落的默认阅读节奏 */
+.sf-copy {
+  color: var(--sf-ink-2);
+  font-size: 13.5px;
+  line-height: 1.72;
+  letter-spacing: 0.002em;
+}
+
+/* ---------- 品牌 ---------- */
+
+.sf-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--sf-ink);
+  text-decoration: none;
+}
+
+.sf-brand-name {
+  font-family: var(--sf-font-display);
+  font-size: 21px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  line-height: 1;
+}
+
+.sf-brand-cn {
+  margin-left: 2px;
+  padding-left: 8px;
+  border-left: 1px solid var(--sf-line-strong);
+  color: var(--sf-ink-3);
+  font-family: var(--sf-font-ui);
+  font-size: 10.5px;
+  font-weight: 620;
+  letter-spacing: 0.16em;
+  line-height: 1;
+}
+
+/* ---------- 表面 ---------- */
+
+.sf-panel {
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-r-lg);
+  background: var(--sf-surface);
+  box-shadow: var(--sf-shadow-sm), var(--sf-shadow-inset);
+}
+
+.sf-hairline {
+  border: 1px solid var(--sf-line-soft);
+  background: var(--sf-surface-2);
+}
+
+/* 列表卡片的统一悬停：抬起 1px + 赤陶描边 */
+.sf-lift {
+  transition:
+    transform var(--sf-dur-2) var(--sf-ease-out),
+    box-shadow var(--sf-dur-2) var(--sf-ease-out),
+    border-color var(--sf-dur-2) var(--sf-ease-out);
+}
+
+.sf-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sf-shadow-md);
+}
+
+/* ---------- 入场 ---------- */
+
+@keyframes sf-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sf-stagger > * {
+  animation: sf-rise var(--sf-dur-4) var(--sf-ease-out) both;
+}
+
+.sf-stagger > *:nth-child(1) {
+  animation-delay: 40ms;
+}
+.sf-stagger > *:nth-child(2) {
+  animation-delay: 90ms;
+}
+.sf-stagger > *:nth-child(3) {
+  animation-delay: 140ms;
+}
+.sf-stagger > *:nth-child(4) {
+  animation-delay: 190ms;
+}
+.sf-stagger > *:nth-child(5) {
+  animation-delay: 240ms;
+}
+.sf-stagger > *:nth-child(6) {
+  animation-delay: 290ms;
+}
+.sf-stagger > *:nth-child(7) {
+  animation-delay: 340ms;
+}
+.sf-stagger > *:nth-child(8) {
+  animation-delay: 390ms;
+}
+
+/* ---------- 页面切换 ---------- */
+
+.sf-page-enter-active {
+  transition:
+    opacity var(--sf-dur-3) var(--sf-ease-out),
+    transform var(--sf-dur-3) var(--sf-ease-out),
+    filter var(--sf-dur-3) var(--sf-ease-out);
+}
+
+.sf-page-leave-active {
+  transition:
+    opacity 120ms var(--sf-ease-out),
+    transform 120ms var(--sf-ease-out);
+}
+
+.sf-page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+  filter: blur(4px);
+}
+
+.sf-page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* ---------- 全局点击火花（vue-bits ClickSpark） ---------- */
+
+.sf-clickspark {
+  min-height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-page-enter-active,
+  .sf-page-leave-active {
+    transition: none;
+  }
+
+  .sf-stagger > * {
+    animation: none;
+  }
+}

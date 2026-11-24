@@ -137,9 +137,9 @@ const progressLabel = computed(() => {
 .generation-card {
   margin-top: 12px;
   padding: 14px;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 16px;
-  background: #fafaf8;
+  background: var(--sf-surface-2);
 }
 
 .generation-head {
@@ -155,10 +155,10 @@ const progressLabel = computed(() => {
   width: 30px;
   height: 30px;
   flex: none;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 9px;
-  background: #ffffff;
-  color: #4a4a44;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
 }
 
 .generation-icon svg {
@@ -174,7 +174,7 @@ const progressLabel = computed(() => {
 }
 
 .generation-titles strong {
-  color: #1d1d1b;
+  color: var(--sf-ink);
   font-size: 13px;
   font-weight: 600;
 }
@@ -184,14 +184,14 @@ const progressLabel = computed(() => {
   align-items: center;
   flex-wrap: wrap;
   gap: 4px 8px;
-  color: #8c8c84;
+  color: var(--sf-ink-3);
   font-size: 11px;
 }
 
 .generation-meta span + span::before {
   content: '·';
   margin-right: 8px;
-  color: #c9c9c1;
+  color: var(--sf-line-strong);
 }
 
 .generation-status {
@@ -201,10 +201,10 @@ const progressLabel = computed(() => {
   margin-left: auto;
   padding: 3px 9px;
   flex: none;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 999px;
-  background: #ffffff;
-  color: #6d6d65;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
   font-size: 10.5px;
   font-weight: 600;
 }
@@ -216,23 +216,23 @@ const progressLabel = computed(() => {
 }
 
 .generation-status.status-failed {
-  border-color: #f0dede;
-  background: #fdf6f6;
-  color: #a04444;
+  border-color: var(--sf-danger-soft);
+  background: var(--sf-danger-soft);
+  color: var(--sf-danger);
 }
 
 .status-spinner {
   width: 9px;
   height: 9px;
-  border: 1.5px solid #cfcfc7;
-  border-top-color: #4a4a44;
+  border: 1.5px solid var(--sf-line-strong);
+  border-top-color: var(--sf-ink-2);
   border-radius: 50%;
   animation: generation-spin 0.8s linear infinite;
 }
 
 .generation-prompt {
   margin: 10px 0 0;
-  color: #4a4a44;
+  color: var(--sf-ink-2);
   font-size: 12.5px;
   line-height: 1.65;
   white-space: pre-wrap;
@@ -252,7 +252,7 @@ const progressLabel = computed(() => {
   height: 4px;
   overflow: hidden;
   border-radius: 999px;
-  background: #ececE6;
+  background: var(--sf-line-soft);
 }
 
 .progress-fill {
@@ -260,7 +260,7 @@ const progressLabel = computed(() => {
   inset: 0 auto 0 0;
   width: 0;
   border-radius: 999px;
-  background: #1d1d1b;
+  background: var(--sf-ink);
   transition: width 300ms ease;
 }
 
@@ -271,7 +271,7 @@ const progressLabel = computed(() => {
 
 .progress-label {
   flex: none;
-  color: #8c8c84;
+  color: var(--sf-ink-3);
   font-size: 10.5px;
 }
 
@@ -296,9 +296,9 @@ const progressLabel = computed(() => {
 .image-item {
   display: block;
   overflow: hidden;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 11px;
-  background: #ffffff;
+  background: var(--sf-surface);
 }
 
 .image-item img {
@@ -318,9 +318,9 @@ const progressLabel = computed(() => {
   display: block;
   width: 100%;
   max-height: 420px;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 11px;
-  background: #111111;
+  background: var(--sf-ink);
 }
 
 .generation-actions {
@@ -338,7 +338,7 @@ const progressLabel = computed(() => {
 
 .result-note {
   margin: 8px 0 0;
-  color: #a4a49c;
+  color: var(--sf-ink-3);
   font-size: 10.5px;
   line-height: 1.5;
 }
@@ -349,10 +349,10 @@ const progressLabel = computed(() => {
   gap: 10px;
   margin-top: 12px;
   padding: 9px 11px;
-  border: 1px solid #f0dede;
+  border: 1px solid var(--sf-danger-soft);
   border-radius: 9px;
-  background: #fdf6f6;
-  color: #a04444;
+  background: var(--sf-danger-soft);
+  color: var(--sf-danger);
   font-size: 12px;
 }
 
@@ -362,7 +362,7 @@ const progressLabel = computed(() => {
   flex: none;
   border: 1px solid #e6caca;
   border-radius: 999px;
-  background: #ffffff;
+  background: var(--sf-surface);
   color: #8f3d3d;
   font-size: 11px;
   font-weight: 600;

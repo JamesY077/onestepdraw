@@ -306,7 +306,7 @@ const summaryPlaceholder = computed(() =>
     : '例如：夏日午后，暖光，极简海报风格',
 )
 
-const LAYER_COLORS = ['#f6c453', '#63b3ed', '#f687b3', '#68d391', '#b794f4', '#f6ad55', '#4fd1c5', '#fc8181']
+const LAYER_COLORS = ['var(--sf-amber)', '#63b3ed', '#f687b3', '#68d391', '#b794f4', '#f6ad55', '#4fd1c5', '#fc8181']
 
 const draft = ref<MossLayout>(cloneLayout(props.layout))
 // 背景层不可编辑位置，默认选中第一个可编辑图层，没有时才回落到背景层。
@@ -703,7 +703,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(17, 17, 16, 0.28);
+  background: rgba(36, 31, 25, 0.28);
   backdrop-filter: blur(10px);
 }
 
@@ -713,11 +713,11 @@ onBeforeUnmount(() => {
   width: min(1280px, 100%);
   height: min(860px, 100%);
   overflow: hidden;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 22px;
-  background: #ffffff;
-  color: rgba(29, 29, 27, 0.9);
-  box-shadow: 0 24px 70px rgba(17, 17, 16, 0.16);
+  background: var(--sf-surface);
+  color: rgba(36, 31, 25, 0.9);
+  box-shadow: 0 24px 70px rgba(36, 31, 25, 0.16);
 }
 
 .editor-head {
@@ -725,7 +725,7 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   gap: 16px;
   padding: 18px 22px;
-  border-bottom: 1px solid rgba(17, 17, 16, 0.08);
+  border-bottom: 1px solid rgba(36, 31, 25, 0.08);
 }
 
 .head-text h2 {
@@ -739,22 +739,22 @@ onBeforeUnmount(() => {
   max-width: 760px;
   font-size: 12px;
   line-height: 1.6;
-  color: rgba(29, 29, 27, 0.55);
+  color: rgba(36, 31, 25, 0.55);
 }
 
 .close-btn {
   margin-left: auto;
   width: 32px;
   height: 32px;
-  border: 1px solid rgba(17, 17, 16, 0.12);
+  border: 1px solid rgba(36, 31, 25, 0.12);
   border-radius: 10px;
-  background: rgba(17, 17, 16, 0.04);
-  color: rgba(29, 29, 27, 0.7);
+  background: rgba(36, 31, 25, 0.04);
+  color: rgba(36, 31, 25, 0.7);
   cursor: pointer;
 }
 
 .close-btn:hover {
-  background: rgba(17, 17, 16, 0.1);
+  background: rgba(36, 31, 25, 0.1);
 }
 
 .editor-body {
@@ -771,7 +771,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: #f5f5f1;
+  background: var(--sf-surface-3);
 }
 
 .stage-badge {
@@ -781,13 +781,13 @@ onBeforeUnmount(() => {
   z-index: 3;
   padding: 5px 12px;
   border-radius: 999px;
-  background: #111111;
-  color: #ffffff;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
   transform: translateX(-50%);
-  box-shadow: 0 6px 16px rgba(17, 17, 16, 0.12);
+  box-shadow: 0 6px 16px rgba(36, 31, 25, 0.12);
 }
 
 /* 画布容器必须与图片尺寸完全一致，否则 bbox 百分比定位会和图片错位。 */
@@ -800,7 +800,7 @@ onBeforeUnmount(() => {
   max-width: 100%;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 12px 32px rgba(17, 17, 16, 0.12);
+  box-shadow: 0 12px 32px rgba(36, 31, 25, 0.12);
   touch-action: none;
 }
 
@@ -816,15 +816,15 @@ onBeforeUnmount(() => {
 
 .bbox {
   position: absolute;
-  border: 1.5px solid var(--layer-color, #f6c453);
-  background: color-mix(in srgb, var(--layer-color, #f6c453) 12%, transparent);
+  border: 1.5px solid var(--layer-color, var(--sf-amber));
+  background: color-mix(in srgb, var(--layer-color, var(--sf-amber)) 12%, transparent);
   cursor: move;
   transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .bbox.background {
   cursor: default;
-  border-color: rgba(29, 29, 27, 0.38);
+  border-color: rgba(36, 31, 25, 0.38);
   border-style: dashed;
   background: transparent;
 }
@@ -851,8 +851,8 @@ onBeforeUnmount(() => {
 }
 
 .bbox.selected {
-  background: color-mix(in srgb, var(--layer-color, #f6c453) 22%, transparent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--layer-color, #f6c453) 45%, transparent);
+  background: color-mix(in srgb, var(--layer-color, var(--sf-amber)) 22%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--layer-color, var(--sf-amber)) 45%, transparent);
   z-index: 2;
 }
 
@@ -867,7 +867,7 @@ onBeforeUnmount(() => {
   padding: 2px 7px;
   overflow: hidden;
   border-radius: 6px 6px 6px 0;
-  background: var(--layer-color, #f6c453);
+  background: var(--layer-color, var(--sf-amber));
   color: rgba(10, 10, 10, 0.92);
   font-size: 11px;
   font-weight: 600;
@@ -880,7 +880,7 @@ onBeforeUnmount(() => {
 .bbox-label em {
   padding: 0 4px;
   border-radius: 4px;
-  background: rgba(17, 17, 16, 0.08);
+  background: rgba(36, 31, 25, 0.08);
   font-style: normal;
 }
 
@@ -898,7 +898,7 @@ onBeforeUnmount(() => {
   height: 11px;
   border: 1.5px solid rgba(10, 10, 10, 0.85);
   border-radius: 3px;
-  background: var(--layer-color, #f6c453);
+  background: var(--layer-color, var(--sf-amber));
   cursor: nwse-resize;
 }
 
@@ -908,7 +908,7 @@ onBeforeUnmount(() => {
   width: 360px;
   flex: 0 0 360px;
   min-height: 0;
-  border-left: 1px solid rgba(17, 17, 16, 0.08);
+  border-left: 1px solid rgba(36, 31, 25, 0.08);
   overflow: hidden;
 }
 
@@ -921,7 +921,7 @@ onBeforeUnmount(() => {
 
 .panel-block {
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(17, 17, 16, 0.06);
+  border-bottom: 1px solid rgba(36, 31, 25, 0.06);
 }
 
 .panel-head {
@@ -936,33 +936,33 @@ onBeforeUnmount(() => {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: rgba(29, 29, 27, 0.78);
+  color: rgba(36, 31, 25, 0.78);
 }
 
 .hint-text {
   font-size: 11px;
-  color: rgba(29, 29, 27, 0.42);
+  color: rgba(36, 31, 25, 0.42);
 }
 
 .panel-hint {
   margin: 8px 0 0;
-  color: rgba(29, 29, 27, 0.38);
+  color: rgba(36, 31, 25, 0.38);
   font-size: 11px;
   line-height: 1.5;
 }
 
 .ghost-btn {
   padding: 5px 10px;
-  border: 1px solid rgba(17, 17, 16, 0.14);
+  border: 1px solid rgba(36, 31, 25, 0.14);
   border-radius: 8px;
-  background: rgba(17, 17, 16, 0.05);
-  color: rgba(29, 29, 27, 0.75);
+  background: rgba(36, 31, 25, 0.05);
+  color: rgba(36, 31, 25, 0.75);
   font-size: 12px;
   cursor: pointer;
 }
 
 .ghost-btn:hover {
-  background: rgba(17, 17, 16, 0.1);
+  background: rgba(36, 31, 25, 0.1);
 }
 
 .file-input {
@@ -976,9 +976,9 @@ onBeforeUnmount(() => {
 }
 
 .asset-add-btn {
-  border-color: rgba(17, 17, 16, 0.38);
-  background: rgba(17, 17, 16, 0.10);
-  color: rgba(17, 17, 16, 0.92);
+  border-color: rgba(36, 31, 25, 0.38);
+  background: rgba(36, 31, 25, 0.10);
+  color: rgba(36, 31, 25, 0.92);
 }
 
 .asset-add-btn::before {
@@ -988,7 +988,7 @@ onBeforeUnmount(() => {
 }
 
 .asset-add-btn:hover {
-  background: rgba(17, 17, 16, 0.18);
+  background: rgba(36, 31, 25, 0.18);
 }
 
 .asset-add-btn:disabled {
@@ -1009,21 +1009,21 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 9px;
   padding: 7px 8px;
-  border: 1px solid rgba(17, 17, 16, 0.07);
+  border: 1px solid rgba(36, 31, 25, 0.07);
   border-radius: 10px;
-  background: rgba(17, 17, 16, 0.03);
+  background: rgba(36, 31, 25, 0.03);
   color: inherit;
   text-align: left;
   cursor: pointer;
 }
 
 .layer-row:hover {
-  background: rgba(17, 17, 16, 0.07);
+  background: rgba(36, 31, 25, 0.07);
 }
 
 .layer-row.active {
-  border-color: rgba(17, 17, 16, 0.55);
-  background: rgba(17, 17, 16, 0.1);
+  border-color: rgba(36, 31, 25, 0.55);
+  background: rgba(36, 31, 25, 0.1);
 }
 
 .layer-index {
@@ -1048,19 +1048,19 @@ onBeforeUnmount(() => {
 
 .layer-kind {
   font-size: 10px;
-  color: rgba(29, 29, 27, 0.4);
+  color: rgba(36, 31, 25, 0.4);
 }
 
 .layer-caption {
   overflow: hidden;
   font-size: 12px;
-  color: rgba(29, 29, 27, 0.8);
+  color: rgba(36, 31, 25, 0.8);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .layer-caption.missing {
-  color: #8a6d1f;
+  color: var(--sf-amber);
   font-style: italic;
 }
 
@@ -1068,13 +1068,13 @@ onBeforeUnmount(() => {
   margin-left: auto;
   padding: 2px 6px;
   border-radius: 6px;
-  color: rgba(29, 29, 27, 0.35);
+  color: rgba(36, 31, 25, 0.35);
   font-size: 11px;
 }
 
 .layer-remove:hover {
-  background: #fdf4f3;
-  color: #b4342c;
+  background: var(--sf-terra-wash);
+  color: var(--sf-terra-strong);
 }
 
 .field {
@@ -1083,12 +1083,12 @@ onBeforeUnmount(() => {
   gap: 6px;
   margin-bottom: 10px;
   font-size: 11px;
-  color: rgba(29, 29, 27, 0.55);
+  color: rgba(36, 31, 25, 0.55);
 }
 
 .field em {
   margin-left: 6px;
-  color: rgba(29, 29, 27, 0.32);
+  color: rgba(36, 31, 25, 0.32);
   font-style: normal;
 }
 
@@ -1098,10 +1098,10 @@ onBeforeUnmount(() => {
 .ai-block textarea {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid rgba(17, 17, 16, 0.12);
+  border: 1px solid rgba(36, 31, 25, 0.12);
   border-radius: 9px;
-  background: #ffffff;
-  color: #1d1d1b;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
   font-size: 12px;
   font-family: inherit;
   line-height: 1.5;
@@ -1113,7 +1113,7 @@ onBeforeUnmount(() => {
 .field textarea:focus,
 .ai-block textarea:focus {
   outline: none;
-  border-color: rgba(17, 17, 16, 0.5);
+  border-color: rgba(36, 31, 25, 0.5);
 }
 
 .coord-grid {
@@ -1126,12 +1126,12 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgba(29, 29, 27, 0.45);
+  color: rgba(36, 31, 25, 0.45);
 }
 
 .asset-field {
   padding-top: 10px;
-  border-top: 1px dashed rgba(17, 17, 16, 0.08);
+  border-top: 1px dashed rgba(36, 31, 25, 0.08);
 }
 
 .asset-preview {
@@ -1139,9 +1139,9 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 10px;
   padding: 8px;
-  border: 1px solid rgba(17, 17, 16, 0.1);
+  border: 1px solid rgba(36, 31, 25, 0.1);
   border-radius: 10px;
-  background: #fafaf8;
+  background: var(--sf-surface-2);
 }
 
 .asset-preview img {
@@ -1150,7 +1150,7 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   border-radius: 8px;
   object-fit: contain;
-  background: rgba(17, 17, 16, 0.04);
+  background: rgba(36, 31, 25, 0.04);
 }
 
 .asset-preview-actions {
@@ -1161,64 +1161,64 @@ onBeforeUnmount(() => {
 
 .asset-upload-btn {
   padding: 10px 12px;
-  border: 1px dashed rgba(17, 17, 16, 0.45);
+  border: 1px dashed rgba(36, 31, 25, 0.45);
   border-radius: 10px;
-  background: rgba(17, 17, 16, 0.08);
-  color: #1d1d1b;
+  background: rgba(36, 31, 25, 0.08);
+  color: var(--sf-ink);
   font-size: 12px;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .asset-upload-btn:hover {
-  background: rgba(17, 17, 16, 0.16);
+  background: rgba(36, 31, 25, 0.16);
 }
 
 .asset-hint {
   margin: 2px 0 0;
-  color: rgba(29, 29, 27, 0.32);
+  color: rgba(36, 31, 25, 0.32);
   font-size: 10px;
   line-height: 1.5;
 }
 
 .mini-btn {
   padding: 5px 9px;
-  border: 1px solid rgba(17, 17, 16, 0.14);
+  border: 1px solid rgba(36, 31, 25, 0.14);
   border-radius: 8px;
-  background: rgba(17, 17, 16, 0.05);
-  color: rgba(29, 29, 27, 0.72);
+  background: rgba(36, 31, 25, 0.05);
+  color: rgba(36, 31, 25, 0.72);
   font-size: 11px;
   cursor: pointer;
 }
 
 .mini-btn:hover {
-  background: rgba(17, 17, 16, 0.1);
+  background: rgba(36, 31, 25, 0.1);
 }
 
 .mini-btn.danger {
-  border-color: #f0d3d0;
-  color: #b4342c;
+  border-color: var(--sf-danger-soft);
+  color: var(--sf-terra-strong);
 }
 
 .mini-btn.danger:hover {
-  background: #fdf4f3;
+  background: var(--sf-terra-wash);
 }
 
 .ai-btn {
   width: 100%;
   margin-top: 8px;
   padding: 9px 12px;
-  border: 1px solid rgba(17, 17, 16, 0.4);
+  border: 1px solid rgba(36, 31, 25, 0.4);
   border-radius: 10px;
-  background: rgba(17, 17, 16, 0.12);
-  color: #1d1d1b;
+  background: rgba(36, 31, 25, 0.12);
+  color: var(--sf-ink);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
 
 .ai-btn:hover:not(:disabled) {
-  background: rgba(17, 17, 16, 0.2);
+  background: rgba(36, 31, 25, 0.2);
 }
 
 .ai-btn:disabled,
@@ -1229,7 +1229,7 @@ onBeforeUnmount(() => {
 
 .error-text {
   margin: 8px 0 0;
-  color: #b4342c;
+  color: var(--sf-terra-strong);
   font-size: 11px;
   line-height: 1.5;
 }
@@ -1237,27 +1237,27 @@ onBeforeUnmount(() => {
 .editor-foot {
   flex: 0 0 auto;
   padding: 12px 16px 16px;
-  border-top: 1px solid #ecece7;
-  background: #fafaf8;
+  border-top: 1px solid var(--sf-line-soft);
+  background: var(--sf-surface-2);
 }
 
 .foot-note {
   margin: 0 0 10px;
-  color: rgba(29, 29, 27, 0.38);
+  color: rgba(36, 31, 25, 0.38);
   font-size: 11px;
   line-height: 1.5;
 }
 
 .foot-dirty {
   margin: 0 0 10px;
-  color: #8a6d1f;
+  color: var(--sf-amber);
   font-size: 11px;
   line-height: 1.5;
 }
 
 .foot-warn {
   margin: 0 0 8px;
-  color: #8a6d1f;
+  color: var(--sf-amber);
   font-size: 11px;
   line-height: 1.5;
 }
@@ -1272,8 +1272,8 @@ onBeforeUnmount(() => {
   padding: 9px 16px;
   border: 0;
   border-radius: 10px;
-  background: #111111;
-  color: #ffffff;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -1314,7 +1314,7 @@ onBeforeUnmount(() => {
     width: 100%;
     flex: 1;
     border-left: 0;
-    border-top: 1px solid rgba(17, 17, 16, 0.08);
+    border-top: 1px solid rgba(36, 31, 25, 0.08);
   }
 }
 </style>

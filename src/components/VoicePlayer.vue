@@ -226,16 +226,16 @@ onBeforeUnmount(() => {
   gap: 13px;
   min-width: 0;
   padding: 10px 14px 10px 11px;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 17px;
   overflow: hidden;
-  background: #fafaf8;
+  background: var(--sf-surface-2);
   isolation: isolate;
   transition: border-color var(--transition-base), background var(--transition-base);
 }
 
 .voice-player:hover {
-  border-color: #d2d2ca;
+  border-color: var(--sf-line-strong);
 }
 
 .voice-player.is-compact {
@@ -255,10 +255,10 @@ onBeforeUnmount(() => {
   height: 38px;
   border: 0;
   border-radius: 50%;
-  background: #111111;
-  color: #ffffff;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(17, 17, 16, 0.16);
+  box-shadow: 0 4px 12px rgba(36, 31, 25, 0.16);
   transition: transform 0.18s ease, background 0.18s ease;
 }
 
@@ -279,7 +279,7 @@ onBeforeUnmount(() => {
 
 .player-toggle:hover:not(:disabled) {
   transform: translateY(-1px) scale(1.03);
-  background: #2a2a27;
+  background: var(--sf-ink);
 }
 
 .player-toggle:active:not(:disabled) {
@@ -287,7 +287,7 @@ onBeforeUnmount(() => {
 }
 
 .player-toggle:focus-visible {
-  outline: 2px solid rgba(17, 17, 16, 0.36);
+  outline: 2px solid rgba(36, 31, 25, 0.36);
   outline-offset: 3px;
 }
 
@@ -301,7 +301,7 @@ onBeforeUnmount(() => {
   content: '';
   position: absolute;
   inset: -5px;
-  border: 1px solid rgba(17, 17, 16, 0.22);
+  border: 1px solid rgba(36, 31, 25, 0.22);
   border-radius: 50%;
   opacity: 0;
   pointer-events: none;
@@ -331,7 +331,7 @@ onBeforeUnmount(() => {
 }
 
 .player-track:focus-visible {
-  outline: 2px solid rgba(17, 17, 16, 0.32);
+  outline: 2px solid rgba(36, 31, 25, 0.32);
   outline-offset: 4px;
   border-radius: 8px;
 }
@@ -348,8 +348,8 @@ onBeforeUnmount(() => {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(17, 17, 16, 0.1) 12%,
-    rgba(17, 17, 16, 0.1) 88%,
+    rgba(36, 31, 25, 0.1) 12%,
+    rgba(36, 31, 25, 0.1) 88%,
     transparent
   );
   pointer-events: none;
@@ -361,7 +361,7 @@ onBeforeUnmount(() => {
   flex: 1 1 0;
   min-width: 0;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(17, 17, 16, 0.24) 0%, rgba(17, 17, 16, 0.1) 100%);
+  background: linear-gradient(180deg, rgba(36, 31, 25, 0.24) 0%, rgba(36, 31, 25, 0.1) 100%);
   transition:
     height 0.32s cubic-bezier(0.22, 1, 0.36, 1),
     background var(--transition-base),
@@ -369,11 +369,11 @@ onBeforeUnmount(() => {
 }
 
 .player-track:hover .player-bar:not(.is-played) {
-  background: linear-gradient(180deg, rgba(17, 17, 16, 0.4) 0%, rgba(17, 17, 16, 0.16) 100%);
+  background: linear-gradient(180deg, rgba(36, 31, 25, 0.4) 0%, rgba(36, 31, 25, 0.16) 100%);
 }
 
 .player-bar.is-played {
-  background: linear-gradient(180deg, #3a3a36 0%, #1d1d1b 100%);
+  background: linear-gradient(180deg, #3a3a36 0%, var(--sf-ink) 100%);
 }
 
 /* 播放头 */
@@ -385,7 +385,7 @@ onBeforeUnmount(() => {
   width: 2px;
   margin-left: -1px;
   border-radius: 999px;
-  background: #111111;
+  background: var(--sf-ink);
   pointer-events: none;
   transition: left 0.12s linear;
 }
@@ -398,7 +398,7 @@ onBeforeUnmount(() => {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #111111;
+  background: var(--sf-ink);
   transform: translateX(-50%);
 }
 
@@ -408,10 +408,10 @@ onBeforeUnmount(() => {
   align-items: baseline;
   gap: 3px;
   padding: 4px 7px;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 999px;
-  background: #ffffff;
-  color: #1d1d1b;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
   font-size: 11px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -422,7 +422,7 @@ onBeforeUnmount(() => {
 
 .player-time em {
   margin-left: 0;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-style: normal;
   font-weight: 500;
 }

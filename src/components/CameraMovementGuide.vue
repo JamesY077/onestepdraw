@@ -117,17 +117,17 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutsi
   padding: 5px 10px;
   font-size: 12px;
   line-height: 1;
-  color: rgba(29, 29, 27, 0.66);
-  background: rgba(17, 17, 16, 0.06);
-  border: 1px solid rgba(17, 17, 16, 0.12);
+  color: rgba(36, 31, 25, 0.66);
+  background: rgba(36, 31, 25, 0.06);
+  border: 1px solid rgba(36, 31, 25, 0.12);
   border-radius: 999px;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 .camera-guide-trigger:hover {
-  color: rgba(29, 29, 27, 0.92);
-  border-color: #b9b9b1;
-  background: rgba(17, 17, 16, 0.10);
+  color: rgba(36, 31, 25, 0.92);
+  border-color: var(--sf-line-strong);
+  background: rgba(36, 31, 25, 0.10);
 }
 .camera-guide-trigger.compact {
   padding: 4px 8px;
@@ -142,10 +142,10 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutsi
   width: 320px;
   max-width: min(320px, 86vw);
   padding: 14px;
-  background: #ffffff;
-  border: 1px solid #e8e8e2;
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-line);
   border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(17, 17, 16, 0.12);
+  box-shadow: 0 12px 32px rgba(36, 31, 25, 0.12);
   text-align: left;
 }
 
@@ -157,32 +157,32 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutsi
 }
 .camera-guide-head strong {
   font-size: 13px;
-  color: rgba(29, 29, 27, 0.92);
+  color: rgba(36, 31, 25, 0.92);
 }
 .camera-guide-close {
   width: 20px;
   height: 20px;
   line-height: 18px;
   font-size: 16px;
-  color: rgba(29, 29, 27, 0.55);
+  color: rgba(36, 31, 25, 0.55);
   background: transparent;
   border: none;
   border-radius: 6px;
   cursor: pointer;
 }
 .camera-guide-close:hover {
-  background: rgba(17, 17, 16, 0.08);
-  color: rgba(29, 29, 27, 0.9);
+  background: rgba(36, 31, 25, 0.08);
+  color: rgba(36, 31, 25, 0.9);
 }
 
 .camera-guide-desc {
   margin: 0 0 10px;
   font-size: 11.5px;
   line-height: 1.6;
-  color: rgba(29, 29, 27, 0.66);
+  color: rgba(36, 31, 25, 0.66);
 }
 .camera-guide-desc b {
-  color: #111110;
+  color: var(--sf-ink);
 }
 
 .camera-guide-groups {
@@ -199,7 +199,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutsi
 .camera-guide-group-title {
   flex: 0 0 52px;
   font-size: 11px;
-  color: rgba(29, 29, 27, 0.45);
+  color: rgba(36, 31, 25, 0.45);
 }
 .camera-guide-tags {
   display: flex;
@@ -210,16 +210,16 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutsi
   padding: 3px 8px;
   font-size: 11.5px;
   line-height: 1.4;
-  color: #1d1d1b;
-  background: #f5f5f1;
-  border: 1px solid #e0e0d9;
+  color: var(--sf-ink);
+  background: var(--sf-surface-3);
+  border: 1px solid var(--sf-line);
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
 .camera-guide-tag:hover {
-  background: #ecece7;
-  border-color: #b9b9b1;
+  background: var(--sf-line-soft);
+  border-color: var(--sf-line-strong);
 }
 
 .camera-guide-tips {
@@ -227,15 +227,15 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutsi
   padding-left: 16px;
   font-size: 11px;
   line-height: 1.7;
-  color: rgba(29, 29, 27, 0.66);
+  color: rgba(36, 31, 25, 0.66);
 }
 .camera-guide-tips b {
-  color: rgba(29, 29, 27, 0.92);
+  color: rgba(36, 31, 25, 0.92);
 }
 .camera-guide-tips code {
   padding: 0 3px;
   font-size: 10.5px;
-  background: rgba(17, 17, 16, 0.08);
+  background: rgba(36, 31, 25, 0.08);
   border-radius: 4px;
 }
 
@@ -245,13 +245,13 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutsi
   align-items: center;
   gap: 6px;
   padding: 8px 10px;
-  background: #f5f5f1;
-  border: 1px dashed #d2d2ca;
+  background: var(--sf-surface-3);
+  border: 1px dashed var(--sf-line-strong);
   border-radius: 8px;
 }
 .camera-guide-example-label {
   font-size: 10.5px;
-  color: rgba(29, 29, 27, 0.45);
+  color: rgba(36, 31, 25, 0.45);
 }
 .camera-guide-example code {
   flex: 1 1 100%;
@@ -263,8 +263,8 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutsi
   margin-left: auto;
   padding: 3px 10px;
   font-size: 11px;
-  color: #ffffff;
-  background: #111111;
+  color: var(--sf-surface);
+  background: var(--sf-ink);
   border: none;
   border-radius: 999px;
   cursor: pointer;

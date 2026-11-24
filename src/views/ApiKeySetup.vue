@@ -1,21 +1,89 @@
 <template>
   <div class="login-page">
+    <div class="login-ambient" aria-hidden="true">
+      <DotGrid
+        :dot-size="1.8"
+        :gap="26"
+        base-color="#d8cdbb"
+        active-color="#b4553a"
+        :proximity="130"
+        :strength="0.55"
+        :glow="0.08"
+        :opacity="0.62"
+        :fade="16"
+        shape="circle"
+        :mouse-interaction="!reduced"
+        :click-shock="false"
+        :intro="false"
+      />
+    </div>
+
     <header class="login-header">
       <div class="login-brand">
         <BrandMark :size="28" />
-        <span>步帧</span>
+        <span class="sf-brand-name">Stepframe</span>
+        <span class="sf-brand-cn">步帧</span>
       </div>
-      <span class="local-pill">本地运行</span>
+      <span class="local-pill">
+        <i class="pill-dot" aria-hidden="true" />
+        本地运行 · 数据不出设备
+      </span>
     </header>
 
     <main class="login-main">
-      <section class="login-card" aria-labelledby="login-title">
-        <div class="card-mark">
-          <BrandMark :size="42" />
-        </div>
+      <section class="login-story" aria-labelledby="login-story-title">
+        <p class="sf-kicker">Local AI Creative Agent</p>
+        <TextReveal
+          id="login-story-title"
+          tag="h1"
+          class="login-title"
+          text="把一句话，剪成一支片。"
+          :delay="20"
+          :duration="0.62"
+          effect="rise"
+          trigger="load"
+        />
+        <p class="login-lede">
+          对话、生成、剪辑，都在同一张桌上完成。Stepframe 在这台电脑上工作，
+          素材与对话只留在本地。
+        </p>
 
-        <h1 id="login-title">登录步帧</h1>
-        <p class="card-copy">连接 AIPing API Key，开始与步帧对话。</p>
+        <ol class="login-points sf-stagger">
+          <li>
+            <span class="point-index sf-serif">01</span>
+            <span class="point-body">
+              <b>对话就是分镜</b>
+              <em>把模糊的想法说清楚，镜头、光线与节奏会一起长出来。</em>
+            </span>
+          </li>
+          <li>
+            <span class="point-index sf-serif">02</span>
+            <span class="point-body">
+              <b>生成即入轨</b>
+              <em>图片、视频、配音直接落进时间轴，不用来回导素材。</em>
+            </span>
+          </li>
+          <li>
+            <span class="point-index sf-serif">03</span>
+            <span class="point-body">
+              <b>改一句，重剪一段</b>
+              <em>选中片段单独交给 AI，整条时间轴不必推倒重来。</em>
+            </span>
+          </li>
+        </ol>
+      </section>
+
+      <section class="login-card" aria-labelledby="login-title">
+        <div class="card-head">
+          <div class="card-mark">
+            <BrandMark :size="36" />
+          </div>
+          <div>
+            <p class="card-kicker sf-kicker">Connect</p>
+            <h2 id="login-title">连接 AIPing</h2>
+          </div>
+        </div>
+        <p class="card-copy">填入 API Key，验证通过后就开始创作。</p>
 
         <form class="login-form" @submit.prevent="handleSubmit">
           <div class="field">
@@ -79,35 +147,40 @@
 
           <div v-if="error" class="error-banner" role="alert">{{ error }}</div>
 
-          <button type="submit" class="submit-button" :disabled="!apiKey.trim() || isLoading">
-            <span v-if="!isLoading">连接并开始</span>
-            <span v-else>正在验证连接…</span>
-            <svg v-if="!isLoading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-            <span v-else class="loading-dot" aria-hidden="true" />
-          </button>
+          <MagneticAction>
+            <button type="submit" class="submit-button" :disabled="!apiKey.trim() || isLoading">
+              <span v-if="!isLoading">连接并开始</span>
+              <span v-else>正在验证连接…</span>
+              <svg v-if="!isLoading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+              <span v-else class="loading-dot" aria-hidden="true" />
+            </button>
+          </MagneticAction>
         </form>
 
-        <a class="key-helper" href="https://aiping.cn/user/apikey" target="_blank" rel="noopener noreferrer">
-          获取 AIPing API Key
-          <span aria-hidden="true">↗</span>
-        </a>
-
-        <p class="privacy-note">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
-            <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
-          </svg>
-          API Key 只保存在{{ SESSION_SCOPE }}，不会上传到第三方服务器。
-        </p>
+        <div class="card-links">
+          <a class="key-helper" href="https://aiping.cn/user/apikey" target="_blank" rel="noopener noreferrer">
+            获取 AIPing API Key
+            <span aria-hidden="true">↗</span>
+          </a>
+          <p class="privacy-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
+              <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
+            </svg>
+            Key 只保存在{{ SESSION_SCOPE }}，不会上传到第三方服务器。
+          </p>
+        </div>
       </section>
     </main>
 
     <footer class="login-footer">
-      <span>步帧 Stepframe · Local AI Creative Agent</span>
+      <span class="sf-mono">Stepframe 1.0</span>
       <span class="footer-dot" aria-hidden="true">·</span>
-      <span>DeepSeek-V4.1-Flash-1017</span>
+      <span>Local AI Creative Agent</span>
+      <span class="footer-dot" aria-hidden="true">·</span>
+      <span class="sf-mono">DeepSeek-V4.1-Flash-1017</span>
     </footer>
   </div>
 </template>
@@ -116,6 +189,10 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BrandMark from '@/components/agent/BrandMark.vue'
+import DotGrid from '@/components/bits/DotGrid.vue'
+import MagneticAction from '@/components/ui/MagneticAction.vue'
+import TextReveal from '@/components/ui/TextReveal.vue'
+import { useReducedMotion } from '@/composables/useReducedMotion'
 import { useApiStore } from '@/stores/apiStore'
 import { AIPING_PUBLIC_API_BASE_URL, isOpenAiBaseUrlFormat } from '@/api/config'
 import { SESSION_SCOPE } from '@/utils/platform'
@@ -123,6 +200,7 @@ import { SESSION_SCOPE } from '@/utils/platform'
 const router = useRouter()
 const route = useRoute()
 const apiStore = useApiStore()
+const reduced = useReducedMotion()
 
 const apiKey = ref('')
 const apiBaseUrl = ref(AIPING_PUBLIC_API_BASE_URL)
@@ -180,8 +258,22 @@ async function handleSubmit() {
   min-height: 100dvh;
   flex-direction: column;
   overflow: hidden;
-  background: #ffffff;
-  color: #1d1d1b;
+  background: transparent;
+  color: var(--sf-ink);
+}
+
+.login-ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.55;
+  mask-image: radial-gradient(120% 90% at 50% 30%, #000 30%, transparent 78%);
+  pointer-events: none;
+}
+
+.login-ambient :deep(.dot-grid) {
+  width: 100%;
+  height: 100%;
 }
 
 .login-header {
@@ -191,75 +283,172 @@ async function handleSubmit() {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 24px clamp(20px, 4vw, 40px);
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 26px clamp(20px, 4vw, 44px);
 }
 
 .login-brand {
   display: flex;
   align-items: center;
-  gap: 9px;
-  color: #161614;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  gap: 10px;
 }
 
 .local-pill {
-  padding: 4px 10px;
-  border: 1px solid #e7e7e1;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border: 1px solid var(--sf-line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.7);
-  color: #8e8e86;
+  background: rgba(255, 253, 248, 0.72);
+  color: var(--sf-ink-2);
   font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-weight: 560;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(10px);
+}
+
+.pill-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sf-success);
+  box-shadow: 0 0 0 3px rgba(63, 122, 86, 0.14);
 }
 
 .login-main {
   position: relative;
   z-index: 1;
-  display: flex;
+  display: grid;
+  width: 100%;
+  max-width: 1240px;
   flex: 1;
   align-items: center;
-  justify-content: center;
-  padding: 28px 20px 44px;
+  gap: clamp(36px, 6vw, 96px);
+  margin: 0 auto;
+  padding: clamp(18px, 3vw, 44px) clamp(20px, 4vw, 44px) 46px;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 412px);
 }
 
+/* ---------- 左侧叙事 ---------- */
+
+.login-story {
+  max-width: 620px;
+  padding-bottom: 10px;
+}
+
+.login-story .sf-kicker {
+  margin: 0 0 18px;
+  color: var(--sf-terra);
+}
+
+.login-title {
+  font-size: clamp(38px, 4.4vw, 60px);
+  font-weight: 680;
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.login-lede {
+  max-width: 42ch;
+  margin: 20px 0 0;
+  color: var(--sf-ink-2);
+  font-size: 14.5px;
+  line-height: 1.8;
+}
+
+.login-points {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 38px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--sf-line);
+  list-style: none;
+}
+
+.login-points li {
+  display: flex;
+  gap: 18px;
+  padding: 17px 2px;
+  border-bottom: 1px solid var(--sf-line-soft);
+}
+
+.point-index {
+  width: 30px;
+  flex: none;
+  color: var(--sf-terra);
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.point-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.point-body b {
+  color: var(--sf-ink);
+  font-size: 13.5px;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+}
+
+.point-body em {
+  color: var(--sf-ink-3);
+  font-size: 12.5px;
+  font-style: normal;
+  line-height: 1.65;
+}
+
+/* ---------- 右侧登录卡 ---------- */
+
 .login-card {
-  width: min(100%, 404px);
-  padding: 34px 32px 26px;
-  border: 1px solid #ecece6;
-  border-radius: 20px;
-  background: #ffffff;
-  box-shadow:
-    0 1px 2px rgba(17, 17, 16, 0.03),
-    0 18px 50px rgba(17, 17, 16, 0.05);
+  width: 100%;
+  padding: 28px 28px 22px;
+  border: 1px solid var(--sf-line);
+  border-radius: 24px;
+  box-shadow: var(--sf-shadow-md);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 13px;
 }
 
 .card-mark {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 18px;
-  filter: drop-shadow(0 6px 16px rgba(17, 17, 16, 0.1));
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--sf-line-soft);
+  border-radius: 14px;
+  background: var(--sf-surface-2);
 }
 
-.login-card h1 {
+.card-kicker {
+  margin: 0 0 2px;
+  font-size: 9.5px;
+  color: var(--sf-terra);
+}
+
+.login-card h2 {
   margin: 0;
-  color: #141412;
-  font-family: var(--font-family-display);
-  font-size: 25px;
-  font-weight: 650;
-  letter-spacing: -0.035em;
-  text-align: center;
+  font-size: 20px;
+  font-weight: 660;
+  letter-spacing: -0.03em;
 }
 
 .card-copy {
-  margin: 8px auto 26px;
-  max-width: 320px;
-  color: #8a8a82;
-  font-size: 12.8px;
+  margin: 14px 0 20px;
+  color: var(--sf-ink-3);
+  font-size: 12.5px;
   line-height: 1.65;
-  text-align: center;
 }
 
 .login-form {
@@ -271,46 +460,50 @@ async function handleSubmit() {
 .advanced-panel label {
   display: block;
   margin-bottom: 7px;
-  color: #55554e;
-  font-size: 12px;
-  font-weight: 600;
+  color: var(--sf-ink-2);
+  font-size: 11.5px;
+  font-weight: 620;
+  letter-spacing: 0.01em;
 }
 
 .input-shell {
   display: flex;
   align-items: center;
-  border: 1px solid #e3e3dc;
-  border-radius: 11px;
-  background: #ffffff;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  border: 1px solid var(--sf-field-border, var(--sf-line));
+  border-radius: 12px;
+  background: var(--sf-surface-2);
+  transition:
+    border-color var(--sf-dur-1) var(--sf-ease-out),
+    box-shadow var(--sf-dur-1) var(--sf-ease-out),
+    background var(--sf-dur-1) var(--sf-ease-out);
 }
 
 .input-shell:focus-within {
-  border-color: #b9b9b1;
-  box-shadow: 0 0 0 3px rgba(17, 17, 16, 0.05);
+  border-color: rgba(180, 85, 58, 0.55);
+  background: var(--sf-surface);
+  box-shadow: 0 0 0 3px rgba(180, 85, 58, 0.09);
 }
 
 .input-shell.has-error {
-  border-color: #e3bcbc;
+  border-color: var(--sf-danger);
 }
 
 .text-input {
   width: 100%;
   min-width: 0;
-  min-height: 44px;
+  min-height: 46px;
   padding: 0 12px;
   border: 0;
   outline: none;
   background: transparent;
-  color: #1d1d1b;
-  font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
-  font-size: 13px;
+  color: var(--sf-ink);
+  font-family: var(--sf-font-mono);
+  font-size: 12.5px;
   letter-spacing: 0.01em;
 }
 
 .text-input::placeholder {
-  color: #b3b3ab;
-  font-family: inherit;
+  color: var(--sf-ink-4);
 }
 
 .visibility-button {
@@ -322,10 +515,11 @@ async function handleSubmit() {
   margin-right: 4px;
   flex: none;
   border: 0;
-  border-radius: 8px;
+  border-radius: 9px;
   background: transparent;
-  color: #a0a098;
+  color: var(--sf-ink-3);
   cursor: pointer;
+  transition: background var(--sf-dur-1) var(--sf-ease-out);
 }
 
 .visibility-button svg {
@@ -334,32 +528,31 @@ async function handleSubmit() {
 }
 
 .visibility-button:hover {
-  background: #f5f5f1;
-  color: #5c5c54;
+  background: var(--sf-surface-3);
+  color: var(--sf-ink);
 }
 
 .advanced-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 12px;
-  padding: 4px 1px;
+  margin-top: 10px;
+  padding: 5px 1px;
   border: 0;
   background: transparent;
-  color: #91918a;
+  color: var(--sf-ink-3);
   font-size: 11.5px;
   cursor: pointer;
 }
 
 .advanced-toggle:hover {
-  color: #4f4f48;
+  color: var(--sf-ink);
 }
 
 .advanced-chevron {
   width: 13px;
   height: 13px;
-  color: #a3a39b;
-  transition: transform 160ms ease;
+  transition: transform var(--sf-dur-2) var(--sf-ease-out);
 }
 
 .advanced-chevron.open {
@@ -369,42 +562,42 @@ async function handleSubmit() {
 .advanced-panel {
   margin-top: 6px;
   padding: 12px;
-  border: 1px solid #ecece6;
-  border-radius: 10px;
-  background: #fbfbf8;
+  border: 1px solid var(--sf-line-soft);
+  border-radius: 12px;
+  background: var(--sf-surface-2);
 }
 
 .plain-input {
   width: 100%;
   min-height: 40px;
   padding: 0 11px;
-  border: 1px solid #e5e5de;
-  border-radius: 8px;
+  border: 1px solid var(--sf-line);
+  border-radius: 9px;
   outline: none;
-  background: #ffffff;
-  color: #262623;
-  font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  font-family: var(--sf-font-mono);
   font-size: 12px;
 }
 
 .plain-input:focus {
-  border-color: #bdbdb5;
+  border-color: rgba(180, 85, 58, 0.55);
 }
 
 .field-hint {
   margin-top: 7px;
-  color: #a2a29a;
+  color: var(--sf-ink-3);
   font-size: 11px;
   line-height: 1.5;
 }
 
 .error-banner {
-  margin-top: 13px;
+  margin-top: 12px;
   padding: 9px 11px;
-  border: 1px solid #f0dede;
-  border-radius: 8px;
-  background: #fdf6f6;
-  color: #a04444;
+  border: 1px solid var(--sf-danger-soft);
+  border-radius: 10px;
+  background: var(--sf-danger-soft);
+  color: var(--sf-danger);
   font-size: 12px;
   line-height: 1.55;
 }
@@ -415,118 +608,158 @@ async function handleSubmit() {
   justify-content: center;
   gap: 8px;
   width: 100%;
-  min-height: 44px;
+  min-height: 46px;
   margin-top: 18px;
   border: 0;
-  border-radius: 11px;
-  background: #111111;
-  color: #ffffff;
+  border-radius: 12px;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
+  font-family: var(--sf-font-ui);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 620;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: background 160ms ease, opacity 160ms ease, transform 160ms ease;
+  box-shadow: var(--sf-shadow-sm);
+  transition:
+    background var(--sf-dur-1) var(--sf-ease-out),
+    transform var(--sf-dur-1) var(--sf-ease-out),
+    box-shadow var(--sf-dur-1) var(--sf-ease-out);
 }
 
 .submit-button svg {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
 }
 
 .submit-button:hover:not(:disabled) {
-  background: #2a2a27;
-  transform: translateY(-1px);
+  background: #37322b;
+  box-shadow: var(--sf-shadow-md);
+}
+
+.submit-button:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .submit-button:disabled {
-  background: #e9e9e4;
-  color: #a8a8a0;
+  background: var(--sf-line-strong);
+  color: var(--sf-surface-2);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
 .loading-dot {
-  width: 6px;
-  height: 6px;
+  width: 14px;
+  height: 14px;
+  border: 1.6px solid rgba(255, 253, 248, 0.35);
+  border-top-color: var(--sf-surface);
   border-radius: 50%;
-  background: currentColor;
-  animation: blink 900ms ease-in-out infinite;
+  animation: spin 720ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.card-links {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sf-line-soft);
 }
 
 .key-helper {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 4px;
-  margin-top: 16px;
-  color: #74746c;
+  align-self: flex-start;
+  color: var(--sf-terra);
   font-size: 11.5px;
-  font-weight: 500;
+  font-weight: 580;
   text-decoration: none;
+  transition: color var(--sf-dur-1) var(--sf-ease-out);
 }
 
 .key-helper:hover {
-  color: #141412;
+  color: var(--sf-terra-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .privacy-note {
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid #f0f0ea;
-  color: #a3a39b;
+  margin: 0;
+  color: var(--sf-ink-3);
   font-size: 10.5px;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 .privacy-note svg {
   width: 12px;
   height: 12px;
+  margin-top: 1px;
   flex: none;
-  margin-top: 2px;
 }
 
 .login-footer {
   position: relative;
   z-index: 1;
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 0 20px 22px;
-  color: #b0b0a8;
+  gap: 8px;
+  padding: 18px 24px 22px;
+  color: var(--sf-ink-3);
   font-size: 10.5px;
+  letter-spacing: 0.03em;
+}
+
+.login-footer .sf-mono {
+  letter-spacing: 0;
 }
 
 .footer-dot {
-  color: #d0d0c9;
+  opacity: 0.55;
 }
 
-@keyframes blink {
-  0%,
-  100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-@media (max-width: 520px) {
-  .login-header {
-    padding: 18px 18px;
-  }
-
-  .login-card {
-    padding: 28px 22px 22px;
-    border-radius: 16px;
-  }
-
+@media (max-width: 980px) {
   .login-main {
-    padding-top: 12px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 34px;
+    max-width: 540px;
+    align-content: center;
   }
 
-  .login-footer {
-    flex-wrap: wrap;
+  .login-points {
+    display: none;
+  }
+
+  .login-lede {
+    margin-top: 14px;
+    font-size: 13.5px;
+  }
+
+  .login-title {
+    font-size: clamp(32px, 7vw, 42px);
+  }
+}
+
+@media (max-height: 760px) and (min-width: 981px) {
+  .login-points {
+    margin-top: 24px;
+  }
+
+  .login-points li {
+    padding: 12px 2px;
+  }
+
+  .login-title {
+    font-size: clamp(34px, 3.8vw, 50px);
   }
 }
 </style>

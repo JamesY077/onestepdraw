@@ -85,10 +85,23 @@
       <div ref="scrollRef" class="chat-scroll" @scroll="handleScroll">
         <section v-if="!messages.length" class="welcome">
           <div class="welcome-mark">
-            <BrandMark :size="46" />
+            <span class="welcome-stamp" aria-hidden="true" />
+            <BrandMark :size="40" />
           </div>
-          <p v-if="chatMode.isCreate" class="welcome-eyebrow">Creative Mode</p>
-          <h2>{{ welcomeTitle }}</h2>
+          <p class="welcome-eyebrow sf-kicker">
+            {{ chatMode.isCreate ? 'Creative Mode' : 'Local Creative Agent' }}
+          </p>
+          <TextReveal
+            :key="welcomeTitle"
+            tag="h2"
+            class="welcome-title"
+            :text="welcomeTitle"
+            :delay="16"
+            :duration="0.58"
+            effect="rise"
+            trigger="load"
+          />
+          <span class="welcome-rule" aria-hidden="true" />
           <p class="welcome-copy">
             {{
               chatMode.isCreate
@@ -106,25 +119,30 @@
           </div>
 
           <div class="suggestion-grid">
-            <button
+            <SpotlightSurface
               v-for="(suggestion, index) in suggestions"
               :key="suggestion.title"
-              type="button"
               class="suggestion-card"
-              @click="applySuggestion(suggestion.prompt)"
+              :grain="0.08"
             >
-              <span class="suggestion-icon" aria-hidden="true">
-                <span v-if="chatMode.isCreate" class="suggestion-index">{{ String(index + 1).padStart(2, '0') }}</span>
-                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                  <path :d="suggestion.icon" />
-                </svg>
-              </span>
-              <span class="suggestion-copy">
-                <span class="suggestion-title">{{ suggestion.title }}</span>
-                <span class="suggestion-desc">{{ suggestion.description }}</span>
-              </span>
-              <span class="suggestion-arrow" aria-hidden="true">↗</span>
-            </button>
+              <button
+                type="button"
+                class="suggestion-button"
+                @click="applySuggestion(suggestion.prompt)"
+              >
+                <span class="suggestion-icon" aria-hidden="true">
+                  <span v-if="chatMode.isCreate" class="suggestion-index">{{ String(index + 1).padStart(2, '0') }}</span>
+                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path :d="suggestion.icon" />
+                  </svg>
+                </span>
+                <span class="suggestion-copy">
+                  <span class="suggestion-title">{{ suggestion.title }}</span>
+                  <span class="suggestion-desc">{{ suggestion.description }}</span>
+                </span>
+                <span class="suggestion-arrow" aria-hidden="true">↗</span>
+              </button>
+            </SpotlightSurface>
           </div>
 
           <p class="welcome-note">
@@ -187,6 +205,8 @@ import AgentComposer from '@/components/agent/AgentComposer.vue'
 import AgentMessage from '@/components/agent/AgentMessage.vue'
 import BrandMark from '@/components/agent/BrandMark.vue'
 import StudioIsland from '@/components/StudioIsland.vue'
+import SpotlightSurface from '@/components/ui/SpotlightSurface.vue'
+import TextReveal from '@/components/ui/TextReveal.vue'
 import { useAgentStore } from '@/stores/agentStore'
 import { useApiStore } from '@/stores/apiStore'
 import { useLocalAgentStore } from '@/stores/localAgentStore'
@@ -550,8 +570,8 @@ onBeforeUnmount(() => {
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  background: #ffffff;
-  color: #1d1d1b;
+  background: transparent;
+  color: var(--sf-ink);
 }
 
 .sidebar-slot {
@@ -563,7 +583,7 @@ onBeforeUnmount(() => {
   flex: 1;
   min-width: 0;
   flex-direction: column;
-  background: #ffffff;
+  background: transparent;
 }
 
 /* 桌面端为右侧悬浮岛留出通道 */
@@ -580,9 +600,9 @@ onBeforeUnmount(() => {
   height: 58px;
   flex: none;
   padding: 0 20px;
-  border-bottom: 1px solid #ededE8;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--sf-line-soft);
+  background: rgba(247, 243, 236, 0.82);
+  backdrop-filter: blur(14px) saturate(1.1);
 }
 
 .menu-button {
@@ -627,20 +647,20 @@ onBeforeUnmount(() => {
 
 .local-badge {
   padding: 3px 8px;
-  border: 1px solid #e6e6e0;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 999px;
-  background: #fafaf8;
-  color: #8c8c84;
+  background: var(--sf-surface-2);
+  color: var(--sf-ink-3);
   font-size: 10.5px;
   font-weight: 600;
 }
 
 .mode-badge {
   padding: 3px 8px;
-  border: 1px solid #e6e6e0;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 999px;
-  background: #ffffff;
-  color: #8c8c84;
+  background: var(--sf-surface);
+  color: var(--sf-ink-3);
   font-family: inherit;
   font-size: 10.5px;
   font-weight: 600;
@@ -649,13 +669,13 @@ onBeforeUnmount(() => {
 
 .mode-badge.is-create {
   border-color: #d9d9cf;
-  background: #111110;
-  color: #fafaf7;
+  background: var(--sf-ink);
+  color: var(--sf-surface-2);
 }
 
 .project-shortcut {
   cursor: pointer;
-  color: #5f5f57;
+  color: var(--sf-ink-2);
 }
 
 .template-shortcut {
@@ -663,10 +683,10 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 5px;
   padding: 4px 9px;
-  border: 1px solid #e6e6e0;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 999px;
-  background: #ffffff;
-  color: #6b6b63;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
   font-family: inherit;
   font-size: 10.5px;
   font-weight: 600;
@@ -681,9 +701,9 @@ onBeforeUnmount(() => {
 }
 
 .template-shortcut:hover {
-  border-color: #d4d4cc;
-  background: #fafaf8;
-  color: #1d1d1b;
+  border-color: var(--sf-line-strong);
+  background: var(--sf-surface-2);
+  color: var(--sf-ink);
 }
 
 @media (max-width: 720px) {
@@ -722,16 +742,16 @@ onBeforeUnmount(() => {
 }
 
 .new-chat-icon:hover {
-  border-color: #e7e7e1;
-  background: #fafaf8;
-  color: #1d1d1b;
+  border-color: var(--sf-line-soft);
+  background: var(--sf-surface-2);
+  color: var(--sf-ink);
 }
 
 .expired-banner {
   padding: 9px 20px;
-  border-bottom: 1px solid #f0dede;
-  background: #fdf6f6;
-  color: #a04444;
+  border-bottom: 1px solid var(--sf-danger-soft);
+  background: var(--sf-danger-soft);
+  color: var(--sf-danger);
   font-size: 12.5px;
   text-align: center;
 }
@@ -742,19 +762,19 @@ onBeforeUnmount(() => {
   justify-content: center;
   gap: 10px;
   padding: 8px 20px;
-  border-bottom: 1px solid #f0ead9;
-  background: #fdfbf3;
-  color: #8a7a45;
+  border-bottom: 1px solid var(--sf-amber-soft);
+  background: var(--sf-amber-soft);
+  color: var(--sf-amber);
   font-size: 12px;
   text-align: center;
 }
 
 .engine-warning button {
   padding: 2px 7px;
-  border: 1px solid #ebe2c8;
+  border: 1px solid var(--sf-line);
   border-radius: 6px;
-  background: #ffffff;
-  color: #7d6d36;
+  background: var(--sf-surface);
+  color: var(--sf-amber);
   font-family: inherit;
   font-size: 11px;
   cursor: pointer;
@@ -762,7 +782,7 @@ onBeforeUnmount(() => {
 
 .engine-warning button:hover {
   border-color: #dcd0ae;
-  background: #fffdf6;
+  background: var(--sf-amber-soft);
 }
 
 .chat-scroll {
@@ -770,7 +790,7 @@ onBeforeUnmount(() => {
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #deded7 transparent;
+  scrollbar-color: var(--sf-line) transparent;
 }
 
 .chat-scroll::-webkit-scrollbar {
@@ -778,9 +798,9 @@ onBeforeUnmount(() => {
 }
 
 .chat-scroll::-webkit-scrollbar-thumb {
-  border: 2px solid #ffffff;
+  border: 2px solid var(--sf-surface);
   border-radius: 999px;
-  background: #deded7;
+  background: var(--sf-line);
   background-clip: padding-box;
 }
 
@@ -788,32 +808,56 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   flex-direction: column;
-  width: min(760px, 100%);
+  width: min(820px, 100%);
   margin: 0 auto;
-  padding: clamp(48px, 12vh, 120px) 24px 40px;
+  padding: clamp(40px, 11vh, 112px) 24px 40px;
   text-align: center;
 }
 
 .welcome-mark {
-  margin-bottom: 20px;
-  filter: drop-shadow(0 8px 20px rgba(17, 17, 16, 0.09));
+  position: relative;
+  display: grid;
+  margin-bottom: 22px;
+  place-items: center;
+  filter: drop-shadow(0 8px 20px rgba(36, 31, 25, 0.1));
 }
 
-.welcome h2 {
-  margin: 0;
-  color: #171715;
-  font-family: var(--font-family-display);
-  font-size: clamp(26px, 3.4vw, 34px);
-  font-weight: 650;
-  letter-spacing: -0.04em;
+.welcome-stamp {
+  position: absolute;
+  inset: -9px;
+  border: 1px dashed rgba(180, 85, 58, 0.32);
+  border-radius: 16px;
+  transform: rotate(-4deg);
+}
+
+.welcome-eyebrow {
+  margin: 0 0 14px;
+  color: var(--sf-ink-3);
+}
+
+.welcome-title {
+  color: var(--sf-ink);
+  font-size: clamp(30px, 4vw, 46px);
+  font-weight: 690;
+  line-height: 1.12;
+  letter-spacing: -0.045em;
+}
+
+.welcome-rule {
+  width: 34px;
+  height: 2px;
+  margin: 18px 0 0;
+  border-radius: 2px;
+  background: var(--sf-terra);
+  opacity: 0.8;
 }
 
 .welcome-copy {
-  max-width: 480px;
-  margin: 11px 0 30px;
-  color: #83837b;
+  max-width: 470px;
+  margin: 16px 0 30px;
+  color: var(--sf-ink-2);
   font-size: 13.5px;
-  line-height: 1.75;
+  line-height: 1.8;
 }
 
 .suggestion-grid {
@@ -825,37 +869,50 @@ onBeforeUnmount(() => {
 }
 
 .suggestion-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 11px;
-  padding: 14px 14px;
-  border: 1px solid #e9e9e3;
-  border-radius: 13px;
-  background: #fdfdfb;
-  color: #1d1d1b;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  border-radius: 15px;
+  transition:
+    transform var(--sf-dur-2) var(--sf-ease-out),
+    box-shadow var(--sf-dur-2) var(--sf-ease-out);
+  animation: sf-rise var(--sf-dur-4) var(--sf-ease-out) both;
 }
 
+.suggestion-card:nth-child(1) { animation-delay: 60ms; }
+.suggestion-card:nth-child(2) { animation-delay: 100ms; }
+.suggestion-card:nth-child(3) { animation-delay: 140ms; }
+.suggestion-card:nth-child(4) { animation-delay: 180ms; }
+.suggestion-card:nth-child(5) { animation-delay: 220ms; }
+.suggestion-card:nth-child(6) { animation-delay: 260ms; }
+
 .suggestion-card:hover {
-  border-color: #d6d6ce;
-  background: #ffffff;
-  box-shadow: 0 6px 22px rgba(17, 17, 16, 0.05);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: var(--sf-shadow-md);
+}
+
+.suggestion-button {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 15px 15px;
+  border: 0;
+  background: transparent;
+  color: var(--sf-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .suggestion-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   flex: none;
-  border: 1px solid #ebebe5;
-  border-radius: 8px;
-  background: #f5f5f1;
-  color: #6f6f67;
+  border: 1px solid var(--sf-line-soft);
+  border-radius: 9px;
+  background: var(--sf-surface-2);
+  color: var(--sf-terra);
 }
 
 .suggestion-icon svg {
@@ -871,26 +928,29 @@ onBeforeUnmount(() => {
 }
 
 .suggestion-title {
-  color: #242421;
+  color: var(--sf-ink);
   font-size: 12.8px;
   font-weight: 600;
 }
 
 .suggestion-desc {
-  color: #92928a;
+  color: var(--sf-ink-3);
   font-size: 11.5px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .suggestion-arrow {
   margin-left: auto;
-  color: #bcbcb4;
+  padding-top: 1px;
+  color: var(--sf-ink-4);
   font-size: 12px;
-  transition: color 150ms ease, transform 150ms ease;
+  transition:
+    color var(--sf-dur-2) var(--sf-ease-out),
+    transform var(--sf-dur-2) var(--sf-ease-out);
 }
 
 .suggestion-card:hover .suggestion-arrow {
-  color: #55554e;
+  color: var(--sf-terra);
   transform: translate(1px, -1px);
 }
 
@@ -899,7 +959,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 7px;
   margin-top: 28px;
-  color: #a4a49c;
+  color: var(--sf-ink-3);
   font-size: 11px;
 }
 
@@ -907,7 +967,7 @@ onBeforeUnmount(() => {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #58a274;
+  background: var(--sf-success);
 }
 
 .message-list {
@@ -923,7 +983,7 @@ onBeforeUnmount(() => {
 .composer-area {
   flex: none;
   padding: 10px 24px 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 24%);
+  background: linear-gradient(180deg, rgba(247, 243, 236, 0) 0%, var(--sf-paper) 30%);
 }
 
 .composer-inner {
@@ -955,7 +1015,7 @@ onBeforeUnmount(() => {
     position: fixed;
     inset: 0;
     z-index: 50;
-    background: rgba(17, 17, 16, 0.22);
+    background: rgba(36, 31, 25, 0.22);
     backdrop-filter: blur(2px);
   }
 
@@ -1018,9 +1078,9 @@ onBeforeUnmount(() => {
 
 /* ── 创作对话：保持纯白，只增加克制的模式提示 ── */
 .chat-page.is-create {
-  --create-accent: #b4472f;
+  --create-accent: var(--sf-terra);
   --create-serif: 'Songti SC', 'STSong', 'Noto Serif SC', Georgia, 'Times New Roman', serif;
-  background: #ffffff;
+  background: var(--sf-surface);
 }
 
 /* 顶栏徽标：墨色胶囊 + 一点陶土色，提醒当前处于创作模式 */
@@ -1028,9 +1088,9 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-color: #141412;
-  background: #141412;
-  color: #fafaf7;
+  border-color: var(--sf-ink);
+  background: var(--sf-ink);
+  color: var(--sf-surface-2);
   letter-spacing: 0.01em;
 }
 
@@ -1044,13 +1104,13 @@ onBeforeUnmount(() => {
 
 .is-create .project-shortcut {
   border-color: #e2ddd2;
-  background: #ffffff;
-  color: #5f5f57;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
 }
 
 .is-create .project-shortcut:hover {
   border-color: #cfc7b8;
-  color: #1d1d1b;
+  color: var(--sf-ink);
 }
 
 /* 欢迎页：衬线标题 + 编号卡片，是模式提示而不是换底色 */
@@ -1086,7 +1146,7 @@ onBeforeUnmount(() => {
   padding: 6px 13px;
   border: 1px solid #ece7dc;
   border-radius: 999px;
-  background: #ffffff;
+  background: var(--sf-surface);
   color: #918876;
   font-size: 10.5px;
   letter-spacing: 0.01em;
@@ -1133,7 +1193,7 @@ onBeforeUnmount(() => {
 }
 
 .is-create .suggestion-title {
-  color: #242421;
+  color: var(--sf-ink);
 }
 
 .is-create .note-dot {
@@ -1141,7 +1201,7 @@ onBeforeUnmount(() => {
 }
 
 .is-create .welcome-note {
-  color: #a4a49c;
+  color: var(--sf-ink-3);
 }
 
 /* 输入框上方的模式提示：不碰导航，只在创作模式下出现 */
@@ -1169,7 +1229,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   margin: 0 0 7px 3px;
-  color: #9c4a30;
+  color: var(--sf-terra-strong);
   font-size: 10.5px;
   font-weight: 550;
   letter-spacing: 0.01em;
@@ -1180,7 +1240,7 @@ onBeforeUnmount(() => {
   height: 5px;
   flex: none;
   border-radius: 50%;
-  background: #b4553a;
+  background: var(--sf-terra);
 }
 
 @media (max-width: 640px) {

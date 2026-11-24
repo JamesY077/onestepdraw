@@ -117,7 +117,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   display: flex;
   flex-direction: column;
   padding: 18px 18px 0;
-  background: #ffffff;
+  background: var(--sf-surface);
   backdrop-filter: blur(18px);
 }
 
@@ -130,7 +130,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .lightbox-counter {
-  color: #1d1d1b;
+  color: var(--sf-ink);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
@@ -138,7 +138,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 .lightbox-model {
   overflow: hidden;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-size: 11.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -148,17 +148,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   margin-left: auto;
   width: 32px;
   height: 32px;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 50%;
-  background: #ffffff;
-  color: #4a4a44;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
   font-size: 13px;
   cursor: pointer;
 }
 
 .lightbox-close:hover {
-  background: #f5f5f1;
-  color: #111110;
+  background: var(--sf-surface-3);
+  color: var(--sf-ink);
 }
 
 .lightbox-stage {
@@ -175,7 +175,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   max-height: 100%;
   border-radius: 10px;
   object-fit: contain;
-  box-shadow: 0 18px 50px rgba(17, 17, 16, 0.14);
+  box-shadow: 0 18px 50px rgba(36, 31, 25, 0.14);
 }
 
 .lightbox-nav {
@@ -185,10 +185,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   place-items: center;
   width: 44px;
   height: 44px;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 50%;
-  background: #ffffff;
-  color: #4a4a44;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
@@ -196,8 +196,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .lightbox-nav:hover {
-  background: #f5f5f1;
-  color: #111110;
+  background: var(--sf-surface-3);
+  color: var(--sf-ink);
 }
 
 .lightbox-prev {
@@ -214,22 +214,22 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   gap: 14px;
   flex: 0 0 auto;
   padding: 12px 4px 18px;
-  border-top: 1px solid #ecece7;
+  border-top: 1px solid var(--sf-line-soft);
 }
 
 .lightbox-meta {
   display: flex;
   gap: 10px;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 
 .lightbox-note {
   padding: 0 8px;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 999px;
-  color: #66665f;
+  color: var(--sf-ink-2);
   font-size: 10px;
   line-height: 18px;
 }
@@ -244,10 +244,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .lb-btn {
   min-height: 32px;
   padding: 0 14px;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 999px;
-  background: #ffffff;
-  color: #4a4a44;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
   font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
@@ -255,26 +255,26 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .lb-btn:hover {
-  border-color: #d2d2ca;
-  background: #f5f5f1;
-  color: #111110;
+  border-color: var(--sf-line-strong);
+  background: var(--sf-surface-3);
+  color: var(--sf-ink);
 }
 
 .lb-btn-primary {
   border-color: transparent;
-  background: #111111;
-  color: #ffffff;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
 }
 
 .lb-btn-primary:hover {
-  background: #2a2a27;
-  color: #ffffff;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
 }
 
 .lb-btn-layers {
-  border-color: #efe4c6;
-  background: #fdf9ee;
-  color: #8a6d1f;
+  border-color: var(--sf-amber-soft);
+  background: var(--sf-surface-2);
+  color: var(--sf-amber);
 }
 
 @media (max-width: 720px) {

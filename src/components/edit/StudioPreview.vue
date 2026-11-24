@@ -297,7 +297,7 @@ function formatTime(seconds: number): string {
   overflow: hidden;
   border-radius: 10px;
   background: #0f0f0e;
-  box-shadow: 0 10px 30px rgba(17, 17, 16, 0.12);
+  box-shadow: 0 10px 30px rgba(36, 31, 25, 0.12);
 }
 
 .stage-canvas {
@@ -344,7 +344,7 @@ function formatTime(seconds: number): string {
 
 .stage-empty p {
   margin: 0;
-  color: #cfcfc7;
+  color: var(--sf-line-strong);
   font-size: 13px;
   font-weight: 600;
 }
@@ -362,7 +362,7 @@ function formatTime(seconds: number): string {
   justify-content: space-between;
   gap: 10px;
   padding: 8px 4px 2px;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-size: 10.5px;
   font-variant-numeric: tabular-nums;
 }
@@ -383,8 +383,8 @@ function formatTime(seconds: number): string {
   padding: 0;
   border: 1px solid #e5e3db;
   border-radius: 999px;
-  background: #ffffff;
-  color: #1d1d1b;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
   cursor: pointer;
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
@@ -395,8 +395,8 @@ function formatTime(seconds: number): string {
 }
 
 .stage-play:hover {
-  border-color: #111110;
-  box-shadow: 0 3px 10px -6px rgba(17, 17, 16, 0.5);
+  border-color: var(--sf-ink);
+  box-shadow: 0 3px 10px -6px rgba(36, 31, 25, 0.5);
 }
 
 .stage-skip {
@@ -409,7 +409,7 @@ function formatTime(seconds: number): string {
   border: 1px solid transparent;
   border-radius: 7px;
   background: transparent;
-  color: #8c8c84;
+  color: var(--sf-ink-3);
   cursor: pointer;
 }
 
@@ -419,9 +419,9 @@ function formatTime(seconds: number): string {
 }
 
 .stage-skip:hover {
-  border-color: #e7e7e1;
-  background: #ffffff;
-  color: #111110;
+  border-color: var(--sf-line-soft);
+  background: var(--sf-surface);
+  color: var(--sf-ink);
 }
 
 .stage-time {

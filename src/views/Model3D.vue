@@ -1,5 +1,5 @@
 <template>
-  <div class="studio-page model3d-page" :style="{ '--studio-accent': '#111111' }">
+  <div class="studio-page model3d-page" :style="{ '--studio-accent': 'var(--sf-ink)' }">
     <StudioIsland />
 
     <StudioHeader
@@ -10,7 +10,7 @@
           ? '上传人物视频，自动追踪姿态并输出可直接驱动三维角色的 BVH 动作数据'
           : 'V2Fun 三维重建：文生 3D、图生 3D、多视角 3D'
       "
-      accent="#111111"
+      accent="var(--sf-ink)"
     >
       <template #actions>
         <span class="studio-chip">{{ model.displayName }}</span>
@@ -1115,7 +1115,7 @@ const MATERIAL_PRESETS: { value: ViewerMaterial; label: string; hint: string; sw
   { value: 'matte', label: '哑光', hint: '低反光，接近手办 / 黏土', swatch: 'linear-gradient(135deg, #97a1aa, #4c5560)' },
   { value: 'ceramic', label: '陶瓷', hint: '清漆釉面，柔和高光', swatch: 'linear-gradient(135deg, #fdfaf2, #cfc8ba)' },
   { value: 'metal', label: '金属', hint: '保留贴图的金属质感', swatch: 'linear-gradient(135deg, #e2edf7, #6b7d90)' },
-  { value: 'chrome', label: '镀铬', hint: '镜面反射，高对比高光', swatch: 'linear-gradient(135deg, #ffffff, #8ea6bb)' },
+  { value: 'chrome', label: '镀铬', hint: '镜面反射，高对比高光', swatch: 'linear-gradient(135deg, var(--sf-surface), #8ea6bb)' },
   { value: 'gold', label: '黄金', hint: '暖金金属，适合奖杯 / 饰品', swatch: 'linear-gradient(135deg, #ffe9a8, #c79320)' },
   { value: 'glass', label: '玻璃', hint: '可调厚度的透射材质', swatch: 'linear-gradient(135deg, rgba(223,242,255,0.95), rgba(120,190,230,0.45))' },
   { value: 'jade', label: '玉石', hint: '半透青玉，温润光泽', swatch: 'linear-gradient(135deg, #b8f3d6, #2f9c72)' },
@@ -1151,7 +1151,7 @@ const EXPORT_MODEL_FORMATS: { value: ModelExportFormat; label: string; hint: str
   { value: 'ply', label: 'PLY', hint: '网格 + 顶点色，适合扫描类软件' },
 ]
 
-const EXPORT_COLORS = ['#0b1626', '#ffffff', '#000000', '#111111', '#f5e7d0', '#1d2b36']
+const EXPORT_COLORS = ['#0b1626', 'var(--sf-surface)', 'var(--sf-ink)', 'var(--sf-ink)', '#f5e7d0', '#1d2b36']
 
 /** 动图导出：GIF 只有 256 色，尺寸和帧数都要控制，否则几分钟都编不完。 */
 const GIF_SIZES = [
@@ -2392,9 +2392,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
  * ========================================================================= */
 
 .model3d-page {
-  --stage-cyan: #111111;
-  --stage-cyan-soft: rgba(17, 17, 16, 0.080);
-  --stage-line: rgba(17, 17, 16, 0.100);
+  --stage-cyan: var(--sf-ink);
+  --stage-cyan-soft: rgba(36, 31, 25, 0.080);
+  --stage-line: rgba(36, 31, 25, 0.100);
 }
 
 .model3d-main {
@@ -2491,9 +2491,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: flex-start;
   gap: 10px;
   padding: 11px 12px;
-  border: 1px solid rgba(17, 17, 16, 0.08);
+  border: 1px solid rgba(36, 31, 25, 0.08);
   border-radius: 16px;
-  background: rgba(17, 17, 16, 0.035);
+  background: rgba(36, 31, 25, 0.035);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -2509,15 +2509,15 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(120px 80px at 100% 0%, rgba(17, 17, 16, 0.080), transparent 70%);
+  background: radial-gradient(120px 80px at 100% 0%, rgba(36, 31, 25, 0.080), transparent 70%);
   opacity: 0;
   transition: opacity 220ms ease;
   pointer-events: none;
 }
 
 .model-card:hover {
-  border-color: rgba(17, 17, 16, 0.144);
-  background: rgba(17, 17, 16, 0.055);
+  border-color: rgba(36, 31, 25, 0.144);
+  background: rgba(36, 31, 25, 0.055);
 }
 
 .model-card:hover::after,
@@ -2527,14 +2527,14 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 
 .model-card.active {
   border-color: color-mix(in srgb, var(--stage-cyan) 62%, transparent);
-  background: linear-gradient(160deg, rgba(17, 17, 16, 0.070), rgba(17, 17, 16, 0.020));
+  background: linear-gradient(160deg, rgba(36, 31, 25, 0.070), rgba(36, 31, 25, 0.020));
   box-shadow:
-    inset 0 0 0 1px rgba(17, 17, 16, 0.100),
-    0 12px 30px -18px #111111;
+    inset 0 0 0 1px rgba(36, 31, 25, 0.100),
+    0 12px 30px -18px var(--sf-ink);
 }
 
 .model-card.motion::after {
-  background: radial-gradient(120px 80px at 100% 0%, rgba(17, 17, 16, 0.18), transparent 70%);
+  background: radial-gradient(120px 80px at 100% 0%, rgba(36, 31, 25, 0.18), transparent 70%);
 }
 
 .model-glyph {
@@ -2545,8 +2545,8 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   width: 28px;
   height: 28px;
   border-radius: 9px;
-  background: rgba(17, 17, 16, 0.060);
-  color: #4a4a44;
+  background: rgba(36, 31, 25, 0.060);
+  color: var(--sf-ink-2);
 }
 
 .model-body {
@@ -2565,8 +2565,8 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .model-card.motion .model-glyph {
-  background: rgba(17, 17, 16, 0.14);
-  color: #4a4a44;
+  background: rgba(36, 31, 25, 0.14);
+  color: var(--sf-ink-2);
 }
 
 .model-glyph svg {
@@ -2578,7 +2578,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.14em;
-  color: rgba(29, 29, 27, 0.42);
+  color: rgba(36, 31, 25, 0.42);
 }
 
 .model-name {
@@ -2586,7 +2586,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: rgba(29, 29, 27, 0.95);
+  color: rgba(36, 31, 25, 0.95);
 }
 
 .model-desc {
@@ -2596,7 +2596,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   overflow: hidden;
   font-size: 10.5px;
   line-height: 1.5;
-  color: rgba(29, 29, 27, 0.46);
+  color: rgba(36, 31, 25, 0.46);
 }
 
 .model-foot {
@@ -2606,7 +2606,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   gap: 5px 8px;
   margin-top: 3px;
   font-size: 10px;
-  color: rgba(17, 17, 16, 0.8);
+  color: rgba(36, 31, 25, 0.8);
 }
 
 .model-price {
@@ -2629,8 +2629,8 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   line-height: 1.4;
   padding: 1px 5px;
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.06);
-  color: rgba(29, 29, 27, 0.5);
+  background: rgba(36, 31, 25, 0.06);
+  color: rgba(36, 31, 25, 0.5);
   white-space: nowrap;
 }
 
@@ -2640,9 +2640,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   display: flex;
   gap: 4px;
   padding: 4px;
-  border: 1px solid rgba(17, 17, 16, 0.07);
+  border: 1px solid rgba(36, 31, 25, 0.07);
   border-radius: 14px;
-  background: rgba(17, 17, 16, 0.03);
+  background: rgba(36, 31, 25, 0.03);
 }
 
 .segmented-item {
@@ -2651,7 +2651,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: rgba(29, 29, 27, 0.52);
+  color: rgba(36, 31, 25, 0.52);
   font: inherit;
   font-size: 12px;
   font-weight: 600;
@@ -2662,13 +2662,13 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .segmented-item:hover {
-  color: rgba(29, 29, 27, 0.82);
+  color: rgba(36, 31, 25, 0.82);
 }
 
 .segmented-item.active {
-  background: #111111;
-  color: #ffffff;
-  box-shadow: inset 0 0 0 1px rgba(17, 17, 16, 0.126);
+  background: var(--sf-ink);
+  color: var(--sf-surface);
+  box-shadow: inset 0 0 0 1px rgba(36, 31, 25, 0.126);
 }
 
 /* ---------- 文本输入 ---------- */
@@ -2697,14 +2697,14 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: center;
   justify-content: space-between;
   font-size: 10.5px;
-  color: rgba(29, 29, 27, 0.36);
+  color: rgba(36, 31, 25, 0.36);
 }
 
 .field-hint {
   margin: 0;
   font-size: 10.5px;
   line-height: 1.55;
-  color: rgba(29, 29, 27, 0.34);
+  color: rgba(36, 31, 25, 0.34);
 }
 
 .preset-block {
@@ -2721,13 +2721,13 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: rgba(29, 29, 27, 0.42);
+  color: rgba(36, 31, 25, 0.42);
 }
 
 .preset-hint {
   font-weight: 400;
   letter-spacing: 0;
-  color: rgba(29, 29, 27, 0.28);
+  color: rgba(36, 31, 25, 0.28);
 }
 
 .preset-chips {
@@ -2738,10 +2738,10 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 
 .preset-chip {
   padding: 4px 9px;
-  border: 1px solid rgba(17, 17, 16, 0.09);
+  border: 1px solid rgba(36, 31, 25, 0.09);
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.03);
-  color: rgba(29, 29, 27, 0.6);
+  background: rgba(36, 31, 25, 0.03);
+  color: rgba(36, 31, 25, 0.6);
   font: inherit;
   font-size: 11px;
   cursor: pointer;
@@ -2752,9 +2752,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .preset-chip:hover {
-  border-color: rgba(17, 17, 16, 0.180);
-  background: rgba(17, 17, 16, 0.050);
-  color: #111110;
+  border-color: rgba(36, 31, 25, 0.180);
+  background: rgba(36, 31, 25, 0.050);
+  color: var(--sf-ink);
 }
 
 /* ---------- 上传区 ---------- */
@@ -2768,10 +2768,10 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   gap: 6px;
   min-height: 148px;
   padding: 14px;
-  border: 1px dashed rgba(17, 17, 16, 0.126);
+  border: 1px dashed rgba(36, 31, 25, 0.126);
   border-radius: 16px;
-  background: rgba(17, 17, 16, 0.022);
-  color: rgba(29, 29, 27, 0.6);
+  background: rgba(36, 31, 25, 0.022);
+  color: rgba(36, 31, 25, 0.6);
   text-align: center;
   cursor: pointer;
   overflow: hidden;
@@ -2781,13 +2781,13 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .dropzone:hover {
-  border-color: rgba(17, 17, 16, 0.248);
-  background: rgba(17, 17, 16, 0.045);
+  border-color: rgba(36, 31, 25, 0.248);
+  background: rgba(36, 31, 25, 0.045);
 }
 
 .dropzone.filled {
   border-style: solid;
-  border-color: rgba(17, 17, 16, 0.135);
+  border-color: rgba(36, 31, 25, 0.135);
   padding: 0;
 }
 
@@ -2798,14 +2798,14 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 .dropzone-icon svg {
   width: 26px;
   height: 26px;
-  color: rgba(17, 17, 16, 0.75);
+  color: rgba(36, 31, 25, 0.75);
 }
 
 .dropzone-title {
   max-width: 100%;
   font-size: 12.5px;
   font-weight: 600;
-  color: rgba(29, 29, 27, 0.82);
+  color: rgba(36, 31, 25, 0.82);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2813,19 +2813,19 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 
 .dropzone-sub {
   font-size: 10.5px;
-  color: rgba(29, 29, 27, 0.36);
+  color: rgba(36, 31, 25, 0.36);
 }
 
 .video-file-icon {
   font-size: 20px;
-  color: rgba(17, 17, 16, 0.8);
+  color: rgba(36, 31, 25, 0.8);
 }
 
 .dropzone-thumb {
   width: 100%;
   height: 148px;
   object-fit: contain;
-  background: radial-gradient(circle at 50% 44%, rgba(17, 17, 16, 0.070), transparent 70%);
+  background: radial-gradient(circle at 50% 44%, rgba(36, 31, 25, 0.070), transparent 70%);
 }
 
 .dropzone-overlay {
@@ -2839,7 +2839,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   gap: 8px;
   padding: 8px 10px;
   font-size: 10.5px;
-  color: #1d1d1b;
+  color: var(--sf-ink);
   background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.94));
 }
 
@@ -2852,8 +2852,8 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   border: 0;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.92);
-  color: #1d1d1b;
-  box-shadow: 0 1px 4px rgba(17, 17, 16, 0.12);
+  color: var(--sf-ink);
+  box-shadow: 0 1px 4px rgba(36, 31, 25, 0.12);
   font: inherit;
   font-size: 15px;
   line-height: 1;
@@ -2861,8 +2861,8 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .thumb-clear:hover {
-  background: #fdf4f3;
-  color: #b4342c;
+  background: var(--sf-terra-wash);
+  color: var(--sf-terra-strong);
 }
 
 .view-grid {
@@ -2879,10 +2879,10 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   justify-content: center;
   gap: 3px;
   aspect-ratio: 1 / 1;
-  border: 1px dashed rgba(17, 17, 16, 0.14);
+  border: 1px dashed rgba(36, 31, 25, 0.14);
   border-radius: 14px;
-  background: rgba(17, 17, 16, 0.03);
-  color: rgba(29, 29, 27, 0.5);
+  background: rgba(36, 31, 25, 0.03);
+  color: rgba(36, 31, 25, 0.5);
   cursor: pointer;
   overflow: hidden;
   transition:
@@ -2891,12 +2891,12 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .view-slot.required {
-  border-color: rgba(17, 17, 16, 0.171);
+  border-color: rgba(36, 31, 25, 0.171);
 }
 
 .view-slot:hover {
-  border-color: rgba(17, 17, 16, 0.225);
-  background: rgba(17, 17, 16, 0.035);
+  border-color: rgba(36, 31, 25, 0.225);
+  background: rgba(36, 31, 25, 0.035);
 }
 
 .view-slot img {
@@ -2912,7 +2912,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 
 .view-slot-hint {
   font-size: 10px;
-  color: rgba(29, 29, 27, 0.3);
+  color: rgba(36, 31, 25, 0.3);
 }
 
 /* ---------- 动捕时间轴 ---------- */
@@ -2922,9 +2922,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  border: 1px solid rgba(17, 17, 16, 0.07);
+  border: 1px solid rgba(36, 31, 25, 0.07);
   border-radius: 14px;
-  background: rgba(17, 17, 16, 0.025);
+  background: rgba(36, 31, 25, 0.025);
 }
 
 .time-row {
@@ -2938,7 +2938,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   flex-direction: column;
   gap: 5px;
   font-size: 10.5px;
-  color: rgba(29, 29, 27, 0.42);
+  color: rgba(36, 31, 25, 0.42);
 }
 
 .time-input {
@@ -2947,16 +2947,16 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   gap: 4px;
   height: 34px;
   padding: 0 10px;
-  border: 1px solid rgba(17, 17, 16, 0.09);
+  border: 1px solid rgba(36, 31, 25, 0.09);
   border-radius: 10px;
-  background: rgba(17, 17, 16, 0.04);
+  background: rgba(36, 31, 25, 0.04);
 }
 
 .time-input input {
   width: 100%;
   border: 0;
   background: transparent;
-  color: rgba(29, 29, 27, 0.9);
+  color: rgba(36, 31, 25, 0.9);
   font: inherit;
   font-size: 12.5px;
   outline: none;
@@ -2965,7 +2965,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 .time-input em {
   font-style: normal;
   font-size: 10.5px;
-  color: rgba(29, 29, 27, 0.36);
+  color: rgba(36, 31, 25, 0.36);
 }
 
 .time-range {
@@ -2973,7 +2973,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   height: 4px;
   border-radius: 999px;
   appearance: none;
-  background: linear-gradient(90deg, #111111, rgba(17, 17, 16, 0.070));
+  background: linear-gradient(90deg, var(--sf-ink), rgba(36, 31, 25, 0.070));
   outline: none;
 }
 
@@ -2981,19 +2981,19 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   appearance: none;
   width: 13px;
   height: 13px;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--sf-surface);
   border-radius: 50%;
-  background: #111111;
-  box-shadow: 0 0 10px #111111;
+  background: var(--sf-ink);
+  box-shadow: 0 0 10px var(--sf-ink);
   cursor: pointer;
 }
 
 .time-range::-moz-range-thumb {
   width: 13px;
   height: 13px;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--sf-surface);
   border-radius: 50%;
-  background: #111111;
+  background: var(--sf-ink);
   cursor: pointer;
 }
 
@@ -3002,7 +3002,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: center;
   justify-content: space-between;
   font-size: 10px;
-  color: rgba(29, 29, 27, 0.34);
+  color: rgba(36, 31, 25, 0.34);
 }
 
 /* ---------- 开关与参数 ---------- */
@@ -3012,15 +3012,15 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  border: 1px solid rgba(17, 17, 16, 0.07);
+  border: 1px solid rgba(36, 31, 25, 0.07);
   border-radius: 14px;
-  background: rgba(17, 17, 16, 0.025);
+  background: rgba(36, 31, 25, 0.025);
   cursor: pointer;
   transition: border-color 160ms ease;
 }
 
 .switch-row:hover {
-  border-color: rgba(17, 17, 16, 0.117);
+  border-color: rgba(36, 31, 25, 0.117);
 }
 
 .switch-row.disabled {
@@ -3039,12 +3039,12 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 .switch-title {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(29, 29, 27, 0.84);
+  color: rgba(36, 31, 25, 0.84);
 }
 
 .switch-sub {
   font-size: 10px;
-  color: rgba(29, 29, 27, 0.36);
+  color: rgba(36, 31, 25, 0.36);
 }
 
 .switch-row input {
@@ -3059,7 +3059,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   width: 38px;
   height: 21px;
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.12);
+  background: rgba(36, 31, 25, 0.12);
   transition: background 180ms ease;
 }
 
@@ -3077,13 +3077,13 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .switch-row input:checked + .switch-track {
-  background: #111111;
-  box-shadow: 0 0 14px -2px #111111;
+  background: var(--sf-ink);
+  box-shadow: 0 0 14px -2px var(--sf-ink);
 }
 
 .switch-row input:checked + .switch-track .switch-thumb {
   transform: translateX(17px);
-  background: #fff;
+  background: var(--sf-surface);
 }
 
 .param-row {
@@ -3098,13 +3098,13 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: center;
   justify-content: space-between;
   font-size: 11.5px;
-  color: rgba(29, 29, 27, 0.62);
+  color: rgba(36, 31, 25, 0.62);
 }
 
 .param-label em {
   font-style: normal;
   font-size: 10.5px;
-  color: rgba(17, 17, 16, 0.82);
+  color: rgba(36, 31, 25, 0.82);
 }
 
 .billing-card {
@@ -3112,9 +3112,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   flex-direction: column;
   gap: 6px;
   padding: 12px;
-  border: 1px solid rgba(17, 17, 16, 0.24);
+  border: 1px solid rgba(36, 31, 25, 0.24);
   border-radius: 14px;
-  background: rgba(17, 17, 16, 0.07);
+  background: rgba(36, 31, 25, 0.07);
 }
 
 .billing-row {
@@ -3122,19 +3122,19 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: center;
   justify-content: space-between;
   font-size: 11.5px;
-  color: rgba(29, 29, 27, 0.55);
+  color: rgba(36, 31, 25, 0.55);
 }
 
 .billing-row strong {
   font-size: 12.5px;
-  color: #1d1d1b;
+  color: var(--sf-ink);
 }
 
 .billing-note {
   margin: 0;
   font-size: 10px;
   line-height: 1.5;
-  color: rgba(29, 29, 27, 0.32);
+  color: rgba(36, 31, 25, 0.32);
 }
 
 /* ---------- 生成按钮 ---------- */
@@ -3155,8 +3155,8 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   height: 48px;
   border: 1px solid #d9d9d2;
   border-radius: 16px;
-  background: #111111;
-  color: #ffffff;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
   font: inherit;
   font-size: 13.5px;
   font-weight: 700;
@@ -3164,7 +3164,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   cursor: pointer;
   overflow: hidden;
   box-shadow:
-    0 18px 36px -20px #111111,
+    0 18px 36px -20px var(--sf-ink),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
   transition:
     filter 180ms ease,
@@ -3216,7 +3216,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   margin: 0;
   text-align: center;
   font-size: 10.5px;
-  color: rgba(29, 29, 27, 0.34);
+  color: rgba(36, 31, 25, 0.34);
 }
 
 /* ============================ 中央组装台 ============================ */
@@ -3245,7 +3245,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
     linear-gradient(180deg, rgba(8, 14, 22, 0.9), rgba(4, 8, 14, 0.96));
   box-shadow:
     0 40px 90px -50px rgba(56, 189, 248, 0.6),
-    inset 0 1px 0 rgba(17, 17, 16, 0.06);
+    inset 0 1px 0 rgba(36, 31, 25, 0.06);
   overflow: hidden;
 }
 
@@ -3258,7 +3258,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
     linear-gradient(rgba(125, 211, 252, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(125, 211, 252, 0.05) 1px, transparent 1px);
   background-size: 54px 54px;
-  mask-image: radial-gradient(circle at 50% 46%, #000 0 42%, transparent 82%);
+  mask-image: radial-gradient(circle at 50% 46%, var(--sf-ink) 0 42%, transparent 82%);
 }
 
 .stage-shell.is-video::before {
@@ -3282,7 +3282,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   min-width: 0;
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: rgba(29, 29, 27, 0.5);
+  color: rgba(36, 31, 25, 0.5);
 }
 
 .stage-dot {
@@ -3293,7 +3293,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .stage-dot.dot-running {
-  background: #111111;
+  background: var(--sf-ink);
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16);
   animation: dot-pulse 1.6s ease-in-out infinite;
 }
@@ -3321,14 +3321,14 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 .stage-ident-model {
   font-size: 12px;
   font-weight: 700;
-  color: rgba(29, 29, 27, 0.86);
+  color: rgba(36, 31, 25, 0.86);
   white-space: nowrap;
 }
 
 .stage-ident-divider {
   width: 1px;
   height: 11px;
-  background: rgba(17, 17, 16, 0.14);
+  background: rgba(36, 31, 25, 0.14);
 }
 
 .stage-ident-mode {
@@ -3342,7 +3342,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 .stage-ident-status {
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.06);
+  background: rgba(36, 31, 25, 0.06);
   font-size: 10px;
   white-space: nowrap;
 }
@@ -3358,10 +3358,10 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   justify-content: center;
   width: 30px;
   height: 30px;
-  border: 1px solid rgba(17, 17, 16, 0.09);
+  border: 1px solid rgba(36, 31, 25, 0.09);
   border-radius: 10px;
-  background: rgba(17, 17, 16, 0.035);
-  color: rgba(29, 29, 27, 0.6);
+  background: rgba(36, 31, 25, 0.035);
+  color: rgba(36, 31, 25, 0.6);
   cursor: pointer;
   transition:
     border-color 160ms ease,
@@ -3377,7 +3377,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 .stage-action:hover:not(:disabled) {
   border-color: rgba(125, 211, 252, 0.4);
   background: rgba(56, 189, 248, 0.12);
-  color: #111110;
+  color: var(--sf-ink);
 }
 
 .stage-action:disabled {
@@ -3445,7 +3445,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   height: 100%;
   object-fit: contain;
   border-radius: 12px;
-  background: #000;
+  background: var(--sf-ink);
 }
 
 .stage-video-tag {
@@ -3600,7 +3600,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .readout-value {
-  color: rgba(29, 29, 27, 0.66);
+  color: rgba(36, 31, 25, 0.66);
   font-variant-numeric: tabular-nums;
 }
 
@@ -3672,7 +3672,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 
 .building-sub {
   font-size: 11px;
-  color: rgba(29, 29, 27, 0.42);
+  color: rgba(36, 31, 25, 0.42);
 }
 
 .building-bar {
@@ -3680,7 +3680,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   height: 3px;
   margin-top: 5px;
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.08);
+  background: rgba(36, 31, 25, 0.08);
   overflow: hidden;
 }
 
@@ -3713,7 +3713,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: rgba(29, 29, 27, 0.78);
+  color: rgba(36, 31, 25, 0.78);
 }
 
 .idle-sub,
@@ -3721,7 +3721,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   max-width: 320px;
   font-size: 11px;
   line-height: 1.6;
-  color: rgba(29, 29, 27, 0.36);
+  color: rgba(36, 31, 25, 0.36);
 }
 
 .loading-ring {
@@ -3745,7 +3745,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   height: 3px;
   margin-top: 6px;
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.08);
+  background: rgba(36, 31, 25, 0.08);
   overflow: hidden;
 }
 
@@ -3832,10 +3832,10 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: center;
   gap: 5px;
   padding: 5px 11px;
-  border: 1px solid rgba(17, 17, 16, 0.09);
+  border: 1px solid rgba(36, 31, 25, 0.09);
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.03);
-  color: rgba(29, 29, 27, 0.55);
+  background: rgba(36, 31, 25, 0.03);
+  color: rgba(36, 31, 25, 0.55);
   font: inherit;
   font-size: 11px;
   cursor: pointer;
@@ -3846,14 +3846,14 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .tool-chip:hover:not(:disabled) {
-  border-color: rgba(17, 17, 16, 0.158);
-  color: #111110;
+  border-color: rgba(36, 31, 25, 0.158);
+  color: var(--sf-ink);
 }
 
 .tool-chip.active {
   border-color: transparent;
-  background: #111111;
-  color: #ffffff;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
 }
 
 .tool-chip:disabled {
@@ -3872,7 +3872,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   margin-left: auto;
   font-size: 10px;
   letter-spacing: 0.02em;
-  color: rgba(29, 29, 27, 0.26);
+  color: rgba(36, 31, 25, 0.26);
 }
 
 /* 装配步骤 */
@@ -3888,9 +3888,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: center;
   gap: 8px;
   padding: 9px 11px;
-  border: 1px solid rgba(17, 17, 16, 0.06);
+  border: 1px solid rgba(36, 31, 25, 0.06);
   border-radius: 13px;
-  background: rgba(17, 17, 16, 0.022);
+  background: rgba(36, 31, 25, 0.022);
   opacity: 0.55;
   transition:
     border-color 220ms ease,
@@ -3900,8 +3900,8 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 
 .stage-step.active {
   opacity: 1;
-  border-color: rgba(17, 17, 16, 0.180);
-  background: rgba(17, 17, 16, 0.045);
+  border-color: rgba(36, 31, 25, 0.180);
+  background: rgba(36, 31, 25, 0.045);
 }
 
 .stage-step.done {
@@ -3916,7 +3916,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: rgba(17, 17, 16, 0.300);
+  color: rgba(36, 31, 25, 0.300);
 }
 
 .step-copy {
@@ -3929,13 +3929,13 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 .step-copy strong {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(29, 29, 27, 0.82);
+  color: rgba(36, 31, 25, 0.82);
 }
 
 .step-copy em {
   font-style: normal;
   font-size: 9.5px;
-  color: rgba(29, 29, 27, 0.36);
+  color: rgba(36, 31, 25, 0.36);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3948,30 +3948,30 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   border-radius: 999px;
   font-size: 10.5px;
   font-weight: 600;
-  background: rgba(17, 17, 16, 0.07);
-  color: rgba(29, 29, 27, 0.6);
+  background: rgba(36, 31, 25, 0.07);
+  color: rgba(36, 31, 25, 0.6);
 }
 
 .status-pill.status-running {
-  background: rgba(17, 17, 16, 0.080);
-  color: #111110;
+  background: rgba(36, 31, 25, 0.080);
+  color: var(--sf-ink);
 }
 
 .status-pill.status-done {
   background: rgba(52, 211, 153, 0.16);
-  color: #1f7a56;
+  color: var(--sf-success);
 }
 
 .status-pill.status-failed {
   background: rgba(251, 113, 133, 0.16);
-  color: #b4342c;
+  color: var(--sf-terra-strong);
 }
 
 .progress-track {
   position: relative;
   height: 4px;
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.08);
+  background: rgba(36, 31, 25, 0.08);
   overflow: hidden;
 }
 
@@ -3979,12 +3979,12 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #111111, #111111);
+  background: linear-gradient(90deg, var(--sf-ink), var(--sf-ink));
   transition: width 400ms ease;
 }
 
 .progress-fill.indeterminate {
-  background: linear-gradient(90deg, rgba(17, 17, 16, 0.080), #111111, rgba(17, 17, 16, 0.080));
+  background: linear-gradient(90deg, rgba(36, 31, 25, 0.080), var(--sf-ink), rgba(36, 31, 25, 0.080));
   background-size: 200% 100%;
   animation: progress-flow 1.8s linear infinite;
 }
@@ -4005,7 +4005,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   margin-top: -6px;
   font-size: 10px;
   font-variant-numeric: tabular-nums;
-  color: rgba(29, 29, 27, 0.4);
+  color: rgba(36, 31, 25, 0.4);
 }
 
 .task-meta {
@@ -4014,9 +4014,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   gap: 7px;
   margin: 0;
   padding: 12px;
-  border: 1px solid rgba(17, 17, 16, 0.06);
+  border: 1px solid rgba(36, 31, 25, 0.06);
   border-radius: 14px;
-  background: rgba(17, 17, 16, 0.022);
+  background: rgba(36, 31, 25, 0.022);
 }
 
 .task-meta > div {
@@ -4028,14 +4028,14 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 
 .task-meta dt {
   font-size: 10.5px;
-  color: rgba(29, 29, 27, 0.36);
+  color: rgba(36, 31, 25, 0.36);
 }
 
 .task-meta dd {
   margin: 0;
   max-width: 62%;
   font-size: 11px;
-  color: rgba(29, 29, 27, 0.72);
+  color: rgba(36, 31, 25, 0.72);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4043,10 +4043,10 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 
 .copy-btn {
   padding: 2px 7px;
-  border: 1px solid rgba(17, 17, 16, 0.1);
+  border: 1px solid rgba(36, 31, 25, 0.1);
   border-radius: 7px;
-  background: rgba(17, 17, 16, 0.04);
-  color: rgba(17, 17, 16, 0.9);
+  background: rgba(36, 31, 25, 0.04);
+  color: rgba(36, 31, 25, 0.9);
   font: inherit;
   font-size: 10.5px;
   font-variant-numeric: tabular-nums;
@@ -4054,7 +4054,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .copy-btn:hover {
-  border-color: rgba(17, 17, 16, 0.180);
+  border-color: rgba(36, 31, 25, 0.180);
 }
 
 .inline-error {
@@ -4065,7 +4065,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   background: rgba(251, 113, 133, 0.08);
   font-size: 11px;
   line-height: 1.6;
-  color: #b4342c;
+  color: var(--sf-terra-strong);
 }
 
 .cancel-btn {
@@ -4074,12 +4074,12 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 
 .empty-block {
   padding: 16px 12px;
-  border: 1px dashed rgba(17, 17, 16, 0.09);
+  border: 1px dashed rgba(36, 31, 25, 0.09);
   border-radius: 13px;
   text-align: center;
   font-size: 10.5px;
   line-height: 1.7;
-  color: rgba(29, 29, 27, 0.32);
+  color: rgba(36, 31, 25, 0.32);
 }
 
 .asset-list,
@@ -4097,9 +4097,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: center;
   gap: 9px;
   padding: 9px 10px;
-  border: 1px solid rgba(17, 17, 16, 0.07);
+  border: 1px solid rgba(36, 31, 25, 0.07);
   border-radius: 12px;
-  background: rgba(17, 17, 16, 0.028);
+  background: rgba(36, 31, 25, 0.028);
 }
 
 .asset-icon {
@@ -4110,19 +4110,19 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   width: 28px;
   height: 28px;
   border-radius: 9px;
-  background: rgba(17, 17, 16, 0.060);
-  color: #4a4a44;
+  background: rgba(36, 31, 25, 0.060);
+  color: var(--sf-ink-2);
   font-size: 13px;
 }
 
 .asset-icon.asset-motion {
-  background: rgba(17, 17, 16, 0.14);
-  color: #4a4a44;
+  background: rgba(36, 31, 25, 0.14);
+  color: var(--sf-ink-2);
 }
 
 .asset-icon.asset-video {
   background: rgba(52, 211, 153, 0.12);
-  color: #1f7a56;
+  color: var(--sf-success);
 }
 
 .asset-copy {
@@ -4136,12 +4136,12 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 .asset-name {
   font-size: 11.5px;
   font-weight: 600;
-  color: rgba(29, 29, 27, 0.82);
+  color: rgba(36, 31, 25, 0.82);
 }
 
 .asset-sub {
   font-size: 9.5px;
-  color: rgba(29, 29, 27, 0.34);
+  color: rgba(36, 31, 25, 0.34);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4158,10 +4158,10 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   justify-content: center;
   width: 26px;
   height: 26px;
-  border: 1px solid rgba(17, 17, 16, 0.09);
+  border: 1px solid rgba(36, 31, 25, 0.09);
   border-radius: 8px;
   background: transparent;
-  color: rgba(29, 29, 27, 0.5);
+  color: rgba(36, 31, 25, 0.5);
   cursor: pointer;
   transition:
     border-color 160ms ease,
@@ -4175,9 +4175,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .asset-btn:hover {
-  border-color: rgba(17, 17, 16, 0.180);
-  background: rgba(17, 17, 16, 0.060);
-  color: #111110;
+  border-color: rgba(36, 31, 25, 0.180);
+  background: rgba(36, 31, 25, 0.060);
+  color: var(--sf-ink);
 }
 
 /* 下载结果提示：浮在右下角的短时 toast，不参与右栏布局、不影响历史可见性 */
@@ -4189,28 +4189,28 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   max-width: 340px;
   margin: 0;
   padding: 9px 13px;
-  border: 1px solid rgba(17, 17, 16, 0.108);
+  border: 1px solid rgba(36, 31, 25, 0.108);
   border-radius: 11px;
-  background: #ffffff;
-  box-shadow: 0 12px 34px rgba(17, 17, 16, 0.14);
+  background: var(--sf-surface);
+  box-shadow: 0 12px 34px rgba(36, 31, 25, 0.14);
   backdrop-filter: blur(10px);
   font-size: 11px;
   line-height: 1.5;
-  color: #1d1d1b;
+  color: var(--sf-ink);
   word-break: break-all;
 }
 
 .link-btn {
   border: 0;
   background: transparent;
-  color: rgba(17, 17, 16, 0.7);
+  color: rgba(36, 31, 25, 0.7);
   font: inherit;
   font-size: 10.5px;
   cursor: pointer;
 }
 
 .link-btn:hover {
-  color: #111110;
+  color: var(--sf-ink);
 }
 
 .history-item {
@@ -4219,9 +4219,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   gap: 3px;
   width: 100%;
   padding: 9px 10px;
-  border: 1px solid rgba(17, 17, 16, 0.06);
+  border: 1px solid rgba(36, 31, 25, 0.06);
   border-radius: 12px;
-  background: rgba(17, 17, 16, 0.022);
+  background: rgba(36, 31, 25, 0.022);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -4232,13 +4232,13 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .history-item:hover {
-  border-color: rgba(17, 17, 16, 0.135);
-  background: rgba(17, 17, 16, 0.030);
+  border-color: rgba(36, 31, 25, 0.135);
+  background: rgba(36, 31, 25, 0.030);
 }
 
 .history-item.active {
-  border-color: rgba(17, 17, 16, 0.189);
-  background: rgba(17, 17, 16, 0.050);
+  border-color: rgba(36, 31, 25, 0.189);
+  background: rgba(36, 31, 25, 0.050);
 }
 
 .history-head {
@@ -4252,8 +4252,8 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   margin-right: 4px;
   padding: 0 4px;
   border-radius: 4px;
-  background: rgba(17, 17, 16, 0.060);
-  color: rgba(17, 17, 16, 0.82);
+  background: rgba(36, 31, 25, 0.060);
+  color: rgba(36, 31, 25, 0.82);
   font-size: 9px;
   font-weight: 600;
 }
@@ -4262,24 +4262,24 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   font-size: 9.5px;
   padding: 1px 6px;
   border-radius: 999px;
-  background: rgba(17, 17, 16, 0.07);
-  color: rgba(29, 29, 27, 0.5);
+  background: rgba(36, 31, 25, 0.07);
+  color: rgba(36, 31, 25, 0.5);
 }
 
 .history-status.hs-COMPLETED {
   background: rgba(52, 211, 153, 0.14);
-  color: #1f7a56;
+  color: var(--sf-success);
 }
 
 .history-status.hs-FAILED {
   background: rgba(251, 113, 133, 0.14);
-  color: #b4342c;
+  color: var(--sf-terra-strong);
 }
 
 .history-prompt {
   font-size: 10.5px;
   line-height: 1.45;
-  color: rgba(29, 29, 27, 0.44);
+  color: rgba(36, 31, 25, 0.44);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4287,7 +4287,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 
 .history-time {
   font-size: 9.5px;
-  color: rgba(29, 29, 27, 0.28);
+  color: rgba(36, 31, 25, 0.28);
 }
 
 /* 历史面板不参与 flex 收缩：整条右栏滚动，避免被压缩成空壳 */
@@ -4330,7 +4330,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(29, 29, 27, 0.36);
+  color: rgba(36, 31, 25, 0.36);
 }
 
 .project-name-input {
@@ -4346,9 +4346,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   width: 100%;
   min-width: 0;
   padding: 6px 9px;
-  border: 1px solid rgba(17, 17, 16, 0.100);
+  border: 1px solid rgba(36, 31, 25, 0.100);
   border-radius: 10px;
-  background: rgba(17, 17, 16, 0.030);
+  background: rgba(36, 31, 25, 0.030);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -4359,15 +4359,15 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .project-strip:hover {
-  border-color: rgba(17, 17, 16, 0.171);
-  background: rgba(17, 17, 16, 0.055);
+  border-color: rgba(36, 31, 25, 0.171);
+  background: rgba(36, 31, 25, 0.055);
 }
 
 .project-strip-pen {
   flex: 0 0 auto;
   width: 12px;
   height: 12px;
-  color: rgba(17, 17, 16, 0.207);
+  color: rgba(36, 31, 25, 0.207);
 }
 
 .project-strip-label {
@@ -4375,7 +4375,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.14em;
-  color: rgba(17, 17, 16, 0.279);
+  color: rgba(36, 31, 25, 0.279);
 }
 
 .project-strip-name {
@@ -4386,7 +4386,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   white-space: nowrap;
   font-size: 11px;
   font-weight: 600;
-  color: rgba(29, 29, 27, 0.82);
+  color: rgba(36, 31, 25, 0.82);
 }
 
 .history-row {
@@ -4400,7 +4400,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   white-space: nowrap;
   font-size: 11.5px;
   font-weight: 600;
-  color: rgba(29, 29, 27, 0.86);
+  color: rgba(36, 31, 25, 0.86);
 }
 
 .rail-panel--history .history-name {
@@ -4420,7 +4420,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: rgba(29, 29, 27, 0.26);
+  color: rgba(36, 31, 25, 0.26);
   cursor: pointer;
   opacity: 0;
   transition:
@@ -4435,8 +4435,8 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .history-rename:hover {
-  background: #f5f5f1;
-  color: #111110;
+  background: var(--sf-surface-3);
+  color: var(--sf-ink);
 }
 
 .history-rename svg {
@@ -4455,10 +4455,10 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   width: 100%;
   height: 30px;
   padding: 0 9px;
-  border: 1px solid rgba(17, 17, 16, 0.203);
+  border: 1px solid rgba(36, 31, 25, 0.203);
   border-radius: 10px;
-  background: #ffffff;
-  color: #1d1d1b;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
   font: inherit;
   font-size: 11.5px;
   outline: none;
@@ -4552,7 +4552,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   flex-direction: column;
   gap: 9px;
   padding-top: 13px;
-  border-top: 1px solid rgba(17, 17, 16, 0.07);
+  border-top: 1px solid rgba(36, 31, 25, 0.07);
 }
 
 .material-head {
@@ -4565,13 +4565,13 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 .material-title {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(29, 29, 27, 0.82);
+  color: rgba(36, 31, 25, 0.82);
 }
 
 .material-hint {
   font-size: 10px;
   letter-spacing: 0.02em;
-  color: rgba(29, 29, 27, 0.32);
+  color: rgba(36, 31, 25, 0.32);
 }
 
 .segmented--compact {
@@ -4598,10 +4598,10 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   gap: 5px;
   min-height: 30px;
   padding: 0 6px;
-  border: 1px solid rgba(17, 17, 16, 0.08);
+  border: 1px solid rgba(36, 31, 25, 0.08);
   border-radius: 9px;
-  background: rgba(17, 17, 16, 0.03);
-  color: rgba(29, 29, 27, 0.55);
+  background: rgba(36, 31, 25, 0.03);
+  color: rgba(36, 31, 25, 0.55);
   font: inherit;
   font-size: 11.5px;
   font-weight: 600;
@@ -4613,14 +4613,14 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .material-chip:hover {
-  border-color: rgba(29, 29, 27, 0.16);
-  color: rgba(29, 29, 27, 0.82);
+  border-color: rgba(36, 31, 25, 0.16);
+  color: rgba(36, 31, 25, 0.82);
 }
 
 .material-chip.active {
   border-color: transparent;
-  background: #111111;
-  color: #ffffff;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
 }
 
 .material-swatch {
@@ -4628,7 +4628,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   width: 10px;
   height: 10px;
   border-radius: 3px;
-  box-shadow: inset 0 0 0 1px rgba(17, 17, 16, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(36, 31, 25, 0.22);
 }
 
 .format-grid {
@@ -4643,9 +4643,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: flex-start;
   gap: 3px;
   padding: 10px 12px;
-  border: 1px solid rgba(17, 17, 16, 0.08);
+  border: 1px solid rgba(36, 31, 25, 0.08);
   border-radius: 12px;
-  background: rgba(17, 17, 16, 0.03);
+  background: rgba(36, 31, 25, 0.03);
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -4655,12 +4655,12 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .format-chip:hover {
-  border-color: rgba(29, 29, 27, 0.16);
+  border-color: rgba(36, 31, 25, 0.16);
 }
 
 .format-chip.active {
   border-color: transparent;
-  background: #111111;
+  background: var(--sf-ink);
 }
 
 .format-chip:last-child {
@@ -4670,18 +4670,18 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 .format-name {
   font-size: 12.5px;
   font-weight: 700;
-  color: rgba(29, 29, 27, 0.8);
+  color: rgba(36, 31, 25, 0.8);
 }
 
 .format-chip.active .format-name,
 .format-chip.active .format-hint {
-  color: #ffffff;
+  color: var(--sf-surface);
 }
 
 .format-hint {
   font-size: 10.5px;
   line-height: 1.45;
-  color: rgba(29, 29, 27, 0.36);
+  color: rgba(36, 31, 25, 0.36);
 }
 
 .material-thickness {
@@ -4695,12 +4695,12 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: center;
   justify-content: space-between;
   font-size: 11px;
-  color: rgba(29, 29, 27, 0.5);
+  color: rgba(36, 31, 25, 0.5);
 }
 
 .material-thickness-head span:last-child {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: rgba(17, 17, 16, 0.300);
+  color: rgba(36, 31, 25, 0.300);
 }
 
 /* ---------- 机位快捷组 ---------- */
@@ -4709,7 +4709,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: center;
   gap: 4px;
   padding-left: 12px;
-  border-left: 1px solid rgba(17, 17, 16, 0.08);
+  border-left: 1px solid rgba(36, 31, 25, 0.08);
 }
 
 .tool-group-label {
@@ -4717,7 +4717,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.14em;
-  color: rgba(29, 29, 27, 0.26);
+  color: rgba(36, 31, 25, 0.26);
 }
 
 .tool-chip--compact {
@@ -4725,7 +4725,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .tool-chip--bg {
-  border-color: rgba(17, 17, 16, 0.100);
+  border-color: rgba(36, 31, 25, 0.100);
 }
 
 /* ---------- 弹层：导出 / AI 背景 ---------- */
@@ -4738,7 +4738,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(17, 17, 16, 0.28);
+  background: rgba(36, 31, 25, 0.28);
   backdrop-filter: blur(6px);
 }
 
@@ -4747,10 +4747,10 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   flex-direction: column;
   width: min(420px, 100%);
   max-height: min(86dvh, 760px);
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 20px;
-  background: #ffffff;
-  box-shadow: 0 24px 70px rgba(17, 17, 16, 0.16);
+  background: var(--sf-surface);
+  box-shadow: 0 24px 70px rgba(36, 31, 25, 0.16);
   overflow: hidden;
 }
 
@@ -4764,7 +4764,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   justify-content: space-between;
   gap: 12px;
   padding: 16px 18px 12px;
-  border-bottom: 1px solid rgba(17, 17, 16, 0.07);
+  border-bottom: 1px solid rgba(36, 31, 25, 0.07);
 }
 
 .modal-headings {
@@ -4777,7 +4777,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   font-size: 9.5px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(17, 17, 16, 0.279);
+  color: rgba(36, 31, 25, 0.279);
 }
 
 .modal-title {
@@ -4785,16 +4785,16 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   font-family: var(--font-family-display);
   font-size: 15px;
   font-weight: 600;
-  color: rgba(29, 29, 27, 0.94);
+  color: rgba(36, 31, 25, 0.94);
 }
 
 .modal-close {
   width: 28px;
   height: 28px;
-  border: 1px solid rgba(17, 17, 16, 0.1);
+  border: 1px solid rgba(36, 31, 25, 0.1);
   border-radius: 9px;
-  background: rgba(17, 17, 16, 0.04);
-  color: rgba(29, 29, 27, 0.6);
+  background: rgba(36, 31, 25, 0.04);
+  color: rgba(36, 31, 25, 0.6);
   font: inherit;
   font-size: 17px;
   line-height: 1;
@@ -4805,8 +4805,8 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 }
 
 .modal-close:hover {
-  border-color: rgba(17, 17, 16, 0.158);
-  color: #1d1d1b;
+  border-color: rgba(36, 31, 25, 0.158);
+  color: var(--sf-ink);
 }
 
 .modal-body {
@@ -4827,7 +4827,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: rgba(29, 29, 27, 0.52);
+  color: rgba(36, 31, 25, 0.52);
 }
 
 .color-row {
@@ -4841,7 +4841,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   width: 38px;
   height: 32px;
   padding: 2px;
-  border: 1px solid rgba(17, 17, 16, 0.12);
+  border: 1px solid rgba(36, 31, 25, 0.12);
   border-radius: 9px;
   background: transparent;
   cursor: pointer;
@@ -4850,7 +4850,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 .color-value {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11.5px;
-  color: rgba(29, 29, 27, 0.6);
+  color: rgba(36, 31, 25, 0.6);
 }
 
 .swatch-row {
@@ -4863,13 +4863,13 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   width: 22px;
   height: 22px;
   padding: 0;
-  border: 1px solid rgba(17, 17, 16, 0.18);
+  border: 1px solid rgba(36, 31, 25, 0.18);
   border-radius: 7px;
   cursor: pointer;
 }
 
 .swatch.active {
-  outline: 2px solid rgba(17, 17, 16, 0.300);
+  outline: 2px solid rgba(36, 31, 25, 0.300);
   outline-offset: 1px;
 }
 
@@ -4878,7 +4878,7 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   align-items: center;
   gap: 8px;
   padding: 12px 18px 16px;
-  border-top: 1px solid rgba(17, 17, 16, 0.07);
+  border-top: 1px solid rgba(36, 31, 25, 0.07);
 }
 
 .modal-spacer {
@@ -4887,9 +4887,9 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 
 .bg-preview {
   position: relative;
-  border: 1px solid rgba(17, 17, 16, 0.1);
+  border: 1px solid rgba(36, 31, 25, 0.1);
   border-radius: 14px;
-  background: #f5f5f1;
+  background: var(--sf-surface-3);
   overflow: hidden;
 }
 

@@ -139,10 +139,10 @@ function createAndAdd() {
   max-height: min(78vh, 620px);
   display: flex;
   flex-direction: column;
-  border: 1px solid #e7e7e1;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 16px;
-  background: #ffffff;
-  box-shadow: 0 24px 70px rgba(17, 17, 16, 0.18);
+  background: var(--sf-surface);
+  box-shadow: 0 24px 70px rgba(36, 31, 25, 0.18);
   overflow: hidden;
 }
 
@@ -156,7 +156,7 @@ function createAndAdd() {
 
 .inbox-head h2 {
   margin: 0;
-  color: #1d1d1b;
+  color: var(--sf-ink);
   font-size: 15px;
   font-weight: 650;
   letter-spacing: -0.01em;
@@ -164,7 +164,7 @@ function createAndAdd() {
 
 .inbox-head p {
   margin: 4px 0 0;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-size: 11.5px;
 }
 
@@ -178,7 +178,7 @@ function createAndAdd() {
   border: 1px solid transparent;
   border-radius: 7px;
   background: transparent;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   cursor: pointer;
 }
 
@@ -188,8 +188,8 @@ function createAndAdd() {
 }
 
 .inbox-close:hover {
-  border-color: #ecece6;
-  color: #1d1d1b;
+  border-color: var(--sf-line-soft);
+  color: var(--sf-ink);
 }
 
 .inbox-assets {
@@ -207,10 +207,10 @@ function createAndAdd() {
   min-width: 0;
   max-width: 150px;
   padding: 5px 8px;
-  border: 1px solid #efefe9;
+  border: 1px solid var(--sf-surface-3);
   border-radius: 8px;
-  background: #fbfbf8;
-  color: #6b6b63;
+  background: var(--sf-surface-2);
+  color: var(--sf-ink-2);
   font-size: 11px;
 }
 
@@ -226,8 +226,8 @@ function createAndAdd() {
   flex: none;
   padding: 2px 5px;
   border-radius: 4px;
-  background: #111110;
-  color: #fff;
+  background: var(--sf-ink);
+  color: var(--sf-surface);
   font-size: 9.5px;
 }
 
@@ -239,7 +239,7 @@ function createAndAdd() {
 
 .asset-more {
   flex: none;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
 }
 
 .inbox-list-head {
@@ -247,7 +247,7 @@ function createAndAdd() {
   align-items: center;
   justify-content: space-between;
   padding: 0 18px 8px;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-size: 11px;
   letter-spacing: 0.02em;
 }
@@ -256,7 +256,7 @@ function createAndAdd() {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #1d1d1b;
+  color: var(--sf-ink);
   font-family: inherit;
   font-size: 11px;
   font-weight: 600;
@@ -287,8 +287,8 @@ function createAndAdd() {
 }
 
 .project-row:hover {
-  border-color: #ecece6;
-  background: #fbfbf8;
+  border-color: var(--sf-line-soft);
+  background: var(--sf-surface-2);
 }
 
 .project-dot {
@@ -300,7 +300,7 @@ function createAndAdd() {
 }
 
 .project-row.is-last .project-dot {
-  background: #111110;
+  background: var(--sf-ink);
 }
 
 .project-copy {
@@ -313,7 +313,7 @@ function createAndAdd() {
 
 .project-copy strong {
   overflow: hidden;
-  color: #2a2a26;
+  color: var(--sf-ink);
   font-size: 12.5px;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -321,27 +321,27 @@ function createAndAdd() {
 }
 
 .project-copy small {
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 10.5px;
 }
 
 .project-add {
   flex: none;
-  color: #8d8d85;
+  color: var(--sf-ink-3);
   font-size: 11px;
   font-weight: 600;
 }
 
 .project-row:hover .project-add {
-  color: #111110;
+  color: var(--sf-ink);
 }
 
 .inbox-empty {
   margin: 0 18px;
   padding: 18px;
-  border: 1px dashed #e7e7e1;
+  border: 1px dashed var(--sf-line-soft);
   border-radius: 10px;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-size: 11.5px;
   text-align: center;
 }
@@ -372,14 +372,14 @@ function createAndAdd() {
 }
 
 .inbox-ghost {
-  border: 1px solid #e7e7e1;
-  background: #ffffff;
-  color: #6b6b63;
+  border: 1px solid var(--sf-line-soft);
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
 }
 
 .inbox-primary {
-  border: 1px solid #111110;
-  background: #111110;
-  color: #ffffff;
+  border: 1px solid var(--sf-ink);
+  background: var(--sf-ink);
+  color: var(--sf-surface);
 }
 </style>

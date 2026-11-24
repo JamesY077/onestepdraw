@@ -41,10 +41,10 @@ const emit = defineEmits<{ 'update:page': [page: number] }>()
   width: 22px;
   height: 22px;
   padding: 0;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 7px;
-  background: #ffffff;
-  color: #66665f;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
   cursor: pointer;
   transition:
     border-color 160ms ease,
@@ -58,9 +58,9 @@ const emit = defineEmits<{ 'update:page': [page: number] }>()
 }
 
 .pager-btn:hover:not(:disabled) {
-  border-color: #c9c9c1;
-  background: #f5f5f1;
-  color: #111110;
+  border-color: var(--sf-line-strong);
+  background: var(--sf-surface-3);
+  color: var(--sf-ink);
 }
 
 .pager-btn:disabled {
@@ -72,7 +72,7 @@ const emit = defineEmits<{ 'update:page': [page: number] }>()
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-variant-numeric: tabular-nums;
 }
 </style>

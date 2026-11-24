@@ -46,9 +46,9 @@ label {
   width: 100%;
   min-height: 46px;
   overflow: hidden;
-  border: 1px solid rgba(17, 17, 16, 0.12);
+  border: 1px solid rgba(36, 31, 25, 0.12);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--sf-surface);
   box-shadow: none;
 }
 
@@ -59,17 +59,17 @@ input {
   padding: 0 16px;
   border: 0;
   background: transparent;
-  color: rgba(29, 29, 27, 0.92);
+  color: rgba(36, 31, 25, 0.92);
   outline: none;
 }
 
 .input-wrapper:focus-within {
-  border-color: #b9b9b1;
-  box-shadow: 0 0 0 3px rgba(17, 17, 16, 0.06);
+  border-color: var(--sf-line-strong);
+  box-shadow: 0 0 0 3px rgba(36, 31, 25, 0.06);
 }
 
 input::placeholder {
-  color: rgba(29, 29, 27, 0.38);
+  color: rgba(36, 31, 25, 0.38);
 }
 
 .toggle-visibility {
@@ -78,15 +78,15 @@ input::placeholder {
   min-height: 44px;
   padding: 0 14px;
   border: 0;
-  border-left: 1px solid rgba(17, 17, 16, 0.10);
-  background: rgba(17, 17, 16, 0.08);
-  color: rgba(29, 29, 27, 0.72);
+  border-left: 1px solid rgba(36, 31, 25, 0.10);
+  background: rgba(36, 31, 25, 0.08);
+  color: rgba(36, 31, 25, 0.72);
   font-size: 13px;
   font-weight: 600;
 }
 
 .toggle-visibility:hover {
-  background: rgba(17, 17, 16, 0.12);
-  color: rgba(29, 29, 27, 0.92);
+  background: rgba(36, 31, 25, 0.12);
+  color: rgba(36, 31, 25, 0.92);
 }
 </style>

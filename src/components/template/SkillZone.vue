@@ -359,10 +359,10 @@ function removeSkill(skill: DistilledSkill) {
   align-items: center;
   gap: 4px;
   padding: 6px 9px;
-  border: 1px solid #b4472f;
+  border: 1px solid var(--sf-terra);
   border-radius: 8px;
-  background: #b4472f;
-  color: #ffffff;
+  background: var(--sf-terra);
+  color: var(--sf-surface);
   font-family: inherit;
   font-size: 10.5px;
   font-weight: 600;
@@ -370,8 +370,8 @@ function removeSkill(skill: DistilledSkill) {
 }
 
 .sz-distill-open:hover {
-  border-color: #9c3b26;
-  background: #9c3b26;
+  border-color: var(--sf-terra-strong);
+  background: var(--sf-terra-strong);
 }
 
 .sz-distill-open svg {
@@ -384,9 +384,9 @@ function removeSkill(skill: DistilledSkill) {
   flex-direction: column;
   gap: 9px;
   padding: 12px;
-  border: 1px solid #e8e8e2;
+  border: 1px solid var(--sf-line);
   border-radius: 11px;
-  background: #fbfbf8;
+  background: var(--sf-surface-2);
 }
 
 .sz-distill-head {
@@ -397,14 +397,14 @@ function removeSkill(skill: DistilledSkill) {
 }
 
 .sz-distill-head strong {
-  color: #1d1d1b;
+  color: var(--sf-ink);
   font-size: 12.5px;
   font-weight: 650;
 }
 
 .sz-distill-head p {
   margin: 3px 0 0;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-size: 10px;
   line-height: 1.55;
 }
@@ -417,7 +417,7 @@ function removeSkill(skill: DistilledSkill) {
 }
 
 .sz-distill-hint {
-  color: #b0b0a8;
+  color: var(--sf-ink-4);
   font-size: 9px;
 }
 
@@ -439,7 +439,7 @@ function removeSkill(skill: DistilledSkill) {
 }
 
 .sz-field > span {
-  color: #8c8c84;
+  color: var(--sf-ink-3);
   font-size: 9.5px;
   font-weight: 550;
 }
@@ -447,17 +447,17 @@ function removeSkill(skill: DistilledSkill) {
 .sz-input {
   width: 100%;
   padding: 7px 9px;
-  border: 1px solid #e6e6df;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 8px;
   outline: none;
-  background: #ffffff;
-  color: #2c2c28;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
   font-family: inherit;
   font-size: 11px;
 }
 
 .sz-input:focus {
-  border-color: #c9c9c1;
+  border-color: var(--sf-line-strong);
 }
 
 .sz-textarea {
@@ -473,18 +473,18 @@ function removeSkill(skill: DistilledSkill) {
 
 .sz-file-btn {
   padding: 4px 8px;
-  border: 1px solid #e4e4dc;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 7px;
-  background: #ffffff;
-  color: #6b6b63;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
   font-family: inherit;
   font-size: 9.5px;
   cursor: pointer;
 }
 
 .sz-file-btn:hover:not(:disabled) {
-  border-color: #b4472f;
-  color: #b4472f;
+  border-color: var(--sf-terra);
+  color: var(--sf-terra);
 }
 
 .sz-file {
@@ -493,13 +493,13 @@ function removeSkill(skill: DistilledSkill) {
 
 .sz-count {
   margin-left: auto;
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 9.5px;
   font-variant-numeric: tabular-nums;
 }
 
 .sz-count.over {
-  color: #b4472f;
+  color: var(--sf-terra);
 }
 
 .sz-search {
@@ -508,16 +508,16 @@ function removeSkill(skill: DistilledSkill) {
   gap: 7px;
   margin-top: 10px;
   padding: 0 10px;
-  border: 1px solid #ecece6;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 9px;
-  background: #fafaf7;
+  background: var(--sf-surface-2);
 }
 
 .sz-search svg {
   width: 14px;
   height: 14px;
   flex: none;
-  color: #b0b0a8;
+  color: var(--sf-ink-4);
 }
 
 .sz-search input {
@@ -526,13 +526,13 @@ function removeSkill(skill: DistilledSkill) {
   border: 0;
   outline: none;
   background: transparent;
-  color: #2c2c28;
+  color: var(--sf-ink);
   font-family: inherit;
   font-size: 12px;
 }
 
 .sz-search input::placeholder {
-  color: #b3b3ab;
+  color: var(--sf-ink-4);
 }
 
 .sz-filters {
@@ -550,9 +550,9 @@ function removeSkill(skill: DistilledSkill) {
 .sz-filters button {
   flex: none;
   padding: 4px 9px;
-  border: 1px solid #ecece6;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 999px;
-  background: #ffffff;
+  background: var(--sf-surface);
   color: #7d7d75;
   font-family: inherit;
   font-size: 10.5px;
@@ -561,13 +561,13 @@ function removeSkill(skill: DistilledSkill) {
 }
 
 .sz-filters button:hover {
-  border-color: #d8d8d0;
+  border-color: var(--sf-line-strong);
 }
 
 .sz-filters button.active {
-  border-color: #111110;
-  background: #111110;
-  color: #ffffff;
+  border-color: var(--sf-ink);
+  background: var(--sf-ink);
+  color: var(--sf-surface);
 }
 
 .sz-list {
@@ -578,20 +578,20 @@ function removeSkill(skill: DistilledSkill) {
 
 .sz-card {
   padding: 10px 11px;
-  border: 1px solid #ecece6;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 11px;
-  background: #ffffff;
+  background: var(--sf-surface);
   transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
 .sz-card:hover {
   border-color: #d9d9d1;
-  box-shadow: 0 6px 18px rgba(17, 17, 16, 0.05);
+  box-shadow: 0 6px 18px rgba(36, 31, 25, 0.05);
 }
 
 .sz-card.is-user {
   border-color: #efdcd3;
-  background: #fffdfb;
+  background: var(--sf-surface);
 }
 
 .sz-card-head {
@@ -606,15 +606,15 @@ function removeSkill(skill: DistilledSkill) {
   flex: none;
   padding: 1px 5px;
   border-radius: 999px;
-  background: #f3f3ed;
-  color: #8c8c84;
+  background: var(--sf-surface-3);
+  color: var(--sf-ink-3);
   font-size: 8.5px;
   font-weight: 600;
 }
 
 .sz-source-title {
   overflow: hidden;
-  color: #b0b0a8;
+  color: var(--sf-ink-4);
   font-size: 9px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -632,7 +632,7 @@ function removeSkill(skill: DistilledSkill) {
 
 .sz-user-tag {
   background: #fdf1ec;
-  color: #b4472f;
+  color: var(--sf-terra);
 }
 
 .sz-active-tag {
@@ -650,7 +650,7 @@ function removeSkill(skill: DistilledSkill) {
 
 .sz-summary {
   margin: 4px 0 0;
-  color: #8c8c84;
+  color: var(--sf-ink-3);
   font-size: 10.5px;
   line-height: 1.6;
 }
@@ -664,10 +664,10 @@ function removeSkill(skill: DistilledSkill) {
 
 .sz-tag {
   padding: 1px 5px;
-  border: 1px solid #f0ece7;
+  border: 1px solid var(--sf-surface-3);
   border-radius: 5px;
   background: #fcfbf8;
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 8.5px;
 }
 
@@ -680,10 +680,10 @@ function removeSkill(skill: DistilledSkill) {
 
 .sz-action {
   padding: 5px 9px;
-  border: 1px solid #e7e7e1;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 7px;
-  background: #ffffff;
-  color: #6b6b63;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
   font-family: inherit;
   font-size: 10px;
   font-weight: 550;
@@ -691,42 +691,42 @@ function removeSkill(skill: DistilledSkill) {
 }
 
 .sz-action:hover {
-  border-color: #cfcfc7;
-  color: #1d1d1b;
+  border-color: var(--sf-line-strong);
+  color: var(--sf-ink);
 }
 
 .sz-action--chat {
-  border-color: #111110;
-  background: #111110;
-  color: #ffffff;
+  border-color: var(--sf-ink);
+  background: var(--sf-ink);
+  color: var(--sf-surface);
 }
 
 .sz-action--chat:hover {
-  border-color: #000000;
-  background: #000000;
-  color: #ffffff;
+  border-color: var(--sf-ink);
+  background: var(--sf-ink);
+  color: var(--sf-surface);
 }
 
 .sz-action--danger {
   border-color: transparent;
   background: transparent;
-  color: #b0b0a8;
+  color: var(--sf-ink-4);
 }
 
 .sz-action--danger:hover {
   border-color: #f0d8d0;
   background: #fdf4f1;
-  color: #b4472f;
+  color: var(--sf-terra);
 }
 
 .sz-detail {
   margin-top: 7px;
-  border-top: 1px dashed #f0f0ea;
+  border-top: 1px dashed var(--sf-surface-3);
   padding-top: 6px;
 }
 
 .sz-detail summary {
-  color: #a3a39b;
+  color: var(--sf-ink-3);
   font-size: 9.5px;
   cursor: pointer;
 }
@@ -748,7 +748,7 @@ function removeSkill(skill: DistilledSkill) {
 
 .sz-empty {
   margin: 24px 4px;
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   font-size: 11px;
   line-height: 1.7;
   text-align: center;
@@ -766,35 +766,35 @@ function removeSkill(skill: DistilledSkill) {
 
 .sz-error {
   margin: 0;
-  color: #b4472f;
+  color: var(--sf-terra);
   font-size: 10.5px;
   line-height: 1.55;
 }
 
 .sz-credit {
   margin: 16px 2px 0;
-  color: #b3b3ab;
+  color: var(--sf-ink-4);
   font-size: 9px;
   line-height: 1.7;
 }
 
 .sz-credit a {
-  color: #9a9a92;
+  color: var(--sf-ink-3);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .sz-credit a:hover {
-  color: #b4472f;
+  color: var(--sf-terra);
 }
 
 .sz-ghost {
   flex: none;
   padding: 5px 8px;
-  border: 1px solid #e7e7e1;
+  border: 1px solid var(--sf-line-soft);
   border-radius: 7px;
-  background: #ffffff;
-  color: #6b6b63;
+  background: var(--sf-surface);
+  color: var(--sf-ink-2);
   font-family: inherit;
   font-size: 10px;
   cursor: pointer;
@@ -802,10 +802,10 @@ function removeSkill(skill: DistilledSkill) {
 
 .sz-primary {
   padding: 6px 12px;
-  border: 1px solid #b4472f;
+  border: 1px solid var(--sf-terra);
   border-radius: 8px;
-  background: #b4472f;
-  color: #ffffff;
+  background: var(--sf-terra);
+  color: var(--sf-surface);
   font-family: inherit;
   font-size: 10.5px;
   font-weight: 600;
@@ -813,13 +813,13 @@ function removeSkill(skill: DistilledSkill) {
 }
 
 .sz-primary:hover:not(:disabled) {
-  border-color: #9c3b26;
-  background: #9c3b26;
+  border-color: var(--sf-terra-strong);
+  background: var(--sf-terra-strong);
 }
 
 .sz-primary:disabled {
-  border-color: #e4d7d1;
-  background: #e4d7d1;
+  border-color: var(--sf-terra-soft);
+  background: var(--sf-terra-soft);
   cursor: default;
 }
 
