@@ -1,5 +1,7 @@
 <template>
   <div class="studio-page settings-page">
+    <AppTopNav />
+
     <div class="settings-shell">
       <header class="settings-header">
         <button class="back-btn" type="button" @click="router.back()">
@@ -468,8 +470,6 @@
       </div>
     </div>
 
-    <AppTopNav />
-
     <div v-if="showEditConfig" class="modal-overlay" @click.self="showEditConfig = false">
       <div class="modal">
         <h3>更新 API 访问信息</h3>
@@ -895,9 +895,13 @@ function resetTranslationModel() {
 </script>
 
 <style scoped>
-.settings-page {
-  min-height: 100dvh;
-  padding: 28px 24px 48px;
+.studio-page.settings-page {
+  /* 内容比视口长时，由页面自己滚动，顶部导航仍固定 */
+  height: 100dvh;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 24px 48px;
   color: var(--sf-ink);
   background: #fbfbf9;
 }
@@ -911,6 +915,7 @@ function resetTranslationModel() {
 .settings-shell {
   width: min(100%, 1180px);
   margin: 0 auto;
+  padding-top: 12px;
 }
 
 /* ---------------------------------- 顶部 ---------------------------------- */

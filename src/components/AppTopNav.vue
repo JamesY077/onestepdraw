@@ -123,16 +123,44 @@ function go(item: NavItem) {
  * 参与页面文档流（不浮动），页面因此不需要额外的顶部占位。
  */
 .app-top-nav {
-  position: relative;
-  z-index: 30;
+  /*
+   * 吸顶而不是 fixed：
+   * 作为页面第一个子元素时，它先占位、再随滚动吸在顶部，
+   * 页面不需要为它预留 padding，也就不会被各自的 padding 覆盖掉。
+   */
+  position: sticky;
+  top: 0;
+  z-index: 120;
   display: flex;
-  width: 100%;
-  flex: none;
   justify-content: center;
-  padding: 10px clamp(12px, 2.4vw, 26px) 6px;
+  padding: 10px clamp(12px, 2.4vw, 26px) 10px;
+  pointer-events: none;
+}
+
+/*
+ * 吸顶时内容会从下面经过，这里铺一条自上而下渐隐的纸色带，
+ * 保证导航区域始终干净，同时不显得像一块生硬的横条。
+ */
+.app-top-nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: rgba(250, 246, 238, 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(180deg, #000 58%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(180deg, #000 58%, rgba(0, 0, 0, 0) 100%);
+  pointer-events: none;
+}
+
+/* 只有导航本体接收点击，两侧留白不挡页面 */
+.app-top-nav__glass {
+  pointer-events: auto;
 }
 
 .app-top-nav__glass {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 980px;
 }
