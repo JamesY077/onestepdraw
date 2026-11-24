@@ -216,19 +216,30 @@ client.interceptors.request.use((config) => {
   return config
 })
 
+/**
+ * 鉴权失效的处理策略：
+ * 只有「用户主动操作」的请求（发送消息、点测试连接）才值得把用户踢回登录页；
+ * 页面加载时的模型列表、配置读取等后台请求失败，不应该清空会话，
+ * 否则桌面 App 里切一个页面就会被踢出去。调用方可传 skipAuthRedirect 跳过。
+ */
 client.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !(error.config as any)?.skipAuthRedirect) {
-      clearApiAuth()
-      window.location.href = '/login'
+    const config = error.config as { skipAuthRedirect?: boolean; url?: string } | undefined
+    if (error.response?.status === 401 && !config?.skipAuthRedirect) {
+      // 桌面 App 内不做整页跳转，交给页面提示；浏览器版才回登录页。
+      const isDesktop = document.documentElement.classList.contains('is-desktop-app')
+      if (!isDesktop) {
+        clearApiAuth()
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }
 )
 
 export async function getModels(): Promise<ModelsResponse> {
-  const response = await client.get('/models')
+  const response = await client.get('/models', { skipAuthRedirect: true } as never)
   return response.data
 }
 

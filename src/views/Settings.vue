@@ -1,5 +1,5 @@
 <template>
-  <div class="settings-page">
+  <div class="studio-page settings-page">
     <div class="settings-shell">
       <header class="settings-header">
         <button class="back-btn" type="button" @click="router.back()">
@@ -896,11 +896,8 @@ function resetTranslationModel() {
 
 <style scoped>
 .settings-page {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
   min-height: 100dvh;
-  padding: 28px 0 48px 24px;
+  padding: 28px 24px 48px;
   color: var(--sf-ink);
   background: #fbfbf9;
 }
@@ -912,10 +909,7 @@ function resetTranslationModel() {
 }
 
 .settings-shell {
-  flex: 1 1 auto;
-  width: 100%;
-  max-width: 1180px;
-  min-width: 0;
+  width: min(100%, 1180px);
   margin: 0 auto;
 }
 
@@ -2109,15 +2103,4 @@ label {
   }
 }
 
-.settings-page > .studio-island {
-  order: 2;
-  min-height: calc(100dvh - 76px);
-}
-
-@media (max-width: 980px) {
-  .settings-page {
-    flex-direction: column;
-    padding: 28px 24px 48px;
-  }
-}
 </style>

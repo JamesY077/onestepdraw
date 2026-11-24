@@ -1,5 +1,5 @@
 <template>
-  <div class="video-page" :style="{ height: appHeight, '--app-height': appHeight, '--studio-accent': 'var(--sf-ink)' }">
+  <div class="studio-page video-page" :style="{ height: appHeight, '--app-height': appHeight, '--studio-accent': 'var(--sf-ink)' }">
     <StudioIsland v-show="!paramsOpen" />
     <div class="video-shell">
       <StudioHeader
@@ -2815,7 +2815,7 @@ async function handleRegenerate(message: Message) {
   display: flex;
   flex-direction: row;
   height: 100dvh;
-  padding: 16px 0 18px 18px;
+  padding: 16px 18px 18px;
   overflow: hidden;
   background: transparent;
   isolation: isolate;
@@ -6972,11 +6972,10 @@ async function handleRegenerate(message: Message) {
 .video-page {
   position: relative;
   display: flex;
-  /* 导航是右列，内容外壳是左列 */
-  flex-direction: row;
+  flex-direction: column;
   min-height: 0;
   height: 100dvh;
-  padding: 0 0 10px 10px;
+  padding: 0 10px 10px;
   overflow: hidden;
   background: transparent;
   color: var(--sf-ink);
@@ -8154,27 +8153,10 @@ async function handleRegenerate(message: Message) {
 }
 
 
-/* 创作导航是布局里的右列：挂在根节点上，不能落进竖向的 .video-shell */
-.video-page > .studio-island {
-  order: 2;
-  align-self: stretch;
-  height: auto;
-}
-
 .video-shell {
   flex: 1 1 auto;
   min-width: 0;
   padding-right: 18px;
 }
 
-@media (max-width: 980px) {
-  .chat-page {
-    flex-direction: column;
-    padding: 16px 18px 18px;
-  }
-
-  .video-shell {
-    padding-right: 0;
-  }
-}
 </style>

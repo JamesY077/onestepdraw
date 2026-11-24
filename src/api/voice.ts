@@ -45,7 +45,8 @@ export async function fetchVoiceCatalog(): Promise<VoiceCatalog> {
     const response = await client.post(
       VOICES_LIST_ENDPOINT,
       { voice_type: 'all' },
-      { timeout: VOICE_UPLOAD_REQUEST_TIMEOUT },
+      // 页面加载时的目录请求：失败只在页面提示，不把用户踢出登录态。
+      { timeout: VOICE_UPLOAD_REQUEST_TIMEOUT, skipAuthRedirect: true } as never,
     )
     return normalizeVoiceCatalog(response.data)
   } catch (error) {

@@ -1,5 +1,5 @@
 <template>
-  <div class="pl-page">
+  <div class="studio-page pl-page">
     <StudioIsland />
 
     <main class="pl-main">
@@ -158,14 +158,10 @@ async function handleDelete(item: EditProject) {
 
 <style scoped>
 .pl-page {
-  display: flex;
-  min-height: 100dvh;
   color: var(--sf-ink);
 }
 
 .pl-main {
-  flex: 1 1 auto;
-  min-width: 0;
   padding: 30px clamp(20px, 4vw, 48px) 60px;
 }
 
@@ -410,10 +406,6 @@ async function handleDelete(item: EditProject) {
 }
 
 @media (max-width: 900px) {
-  .pl-page {
-    flex-direction: column;
-  }
-
   .pl-main {
     padding: 22px 16px 48px;
   }

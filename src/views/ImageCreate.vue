@@ -1,5 +1,5 @@
 <template>
-  <div class="image-page" :style="{ height: appHeight, '--app-height': appHeight }">
+  <div class="studio-page image-page" :style="{ height: appHeight, '--app-height': appHeight }">
     <!-- 参数抽屉打开时收起悬浮岛，避免图标压在抽屉上层。 -->
     <StudioIsland v-show="!paramsOpen" />
     <div class="image-shell">
@@ -1318,10 +1318,10 @@ onBeforeUnmount(() => {
 .image-page {
   position: relative;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   min-height: 0;
   height: 100dvh;
-  padding: 0 0 10px 10px;
+  padding: 0 10px 10px;
   overflow: hidden;
   background: transparent;
   color: var(--sf-ink);
@@ -2659,19 +2659,8 @@ onBeforeUnmount(() => {
     border-left: 0;
   }
 }
-/* 创作导航是布局里的右列，宽度由它自身占据 */
-.image-page > .studio-island {
-  order: 2;
-}
-
 .image-shell {
   margin: 0 auto;
 }
 
-@media (max-width: 980px) {
-  .image-page {
-    flex-direction: column;
-    padding: 0 10px 10px;
-  }
-}
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <div class="tpl-page">
+  <div class="studio-page tpl-page">
     <header class="tpl-head">
       <div class="tpl-head-row">
         <button type="button" class="tpl-back" aria-label="返回上一页" @click="goBack">
@@ -588,6 +588,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
   top: 0;
   z-index: 30;
   flex: none;
+  /* 顶部留出与窗口边界的呼吸空间，不再贴着标题栏 */
+  padding-top: 22px;
   border-bottom: 1px solid var(--sf-line-soft);
   background: rgba(251, 251, 248, 0.94);
   backdrop-filter: blur(12px);

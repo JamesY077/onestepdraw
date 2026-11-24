@@ -176,42 +176,35 @@ function go(item: { path: string; key?: string }) {
 
 <style scoped>
 /*
- * 创作导航：作为页面布局里的独立侧栏排在内容右侧。
- * 不再用 fixed 覆盖在页面之上，页面内容区因此不会被硬切出一条空白通道。
- * 悬停单个图标时在左侧弹出该分区的文字气泡。
+ * 创作导航（桌面 App）：
+ * 固定在窗口右侧、垂直居中，不参与任何页面的文档流。
+ * 页面只需用 --studio-nav-width 在内容侧留出宽度，不要再改本组件的定位。
  */
 .studio-island {
-  position: relative;
+  position: fixed;
+  top: 50%;
+  right: 10px;
   z-index: 90;
   display: flex;
-  flex: none;
-  align-self: stretch;
+  width: 58px;
   flex-direction: column;
   align-items: center;
-  /* 胶囊固定在容器内垂直居中，并留出与内容区的呼吸边距 */
-  justify-content: center;
   gap: 4px;
-  width: 76px;
-  padding: 16px 8px;
-  /* 不能裁剪：气泡要溢出到胶囊左侧 */
+  padding: 10px 0;
+  transform: translateY(-50%);
+  /* 气泡要溢出到胶囊左侧 */
   overflow: visible;
 }
 
-/*
- * 桌面端：导航停在页面右侧、滚动条所在的同一条背景带内。
- * 垂直用 50% 居中，水平贴在右侧留白里，不再压到内容区。
- */
-@media (min-width: 901px) and (hover: hover) {
+/* 移动端/窄屏：折叠成一个按钮，展开为竖向菜单 */
+@media (hover: none), (max-width: 900px) {
   .studio-island {
-    width: 64px;
-    padding: 0 8px 0 6px;
-  }
-
-  .island-shell {
-    position: absolute;
     top: 50%;
-    right: 8px;
-    transform: translateY(-50%);
+    right: 10px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
   }
 }
 

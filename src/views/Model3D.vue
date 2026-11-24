@@ -2392,9 +2392,6 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
  * ========================================================================= */
 
 .model3d-page {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-content: start;
   --stage-cyan: var(--sf-ink);
   --stage-cyan-soft: rgba(36, 31, 25, 0.080);
   --stage-line: rgba(36, 31, 25, 0.100);
@@ -2403,7 +2400,6 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
 .model3d-main {
   position: relative;
   z-index: 1;
-  grid-column: 1;
   display: grid;
   /* 右栏放宽：窄的 320px 会把参数卡压成两行文字，视觉上像被挤变形 */
   grid-template-columns: minmax(300px, 340px) minmax(420px, 1fr) minmax(320px, 372px);
@@ -4916,10 +4912,5 @@ function historyStatusText(status: Model3DHistoryEntry['status']): string {
   }
 }
 
-/* 创作导航占右列，横跨头部与主体两行 */
-.model3d-page > .studio-island {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  height: 100%;
-}
+
 </style>

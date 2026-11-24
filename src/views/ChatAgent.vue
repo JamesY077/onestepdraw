@@ -1,5 +1,5 @@
 <template>
-  <div class="chat-page" :class="chatMode.isCreate ? 'is-create' : 'is-chat'">
+  <div class="studio-page chat-page" :class="chatMode.isCreate ? 'is-create' : 'is-chat'">
     <div v-if="sidebarOpen" class="sidebar-backdrop" aria-hidden="true" @click="sidebarOpen = false" />
 
     <AgentSidebar
@@ -574,6 +574,11 @@ onBeforeUnmount(() => {
   color: var(--sf-ink);
 }
 
+/* 侧栏 + 主区横向排布，右侧导航由 studio-page 统一留白 */
+.chat-page > .chat-main {
+  min-width: 0;
+}
+
 .sidebar-slot {
   flex: none;
 }
@@ -584,11 +589,6 @@ onBeforeUnmount(() => {
   min-width: 0;
   flex-direction: column;
   background: transparent;
-}
-
-/* 创作导航是布局里的一列，不再覆盖在内容上，也不留空条 */
-.chat-page > .studio-island {
-  order: 3;
 }
 
 .chat-header {
