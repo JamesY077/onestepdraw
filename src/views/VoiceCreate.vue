@@ -239,15 +239,9 @@
           <div v-show="controlTab === 'result'" class="control-result">
             <header class="control-result-head">
               <div class="result-title-line">
-                <input
-                  v-model="resultTitle"
-                  class="result-title-input"
-                  aria-label="配音名称"
-                  maxlength="40"
-                  placeholder="给这段配音起个名字"
-                  @change="renameCurrentResult"
-                />
+                <span class="studio-kicker">Output</span>
                 <button
+                  v-if="result || history.length"
                   class="ghost-btn"
                   type="button"
                   :title="showHistory ? '收起历史记录' : '查看历史记录'"
@@ -268,6 +262,20 @@
               </div>
 
               <template v-else-if="result">
+                <!-- 生成完成后才出现：给这段配音起个名字，可直接改 -->
+                <label class="result-name-row">
+                  <span class="result-name-label">配音名称</span>
+                  <input
+                    v-model="resultTitle"
+                    class="result-title-input"
+                    aria-label="配音名称"
+                    maxlength="40"
+                    placeholder="给它起个名字"
+                    @change="renameCurrentResult"
+                    @keydown.enter.prevent="renameCurrentResult"
+                  />
+                </label>
+
                 <VoicePlayer
                   :key="result.url"
                   :src="result.url"
@@ -3818,6 +3826,24 @@ onBeforeUnmount(() => {
   gap: 8px;
 }
 
+.result-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--studio-panel-border);
+  border-radius: 10px;
+  background: rgba(36, 31, 25, 0.03);
+}
+
+.result-name-label {
+  flex: none;
+  color: var(--studio-text-hint);
+  font-size: 11px;
+  font-weight: 650;
+}
+
 .result-title-input,
 .history-title-input {
   min-width: 0;
@@ -3839,6 +3865,11 @@ onBeforeUnmount(() => {
   border-color: var(--sf-line-strong);
   background: var(--sf-surface);
   outline: none;
+}
+
+.result-name-row .result-title-input {
+  font-size: 12.5px;
+  font-weight: 600;
 }
 
 .control-body {
