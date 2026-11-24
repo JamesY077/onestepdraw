@@ -16,7 +16,8 @@
     </button>
 
     <Transition name="island-menu">
-      <div v-show="desktop || expanded" class="island-list">
+      <div v-show="desktop || expanded" class="island-shell">
+       <div class="island-list">
     <button
       class="island-item island-home"
       type="button"
@@ -79,6 +80,26 @@
 
     <button
       class="island-item"
+      :class="{ active: route.path.startsWith('/templates') }"
+      type="button"
+      aria-label="模板库"
+      :aria-current="route.path.startsWith('/templates') ? 'page' : undefined"
+      @click="expanded = false; go({ path: '/templates' })"
+    >
+      <span class="island-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">
+          <rect x="3.2" y="4.2" width="17.6" height="15.6" rx="3" />
+          <path d="M3.6 9h16.8M8.6 4.4v15.2" />
+          <path d="M12.4 12.2h4.8M12.4 15.4h3.2" opacity="0.6" />
+        </svg>
+      </span>
+      <span class="island-tip" aria-hidden="true">模板库</span>
+    </button>
+
+    <span class="island-divider" aria-hidden="true" />
+
+    <button
+      class="island-item"
       :class="{ active: route.path.startsWith('/settings') }"
       type="button"
       aria-label="设置"
@@ -93,6 +114,7 @@
       </span>
       <span class="island-tip" aria-hidden="true">设置</span>
     </button>
+       </div>
       </div>
     </Transition>
   </nav>
@@ -101,13 +123,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useEditProjectStore } from '@/stores/editProjectStore'
 
 withDefaults(defineProps<{ tone?: 'dark' | 'light' }>(), { tone: 'light' })
 
 const router = useRouter()
 const route = useRoute()
-const projectStore = useEditProjectStore()
 const expanded = ref(false)
 const desktop = ref(false)
 let media: MediaQueryList | null = null
@@ -142,42 +162,49 @@ const items = [
   { path: '/model3d', key: 'model3d', label: '3D 建模' },
 ]
 
-/** 剪辑项目直接进最近编辑的那个，不再落到没有 id 的 /edit 空状态。 */
-const projectPath = computed(() => {
-  const latest = projectStore.sortedProjects[0]
-  return latest ? `/edit/${latest.id}` : '/edit'
-})
+/** 侧栏「剪辑项目」固定进项目列表，由用户自己挑项目。 */
+const projectPath = computed(() => '/edit')
 
 const activePath = computed(() => items.find((item) => route.path.startsWith(item.path))?.path || '')
 
 function go(item: { path: string; key?: string }) {
   // 已经在某个项目里时，点「剪辑项目」保持当前项目，不被最近项目顶掉。
-  const target =
-    item.key === 'project' && !route.path.startsWith('/edit/') ? projectPath.value : item.path
+  const target = item.key === 'project' ? projectPath.value : item.path
   if (route.path !== target) router.push(target)
 }
 </script>
 
 <style scoped>
 /*
- * 悬浮岛：贴右侧固定，只显示图标。
- * 悬停单个图标时在左侧弹出该分区的文字气泡，容器本身不做尺寸动画，
- * 避免展开时遮挡页面内容、也不会出现圆角裁切。
+ * 创作导航：作为页面布局里的独立侧栏排在内容右侧。
+ * 不再用 fixed 覆盖在页面之上，页面内容区因此不会被硬切出一条空白通道。
+ * 悬停单个图标时在左侧弹出该分区的文字气泡。
  */
 .studio-island {
-  position: fixed;
-  right: 14px;
-  top: 50%;
+  position: relative;
   z-index: 90;
+  display: flex;
+  flex: none;
+  align-self: stretch;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 70px;
+  padding: 14px 6px;
+  /* 不能裁剪：气泡要溢出到胶囊左侧 */
+  overflow: visible;
+}
+
+.island-shell {
+  position: sticky;
+  top: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
   width: 58px;
   padding: 10px 8px;
-  transform: translateY(-50%);
-  /* 不能裁剪：气泡要溢出到胶囊左侧 */
-  overflow: visible;
   border: 1px solid var(--sf-line);
   border-radius: 28px;
   background: var(--sf-surface);
@@ -300,12 +327,25 @@ function go(item: { path: string; key?: string }) {
 
 @media (hover: none), (max-width: 900px) {
   .studio-island {
+    position: fixed;
     right: 10px;
+    top: 50%;
+    align-self: auto;
     justify-content: center;
     width: 44px;
     height: 44px;
     padding: 0;
-    border-radius: 50%;
+    transform: translateY(-50%);
+  }
+
+  .island-shell {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 52px;
+    padding: 8px 6px;
+    border-radius: 26px;
+    box-shadow: 0 12px 34px rgba(36, 31, 25, 0.12);
   }
 
   .island-toggle {

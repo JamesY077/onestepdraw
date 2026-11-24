@@ -147,8 +147,7 @@
 
           <div v-if="error" class="error-banner" role="alert">{{ error }}</div>
 
-          <MagneticAction>
-            <button type="submit" class="submit-button" :disabled="!apiKey.trim() || isLoading">
+          <button type="submit" class="submit-button" :disabled="!apiKey.trim() || isLoading">
               <span v-if="!isLoading">连接并开始</span>
               <span v-else>正在验证连接…</span>
               <svg v-if="!isLoading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -156,7 +155,6 @@
               </svg>
               <span v-else class="loading-dot" aria-hidden="true" />
             </button>
-          </MagneticAction>
         </form>
 
         <div class="card-links">
@@ -190,7 +188,6 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BrandMark from '@/components/agent/BrandMark.vue'
 import DotGrid from '@/components/bits/DotGrid.vue'
-import MagneticAction from '@/components/ui/MagneticAction.vue'
 import TextReveal from '@/components/ui/TextReveal.vue'
 import { useReducedMotion } from '@/composables/useReducedMotion'
 import { useApiStore } from '@/stores/apiStore'

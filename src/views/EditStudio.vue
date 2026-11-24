@@ -2,7 +2,12 @@
   <div class="edit-page">
     <header class="es-topbar">
       <div class="es-top-left">
-        <button type="button" class="es-back" title="返回对话" @click="goChat">
+        <button type="button" class="es-back" title="返回项目列表" aria-label="返回项目列表" @click="goProjectList">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 6 8.5 12l6 6" />
+          </svg>
+        </button>
+        <button type="button" class="es-back is-chat" title="返回对话" aria-label="返回对话" @click="goChat">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14.5 6 8.5 12l6 6" />
           </svg>
@@ -94,6 +99,9 @@
         </div>
 
         <div v-if="railTab === 'projects'" class="rail-projects">
+          <button type="button" class="rail-back-list" @click="goProjectList">
+            ← 返回项目列表
+          </button>
           <div
             v-for="item in projectStore.sortedProjects"
             :key="item.id"
@@ -397,25 +405,10 @@ const SHORTCUT_GROUPS = [
 const projectId = computed(() => String(route.params.id || ''))
 const project = computed(() => projectStore.getProject(projectId.value))
 /**
- * 悬浮岛「剪辑项目」和「在新标签页打开」都只会落到 /edit（没有 id）。
- * 只要本地已经有项目，就直接打开最近编辑的那个，避免出现「明明有项目却说没有」。
+ * 项目是二级页面：/edit 由列表页负责选项目，
+ * 直接进来只有带 id 的地址才会打开项目，不再自动跳最近项目。
  */
 const autoOpeningProject = ref(false)
-function openLatestProject() {
-  if (project.value) {
-    autoOpeningProject.value = false
-    return
-  }
-  const latest = projectStore.sortedProjects[0]
-  // 已经在目标项目上（例如数据损坏）时就别再转，正常显示空状态。
-  if (!latest || projectId.value === latest.id) {
-    autoOpeningProject.value = false
-    return
-  }
-  autoOpeningProject.value = true
-  router.replace(`/edit/${latest.id}`)
-}
-openLatestProject()
 const conversationId = computed(() => project.value?.conversationId || '')
 const timelineDuration = computed(() => projectDuration(project.value))
 const canUndo = computed(() => {
@@ -455,13 +448,17 @@ function ensureConversation(projectValue: NonNullable<ReturnType<typeof projectS
   return conversation.id
 }
 
+/** 项目之间不允许直接互跳：先退回项目列表，再选择目标项目。 */
 function openProject(id: string) {
+  if (id === projectId.value) return
   playing.value = false
-  setPlayhead(0)
-  syncClock()
-  clearTimelineSelection()
-  mobileChatOpen.value = false
-  router.push(`/edit/${id}`)
+  showToast('换项目请先回到项目列表')
+  void router.push('/edit')
+}
+
+function goProjectList() {
+  playing.value = false
+  void router.push('/edit')
 }
 
 function goChat() {
@@ -1413,6 +1410,25 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   min-width: 0;
+}
+
+.rail-back-list {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 7px 10px;
+  border: 1px dashed var(--sf-line-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--sf-ink-2);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rail-back-list:hover {
+  border-color: var(--sf-terra);
+  color: var(--sf-terra);
 }
 
 .es-back {

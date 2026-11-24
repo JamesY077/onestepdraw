@@ -2805,7 +2805,24 @@ onBeforeUnmount(() => {
 /* ========================= 页面骨架 ========================= */
 
 .voice-page {
+  display: flex;
+  flex-direction: row;
   color: var(--sf-ink);
+}
+
+.voice-page > .studio-island {
+  order: 2;
+}
+
+.voice-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@media (max-width: 980px) {
+  .voice-page {
+    flex-direction: column;
+  }
 }
 
 .voice-main {

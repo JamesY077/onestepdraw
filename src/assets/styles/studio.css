@@ -30,14 +30,26 @@
 .studio-page {
   position: relative;
   display: flex;
-  flex-direction: column;
+  /* 导航是布局里的一列，页面头部与主体作为一整列放在左侧 */
+  flex-direction: row;
+  align-items: stretch;
   min-height: 100dvh;
-  /* 右侧悬浮岛通道 */
-  padding-right: var(--studio-gutter);
   color: var(--studio-text);
   background: transparent;
   isolation: isolate;
   overflow-x: hidden;
+}
+
+/* 头部与主体包成一列，导航列在右侧独立排布 */
+.studio-page > .studio-header,
+.studio-page > header,
+.studio-page > main {
+  flex: 0 0 auto;
+}
+
+.studio-page > .studio-island {
+  order: 9;
+  align-self: stretch;
 }
 
 .studio-page > header,
@@ -46,15 +58,9 @@
   z-index: 1;
 }
 
-@media (max-width: 1100px) {
-  .studio-page {
-    --studio-gutter: 76px;
-  }
-}
-
 @media (max-width: 900px) {
   .studio-page {
-    --studio-gutter: 60px;
+    flex-direction: column;
   }
 }
 

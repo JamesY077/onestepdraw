@@ -1318,10 +1318,10 @@ onBeforeUnmount(() => {
 .image-page {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   min-height: 0;
   height: 100dvh;
-  padding: 0 10px 10px;
+  padding: 0 0 10px 10px;
   overflow: hidden;
   background: transparent;
   color: var(--sf-ink);
@@ -1342,12 +1342,7 @@ onBeforeUnmount(() => {
   margin: 0 auto;
 }
 
-/* 视口不够宽时，为右侧固定悬浮岛（约 72px）让出空间，避免压住结果图。 */
-@media (min-width: 981px) and (max-width: 1760px) {
-  .image-shell {
-    padding-right: 64px;
-  }
-}
+
 
 /* ---------- 头部 ---------- */
 
@@ -2662,6 +2657,21 @@ onBeforeUnmount(() => {
   .history-panel {
     width: 100%;
     border-left: 0;
+  }
+}
+/* 创作导航是布局里的右列，宽度由它自身占据 */
+.image-page > .studio-island {
+  order: 2;
+}
+
+.image-shell {
+  margin: 0 auto;
+}
+
+@media (max-width: 980px) {
+  .image-page {
+    flex-direction: column;
+    padding: 0 10px 10px;
   }
 }
 </style>

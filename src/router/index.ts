@@ -43,8 +43,15 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    // 剪辑项目列表：先选项目，再进入具体项目的剪辑台。
+    path: '/edit',
+    name: 'ProjectList',
+    component: () => import('@/views/ProjectList.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     // 对话式剪辑台：一个项目 = 时间轴 + 素材库 + 一段创作对话。
-    path: '/edit/:id?',
+    path: '/edit/:id',
     name: 'EditStudio',
     component: () => import('@/views/EditStudio.vue'),
     meta: { requiresAuth: true },

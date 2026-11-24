@@ -32,6 +32,10 @@
         <span class="mode-tip">{{ modeTip }}</span>
       </div>
 
+      <div v-if="mentionChips.length" class="composer-mentions" aria-label="本条消息引用的内容">
+        <span v-for="chip in mentionChips" :key="chip.key" class="composer-mention-chip">{{ chip.label }}</span>
+      </div>
+
       <div v-if="templateStore.applied.length" class="applied-templates" aria-label="已引用模板">
         <span class="applied-templates-label">模板</span>
         <span
@@ -153,19 +157,29 @@
 
       <p v-if="attachNotice" class="attach-notice" role="status">{{ attachNotice }}</p>
 
-      <textarea
-        ref="textareaRef"
-        v-model="text"
-        class="composer-input"
-        rows="1"
-        :placeholder="placeholderText"
-        :disabled="false"
-        @focus="focused = true"
-        @blur="focused = false"
-        @keydown="handleKeydown"
-        @input="resize"
-        @paste="handlePaste"
-      />
+      <div class="composer-field">
+        <textarea
+          ref="textareaRef"
+          v-model="text"
+          class="composer-input"
+          rows="1"
+          :placeholder="placeholderText"
+          :disabled="false"
+          @focus="focused = true"
+          @blur="handleBlur"
+          @keydown="handleKeydown"
+          @input="handleInput"
+          @paste="handlePaste"
+        />
+        <MentionMenu
+          :open="mention.open.value"
+          :groups="mentionGroups"
+          :active-key="mention.activeKey.value"
+          :position="mentionPosition"
+          @pick="insertMention"
+          @hover="setMentionActive"
+        />
+      </div>
 
       <div class="composer-bottom">
         <div class="composer-pickers">
@@ -430,6 +444,8 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AgentMark from '@/components/agent/AgentMark.vue'
+import MentionMenu, { type MentionGroup, type MentionItem } from '@/components/agent/MentionMenu.vue'
+import { useMentionRefs } from '@/composables/useMentionRefs'
 import { BUILTIN_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
@@ -488,6 +504,99 @@ const modelQuery = ref('')
 const modelSearchRef = ref<HTMLInputElement | null>(null)
 const text = defineModel<string>({ default: '' })
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const mention = useMentionRefs(textareaRef)
+const mentionPosition = computed<Record<string, string> | undefined>(() => ({
+  position: 'absolute',
+  left: '0',
+  right: '0',
+  bottom: 'calc(100% + 8px)',
+}))
+
+/** @ 面板的候选：已引用的模板 → 已添加的附件 → 已启用的 Skill。 */
+const mentionGroups = computed<MentionGroup[]>(() => {
+  const groups: MentionGroup[] = []
+
+  groups.push({
+    key: 'template',
+    label: '模板',
+    items: templateStore.applied.map((template, index) => ({
+      key: `template-${template.id}`,
+      kind: 'template' as const,
+      label: template.name,
+      hint: template.category,
+      thumb: template.images[0],
+      glyph: '模',
+      tag: `@模板${index + 1}`,
+      token: `@模板${index + 1}`,
+    })),
+  })
+
+  groups.push({
+    key: 'attachment',
+    label: '参考素材',
+    items: attachments.value.map((item, index) => ({
+      key: `attachment-${item.id}`,
+      kind: 'attachment' as const,
+      label: item.name,
+      hint: attachmentKindLabel(item.kind),
+      thumb: item.kind === 'image' ? item.url : item.frames?.[0],
+      glyph: item.kind === 'image' ? '图' : item.kind === 'video' ? '视' : item.kind === 'audio' ? '音' : '文',
+      tag: `@素材${index + 1}`,
+      token: `@素材${index + 1}`,
+    })),
+  })
+
+  groups.push({
+    key: 'skill',
+    label: 'Skill',
+    items: skillStore.activeSkills.map((skill, index) => ({
+      key: `skill-${index}-${skill.name}`,
+      kind: 'skill' as const,
+      label: skill.name,
+      hint: skill.description,
+      glyph: '技',
+      tag: `@Skill${index + 1}`,
+      token: `@Skill${index + 1}`,
+    })),
+  })
+
+  return groups.map((group) => ({
+    ...group,
+    items: group.items.filter(
+      (item) => !mention.query.value || item.label.toLowerCase().includes(mention.query.value.toLowerCase()),
+    ),
+  }))
+})
+
+const mentionFlat = computed(() => mentionGroups.value.flatMap((group) => group.items))
+
+/** 输入框里实际出现的 @引用，提交前给用户一个可见的确认。 */
+const mentionChips = computed(() => {
+  const tokens = new Set(mentionGroups.value.flatMap((group) => group.items.map((item) => item.token)))
+  const found: { key: string; label: string }[] = []
+  for (const token of tokens) {
+    if (text.value.includes(token)) found.push({ key: token, label: token })
+  }
+  return found
+})
+
+function insertMention(item: MentionItem) {
+  mention.insert(item.token)
+  nextTick(resize)
+}
+
+function setMentionActive(key: string) {
+  mention.activeKey.value = key
+}
+
+function handleInput() {
+  resize()
+  mention.onInput()
+}
+
+function handleBlur() {
+  focused.value = false
+}
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const focused = ref(false)
 const dragging = ref(false)
@@ -736,6 +845,7 @@ function submit() {
   // 模板和上传素材一样是「这一条消息」的引用，发完就清空。
   templateStore.clearApplied()
   attachNotice.value = ''
+  mention.close()
   nextTick(() => {
     resize()
     textareaRef.value?.focus()
@@ -743,6 +853,43 @@ function submit() {
 }
 
 function handleKeydown(event: KeyboardEvent) {
+  if (mention.open.value) {
+    const items = mentionFlat.value
+    const total = items.length
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      if (!total) return
+      const current = items.findIndex((item) => item.key === mention.activeKey.value)
+      const step = event.key === 'ArrowDown' ? 1 : -1
+      const next = (current + step + total) % total
+      mention.activeKey.value = items[next].key
+      return
+    }
+    if (event.key === 'Enter' || event.key === 'Tab') {
+      const chosen = items.find((item) => item.key === mention.activeKey.value) || items[0]
+      if (chosen) {
+        event.preventDefault()
+        insertMention(chosen)
+        return
+      }
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      mention.close()
+      return
+    }
+  }
+
+  if (event.key === '@' && !event.isComposing) {
+    // 空输入框直接按 @：把 @ 写进去并立刻展开可选引用
+    if (!text.value.trim()) {
+      event.preventDefault()
+      mention.triggerOnEmpty()
+      nextTick(resize)
+      return
+    }
+  }
+
   if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return
   event.preventDefault()
   submit()
@@ -1746,5 +1893,30 @@ defineExpose({ focus })
 .composer.is-create .send-button:disabled {
   background: #f0e6e0;
   color: #c0a89e;
+}
+
+/* ---------------- @ 引用 ---------------- */
+
+.composer-field {
+  position: relative;
+  width: 100%;
+}
+
+/* 插入后的 @引用 用主题色标出，便于确认它落在哪一句里 */
+.composer-mentions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 8px;
+}
+
+.composer-mention-chip {
+  padding: 2px 8px;
+  border: 1px solid var(--sf-terra-soft);
+  border-radius: 999px;
+  background: var(--sf-terra-wash);
+  color: var(--sf-terra);
+  font-size: 11.5px;
+  font-weight: 600;
 }
 </style>

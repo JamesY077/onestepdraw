@@ -586,11 +586,9 @@ onBeforeUnmount(() => {
   background: transparent;
 }
 
-/* 桌面端为右侧悬浮岛留出通道 */
-@media (min-width: 901px) {
-  .chat-main {
-    padding-right: 76px;
-  }
+/* 创作导航是布局里的一列，不再覆盖在内容上，也不留空条 */
+.chat-page > .studio-island {
+  order: 3;
 }
 
 .chat-header {

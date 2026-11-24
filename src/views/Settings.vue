@@ -896,8 +896,11 @@ function resetTranslationModel() {
 
 <style scoped>
 .settings-page {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   min-height: 100dvh;
-  padding: 28px 24px 48px;
+  padding: 28px 0 48px 24px;
   color: var(--sf-ink);
   background: #fbfbf9;
 }
@@ -909,7 +912,10 @@ function resetTranslationModel() {
 }
 
 .settings-shell {
-  width: min(100%, 1180px);
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 1180px;
+  min-width: 0;
   margin: 0 auto;
 }
 
@@ -2100,6 +2106,18 @@ label {
 
   .engine-path {
     max-width: 100%;
+  }
+}
+
+.settings-page > .studio-island {
+  order: 2;
+  min-height: calc(100dvh - 76px);
+}
+
+@media (max-width: 980px) {
+  .settings-page {
+    flex-direction: column;
+    padding: 28px 24px 48px;
   }
 }
 </style>

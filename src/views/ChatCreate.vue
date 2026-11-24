@@ -194,7 +194,10 @@
                     {{ generatingProgress }}%
                   </template>
                   <template v-else>
-                    生成
+                    <svg class="generate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12 3.6 13.9 9.4 19.7 11.3 13.9 13.2 12 19 10.1 13.2 4.3 11.3 10.1 9.4z" />
+                    </svg>
+                    <span>生成</span>
                     <span class="generate-kbd">⌘↵</span>
                   </template>
                 </button>
@@ -2809,8 +2812,10 @@ async function handleRegenerate(message: Message) {
 <style scoped>
 .chat-page {
   position: relative;
+  display: flex;
+  flex-direction: row;
   height: 100dvh;
-  padding: 16px 18px 18px;
+  padding: 16px 0 18px 18px;
   overflow: hidden;
   background: transparent;
   isolation: isolate;
@@ -2857,7 +2862,7 @@ async function handleRegenerate(message: Message) {
 }
 
 .workspace-shell {
-  width: min(100%, 1480px);
+  width: 100%;
   height: calc(100dvh - 34px);
   margin: 0 auto;
   display: grid;
@@ -6967,10 +6972,11 @@ async function handleRegenerate(message: Message) {
 .video-page {
   position: relative;
   display: flex;
-  flex-direction: column;
+  /* 导航是右列，内容外壳是左列 */
+  flex-direction: row;
   min-height: 0;
   height: 100dvh;
-  padding: 0 10px 10px;
+  padding: 0 0 10px 10px;
   overflow: hidden;
   background: transparent;
   color: var(--sf-ink);
@@ -6991,11 +6997,6 @@ async function handleRegenerate(message: Message) {
   margin: 0 auto;
 }
 
-@media (min-width: 981px) and (max-width: 1760px) {
-  .video-shell {
-    padding-right: 64px;
-  }
-}
 
 /* ---------- 头部操作 ---------- */
 
@@ -7535,6 +7536,12 @@ async function handleRegenerate(message: Message) {
   opacity: 0.42;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+.generate-icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
 }
 
 .generate-kbd {
@@ -8146,4 +8153,28 @@ async function handleRegenerate(message: Message) {
   }
 }
 
+
+/* 创作导航是布局里的右列：挂在根节点上，不能落进竖向的 .video-shell */
+.video-page > .studio-island {
+  order: 2;
+  align-self: stretch;
+  height: auto;
+}
+
+.video-shell {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-right: 18px;
+}
+
+@media (max-width: 980px) {
+  .chat-page {
+    flex-direction: column;
+    padding: 16px 18px 18px;
+  }
+
+  .video-shell {
+    padding-right: 0;
+  }
+}
 </style>
