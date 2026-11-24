@@ -213,16 +213,35 @@
             </div>
           </section>
 
-          <!-- 结果 -->
-          <section ref="resultPanelRef" class="studio-panel result-panel">
-            <header class="studio-panel-head">
-              <div class="studio-panel-headings">
-                <span class="studio-kicker">Output · 02</span>
-                <h2 class="studio-panel-title">生成结果</h2>
-              </div>
+        </div>
+
+        <!-- 声音与参数 -->
+        <aside class="studio-panel control-panel">
+          <header class="studio-panel-head control-head">
+            <div class="control-tabs" role="tablist" aria-label="结果与参数">
+              <button
+                v-for="tab in CONTROL_TABS"
+                :key="tab.value"
+                class="control-tab"
+                :class="{ active: controlTab === tab.value }"
+                type="button"
+                role="tab"
+                :aria-selected="controlTab === tab.value"
+                @click="controlTab = tab.value"
+              >
+                {{ tab.label }}
+                <span v-if="tab.value === 'history' && history.length" class="tab-count">{{ history.length }}</span>
+              </button>
+            </div>
+            <button v-if="controlTab === 'params'" class="ghost-btn" type="button" @click="resetParams">重置</button>
+            <button v-else-if="controlTab === 'history' && history.length" class="ghost-btn" type="button" @click="clearHistory">清空</button>
+          </header>
+
+          <div v-if="controlTab === 'result'" class="control-result">
+            <header class="control-result-head">
+              <span class="studio-kicker">Output</span>
               <span class="studio-panel-meta">{{ result ? resultMeta : '等待生成' }}</span>
             </header>
-
             <div class="result-body">
               <div v-if="generating" class="result-loading">
                 <span class="loading-ring" aria-hidden="true" />
@@ -271,22 +290,24 @@
 
               <p v-if="generateError" class="inline-error">{{ generateError }}</p>
             </div>
-          </section>
+          </div>
 
-          <!-- 配音音频库（持久化，可被视频多模态引用） -->
-          <section v-if="history.length" class="studio-panel history-panel">
-            <header class="studio-panel-head">
-              <div class="studio-panel-headings">
-                <span class="studio-kicker">Voice Library</span>
-                <h2 class="studio-panel-title">配音音频库</h2>
-              </div>
-              <div class="history-head-actions">
-                <span class="studio-panel-meta">共 {{ history.length }} 条</span>
-                <button class="ghost-btn" type="button" @click="clearHistory">清空</button>
-              </div>
+          <div v-else-if="controlTab === 'history'" class="control-history">
+            <header class="control-result-head">
+              <span class="studio-kicker">History</span>
+              <span class="studio-panel-meta">{{ history.length ? `共 ${history.length} 条` : '暂无记录' }}</span>
             </header>
-
-            <ul class="history-list">
+            <div class="result-body">
+              <div v-if="!history.length" class="result-empty">
+                <span class="empty-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="8" />
+                    <path d="M12 8v4l2.5 2.5" />
+                  </svg>
+                </span>
+                <p>还没有配音记录。生成一次后，音频会保存在这里，随时可以复用或下载。</p>
+              </div>
+              <ul v-else class="history-list">
               <li v-for="item in pagedHistory" :key="item.id" class="history-item">
                 <div class="history-top">
                   <span class="history-voice">{{ item.voiceName }}</span>
@@ -344,20 +365,10 @@
                 下一页
               </button>
             </footer>
-          </section>
-        </div>
-
-        <!-- 声音与参数 -->
-        <aside class="studio-panel control-panel">
-          <header class="studio-panel-head control-head">
-            <div class="studio-panel-headings">
-              <span class="studio-kicker">Voice &amp; Params</span>
-              <h2 class="studio-panel-title">声音与参数</h2>
             </div>
-            <button class="ghost-btn" type="button" @click="resetParams">重置</button>
-          </header>
+          </div>
 
-          <div class="control-body studio-scroll">
+          <div v-show="controlTab === 'params'" class="control-body studio-scroll">
             <!-- 01 声音 -->
             <section class="side-card">
               <header class="side-card-head">
@@ -1599,6 +1610,13 @@ const saved = loadVoiceSettings()
 /* ---------------- 基础状态 ---------------- */
 
 const activeTab = ref<'speech' | 'design' | 'clone'>('speech')
+/** 右栏页签：默认看生成结果，可切到历史或参数。 */
+const controlTab = ref<'result' | 'history' | 'params'>('result')
+const CONTROL_TABS = [
+  { value: 'result' as const, label: '生成结果' },
+  { value: 'history' as const, label: '历史记录' },
+  { value: 'params' as const, label: '声音与参数' },
+]
 const text = ref('')
 const speed = ref(saved.speed)
 const pitch = ref(saved.pitch)
@@ -3624,6 +3642,63 @@ onBeforeUnmount(() => {
   max-height: none;
   min-height: 0;
   overflow: hidden;
+}
+
+.control-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--studio-panel-bg, rgba(36, 31, 25, 0.05));
+}
+
+.control-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 11px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--studio-text-soft);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.control-tab.active {
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  box-shadow: var(--sf-shadow-xs);
+}
+
+.control-tab .tab-count {
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(36, 31, 25, 0.10);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.control-result,
+.control-history {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.control-result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--studio-panel-border);
 }
 
 .control-body {
