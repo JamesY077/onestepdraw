@@ -80,21 +80,24 @@ function openExternal(url) {
 }
 
 async function createWindow() {
-  const { startServer } = await import('../server/local/server.mjs')
-  // 端口必须固定：localStorage / IndexedDB 都按 origin 隔离，
-  // 端口一变（随机端口）对话记录和项目就会「消失」。
-  serverHandle = await startServer({ port: APP_PORT, open: false, quiet: true })
-  console.log(`[stepframe] ${serverHandle.url}`)
-  if (serverHandle.port !== APP_PORT) {
-    console.warn(
-      `[stepframe] 端口 ${APP_PORT} 被占用，已改用 ${serverHandle.port}；本次启动看不到历史项目与对话。`,
-    )
+  if (!serverHandle) {
+    const { startServer } = await import('../server/local/server.mjs')
+    // 端口必须固定：localStorage / IndexedDB 都按 origin 隔离，
+    // 端口一变（随机端口）对话记录和项目就会「消失」。
+    serverHandle = await startServer({ port: APP_PORT, open: false, quiet: true })
+    console.log(`[stepframe] ${serverHandle.url}`)
+    if (serverHandle.port !== APP_PORT) {
+      console.warn(
+        `[stepframe] 端口 ${APP_PORT} 被占用，已改用 ${serverHandle.port}；本次启动看不到历史项目与对话。`,
+      )
+    }
   }
 
   const saved = readWindowState()
+  const workArea = screen.getPrimaryDisplay().workAreaSize
   mainWindow = new BrowserWindow({
-    width: saved?.width ?? 1440,
-    height: saved?.height ?? 950,
+    width: saved?.width ?? Math.min(1440, workArea.width - 80),
+    height: saved?.height ?? Math.min(950, workArea.height - 80),
     x: saved?.x,
     y: saved?.y,
     minWidth: 1200,
@@ -161,7 +164,10 @@ if (!gotLock) {
   app.quit()
 } else {
   app.on('second-instance', () => {
-    if (!mainWindow) return
+    if (!mainWindow) {
+      void createWindow()
+      return
+    }
     if (mainWindow.isMinimized()) mainWindow.restore()
     mainWindow.focus()
   })
