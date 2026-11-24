@@ -862,9 +862,19 @@ defineExpose({ focusComposer })
   scrollbar-width: thin;
 }
 
+/*
+ * 剪辑页的输入框贴左上角：
+ * 外层 .composer-field 与输入框自身的内边距会叠加，
+ * 这里两层都收紧，文字才会真正靠在卡片左上。
+ */
+.sc-composer :deep(.composer-field) {
+  /* 文字与卡片边缘留一点呼吸，不要贴死 */
+  padding: 9px 13px 0;
+}
+
 .sc-composer :deep(.composer-input) {
-  min-height: 38px;
-  padding: 9px 12px 2px;
+  min-height: 30px;
+  padding: 0;
   font-size: 12.5px;
 }
 
