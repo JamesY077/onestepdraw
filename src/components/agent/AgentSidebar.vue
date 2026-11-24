@@ -2,7 +2,7 @@
   <aside class="agent-sidebar">
     <header class="sidebar-head">
       <div class="sidebar-brand">
-        <BrandMark :size="26" />
+        <BrandMark :size="24" />
         <span class="brand-text">{{ BRAND_NAME_EN }}</span>
       </div>
       <button type="button" class="icon-button close-button" aria-label="收起侧栏" @click="$emit('close')">
@@ -200,9 +200,9 @@ async function handleDelete(conversation: AgentConversation) {
 .sidebar-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  /* 向下让出顶部留白，与内容区同一条左边线对齐 */
-  padding: 30px 16px 12px 20px;
+  justify-content: flex-start;
+  /* 左边线与「新对话」按钮的文字起点对齐，顶部留出呼吸空间 */
+  padding: 44px 14px 14px 18px;
 }
 
 .sidebar-brand {
@@ -215,9 +215,9 @@ async function handleDelete(conversation: AgentConversation) {
 .brand-text {
   color: var(--sf-ink);
   font-family: var(--sf-font-brand);
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 400;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.012em;
   line-height: 1;
 }
 

@@ -3,44 +3,62 @@
     class="brand-mark"
     :width="size"
     :height="size"
-    viewBox="0 0 32 32"
+    viewBox="0 0 1024 1024"
     fill="none"
     role="img"
     :aria-label="`${BRAND_NAME_EN}${BRAND_NAME_CN ? ' ' + BRAND_NAME_CN : ''}`"
   >
-    <!-- 底：圆角方块 -->
-    <rect
-      width="32"
-      height="32"
-      rx="9"
-      :fill="inverted ? '#FBF6EE' : 'var(--sf-terra)'"
-    />
-    <!-- 一道斜向笔触，穿过取景框 -->
-    <path
-      d="M8.2 22.8C12.4 22.2 16.2 18.6 19.2 13.6C20.5 11.5 22 10 24.2 9.4"
+    <!-- 与 design/app-icon 同一套分层：底色、取景框、笔触 -->
+    <defs>
+      <linearGradient :id="gradientId" x1="0.1" y1="0" x2="0.6" y2="1">
+        <stop offset="0" :stop-color="inverted ? '#FBF3EA' : '#C4664A'" />
+        <stop offset="0.52" :stop-color="inverted ? '#F3E7DA' : '#B4553A'" />
+        <stop offset="1" :stop-color="inverted ? '#E9D9C9' : '#8F3C25'" />
+      </linearGradient>
+    </defs>
+    <rect x="102" y="102" width="820" height="820" rx="188" :fill="`url(#${gradientId})`" />
+    <g
+      fill="none"
       :stroke="inverted ? 'var(--sf-terra)' : '#FBF3EA'"
-      stroke-width="2.6"
-      stroke-linecap="round"
-    />
-    <!-- 取景框右下角：表示「片」 -->
-    <path
-      d="M8.4 12.2V8.6H12M20 8.6H23.6V12.2M23.6 19.8V23.4H20M12 23.4H8.4V19.8"
-      :stroke="inverted ? 'var(--sf-terra)' : '#FBF3EA'"
-      stroke-width="1.5"
+      stroke-width="40"
       stroke-linecap="round"
       stroke-linejoin="round"
-      :opacity="inverted ? 0.9 : 0.62"
+      stroke-opacity="0.68"
+    >
+      <path d="M300 452V330H422" />
+      <path d="M602 330H724V452" />
+      <path d="M724 572V694H602" />
+      <path d="M422 694H300V572" />
+    </g>
+    <path
+      d="M292 712C402 700 496 624 566 500C600 440 646 388 716 362"
+      fill="none"
+      :stroke="inverted ? 'var(--sf-terra)' : '#FBF3EA'"
+      stroke-width="72"
+      stroke-linecap="round"
+    />
+    <path
+      d="M716 362C742 353 762 344 776 330"
+      fill="none"
+      :stroke="inverted ? 'var(--sf-terra)' : '#FBF3EA'"
+      stroke-width="44"
+      stroke-linecap="round"
+      stroke-opacity="0.9"
     />
   </svg>
 </template>
 
 <script setup lang="ts">
+import { useId } from 'vue'
 import { BRAND_NAME_CN, BRAND_NAME_EN } from '@/features/brand'
 
 withDefaults(defineProps<{ size?: number; inverted?: boolean }>(), {
   size: 28,
   inverted: false,
 })
+
+// 每个实例独立的渐变 id，避免多个图标互相覆盖。
+const gradientId = `sable-tile-${useId()}`
 </script>
 
 <style scoped>

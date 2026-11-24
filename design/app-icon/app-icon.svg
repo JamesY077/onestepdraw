@@ -1,34 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
-    <linearGradient id="solid" x1="0" y1="0" x2="0.4" y2="1">
-      <stop offset="0" stop-color="#C0603F"/>
-      <stop offset="0.5" stop-color="#B4553A"/>
-      <stop offset="1" stop-color="#943E27"/>
-    </linearGradient>
-    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"/>
-      <stop offset="0.42" stop-color="#FFFFFF" stop-opacity="0.03"/>
-      <stop offset="0.75" stop-color="#FFFFFF" stop-opacity="0"/>
+    <linearGradient id="solid" x1="0.1" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#C4664A"/>
+      <stop offset="0.52" stop-color="#B4553A"/>
+      <stop offset="1" stop-color="#8F3C25"/>
     </linearGradient>
     <filter id="drop" x="-25%" y="-25%" width="150%" height="150%">
-      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#3A2118" flood-opacity="0.24"/>
+      <feDropShadow dx="0" dy="14" stdDeviation="20" flood-color="#3A2118" flood-opacity="0.26"/>
     </filter>
-    <clipPath id="tileClip">
-      <rect x="102" y="102" width="820" height="820" rx="186"/>
-    </clipPath>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="tileClip"><rect x="102" y="102" width="820" height="820" rx="188"/></clipPath>
   </defs>
-
-  <g filter="url(#drop)">
-    <rect x="102" y="102" width="820" height="820" rx="186" fill="url(#solid)"/>
-  </g>
+  <g filter="url(#drop)"><rect x="102" y="102" width="820" height="820" rx="188" fill="url(#solid)"/></g>
   <g clip-path="url(#tileClip)">
     <rect x="102" y="102" width="820" height="820" fill="url(#sheen)"/>
-    <rect x="103" y="103" width="818" height="818" rx="185" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="3"/>
+    <rect x="103" y="103" width="818" height="818" rx="187" fill="none" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="3"/>
   </g>
 
-  <!-- 帧：画框 -->
-  <rect x="272" y="272" width="480" height="480" rx="112" fill="none" stroke="#FCF5EE" stroke-opacity="0.94" stroke-width="38"/>
-  <!-- 步：框内逐级抬升的台阶 -->
-  <path d="M361 631 H462 V531 H562 V431 H663" fill="none" stroke="#FCF5EE" stroke-width="38"
-        stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="none" stroke="#FBF3EA" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.68">
+    <path d="M300 452V330H422"/>
+    <path d="M602 330H724V452"/>
+    <path d="M724 572V694H602"/>
+    <path d="M422 694H300V572"/>
+  </g>
+
+  <path d="M292 712C402 700 496 624 566 500C600 440 646 388 716 362"
+        fill="none" stroke="#FBF3EA" stroke-width="72" stroke-linecap="round"/>
+  <path d="M716 362C742 353 762 344 776 330"
+        fill="none" stroke="#FBF3EA" stroke-width="44" stroke-linecap="round" stroke-opacity="0.9"/>
 </svg>
