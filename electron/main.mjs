@@ -6,7 +6,7 @@
  * 这样 /api 反代、/local/upload、素材磁盘存储和浏览器版完全一致，
  * 不需要为 App 再写一套协议。
  */
-import { app, BrowserWindow, Menu, dialog, screen, shell } from 'electron'
+import { app, BrowserWindow, Menu, dialog, screen, shell, ipcMain } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -113,6 +113,8 @@ async function createWindow() {
       nodeIntegration: false,
       sandbox: true,
       spellcheck: false,
+      // 只用于系统目录选择面板，不暴露其他 Node 能力。
+      preload: path.join(__dirname, 'preload.cjs'),
     },
   })
 
@@ -158,6 +160,19 @@ async function createWindow() {
 
   await mainWindow.loadURL(serverHandle.url)
 }
+
+// 工作区目录：交给系统原生面板，取消返回 null。
+ipcMain.handle('stepframe:choose-directory', async (_event, options = {}) => {
+  const parent = BrowserWindow.getFocusedWindow() || mainWindow
+  const result = await dialog.showOpenDialog(parent || undefined, {
+    title: options.title || '选择工作区目录',
+    defaultPath: typeof options.defaultPath === 'string' ? options.defaultPath : undefined,
+    buttonLabel: '使用此目录',
+    properties: ['openDirectory', 'createDirectory'],
+  })
+  if (result.canceled || !result.filePaths.length) return null
+  return result.filePaths[0]
+})
 
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {

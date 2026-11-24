@@ -13,7 +13,7 @@
     </header>
 
     <div class="sidebar-workspace">
-      <WorkspaceSwitcher />
+      <WorkspacePicker />
     </div>
 
     <button type="button" class="new-chat-button" @click="$emit('new')">
@@ -86,7 +86,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import BrandMark from './BrandMark.vue'
-import WorkspaceSwitcher from '@/components/workspace/WorkspaceSwitcher.vue'
+import WorkspacePicker from '@/components/workspace/WorkspacePicker.vue'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
 import type { AgentConversation } from '@/types/agent'
 import { confirmDialog } from '@/features/ui/dialog'

@@ -30,6 +30,9 @@
         </div>
 
         <span class="mode-tip">{{ modeTip }}</span>
+        <span class="mode-workspace">
+          <WorkspacePicker />
+        </span>
       </div>
 
       <div v-if="templateStore.applied.length" class="applied-templates" aria-label="已引用模板">
@@ -442,6 +445,7 @@ import { useRouter } from 'vue-router'
 import AgentMark from '@/components/agent/AgentMark.vue'
 import MentionMenu, { type MentionGroup, type MentionItem } from '@/components/agent/MentionMenu.vue'
 import MentionInput from '@/components/agent/MentionInput.vue'
+import WorkspacePicker from '@/components/workspace/WorkspacePicker.vue'
 import { useMentionRefs } from '@/composables/useMentionRefs'
 import { BUILTIN_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
@@ -914,6 +918,13 @@ defineExpose({ focus })
   box-shadow:
     0 1px 2px rgba(36, 31, 25, 0.03),
     0 10px 34px rgba(36, 31, 25, 0.07);
+}
+
+.mode-workspace {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .composer-modes {
