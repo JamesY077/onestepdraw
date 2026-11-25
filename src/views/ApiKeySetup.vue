@@ -52,7 +52,7 @@
           trigger="load"
         />
         <p class="login-lede">
-          对话、生成、剪辑，都在同一张桌上完成。Sable 在这台电脑上工作，
+          对话、生成、剪辑，都在同一张桌上完成。Stepframe 在这台电脑上工作，
           素材与对话只留在本地。
         </p>
 
@@ -183,7 +183,7 @@
     </main>
 
     <footer class="login-footer">
-      <span class="sf-mono">Sable 1.0</span>
+      <span class="sf-mono">Stepframe 1.0</span>
       <span class="footer-dot" aria-hidden="true">·</span>
       <span>Local AI Creative Agent</span>
       <span class="footer-dot" aria-hidden="true">·</span>

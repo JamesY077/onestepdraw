@@ -3,11 +3,12 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Sable（赭墨）— 本地化 AI 创作助手，基于 AIPing 与 DeepSeek V4.1 Flash",
+  "description": "Stepframe（步帧）— 本地化 AI 创作助手，基于 AIPing 与 DeepSeek V4.1 Flash",
   "main": "electron/main.mjs",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "test:clip-revision": "node scripts/test-clip-revision.mjs",
     "preview": "vite preview",
     "serve": "node server/local/server.mjs",
     "start": "npm run build && npm run serve",
@@ -54,8 +55,8 @@
     "node": ">=20.19.0"
   },
   "build": {
-    "appId": "com.sable.creative",
-    "productName": "Sable",
+    "appId": "com.stepframe.creative",
+    "productName": "Stepframe",
     "asar": false,
     "directories": {
       "output": "release",

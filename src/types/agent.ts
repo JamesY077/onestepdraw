@@ -3,6 +3,7 @@ export type AgentRole = 'user' | 'assistant'
 
 /** 用户上传的参考素材类型。 */
 export type AgentAttachmentKind = 'image' | 'video' | 'audio' | 'file'
+export type AnimationSourceType = 'html' | 'jsx' | 'tsx'
 
 /** 一轮对话里附带的参考素材；图片会压缩，视频会额外抽取关键帧。 */
 export interface AgentAttachment {
@@ -46,7 +47,7 @@ export interface AgentTemplateRef {
 export interface AgentClipRef {
   id: string
   name: string
-  kind: 'video' | 'image' | 'audio'
+  kind: 'video' | 'image' | 'audio' | 'animation'
   trackId: string
   trackName: string
   trackKind: 'video' | 'overlay' | 'audio'
@@ -63,6 +64,9 @@ export interface AgentClipRef {
   assetName?: string
   /** 用户为这一段写的修改意见；多段排队发送时逐段带上。 */
   note?: string
+  /** 代码动画的完整源码与语言；只用于源码直改，不送入文生视频。 */
+  code?: string
+  codeLanguage?: AnimationSourceType
 }
 
 /** 输入框一次提交的内容。 */
@@ -99,6 +103,15 @@ export interface AgentGeneration {
   createdAt: number
   /** 素材是否已自动加入创作对话的剪辑项目。 */
   attachedToProject?: boolean
+  /** edit = 修改选中原素材；create = 生成并追加新素材。 */
+  intent?: 'create' | 'edit'
+  targetClipId?: string
+  targetClipName?: string
+  /** 发起时固定的原素材地址；固定片段编辑同时用它防止误覆盖。 */
+  targetSourceUrl?: string
+  targetRevision?: number
+  replacementStatus?: 'replaced' | 'stale'
+  replacementError?: string
 }
 
 /** Agent 向用户提的单个选择题，由对话里的 ```onestep-ask 块解析而来。 */
@@ -135,8 +148,10 @@ export interface AgentMessage {
   status: AgentMessageStatus
   error?: string
   model?: string
-  /** 本条回复触发的图片 / 视频生成任务。 */
+  /** 本条回复当前展示的图片 / 视频生成任务（兼容旧会话）。 */
   generation?: AgentGeneration
+  /** 一轮修改多个素材时保留全部任务，避免只显示或只能重试最后一个。 */
+  generations?: AgentGeneration[]
   /** 本条回复向用户提出的选择题（一次只有一个）。 */
   ask?: AgentAsk
   /** 用户这一轮上传的参考素材。 */

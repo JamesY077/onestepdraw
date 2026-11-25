@@ -4,6 +4,7 @@ import { useWorkspaceStore } from '@/stores/workspaceStore'
 import {
   AUDIO_CLIP_SECONDS,
   IMAGE_CLIP_SECONDS,
+  type AnimationSourceType,
   MAX_PROJECT_SECONDS,
   MIN_CLIP_SECONDS,
   VIDEO_CLIP_SECONDS,
@@ -423,7 +424,9 @@ export const useEditProjectStore = defineStore('editProject', () => {
       duration,
       trimStart: 0,
       volume: asset.kind === 'audio' ? 1 : undefined,
-      opacity: asset.kind === 'image' ? 1 : undefined,
+      opacity: asset.kind === 'image' || asset.kind === 'animation' ? 1 : undefined,
+      code: asset.code,
+      codeLanguage: asset.codeLanguage,
     }
     track.clips.push(clip)
     touch(project)
@@ -487,6 +490,154 @@ export const useEditProjectStore = defineStore('editProject', () => {
     if (typeof patch.opacity === 'number') clip.opacity = Math.max(0, Math.min(1, patch.opacity))
     if (typeof patch.name === 'string' && patch.name.trim()) clip.name = patch.name.trim().slice(0, 80)
     touch(project)
+  }
+
+  interface ClipAssetReplacement {
+    clipId: string
+    input: {
+      kind: 'image' | 'video'
+      url: string
+      thumbnail?: string
+      duration?: number
+      name?: string
+    }
+    expectedUrl: string
+  }
+
+  /**
+   * 一次性替换本轮全部已生成目标。先校验所有 clipId + 原 URL + revision，
+   * 再记一步历史并统一递增版本，避免多选时前一次写入让后一次写入失效。
+   */
+  function replaceClipAssets(
+    projectId: string,
+    replacements: ClipAssetReplacement[],
+    expectedRevision?: number,
+  ): { status: 'applied' | 'stale' | 'missing'; appliedClipIds: string[] } {
+    const project = getProject(projectId)
+    if (!project) return { status: 'missing', appliedClipIds: [] }
+    if (!replacements.length) return { status: 'applied', appliedClipIds: [] }
+    if (expectedRevision !== undefined && (project.revision || 0) !== expectedRevision) {
+      return { status: 'stale', appliedClipIds: [] }
+    }
+    const targets = replacements.map((replacement) => ({
+      replacement,
+      found: findClip(project, replacement.clipId),
+    }))
+    if (targets.some((target) => !target.found)) return { status: 'missing', appliedClipIds: [] }
+    if (targets.some((target) =>
+      target.found?.clip.url !== target.replacement.expectedUrl ||
+      target.found?.clip.kind !== target.replacement.input.kind
+    )) return { status: 'stale', appliedClipIds: [] }
+
+    recordHistory(project)
+    for (const { replacement, found } of targets) {
+      if (!found) continue
+      const { input } = replacement
+      const asset: ProjectAsset = {
+        id: makeId('ast'),
+        name: `${input.name || found.clip.name} · AI 修改`.slice(0, 80),
+        kind: input.kind,
+        url: input.url,
+        thumbnail: input.thumbnail,
+        duration: input.duration,
+        source: 'chat',
+        createdAt: Date.now(),
+      }
+      project.assets.unshift(asset)
+      found.clip.assetId = asset.id
+      found.clip.url = input.url
+      found.clip.thumbnail = input.thumbnail
+    }
+    touch(project)
+    return { status: 'applied', appliedClipIds: replacements.map((item) => item.clipId) }
+  }
+
+  /** 单个媒体替换仍保留给重试等调用方。 */
+  function replaceClipAsset(
+    projectId: string,
+    clipId: string,
+    input: ClipAssetReplacement['input'],
+    expected: { url: string; revision?: number },
+  ): { status: 'applied' | 'stale' | 'missing' } {
+    const result = replaceClipAssets(
+      projectId,
+      [{ clipId, input, expectedUrl: expected.url }],
+      expected.revision,
+    )
+    return { status: result.status }
+  }
+
+  interface AnimationSourceReplacement {
+    clipId: string
+    code: string
+    codeLanguage: AnimationSourceType
+    expectedUrl: string
+    expectedCode?: string
+  }
+
+  /** HTML / React 动画只提交完整源码，保留片段的所有时间轴属性。 */
+  function replaceAnimationSources(
+    projectId: string,
+    replacements: AnimationSourceReplacement[],
+    expectedRevision?: number,
+  ): { status: 'applied' | 'stale' | 'missing'; appliedClipIds: string[] } {
+    const project = getProject(projectId)
+    if (!project) return { status: 'missing', appliedClipIds: [] }
+    if (!replacements.length) return { status: 'applied', appliedClipIds: [] }
+    if (expectedRevision !== undefined && (project.revision || 0) !== expectedRevision) {
+      return { status: 'stale', appliedClipIds: [] }
+    }
+    const targets = replacements.map((replacement) => ({
+      replacement,
+      found: findClip(project, replacement.clipId),
+    }))
+    if (targets.some((target) => !target.found)) return { status: 'missing', appliedClipIds: [] }
+    if (targets.some((target) =>
+      target.found?.clip.kind !== 'animation' ||
+      target.found?.clip.url !== target.replacement.expectedUrl ||
+      (target.found?.clip.code || '') !== (target.replacement.expectedCode || '')
+    )) return { status: 'stale', appliedClipIds: [] }
+
+    recordHistory(project)
+    for (const { replacement, found } of targets) {
+      if (!found) continue
+      const mime = replacement.codeLanguage === 'html' ? 'text/html' : 'text/plain'
+      const url = `data:${mime};charset=utf-8,${encodeURIComponent(replacement.code)}`
+      const asset: ProjectAsset = {
+        id: makeId('ast'),
+        name: found.clip.name,
+        kind: 'animation',
+        url,
+        thumbnail: found.clip.thumbnail,
+        duration: found.clip.duration,
+        source: 'chat',
+        code: replacement.code,
+        codeLanguage: replacement.codeLanguage,
+        createdAt: Date.now(),
+      }
+      project.assets.unshift(asset)
+      found.clip.assetId = asset.id
+      found.clip.url = url
+      found.clip.code = replacement.code
+      found.clip.codeLanguage = replacement.codeLanguage
+    }
+    touch(project)
+    return { status: 'applied', appliedClipIds: replacements.map((item) => item.clipId) }
+  }
+
+  function replaceAnimationSource(
+    projectId: string,
+    clipId: string,
+    code: string,
+    codeLanguage: AnimationSourceType,
+    expected: { url: string; code?: string; revision?: number },
+  ): { status: 'applied' | 'stale' | 'missing' } {
+    const result = replaceAnimationSources(
+      projectId,
+      [{ clipId, code, codeLanguage, expectedUrl: expected.url, expectedCode: expected.code }],
+      expected.revision,
+    )
+    return { status: result.status }
   }
 
   /** 删空的自动轨道顺手收掉；一条都不剩时留一条空轨道好继续加素材。 */
@@ -771,6 +922,10 @@ export const useEditProjectStore = defineStore('editProject', () => {
     addAssetOnly,
     addAssetToTrack,
     updateClip,
+    replaceClipAsset,
+    replaceClipAssets,
+    replaceAnimationSource,
+    replaceAnimationSources,
     removeClip,
     removeClips,
     splitClip,

@@ -18,8 +18,12 @@ export interface BuiltinTemplate {
   category: string
   categoryEn: string
   demo: string
-  /** 打包后的预览图地址。 */
+  /** 打包后的静态参考图地址；应用模板时只发送这张图。 */
   poster: string
+  /** 可选的动态卡片预览，绝不作为模型参考图。 */
+  animatedPreview?: string
+  /** 中性方法示意与原案例分开标识，避免把示意当成原作。 */
+  previewKind?: 'source' | 'schematic'
   /** 是否有原素材的参考静帧。 */
   still: boolean
   /** 原素材没有静帧、由 Seedream 生成的示例图（poster 就是这张图）。 */

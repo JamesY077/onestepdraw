@@ -12,7 +12,15 @@
         </button>
         <div class="tpl-heading">
           <span class="tpl-kicker">Template Library</span>
-          <h2>模板库</h2>
+          <TextReveal
+            class="tpl-title"
+            tag="h2"
+            text="模板库"
+            :delay="20"
+            :duration="0.38"
+            effect="rise"
+            trigger="load"
+          />
           <p>
             {{ BUILTIN_TEMPLATES.length }} 种风格
             <template v-if="stillCount"> · {{ stillCount }} 张静帧</template>
@@ -108,8 +116,8 @@
           <span class="tpl-poster">
             <img
               v-if="!brokenPosters.has(item.id)"
-              :src="templatePosterUrl(item.poster)"
-              :alt="`${item.name}参考图`"
+              :src="templatePosterUrl(item.animatedPreview || item.poster)"
+              :alt="`${item.name}${item.animatedPreview ? '动态预览' : '参考图'}`"
               loading="lazy"
               decoding="async"
               @error="markPosterBroken(item.id)"
@@ -121,12 +129,14 @@
             <span class="tpl-poster-tag">{{ item.category }}</span>
             <span v-if="item.generated" class="tpl-poster-still">AI 示例</span>
             <span v-else-if="!item.still" class="tpl-poster-still">文字参考</span>
+            <span v-else-if="item.previewKind === 'schematic'" class="tpl-poster-still">方法示意</span>
+            <span v-else-if="item.animatedPreview" class="tpl-poster-still">动态预览</span>
             <span v-if="templateStore.isApplied(item.id)" class="tpl-poster-state">已应用</span>
             <span v-if="isSelected(item.id)" class="tpl-poster-pick" aria-hidden="true">✓</span>
           </span>
           <span class="tpl-card-copy">
             <strong>{{ item.name }}</strong>
-            <small>{{ item.nameEn }}<template v-if="item.demo"> · {{ item.demo }}</template></small>
+            <small :title="item.demo || item.nameEn">{{ item.nameEn }}<template v-if="item.demo"> · {{ item.demo }}</template></small>
           </span>
         </button>
       </div>
@@ -140,7 +150,9 @@
         <a href="https://github.com/XiaoyeCodes/code-animation-prompts" target="_blank" rel="noreferrer">code-animation-prompts</a>
         （原素材整理 俯仰观照）· 「华尔街财经解读」融合自
         <a href="https://github.com/HeyChengC/wallstreet-explainer" target="_blank" rel="noreferrer">wallstreet-explainer</a>
-        （MIT，示例静帧仅作风格参考）· 没有静帧的条目由 Seedream 5.0 Lite 生成示例图 · 免费分享，请勿转售
+        （MIT，示例静帧仅作风格参考）· GIF 工厂模板与 Skill 来自
+        <a href="https://github.com/WoYun520/gif-factory" target="_blank" rel="noreferrer">gif-factory</a>
+        （原创说明 MIT；角色、字体、配乐等素材按各自许可，中性示意不冒充原案例）· 没有静帧的条目由 Seedream 5.0 Lite 生成示例图 · 免费分享，请勿转售
       </p>
     </div>
 
@@ -308,6 +320,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppTopNav from '@/components/AppTopNav.vue'
+import TextReveal from '@/components/ui/TextReveal.vue'
 import { useTemplateStore } from '@/stores/templateStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useSkillLibraryStore } from '@/stores/skillLibraryStore'

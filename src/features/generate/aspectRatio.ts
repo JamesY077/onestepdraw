@@ -1,4 +1,4 @@
-export type ImageRequestMode = 'default' | 'seedream-5-lite' | 'moss'
+export type ImageRequestMode = 'default' | 'seedream-5-lite' | 'minimax-h3' | 'moss'
 
 const ASPECT_RATIO_SIZE_MAP: Record<string, { width: number; height: number }> = {
   '21:9': { width: 1680, height: 720 },
@@ -22,12 +22,27 @@ const SEEDREAM_5_LITE_SIZE_MAP: Record<string, { width: number; height: number }
   '9:16': { width: 1600, height: 2848 },
 }
 
+// MiniMax H3 Image 接受任意正整数尺寸；这里统一使用约 2K 像素量级。
+const MINIMAX_H3_IMAGE_SIZE_MAP: Record<string, { width: number; height: number }> = {
+  '21:9': { width: 3136, height: 1344 },
+  '16:9': { width: 2720, height: 1536 },
+  '3:2': { width: 2400, height: 1600 },
+  '4:3': { width: 2304, height: 1728 },
+  '1:1': { width: 2048, height: 2048 },
+  '3:4': { width: 1728, height: 2304 },
+  '2:3': { width: 1600, height: 2400 },
+  '9:16': { width: 1536, height: 2720 },
+}
+
 export function aspectRatioToDimensions(
   aspectRatio: string,
   mode: ImageRequestMode = 'default'
 ): { width: number; height: number } {
   if (mode === 'seedream-5-lite') {
     return SEEDREAM_5_LITE_SIZE_MAP[aspectRatio] || SEEDREAM_5_LITE_SIZE_MAP['1:1']
+  }
+  if (mode === 'minimax-h3') {
+    return MINIMAX_H3_IMAGE_SIZE_MAP[aspectRatio] || MINIMAX_H3_IMAGE_SIZE_MAP['1:1']
   }
   return ASPECT_RATIO_SIZE_MAP[aspectRatio] || ASPECT_RATIO_SIZE_MAP['1:1']
 }

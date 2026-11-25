@@ -129,7 +129,7 @@
 
         <div v-else class="rail-assets">
           <label class="rail-upload">
-            <input type="file" accept="image/*,video/*,audio/*" multiple @change="handleUpload" />
+            <input type="file" accept="image/*,video/*,audio/*,.html,.htm,.jsx,.tsx,text/html" multiple @change="handleUpload" />
             <span>＋</span> 上传素材
           </label>
 
@@ -149,11 +149,11 @@
           >
             <span class="rail-asset-thumb">
               <img v-if="asset.kind === 'image'" :src="asset.thumbnail || asset.url" alt="" />
-              <span v-else>{{ asset.kind === 'video' ? '视频' : '音频' }}</span>
+              <span v-else>{{ asset.kind === 'video' ? '视频' : asset.kind === 'animation' ? '</>' : '音频' }}</span>
             </span>
             <span class="rail-asset-copy">
               <strong>{{ asset.name }}</strong>
-              <small>{{ asset.kind === 'video' ? '视频' : asset.kind === 'image' ? '图片' : '音频' }}<template v-if="asset.duration"> · {{ asset.duration.toFixed(1) }}s</template></small>
+              <small>{{ asset.kind === 'video' ? '视频' : asset.kind === 'image' ? '图片' : asset.kind === 'animation' ? '代码动画' : '音频' }}<template v-if="asset.duration"> · {{ asset.duration.toFixed(1) }}s</template></small>
             </span>
           </button>
         </div>
@@ -696,6 +696,8 @@ const selectedAgentClips = computed<AgentClipRef[]>(() =>
       volume: clip.volume,
       opacity: clip.opacity,
       assetName: asset?.name,
+      code: clip.code || asset?.code,
+      codeLanguage: clip.codeLanguage || asset?.codeLanguage,
     }
   }),
 )
@@ -1075,6 +1077,36 @@ async function handleUpload(event: Event) {
   let skipped = 0
   let needsLocalServer = 0
   for (const file of files) {
+    const extension = file.name.split('.').pop()?.toLowerCase() || ''
+    const codeLanguage = extension === 'html' || extension === 'htm' || file.type === 'text/html'
+      ? 'html' as const
+      : extension === 'jsx'
+        ? 'jsx' as const
+        : extension === 'tsx'
+          ? 'tsx' as const
+          : undefined
+    if (codeLanguage) {
+      if (file.size > DATA_URL_FALLBACK_MAX) {
+        skipped += 1
+        continue
+      }
+      try {
+        const code = await file.text()
+        const mime = codeLanguage === 'html' ? 'text/html' : 'text/plain'
+        projectStore.appendAsset(project.value.id, {
+          name: file.name.replace(/\.[^.]+$/, '').slice(0, 40),
+          kind: 'animation',
+          url: `data:${mime};charset=utf-8,${encodeURIComponent(code)}`,
+          duration: 5,
+          source: 'upload',
+          code,
+          codeLanguage,
+        })
+      } catch {
+        skipped += 1
+      }
+      continue
+    }
     const kind = file.type.startsWith('video/')
       ? 'video'
       : file.type.startsWith('audio/')

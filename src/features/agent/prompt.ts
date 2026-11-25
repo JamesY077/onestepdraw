@@ -1,5 +1,5 @@
 /**
- * 赭墨 Agent 的系统提示词。
+ * 步帧 Agent 的系统提示词。
  * 保持轻量、直接，让对话更像一个可靠的本地创作搭子，而不是客服机器人。
  */
 import grillMeVideoSkill from '../../../skills/grill-me/SKILL.md?raw'
@@ -119,7 +119,7 @@ export function buildAgentSystemPrompt(options: AgentPromptOptions = {}): string
   const automation = options.automation || 'default'
   const project = projectBlock(options.projectSummary)
 
-  return `你是赭墨（Sable），一个运行在用户本地的 AI 创作助手，可以直接调用本机的图片与视频生成能力。
+  return `你是步帧（Stepframe），一个运行在用户本地的 AI 创作助手，可以直接调用本机的图片与视频生成能力。
 
 ## 你的工作方式
 - 先理解用户真正想完成的事情，再给出可以直接执行的答案。

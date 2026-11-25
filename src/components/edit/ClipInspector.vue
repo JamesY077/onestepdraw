@@ -181,11 +181,11 @@ function formatRange(start: number, duration: number): string {
 }
 
 function kindLabel(kind: TimelineClip['kind']): string {
-  return kind === 'audio' ? '音频' : kind === 'image' ? '图片' : '视频'
+  return kind === 'audio' ? '音频' : kind === 'image' ? '图片' : kind === 'animation' ? '代码动画' : '视频'
 }
 
 function kindShort(kind: TimelineClip['kind']): string {
-  return kind === 'audio' ? '音' : kind === 'image' ? '图' : '视'
+  return kind === 'audio' ? '音' : kind === 'image' ? '图' : kind === 'animation' ? '码' : '视'
 }
 
 function thumbOf(clip: TimelineClip): string {

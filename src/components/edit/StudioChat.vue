@@ -303,6 +303,8 @@ function detectTargetsFromText(text: string) {
     url: clip.url,
     thumbnail: clip.thumbnail,
     assetName: clip.name,
+    code: clip.code,
+    codeLanguage: clip.codeLanguage,
     note: `用户指的是这支片里 ${(clip.start + innerStart).toFixed(1)}s–${(clip.start + innerEnd).toFixed(1)}s 这一段（片段内 ${innerStart.toFixed(1)}s–${innerEnd.toFixed(1)}s）`,
   }))
 }
@@ -356,7 +358,7 @@ function clipThumb(clip: AgentClipRef): string {
 }
 
 function kindLetter(kind: AgentClipRef['kind']): string {
-  return kind === 'audio' ? '音' : kind === 'image' ? '图' : '视'
+  return kind === 'audio' ? '音' : kind === 'image' ? '图' : kind === 'animation' ? '码' : '视'
 }
 
 function focusComposer() {

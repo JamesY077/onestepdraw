@@ -26,6 +26,24 @@
               alt=""
               :style="{ opacity: visibleSet.has(item.clip.id) ? item.clip.opacity ?? 1 : 0 }"
             />
+            <iframe
+              v-else-if="item.clip.kind === 'animation' && item.clip.codeLanguage !== 'jsx' && item.clip.codeLanguage !== 'tsx'"
+              class="stage-media stage-animation"
+              :class="{ 'is-idle': !visibleSet.has(item.clip.id) }"
+              :src="item.clip.url"
+              :title="item.clip.name"
+              sandbox="allow-scripts"
+              :style="{ opacity: visibleSet.has(item.clip.id) ? item.clip.opacity ?? 1 : 0 }"
+            />
+            <div
+              v-else-if="item.clip.kind === 'animation'"
+              class="stage-media animation-source-placeholder"
+              :class="{ 'is-idle': !visibleSet.has(item.clip.id) }"
+              :style="{ opacity: visibleSet.has(item.clip.id) ? item.clip.opacity ?? 1 : 0 }"
+            >
+              <strong>{{ item.clip.codeLanguage?.toUpperCase() }} 代码动画</strong>
+              <span>选中片段发给 AI 可直接修改原源码</span>
+            </div>
             <audio
               v-else
               :ref="(el) => setAudioRef(item.clip.id, el)"
@@ -317,6 +335,33 @@ function formatTime(seconds: number): string {
   object-fit: contain;
   background: #0b0b0a;
   transition: opacity 90ms linear;
+}
+
+.stage-animation {
+  border: 0;
+  pointer-events: none;
+}
+
+.animation-source-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  color: #d8d0c8;
+  font-family: var(--sf-font-mono, monospace);
+  text-align: center;
+}
+
+.animation-source-placeholder strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.animation-source-placeholder span {
+  color: #8f8780;
+  font-family: var(--sf-font, sans-serif);
+  font-size: 11px;
 }
 
 .stage-video.is-idle,

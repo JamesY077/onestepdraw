@@ -1,6 +1,7 @@
 /** 剪辑项目的数据模型：一个项目 = 一条时间轴 + 一个素材库 + 一段对话。 */
 
-export type ProjectAssetKind = 'video' | 'image' | 'audio'
+export type ProjectAssetKind = 'video' | 'image' | 'audio' | 'animation'
+export type AnimationSourceType = 'html' | 'jsx' | 'tsx'
 export type EditTrackKind = 'video' | 'overlay' | 'audio'
 
 export interface ProjectAsset {
@@ -14,6 +15,9 @@ export interface ProjectAsset {
   source: 'chat' | 'library' | 'upload'
   /** App / 本地服务模式下原文件在磁盘上的路径。 */
   path?: string
+  /** HTML / React 代码动画的完整源码；选中修改时直接编辑这份源文件。 */
+  code?: string
+  codeLanguage?: AnimationSourceType
   createdAt: number
 }
 
@@ -34,6 +38,9 @@ export interface TimelineClip {
   volume?: number
   /** 画面不透明度 0-1。 */
   opacity?: number
+  /** HTML / React 代码动画的完整源码。 */
+  code?: string
+  codeLanguage?: AnimationSourceType
 }
 
 export interface EditTrack {

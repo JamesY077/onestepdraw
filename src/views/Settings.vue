@@ -12,7 +12,14 @@
         </button>
 
         <div class="header-title">
-          <h1>设置</h1>
+          <TextReveal
+            tag="h1"
+            text="设置"
+            :delay="20"
+            :duration="0.38"
+            effect="rise"
+            trigger="load"
+          />
           <p>全部配置只保存在这台设备上，不会上传到任何服务器。</p>
         </div>
 
@@ -37,7 +44,7 @@
             </button>
           </div>
           <div class="nav-foot">
-            <span>赭墨</span>
+            <span>步帧</span>
             <span>v1.2.0</span>
           </div>
         </aside>
@@ -47,7 +54,7 @@
           <section id="account" class="panel">
             <div class="panel-head">
               <h2>账号与连接</h2>
-              <p>赭墨通过 AIPing 调用模型。密钥只存放在{{ SESSION_SCOPE }}。</p>
+              <p>步帧通过 AIPing 调用模型。密钥只存放在{{ SESSION_SCOPE }}。</p>
             </div>
 
             <div class="detail-list">
@@ -121,7 +128,7 @@
               <div>
                 <h2>本机 Agent</h2>
                 <p>
-                  赭墨启动后会自动扫描这台电脑上已安装的 CLI Agent。选中后，对话会交给它执行，
+                  步帧启动后会自动扫描这台电脑上已安装的 CLI Agent。选中后，对话会交给它执行，
                   可以直接读写项目、生成图片和视频。
                 </p>
               </div>
@@ -212,7 +219,7 @@
                     <p v-if="agent.installHint" class="field-hint">{{ agent.installHint }}</p>
                     <p v-if="agent.appPath" class="field-hint">
                       检测到桌面端 {{ agent.appPath.split('/').pop()?.replace('.app', '') }}，
-                      但桌面端没有提供命令行入口，赭墨暂时无法调用它。
+                      但桌面端没有提供命令行入口，步帧暂时无法调用它。
                     </p>
                   </div>
                   <div class="install-actions">
@@ -281,7 +288,7 @@
             <ul class="agent-notes">
               <li>Agent 会在项目目录中运行，权限与你本机终端一致，请只选择自己信任的 Agent。</li>
               <li>扫描由本地服务完成；用静态托管或远程访问打开页面时，本机 Agent 不可用。</li>
-              <li>对话仍在赭墨里进行，记录只保存在这台设备。</li>
+              <li>对话仍在步帧里进行，记录只保存在这台设备。</li>
             </ul>
           </section>
 
@@ -422,8 +429,8 @@
           <!-- 安装到 Agent -->
           <section id="agent" class="panel">
             <div class="panel-head">
-              <h2>让 Agent 安装赭墨</h2>
-              <p>赭墨是纯本地项目，不依赖云端托管。把下面的指令交给你的 Agent，它会自己克隆仓库、安装依赖并启动。</p>
+              <h2>让 Agent 安装步帧</h2>
+              <p>步帧是纯本地项目，不依赖云端托管。把下面的指令交给你的 Agent，它会自己克隆仓库、安装依赖并启动。</p>
             </div>
 
             <div class="repo-bar">
@@ -506,6 +513,7 @@ import { useRouter } from 'vue-router'
 import { confirmDialog } from '@/features/ui/dialog'
 import ApiKeyInput from '@/components/ApiKeyInput.vue'
 import AppTopNav from '@/components/AppTopNav.vue'
+import TextReveal from '@/components/ui/TextReveal.vue'
 import { useApiStore } from '@/stores/apiStore'
 import { useChatStore } from '@/stores/chatStore'
 import {
@@ -620,7 +628,7 @@ const navGroups = [
     label: '安装与接入',
     items: [
       { id: 'agents', label: '本机 Agent' },
-      { id: 'agent', label: '让 Agent 安装赭墨' },
+      { id: 'agent', label: '让 Agent 安装步帧' },
     ],
   },
 ]
@@ -654,7 +662,7 @@ function setupSectionObserver() {
 
 const repoUrl = 'https://github.com/JamesY077/onestepdraw'
 const repoUrlLabel = 'github.com/JamesY077/onestepdraw'
-const localRootDir = ref('<赭墨项目目录>')
+const localRootDir = ref('<步帧项目目录>')
 
 type AgentTabKey = 'claude-code' | 'cursor' | 'codex' | 'local'
 const agentTab = ref<AgentTabKey>('claude-code')
@@ -663,7 +671,7 @@ const repoCopied = ref(false)
 
 const installPrompt = computed(() =>
   [
-    '请帮我在这台电脑上安装并运行赭墨：',
+    '请帮我在这台电脑上安装并运行步帧：',
     '',
     `1. 克隆仓库：git clone ${repoUrl}.git ~/onestepdraw`,
     '2. 进入目录后运行 npm install',
@@ -676,7 +684,7 @@ const installPrompt = computed(() =>
 
 const localPrompt = computed(() =>
   [
-    '赭墨已经安装在这台电脑上：',
+    '步帧已经安装在这台电脑上：',
     '',
     `项目目录：${localRootDir.value}`,
     '',
@@ -936,7 +944,7 @@ function resetTranslationModel() {
   border: 1px solid var(--sf-line-soft);
   border-radius: 999px;
   background: var(--sf-surface);
-  color: #55554f;
+  color: var(--sf-ink-2);
   font: inherit;
   font-size: 12.5px;
   font-weight: 600;

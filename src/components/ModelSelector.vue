@@ -109,15 +109,15 @@ function filterModels() {
   const allowedIds = new Set(getModelsByMediaType(props.mediaType, allModels.value.map((m) => m.id)))
   const filtered = allModels.value.filter((m) => allowedIds.has(m.id))
 
-  // Seedance 2 系列为白名单专属模型，/models 接口通常不会返回，
-  // 这里始终把内置的 Seedance 2 系列模型补进列表，保证前端可见（点击时再弹白名单提示）。
+  // 内置模型始终补进列表：既覆盖白名单专属的 Seedance 2，
+  // 也避免新接入模型尚未出现在 /models 响应时无法选择。
   const existingIds = new Set(filtered.map((m) => m.id.toLowerCase()))
-  const seedanceModels = BUILT_IN_MODELS
-    .filter((model) => model.mediaType === props.mediaType && isSeedance2Model(model.id))
+  const builtInModels = BUILT_IN_MODELS
+    .filter((model) => model.mediaType === props.mediaType)
     .filter((model) => !existingIds.has(model.id.toLowerCase()))
     .map((model) => toModel(model.id))
 
-  models.value = [...filtered, ...seedanceModels].sort((a, b) => a.id.localeCompare(b.id, 'zh-CN'))
+  models.value = [...filtered, ...builtInModels].sort((a, b) => a.id.localeCompare(b.id, 'zh-CN'))
 }
 
 

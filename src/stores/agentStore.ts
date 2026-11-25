@@ -8,6 +8,7 @@ import type {
   AgentClipRef,
   AgentContentPart,
   AgentConversation,
+  AgentGeneration,
   AgentMessage,
   AgentTemplateRef,
 } from '@/types/agent'
@@ -27,6 +28,15 @@ import {
   persistableClip,
 } from '@/features/agent/clipContext'
 import {
+  animationEditsForSelection,
+  buildAnimationEditSystemPrompt,
+  createMediaRevisionGeneration,
+  mediaReferenceForClip,
+  routeSelectedClips,
+  selectedClipPrompt,
+  stripAgentAnimationBlocks,
+} from '@/features/agent/clipRevision'
+import {
   buildAgentGeneration,
   describeAgentGeneration,
   extractAgentAsk,
@@ -39,6 +49,11 @@ import {
   stripAgentTimelineBlocks,
   type AgentToolCall,
 } from '@/features/agent/tools'
+import {
+  attachmentReferenceForGeneration,
+  createAttachmentMediaGeneration,
+  routeConversationRequest,
+} from '@/features/agent/conversationRouting'
 import { buildImageParams, buildVideoParams } from '@/features/generate/buildParams'
 import { pollVideoStatus } from '@/features/generate/video'
 import { generateImage, generateVideo } from '@/api/aiping'
@@ -68,6 +83,11 @@ function makeTitle(content: string): string {
   const title = content.replace(/\s+/g, ' ').trim()
   if (!title) return EMPTY_CONVERSATION_TITLE
   return title.length > 30 ? `${title.slice(0, 30)}…` : title
+}
+
+function messageGenerations(message: AgentMessage): AgentGeneration[] {
+  if (message.generations?.length) return message.generations
+  return message.generation ? [message.generation] : []
 }
 
 function isConversation(value: any): value is AgentConversation {
@@ -169,8 +189,9 @@ export const useAgentStore = defineStore('agent', () => {
           })),
         }))
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
-    } catch {
-      // 本地存储写满时静默忽略，不影响当前对话继续使用。
+    } catch (error) {
+      // 存储失败不应打断对话，但保留诊断信息，避免桌面端静默丢失记录。
+      console.warn('[stepframe] 对话记录保存失败', error)
     }
   }
 
@@ -253,10 +274,11 @@ export const useAgentStore = defineStore('agent', () => {
 
   /** 把历史消息拼成一段文本；附件与模板会变成可读清单。 */
   function historyText(message: AgentMessage, includePaths = false): string {
-    const note =
-      message.role === 'assistant' && message.generation
-        ? `\n\n[系统记录] 已调用${message.generation.kind === 'image' ? '图片' : '视频'}生成：${describeAgentGeneration(message.generation)}。`
-        : ''
+    const note = message.role === 'assistant'
+      ? messageGenerations(message).map((generation) =>
+          `\n\n[系统记录] 已调用${generation.kind === 'image' ? '图片' : '视频'}生成：${describeAgentGeneration(generation)}。`,
+        ).join('')
+      : ''
     return `${message.content}${note}${askContext(message)}${describeClipContext(
       message.clips,
     )}${describeAttachments(message.attachments, { includePaths })}${describeTemplates(
@@ -281,6 +303,7 @@ export const useAgentStore = defineStore('agent', () => {
           message.status !== 'error' &&
           (message.content.trim() ||
             message.generation ||
+            message.generations?.length ||
             message.attachments?.length ||
             message.templates?.length ||
             message.clips?.length),
@@ -338,26 +361,37 @@ export const useAgentStore = defineStore('agent', () => {
       return { role: message.role, content: text }
     })
 
-    return [{ role: 'system', content: systemPromptFor(conversation) }, ...history]
+    const selectedRoute = routeSelectedClips(latestUser?.clips)
+    const systemPrompt = selectedRoute === 'animation' && latestUser?.clips
+      ? buildAnimationEditSystemPrompt(latestUser.clips)
+      : systemPromptFor(conversation)
+    return [{ role: 'system', content: systemPrompt }, ...history]
   }
 
   /** 本机 CLI Agent 使用纯对话记录，系统提示词由本地服务统一拼装。 */
   function buildLocalContext(conversation: AgentConversation): LocalAgentMessage[] {
-    return conversation.messages
+    const source = conversation.messages
       .filter(
         (message) =>
           message.status !== 'error' &&
           (message.content.trim() ||
             message.generation ||
+            message.generations?.length ||
             message.attachments?.length ||
             message.templates?.length ||
             message.clips?.length),
       )
       .slice(-MAX_CONTEXT_MESSAGES)
-      .map<LocalAgentMessage>((message) => ({
+    const latestUser = latestUserMessage(source)
+    return source.map<LocalAgentMessage>((message) => {
+      const animationProtocol = message === latestUser && routeSelectedClips(message.clips) === 'animation'
+        ? `\n\n[本轮执行协议]\n${buildAnimationEditSystemPrompt(message.clips || [])}`
+        : ''
+      return {
         role: message.role,
-        content: historyText(message, true),
-      }))
+        content: `${historyText(message, true)}${animationProtocol}`,
+      }
+    })
   }
 
   function stopStreaming() {
@@ -374,7 +408,12 @@ export const useAgentStore = defineStore('agent', () => {
   ) {
     if (conversation.mode !== 'create' || !conversation.projectId) return
     const generation = message.generation
-    if (!generation || generation.status !== 'succeeded' || generation.attachedToProject) return
+    if (
+      !generation ||
+      (generation.intent === 'edit' && generation.targetClipId) ||
+      generation.status !== 'succeeded' ||
+      generation.attachedToProject
+    ) return
     const projects = useEditProjectStore()
     const url = generation.kind === 'image' ? generation.images?.[0] : generation.videoUrl
     if (!url) return
@@ -441,18 +480,27 @@ export const useAgentStore = defineStore('agent', () => {
     conversation: AgentConversation,
     message: AgentMessage,
     expectedRevision?: number,
-  ) {
-    const ops = extractAgentTimelineOps(message.content)
-    if (!ops.length) return
+    allowedClipIds?: Set<string>,
+  ): boolean {
+    const extracted = extractAgentTimelineOps(message.content)
+    const ops = allowedClipIds
+      ? extracted.filter((op) => allowedClipIds.has(op.clipId))
+      : extracted
+    if (!extracted.length) return false
+    if (!ops.length) {
+      message.content = `${stripAgentTimelineBlocks(message.content)}\n\n> 已忽略针对未选中片段的时间轴操作。`
+      return true
+    }
     if (conversation.mode === 'create' && conversation.projectId) {
       const projects = useEditProjectStore()
       const result = projects.applyTimelineOps(conversation.projectId, ops, expectedRevision)
       if (result.stale) {
         message.content = `${stripAgentTimelineBlocks(message.content)}\n\n> 时间轴在你生成这段回复期间被改动过，这次修改没有覆盖到项目，请确认后让我再改一次。`
-        return
+        return true
       }
     }
     message.content = stripAgentTimelineBlocks(message.content)
+    return true
   }
 
   function attachProject(conversationId: string, projectId: string) {
@@ -482,27 +530,44 @@ export const useAgentStore = defineStore('agent', () => {
     }
   }
 
-  async function runGeneration(
-    conversation: AgentConversation,
-    message: AgentMessage,
-    call: AgentToolCall,
-  ) {
-    const built = buildAgentGeneration(call)
-    if (!built) return
-    // 保留 reactive 代理：直接改原始对象不会触发结果卡片更新。
-    const generation = reactive(built)
+  function setMessageGeneration(message: AgentMessage, generation: AgentGeneration) {
     message.generation = generation
-    conversation.updatedAt = Date.now()
-    persistNow()
+    const others = (message.generations || []).filter((item) => item.id !== generation.id)
+    message.generations = [...others, generation]
+  }
 
+  /** 只负责调用模型并填充结果；项目写入由固定目标的调用方决定。 */
+  async function executeGeneration(generation: AgentGeneration) {
+    generation.status = 'running'
+    generation.error = undefined
+    generation.replacementError = undefined
+    generation.replacementStatus = undefined
     try {
+      const reference = generation.targetSourceUrl
+        ? mediaReferenceForClip({
+            id: generation.targetClipId || '',
+            name: generation.targetClipName || '选中素材',
+            kind: generation.kind,
+            trackId: '',
+            trackName: '',
+            trackKind: 'video',
+            start: 0,
+            duration: generation.duration || 5,
+            url: generation.targetSourceUrl,
+          })
+        : null
+      if (generation.intent === 'edit' && !reference) {
+        throw new Error('缺少原始素材，已阻止退化为纯文本生成。')
+      }
       if (generation.kind === 'image') {
         const params = await buildImageParams(
           generation.prompt,
           generation.model,
-          null,
+          reference,
           generation.aspectRatio,
           'seedream-5-lite',
+          undefined,
+          reference ? 'multi' : undefined,
         )
         const response = await generateImage(params)
         const images = (response.data || [])
@@ -517,13 +582,13 @@ export const useAgentStore = defineStore('agent', () => {
         const params = await buildVideoParams(
           generation.prompt,
           generation.model,
-          null,
+          reference,
           generation.aspectRatio,
           generation.duration || 5,
           'minimax-h3',
           'off',
           generation.resolution || '768P',
-          null,
+          generation.intent === 'edit' && reference?.type === 'video' ? 'editVideo' : null,
         )
         const task = await generateVideo(params)
         if (!task.id) throw new Error('视频任务创建成功但未返回任务 ID，请重试。')
@@ -547,22 +612,259 @@ export const useAgentStore = defineStore('agent', () => {
         generation.progress = 100
         generation.status = 'succeeded'
       }
-      attachGenerationToProject(conversation, message)
     } catch (error: any) {
       generation.status = 'failed'
       generation.error = error?.message || '生成失败，请稍后重试。'
       if (error instanceof AgentApiError && error.kind === 'auth') authExpired.value = true
-    } finally {
-      conversation.updatedAt = Date.now()
-      persistNow()
     }
   }
 
-  function retryGeneration(messageId: string) {
+  function applyCompletedGeneration(conversation: AgentConversation, generation: AgentGeneration) {
+    if (
+      generation.intent !== 'edit' ||
+      generation.status !== 'succeeded' ||
+      !conversation.projectId ||
+      !generation.targetClipId ||
+      !generation.targetSourceUrl
+    ) return
+    const url = generation.kind === 'image' ? generation.images?.[0] : generation.videoUrl
+    if (!url) return
+    const result = useEditProjectStore().replaceClipAsset(
+      conversation.projectId,
+      generation.targetClipId,
+      {
+        kind: generation.kind,
+        url,
+        thumbnail: generation.thumbnail || (generation.kind === 'image' ? url : undefined),
+        duration: generation.duration,
+        name: generation.targetClipName,
+      },
+      { url: generation.targetSourceUrl, revision: generation.targetRevision },
+    )
+    if (result.status === 'applied') {
+      generation.replacementStatus = 'replaced'
+      generation.attachedToProject = true
+    } else {
+      generation.replacementStatus = 'stale'
+      generation.replacementError = result.status === 'missing'
+        ? '原片段已删除，生成结果未写入项目。'
+        : '片段或项目已在生成期间变化，生成结果未覆盖新内容。'
+    }
+  }
+
+  async function runGeneration(
+    conversation: AgentConversation,
+    message: AgentMessage,
+    call: AgentToolCall,
+    existing?: AgentGeneration,
+  ) {
+    const built = existing || buildAgentGeneration(call)
+    if (!built) return
+    if (!built.targetSourceUrl) {
+      const user = latestUserMessage(conversation.messages)
+      const reference = attachmentReferenceForGeneration([
+        ...(user?.attachments || []),
+        ...templateAssets(user?.templates),
+      ], built.kind)
+      if (reference) {
+        built.targetSourceUrl = reference.url
+        built.targetClipName = built.targetClipName || reference.name
+      }
+    }
+    // 保留 reactive 代理：直接改原始对象不会触发结果卡片更新。
+    const generation = reactive(built)
+    setMessageGeneration(message, generation)
+    conversation.updatedAt = Date.now()
+    persistNow()
+
+    await executeGeneration(generation)
+    if (generation.intent === 'edit' && generation.targetClipId) {
+      applyCompletedGeneration(conversation, generation)
+    } else {
+      attachGenerationToProject(conversation, message)
+    }
+    conversation.updatedAt = Date.now()
+    persistNow()
+  }
+
+  /** 选中媒体跳过聊天模型：原需求 + 原素材直接进图片/多模态视频模型。 */
+  async function runSelectedMediaRevisions(
+    conversation: AgentConversation,
+    message: AgentMessage,
+    clips: AgentClipRef[],
+    expectedRevision?: number,
+  ) {
+    const project = conversation.projectId
+      ? useEditProjectStore().getProject(conversation.projectId)
+      : null
+    if (!project) {
+      message.status = 'error'
+      message.error = '找不到选中的剪辑项目，未发起生成。'
+      return
+    }
+    const user = latestUserMessage(conversation.messages)
+    const generations = clips.map((clip) => reactive(createMediaRevisionGeneration(
+      clip,
+      selectedClipPrompt(user?.content || '', clip),
+      {
+        aspectRatio: project.aspectRatio,
+        resolution: project.resolution,
+        expectedRevision,
+      },
+    )))
+
+    for (const generation of generations) {
+      setMessageGeneration(message, generation)
+      conversation.updatedAt = Date.now()
+      persistNow()
+      await executeGeneration(generation)
+    }
+
+    const succeeded = generations.filter((generation) =>
+      generation.status === 'succeeded' &&
+      generation.targetClipId &&
+      generation.targetSourceUrl &&
+      (generation.kind === 'image' ? generation.images?.[0] : generation.videoUrl)
+    )
+    const replacements = succeeded.map((generation) => {
+      const url = generation.kind === 'image' ? generation.images?.[0] : generation.videoUrl
+      return {
+        clipId: generation.targetClipId || '',
+        expectedUrl: generation.targetSourceUrl || '',
+        input: {
+          kind: generation.kind,
+          url: url || '',
+          thumbnail: generation.thumbnail || (generation.kind === 'image' ? url : undefined),
+          duration: generation.duration,
+          name: generation.targetClipName,
+        },
+      }
+    })
+    const result = conversation.projectId
+      ? useEditProjectStore().replaceClipAssets(conversation.projectId, replacements, expectedRevision)
+      : { status: 'missing' as const, appliedClipIds: [] }
+    const applied = new Set(result.appliedClipIds)
+    for (const generation of succeeded) {
+      if (applied.has(generation.targetClipId || '')) {
+        generation.replacementStatus = 'replaced'
+        generation.attachedToProject = true
+      } else {
+        generation.replacementStatus = 'stale'
+        generation.replacementError = result.status === 'missing'
+          ? '原片段已删除，生成结果未写入项目。'
+          : '项目已在生成期间变化，所有生成结果均未覆盖新内容。'
+      }
+    }
+    const failed = generations.length - succeeded.length
+    if (!succeeded.length) {
+      message.content = `${generations.length} 个选中片段均生成失败，未修改任何片段。`
+      message.status = 'error'
+      message.error = generations.map((generation) => generation.error).filter(Boolean).join('；') || '生成失败，请重试。'
+    } else {
+      message.content = result.status === 'applied'
+        ? `已按原需求修改 ${applied.size} 个选中片段，保留原时间点、时长与布局；可用撤销恢复。${failed ? `另有 ${failed} 段生成失败。` : ''}`
+        : `素材已生成，但目标校验未通过，未修改任何片段。${failed ? `另有 ${failed} 段生成失败。` : ''}`
+      message.status = result.status === 'applied' ? 'done' : 'error'
+      if (result.status !== 'applied') message.error = '生成结果未写回项目，请确认原片段后重试。'
+    }
+    conversation.updatedAt = Date.now()
+    persistNow()
+  }
+
+  /** 普通对话里的明确改图 / 改视频请求同样绕过聊天模型，但只返回衍生素材，不覆盖时间轴。 */
+  async function runAttachmentMediaRevisions(
+    conversation: AgentConversation,
+    message: AgentMessage,
+    attachments: AgentAttachment[],
+  ) {
+    const project = conversation.projectId
+      ? useEditProjectStore().getProject(conversation.projectId)
+      : null
+    const target = {
+      aspectRatio: project?.aspectRatio || '16:9',
+      resolution: project?.resolution || ('768P' as const),
+    }
+    const prompt = latestUserMessage(conversation.messages)?.content.trim() || ''
+    const generations = attachments.map((attachment) => reactive(
+      createAttachmentMediaGeneration(attachment, prompt, target),
+    ))
+
+    for (const generation of generations) {
+      setMessageGeneration(message, generation)
+      conversation.updatedAt = Date.now()
+      persistNow()
+      await executeGeneration(generation)
+      attachGenerationToProject(conversation, message)
+    }
+
+    const succeeded = generations.filter((generation) => generation.status === 'succeeded').length
+    const failed = generations.length - succeeded
+    if (!succeeded) {
+      message.content = `${generations.length} 份素材均修改失败，未生成新素材。`
+      message.status = 'error'
+      message.error = generations.map((generation) => generation.error).filter(Boolean).join('；') || '生成失败，请重试。'
+    } else {
+      message.content = `已根据原素材和你的原话生成 ${succeeded} 份修改结果。${failed ? `另有 ${failed} 份失败。` : ''}`
+      message.status = 'done'
+    }
+    conversation.updatedAt = Date.now()
+    persistNow()
+  }
+
+  function applyAnimationEditsFromReply(
+    conversation: AgentConversation,
+    message: AgentMessage,
+    clips: AgentClipRef[],
+    expectedRevision?: number,
+  ): boolean {
+    const parsed = animationEditsForSelection(message.content, clips)
+    message.content = stripAgentAnimationBlocks(message.content)
+    if (parsed.error) {
+      message.status = 'error'
+      message.error = parsed.error
+      return false
+    }
+    if (!conversation.projectId) {
+      message.status = 'error'
+      message.error = '找不到动画所属的剪辑项目，源码未写入。'
+      return false
+    }
+    const byId = new Map(clips.map((clip) => [clip.id, clip]))
+    const result = useEditProjectStore().replaceAnimationSources(
+      conversation.projectId,
+      parsed.edits.map((edit) => {
+        const clip = byId.get(edit.clipId)
+        return {
+          clipId: edit.clipId,
+          code: edit.code,
+          codeLanguage: edit.sourceType,
+          expectedUrl: clip?.url || '',
+          expectedCode: clip?.code,
+        }
+      }),
+      expectedRevision,
+    )
+    if (result.status !== 'applied') {
+      message.status = 'error'
+      message.error = result.status === 'missing'
+        ? '原动画片段已删除，源码未写入。'
+        : '动画或项目已在回复期间变化，源码未覆盖新内容。'
+      return false
+    }
+    message.status = 'done'
+    message.content = `${message.content}${message.content ? '\n\n' : ''}已直接更新 ${result.appliedClipIds.length} 个选中动画的源码；时间轴属性保持不变，可用撤销恢复。`
+    return true
+  }
+
+  function retryGeneration(messageId: string, generationId?: string) {
     const conversation = activeConversation.value
     if (!conversation) return
     const message = conversation.messages.find((item) => item.id === messageId)
-    const generation = message?.generation
+    const generation = message
+      ? generationId
+        ? messageGenerations(message).find((item) => item.id === generationId)
+        : message.generation
+      : undefined
     if (!message || !generation || generation.status === 'running') return
 
     const call: AgentToolCall = {
@@ -574,11 +876,59 @@ export const useAgentStore = defineStore('agent', () => {
         duration: generation.duration,
       },
     }
-    void runGeneration(conversation, message, call)
+    void runGeneration(
+      conversation,
+      message,
+      call,
+      { ...generation, status: 'running', error: undefined, replacementError: undefined },
+    )
+  }
+
+  /** 内置模型与本机 Agent 共用同一套工具路由，选中片段时绝不另起生成任务。 */
+  function pendingToolFromReply(
+    message: AgentMessage,
+    selectedClips: AgentClipRef[],
+    toolCalls: AgentToolCall[],
+    timelineHandled: boolean,
+  ): AgentToolCall | null {
+    const visible = message.content
+    if (!visible && !toolCalls.length && !timelineHandled) {
+      message.status = 'error'
+      message.error = '模型没有返回内容，请重试。'
+      return null
+    }
+    message.status = 'done'
+    if (!visible && timelineHandled && !toolCalls.length) {
+      message.content = selectedClips.length ? '已按选中范围更新时间轴。' : '已更新时间轴。'
+    }
+    if (!toolCalls.length) return null
+
+    const call = toolCalls[0]
+    if (selectedClips.length) {
+      message.status = 'error'
+      message.error = '选中片段只接受本轮固定目标的修改；本次未执行模型额外返回的生成或跳转工具。'
+      return null
+    }
+    if (buildAgentGeneration(call) || call.name === 'open_voice' || call.name === 'open_3d') return call
+    if (!visible) {
+      message.status = 'error'
+      message.error = '没有解析到可执行的生成参数，请补充画面内容后重试。'
+    }
+    return null
   }
 
   async function requestAssistant(conversation: AgentConversation, assistant: AgentMessage) {
     const controller = new AbortController()
+    const targetUser = latestUserMessage(conversation.messages)
+    const selectedClips = targetUser?.clips || []
+    const selectedRoute = routeSelectedClips(selectedClips)
+    const requestRoute = routeConversationRequest({
+      content: targetUser?.content || '',
+      clips: targetUser?.clips,
+      attachments: targetUser?.attachments,
+      templates: targetUser?.templates,
+    })
+    const allowedClipIds = selectedClips.length ? new Set(selectedClips.map((clip) => clip.id)) : undefined
     // 记下发起时的项目版本：模型回复期间若有人手动改时间轴，落盘前会发现并放弃覆盖。
     const startRevision =
       conversation.mode === 'create' && conversation.projectId
@@ -588,6 +938,8 @@ export const useAgentStore = defineStore('agent', () => {
     streamingId.value = assistant.id
     authExpired.value = false
     let pendingTool: AgentToolCall | null = null
+    let pendingMediaClips: AgentClipRef[] | null = null
+    let pendingMediaAttachments: AgentAttachment[] | null = null
 
     const localAgentStore = useLocalAgentStore()
     const apiStore = useApiStore()
@@ -598,7 +950,21 @@ export const useAgentStore = defineStore('agent', () => {
       .join('\n\n')
 
     try {
-      if (engine) {
+      if (selectedRoute === 'media') {
+        assistant.model = '多模态素材编辑'
+        assistant.content = `已将 ${selectedClips.length} 个选中片段的原素材与需求提交给对应模型，未经过文生视频改写。`
+        assistant.status = 'done'
+        pendingMediaClips = selectedClips
+      } else if (requestRoute === 'attachment-media') {
+        assistant.model = '多模态素材编辑'
+        assistant.content = `已将 ${targetUser?.attachments?.length || 0} 份原素材与你的原话提交给对应模型，未经过文生视频改写。`
+        assistant.status = 'done'
+        pendingMediaAttachments = targetUser?.attachments || []
+      } else if (selectedRoute === 'mixed') {
+        assistant.model = '选中片段路由'
+        assistant.status = 'error'
+        assistant.error = '代码动画、媒体与音频不能混在同一轮修改。请按类型分别选择后发送；本次未修改任何片段。'
+      } else if (engine) {
         assistant.model = engine.name
         const projects = useEditProjectStore()
         const project = projects.getProject(conversation.projectId)
@@ -640,9 +1006,23 @@ export const useAgentStore = defineStore('agent', () => {
                 }`
         } else {
           assistant.status = 'done'
-          applyTimelineOpsFromReply(conversation, assistant, startRevision)
-          applyAskFromReply(assistant)
-          attachLocalMediaToProject(conversation, assistant.content)
+          if (selectedRoute === 'animation') {
+            applyAnimationEditsFromReply(conversation, assistant, selectedClips, startRevision)
+            assistant.content = stripAgentControlBlocks(assistant.content)
+          } else {
+            const raw = assistant.content
+            const toolCalls = extractAgentToolCalls(raw)
+            const timelineHandled = applyTimelineOpsFromReply(
+              conversation,
+              assistant,
+              startRevision,
+              allowedClipIds,
+            )
+            applyAskFromReply(assistant)
+            assistant.content = stripAgentControlBlocks(assistant.content)
+            pendingTool = pendingToolFromReply(assistant, selectedClips, toolCalls, timelineHandled)
+            if (!selectedClips.length) attachLocalMediaToProject(conversation, raw)
+          }
         }
       } else {
         assistant.model = modelStore.selectedId
@@ -665,25 +1045,20 @@ export const useAgentStore = defineStore('agent', () => {
         const raw = assistant.content
         const toolCalls = extractAgentToolCalls(raw)
         assistant.content = raw
-        applyTimelineOpsFromReply(conversation, assistant, startRevision)
-        applyAskFromReply(assistant)
-        assistant.content = stripAgentControlBlocks(assistant.content)
-        const visible = assistant.content
-
-        if (!visible && !toolCalls.length) {
-          assistant.status = 'error'
-          assistant.error = '模型没有返回内容，请重试。'
+        if (selectedRoute === 'animation') {
+          // 动画协议只接受固定 clipId 的完整源码；误返回生成工具也绝不执行。
+          applyAnimationEditsFromReply(conversation, assistant, selectedClips, startRevision)
+          assistant.content = stripAgentControlBlocks(assistant.content)
         } else {
-          assistant.status = 'done'
-          if (toolCalls.length) {
-            const call = toolCalls[0]
-            if (buildAgentGeneration(call)) {
-              pendingTool = call
-            } else if (!visible) {
-              assistant.status = 'error'
-              assistant.error = '没有解析到可执行的生成参数，请补充画面内容后重试。'
-            }
-          }
+          const timelineHandled = applyTimelineOpsFromReply(
+            conversation,
+            assistant,
+            startRevision,
+            allowedClipIds,
+          )
+          applyAskFromReply(assistant)
+          assistant.content = stripAgentControlBlocks(assistant.content)
+          pendingTool = pendingToolFromReply(assistant, selectedClips, toolCalls, timelineHandled)
         }
       }
     } catch (error: any) {
@@ -709,6 +1084,15 @@ export const useAgentStore = defineStore('agent', () => {
       streamingId.value = null
       conversation.updatedAt = Date.now()
       persistNow()
+    }
+
+    if (pendingMediaClips) {
+      void runSelectedMediaRevisions(conversation, assistant, pendingMediaClips, startRevision)
+      return
+    }
+    if (pendingMediaAttachments) {
+      void runAttachmentMediaRevisions(conversation, assistant, pendingMediaAttachments)
+      return
     }
 
     // 文本流结束后再执行生成，避免长时间任务占住输入框。

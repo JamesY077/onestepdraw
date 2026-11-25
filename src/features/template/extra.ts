@@ -1,5 +1,6 @@
 import type { BuiltinTemplate, TemplateCategory } from './types'
 import wallstreetExplainerGuide from './guides/wallstreet-explainer.md?raw'
+import { GIF_FACTORY_CATEGORIES, GIF_FACTORY_TEMPLATES } from './gifFactory'
 
 /**
  * 手工维护的模板，与 code-animation-prompts 的来源分开存放。
@@ -13,6 +14,7 @@ export const EXTRA_CATEGORIES: TemplateCategory[] = [
     label: '财经解读',
     labelEn: 'Finance',
   },
+  ...GIF_FACTORY_CATEGORIES,
 ]
 
 export const EXTRA_TEMPLATES: BuiltinTemplate[] = [
@@ -35,4 +37,5 @@ export const EXTRA_TEMPLATES: BuiltinTemplate[] = [
     ],
     guide: wallstreetExplainerGuide,
   },
+  ...GIF_FACTORY_TEMPLATES,
 ]

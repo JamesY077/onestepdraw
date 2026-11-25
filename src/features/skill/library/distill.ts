@@ -49,7 +49,7 @@ const SOURCE_LABELS: Record<SkillSourceType, string> = {
   github: 'GitHub 资料',
 }
 
-const DISTILL_SYSTEM_PROMPT = `你是赭墨的「内容蒸馏器」，方法来自 cangjie-skill 的 RIA-TV++。
+const DISTILL_SYSTEM_PROMPT = `你是步帧的「内容蒸馏器」，方法来自 cangjie-skill 的 RIA-TV++。
 
 你的任务：把用户给的一段长内容，蒸馏成 1–3 个**可执行的 Agent Skill**。
 这不是书摘、读后感、摘要，也不是扮演作者。只保留「换一个人拿到也能照做」的能力。

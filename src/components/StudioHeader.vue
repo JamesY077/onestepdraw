@@ -1,14 +1,23 @@
 <template>
   <header class="studio-header" :style="{ '--studio-accent': accent }">
     <div class="studio-header-main">
-      <button class="studio-brand" type="button" aria-label="返回赭墨对话" @click="router.push('/chat')">
+      <button class="studio-brand" type="button" aria-label="返回步帧对话" @click="router.push('/chat')">
         <BrandMark :size="26" />
         <span class="studio-brand-name">{{ BRAND_NAME_EN }}</span>
       </button>
 
       <div class="studio-heading">
         <ShinyLabel class="studio-kicker" :text="kicker" />
-        <h1 class="studio-heading-title">{{ title }}</h1>
+        <TextReveal
+          :key="title"
+          class="studio-heading-title"
+          tag="h1"
+          :text="title"
+          :delay="20"
+          :duration="0.38"
+          effect="rise"
+          trigger="load"
+        />
         <p v-if="subtitle" class="studio-heading-sub">{{ subtitle }}</p>
       </div>
 
@@ -25,6 +34,7 @@
 import { useRouter } from 'vue-router'
 import BrandMark from '@/components/agent/BrandMark.vue'
 import ShinyLabel from '@/components/ui/ShinyLabel.vue'
+import TextReveal from '@/components/ui/TextReveal.vue'
 import { BRAND_NAME_EN } from '@/features/brand'
 
 withDefaults(

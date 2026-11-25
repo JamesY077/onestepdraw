@@ -87,7 +87,7 @@ export async function fetchLocalAgents(force = false): Promise<{
       cache: 'no-store',
     })
   } catch {
-    throw new LocalAgentError('无法连接本地服务，请用 npm start 启动赭墨后再扫描。')
+    throw new LocalAgentError('无法连接本地服务，请用 npm start 启动步帧后再扫描。')
   }
 
   let payload: any = null
@@ -102,7 +102,7 @@ export async function fetchLocalAgents(force = false): Promise<{
   }
 
   if (!payload || !Array.isArray(payload.agents)) {
-    throw new LocalAgentError('本机扫描接口不可用，请用 npm start 启动赭墨。')
+    throw new LocalAgentError('本机扫描接口不可用，请用 npm start 启动步帧。')
   }
 
   return {

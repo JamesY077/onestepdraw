@@ -162,7 +162,9 @@
         <a href="https://github.com/win4r/video-director" target="_blank" rel="noreferrer">video-director</a>
         与
         <a href="https://github.com/mattpocock/skills" target="_blank" rel="noreferrer">grill-me</a>
-        （均为 MIT）。
+        （均为 MIT）。动态创作流程来自
+        <a href="https://github.com/WoYun520/gif-factory" target="_blank" rel="noreferrer">GIF 工厂</a>
+        （原创说明 MIT；角色、字体、音乐与外部 Skill 按各自许可，不自动调用外部依赖）。
       </p>
     </template>
   </div>

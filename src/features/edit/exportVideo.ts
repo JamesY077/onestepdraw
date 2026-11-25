@@ -232,7 +232,7 @@ async function mixAudio(
   const clips: Array<{ clip: TimelineClip; muted: boolean }> = []
   for (const track of project.tracks) {
     for (const clip of track.clips) {
-      if (clip.kind === 'image') continue
+      if (clip.kind === 'image' || clip.kind === 'animation') continue
       clips.push({ clip, muted: !!track.muted })
     }
   }

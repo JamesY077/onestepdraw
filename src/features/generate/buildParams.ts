@@ -46,6 +46,15 @@ export async function buildImageParams(
     delete imageParams.image
     delete imageParams.width
     delete imageParams.height
+  } else if (mode === 'minimax-h3') {
+    // MiniMax H3 Image 文生图使用 OpenAI 兼容协议，仅下发其明确支持的参数。
+    imageParams.size = aspectRatioToImageSize(aspectRatio, mode, 'x')
+    imageParams.response_format = 'url'
+    delete imageParams.image
+    delete imageParams.width
+    delete imageParams.height
+    delete imageParams.output_format
+    delete imageParams.watermark
   } else if (mode && mode !== 'default') {
     const { width, height } = aspectRatioToDimensions(aspectRatio, mode)
     imageParams.output_format = 'png'

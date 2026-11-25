@@ -27,7 +27,7 @@ export interface ModelCapability {
     | 'supports-multimodal-upload'
     | 'requires-image-upload'
     | 'requires-video-upload'
-  imageRequestMode?: 'default' | 'seedream-5-lite' | 'moss'
+  imageRequestMode?: 'default' | 'seedream-5-lite' | 'minimax-h3' | 'moss'
   /**
    * 图片参考模式：
    * - 'multi'：支持多张参考图（通过 image 数组上传），可使用 @ 在提示词中引用；

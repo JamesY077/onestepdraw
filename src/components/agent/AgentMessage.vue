@@ -120,9 +120,10 @@
         />
 
         <AgentGenerationCard
-          v-if="message.generation"
-          :generation="message.generation"
-          @retry="$emit('generation-retry', message.id)"
+          v-for="generation in message.generations?.length ? message.generations : (message.generation ? [message.generation] : [])"
+          :key="generation.id"
+          :generation="generation"
+          @retry="$emit('generation-retry', message.id, generation.id)"
         />
 
         <div v-if="message.status === 'error'" class="message-error">
@@ -165,6 +166,7 @@ import MarkdownView from './MarkdownView.vue'
 import AgentGenerationCard from './AgentGenerationCard.vue'
 import AgentAskCard from './AgentAskCard.vue'
 import { stripAgentControlBlocks } from '@/features/agent/tools'
+import { stripAgentAnimationBlocks } from '@/features/agent/clipRevision'
 import type { AgentAttachment, AgentMessage } from '@/types/agent'
 
 const props = withDefaults(
@@ -173,13 +175,13 @@ const props = withDefaults(
 )
 defineEmits<{
   (event: 'retry'): void
-  (event: 'generation-retry', id: string): void
+  (event: 'generation-retry', id: string, generationId?: string): void
   (event: 'ask-answer', payload: { messageId: string; optionId: string; label: string }): void
 }>()
 
 const copied = ref(false)
 
-const displayContent = computed(() => stripAgentControlBlocks(props.message.content))
+const displayContent = computed(() => stripAgentAnimationBlocks(stripAgentControlBlocks(props.message.content)))
 
 function hasPreview(item: AgentAttachment): boolean {
   return (item.kind === 'image' && !!item.url) || (item.kind === 'video' && !!item.frames?.length)

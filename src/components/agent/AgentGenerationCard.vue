@@ -14,7 +14,7 @@
       </span>
 
       <div class="generation-titles">
-        <strong>{{ generation.kind === 'image' ? '图片生成' : '视频生成' }}</strong>
+        <strong>{{ generation.intent === 'edit' ? `${generation.targetClipId ? '修改选中' : '修改'}${generation.kind === 'image' ? '图片' : '视频'}` : generation.kind === 'image' ? '图片生成' : '视频生成' }}</strong>
         <span class="generation-meta">
           <span>{{ generation.aspectRatio }}</span>
           <template v-if="generation.kind === 'video'">
@@ -69,10 +69,12 @@
       />
 
       <div class="generation-actions">
-        <AddToProjectButton :asset="inboxAssets" compact />
-        <span v-if="generation.attachedToProject" class="attached-note">已自动加入创作项目</span>
+        <AddToProjectButton v-if="generation.intent !== 'edit' || !generation.targetClipId" :asset="inboxAssets" compact />
+        <span v-if="generation.replacementStatus === 'replaced'" class="attached-note">已替换原片段 · {{ generation.targetClipName }}</span>
+        <span v-else-if="generation.attachedToProject" class="attached-note">已自动加入创作项目</span>
       </div>
 
+      <p v-if="generation.replacementError" class="replacement-error">{{ generation.replacementError }}</p>
       <p class="result-note">结果链接由上游临时提供，建议及时下载保存。</p>
     </div>
 
@@ -341,6 +343,13 @@ const progressLabel = computed(() => {
   color: var(--sf-ink-3);
   font-size: 10.5px;
   line-height: 1.5;
+}
+
+.replacement-error {
+  margin: 9px 0 0;
+  color: var(--sf-danger);
+  font-size: 11px;
+  line-height: 1.55;
 }
 
 .generation-error {

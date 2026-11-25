@@ -1,6 +1,6 @@
 import type { ImageGenerateRequest } from '@/types/api'
 
-export type ImageProviderName = 'doubao' | 'glm' | 'moss'
+export type ImageProviderName = 'doubao' | 'glm' | 'minimax' | 'moss'
 
 export interface ImageProviderAdapter {
   provider: ImageProviderName

@@ -8,6 +8,7 @@ const KIND_LABEL: Record<AgentClipRef['kind'], string> = {
   video: '视频',
   image: '图片',
   audio: '音频',
+  animation: '代码动画',
 }
 
 function seconds(value: number): string {
@@ -34,6 +35,7 @@ function clipLine(clip: AgentClipRef, index: number): string {
     `时长 ${seconds(clip.duration)}`,
   ]
   if (clip.assetName) details.push(`素材 ${clip.assetName}`)
+  if (clip.kind === 'animation') details.push(`源码 ${clip.codeLanguage || 'html'}`)
   const volume = percent(clip.volume)
   if (volume) details.push(`音量 ${volume}`)
   const opacity = percent(clip.opacity)
@@ -49,14 +51,20 @@ function clipNoteLine(clip: AgentClipRef): string {
 /** 追加到用户消息后面的选中片段清单；没有选中片段时返回空字符串。 */
 export function describeClipContext(clips?: AgentClipRef[]): string {
   if (!clips?.length) return ''
+  const animationOnly = clips.every((clip) => clip.kind === 'animation')
   const lines = [
     `[选中片段 · 只改这些] 用户在本轮选中了 ${clips.length} 个片段，请只针对下面的片段回答和修改；`,
     '不要改动未选中的片段，也不需要重做整支片。带「修改意见」的片段优先按那条意见处理，',
-    '每条修改意见只作用于它所属的片段。需要移动 / 裁剪 / 删除 / 调音量时，',
-    '继续使用 onestep-timeline 操作块，clipId 必须使用下面的 id：',
+    '每条修改意见只作用于它所属的片段。',
+    animationOnly
+      ? '代码动画必须返回 onestep-animation 完整源码补丁，clipId 必须使用下面的 id；禁止生成图片或视频。'
+      : '需要移动 / 裁剪 / 删除 / 调音量时，使用 onestep-timeline 操作块，clipId 必须使用下面的 id：',
     ...clips.flatMap((clip, index) => {
       const note = clipNoteLine(clip)
-      return note ? [clipLine(clip, index), note] : [clipLine(clip, index)]
+      const source = clip.kind === 'animation' && clip.code
+        ? `   原始${clip.codeLanguage || 'html'}源码（在此基础上修改，不要重写为视频提示词）：\n${clip.code}`
+        : ''
+      return [clipLine(clip, index), note, source].filter(Boolean)
     }),
   ]
   return lines.join('\n')
