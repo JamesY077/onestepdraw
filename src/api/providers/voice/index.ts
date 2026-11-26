@@ -7,9 +7,8 @@
  * - 快速复刻：POST /audio/minimax/voices/clone
  * - 删除音色：POST /audio/minimax/voices/delete
  *
- * 注意两个「模型名」的区别：
- * - 合成接口用 AIPing 的模型 id：MiniMax-Speech-2.8-hd
- * - 复刻试听必须传官方小写模型名：speech-2.8-hd（传前者会被上游拒绝）
+ * 合成与复刻试听统一使用 AIPing 平台标准模型 id：MiniMax-Speech-2.8-hd。
+ * 旧的小写官方名 speech-2.8-hd 会被当前平台拒绝。
  */
 
 import { AppError } from '@/utils/errors'

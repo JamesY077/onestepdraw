@@ -80,7 +80,7 @@
 
       <div v-else-if="localAgentStore.pendingSelection" class="engine-warning" role="status">
         <span>
-          没有检测到 {{ localAgentStore.pendingSelection.name }}，当前使用内置 AIPing 模型。
+          没有检测到 {{ localAgentStore.pendingSelection.name }}，当前使用 Stepframe Agent（AIPing 连接）。
         </span>
         <button type="button" @click="localAgentStore.scan(true)">重新扫描</button>
       </div>

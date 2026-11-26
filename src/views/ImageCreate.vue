@@ -52,6 +52,7 @@
                   <div class="batch-meta">
                     <span>{{ currentBatch.model || modelLabel }}</span>
                     <span v-if="currentBatch.aspectRatio">{{ currentBatch.aspectRatio }}</span>
+                    <span v-if="currentBatch.imageResolution">{{ currentBatch.imageResolution }}</span>
                     <span v-if="currentBatch.results.length">{{ currentBatch.results.length }} 张</span>
                     <span>{{ formatTime(currentBatch.createdAt) }}</span>
                   </div>
@@ -165,6 +166,7 @@
               <span class="pchip pchip-model">{{ modelLabel }}</span>
               <span class="pchip">{{ modeLabel }}</span>
               <span class="pchip">{{ settingsStore.aspectRatio }}</span>
+              <span v-if="imageResolutionOptions.length" class="pchip">{{ settingsStore.imageResolution }}</span>
               <span class="pchip">{{ effectiveBatchSize }} 张</span>
               <span v-if="selectedStyleCount" class="pchip pchip-accent">风格 × {{ selectedStyleCount }}</span>
               <span v-if="isMossImageModel && mossLayoutEnabled" class="pchip">分层布局</span>
@@ -188,10 +190,9 @@
                 v-model="settingsStore.selectedModel"
                 media-type="image"
                 compact
-                :disabled="isExpandMode"
                 @update:model-value="settingsStore.saveToStorage()"
               />
-              <p v-if="isExpandMode" class="rail-hint">扩图固定使用 Doubao-Seedream-5.0-lite。</p>
+              <p v-if="isExpandMode" class="rail-hint">扩图使用当前支持参考图的模型；MiniMax 同样支持 1K / 2K / 4K。</p>
             </section>
 
             <section class="rail-card">
@@ -232,6 +233,23 @@
                   <span class="ratio-text">{{ option.label }}</span>
                 </button>
               </div>
+            </section>
+
+            <section v-if="imageResolutionOptions.length" class="rail-card">
+              <span class="rail-label">分辨率</span>
+              <div class="chip-row">
+                <button
+                  v-for="option in imageResolutionOptions"
+                  :key="option"
+                  class="chip"
+                  :class="{ active: settingsStore.imageResolution === option }"
+                  type="button"
+                  @click="selectImageResolution(option)"
+                >
+                  {{ option }}
+                </button>
+              </div>
+              <p class="rail-hint">按所选比例直接输出对应像素尺寸，4K 约为 1600 万像素。</p>
             </section>
 
             <section class="rail-card">
@@ -383,6 +401,7 @@
                   <span class="history-meta">
                     {{ formatTime(batch.createdAt) }} · {{ batch.results.length }} 张
                     <template v-if="batch.aspectRatio"> · {{ batch.aspectRatio }}</template>
+                    <template v-if="batch.imageResolution"> · {{ batch.imageResolution }}</template>
                   </span>
                 </span>
               </button>
@@ -471,6 +490,7 @@ interface ImageBatch {
   aspectRatio?: string
   model?: string
   imageMode?: ImageMode
+  imageResolution?: string
   batchSize?: number
   uploadedFile?: UploadedFile
   uploadedFiles?: UploadedFile[]
@@ -485,7 +505,7 @@ interface LayerEditorState {
   prompt: string
 }
 
-const EXPAND_MODEL_ID = 'Doubao-Seedream-5.0-lite'
+const DEFAULT_EXPAND_MODEL_ID = 'Doubao-Seedream-5.0-lite'
 const MAX_BATCH = 5
 const LANDING_REFERENCE_STORAGE_KEY = 'artrealm_landing_reference_image'
 
@@ -497,7 +517,7 @@ const { generate } = useGenerate()
 
 const inputText = ref('')
 const imageMode = ref<ImageMode>('text2image')
-// 参考图列表：普通模型最多 1 张，Seedream 5 等多图模型最多 10 张。
+// 参考图列表：Seedream 最多 10 张，MiniMax H3 Image 最多 16 张。
 const uploadedFiles = ref<UploadedFile[]>([])
 // uploadedFile 继续指向首图，兼容扩图、落地页参考图与历史记录等单图逻辑。
 const uploadedFile = computed(() => uploadedFiles.value[0] ?? null)
@@ -558,7 +578,7 @@ const isMossImageModel = computed(() => modelCapability.value?.imageRequestMode 
 const isMultiReferenceModel = computed(
   () => modelCapability.value?.imageReferenceMode === 'multi',
 )
-/** 多图参考上限：模型默认 10 张，普通模型固定 1 张。 */
+/** 多图参考上限读取模型能力，普通单图模型固定 1 张。 */
 const referenceLimit = computed(() =>
   isMultiReferenceModel.value
     ? Math.max(1, modelCapability.value?.imageReferenceLimit ?? 10)
@@ -599,6 +619,23 @@ const ratioOptions = computed<AspectRatioOption[]>(() => {
   if (!supported?.length) return ASPECT_RATIO_OPTIONS
   return ASPECT_RATIO_OPTIONS.filter((option) => supported.includes(option.value))
 })
+
+const imageResolutionOptions = computed(() => modelCapability.value?.imageResolutions ?? [])
+
+function resolveImageResolution(model: string | null, preferred?: string): string | undefined {
+  const options = getModelCapability(model)?.imageResolutions
+  if (!options?.length) return undefined
+  if (preferred && options.includes(preferred)) return preferred
+  return options.includes('2K') ? '2K' : options[0]
+}
+
+function resolveExpandModel(...candidates: Array<string | null | undefined>): string {
+  const supported = candidates.find((model) => {
+    const capability = getModelCapability(model)
+    return capability?.mediaType === 'image' && capability.localUploadInputs?.includes('image')
+  })
+  return supported || DEFAULT_EXPAND_MODEL_ID
+}
 
 const effectiveBatchSize = computed(() =>
   isExpandMode.value ? 1 : Math.min(MAX_BATCH, Math.max(1, settingsStore.batchSize || 1)),
@@ -644,6 +681,7 @@ const batches = computed<ImageBatch[]>(() => {
       aspectRatio: message.aspectRatio,
       model: message.model,
       imageMode: message.imageMode,
+      imageResolution: message.imageResolution,
       batchSize: message.batchSize,
       uploadedFile: message.uploadedFile,
       uploadedFiles: message.uploadedFiles,
@@ -764,6 +802,12 @@ function selectRatio(value: string) {
   settingsStore.saveToStorage()
 }
 
+function selectImageResolution(value: string) {
+  if (!imageResolutionOptions.value.includes(value)) return
+  settingsStore.imageResolution = value
+  settingsStore.saveToStorage()
+}
+
 function selectBatchSize(count: number) {
   if (isExpandMode.value) return
   settingsStore.batchSize = count
@@ -778,6 +822,13 @@ function ensureSupportedAspectRatio() {
   settingsStore.saveToStorage()
 }
 
+function ensureSupportedImageResolution() {
+  const resolution = resolveImageResolution(settingsStore.selectedModel, settingsStore.imageResolution)
+  if (!resolution || resolution === settingsStore.imageResolution) return
+  settingsStore.imageResolution = resolution
+  settingsStore.saveToStorage()
+}
+
 function setImageMode(mode: ImageMode) {
   if (imageMode.value === mode) return
   if (mode === 'image2image' && !supportsImageReferenceMode.value) return
@@ -789,7 +840,7 @@ function setImageMode(mode: ImageMode) {
     return
   }
   if (mode === 'expand') {
-    settingsStore.selectedModel = EXPAND_MODEL_ID
+    settingsStore.selectedModel = resolveExpandModel(settingsStore.selectedModel)
     settingsStore.saveToStorage()
   }
   expandHint.value = false
@@ -989,7 +1040,7 @@ async function expandFromResult(result: GenerateResult) {
   }
   clearUploadedFile()
   imageMode.value = 'expand'
-  settingsStore.selectedModel = EXPAND_MODEL_ID
+  settingsStore.selectedModel = resolveExpandModel(result.model, settingsStore.selectedModel)
   settingsStore.saveToStorage()
   lightboxOpen.value = false
   setReferenceFiles([source])
@@ -1068,7 +1119,10 @@ async function handleLayerRegenerate(layout: MossLayout) {
       skillStore.effectiveSkillContents,
       settingsStore.videoResolution,
       1,
-      { mossLayout: layout },
+      {
+        mossLayout: layout,
+        imageResolution: resolveImageResolution(model, settingsStore.imageResolution),
+      },
     )
     return
   }
@@ -1129,8 +1183,14 @@ async function handlePolish() {
   }
 }
 
-/** 扩图链路：先预扩画布，再把扩展后的图交给 Seedream；比例与原图一致时拦截。 */
-async function runExpand(source: UploadedFile, ratio: string, prompt = '') {
+/** 扩图链路：先按当前模型尺寸预扩画布，再走对应模型的参考图编辑接口。 */
+async function runExpand(
+  source: UploadedFile,
+  ratio: string,
+  prompt = '',
+  requestedModel?: string | null,
+  preferredResolution?: string,
+) {
   let dimensions = source.dimensions || null
   if (!dimensions) {
     try {
@@ -1146,14 +1206,24 @@ async function runExpand(source: UploadedFile, ratio: string, prompt = '') {
     return
   }
 
-  const prepared = await createExpandedUploadedFile(source, ratio)
-  const target = getExpandTargetSize(ratio)
+  const model = resolveExpandModel(requestedModel, settingsStore.selectedModel)
+  const capability = getModelCapability(model)
+  const imageResolution = resolveImageResolution(model, preferredResolution || settingsStore.imageResolution)
+  const prepared = await createExpandedUploadedFile(
+    source,
+    ratio,
+    capability?.imageRequestMode,
+    imageResolution,
+  )
+  const target = getExpandTargetSize(ratio, capability?.imageRequestMode, imageResolution)
   const expandPrompt = prompt.trim()
 
+  settingsStore.selectedModel = model
+  if (imageResolution) settingsStore.imageResolution = imageResolution
   await generate(
     expandPrompt,
     'image2image',
-    EXPAND_MODEL_ID,
+    model,
     source,
     ratio,
     settingsStore.videoDuration,
@@ -1165,6 +1235,7 @@ async function runExpand(source: UploadedFile, ratio: string, prompt = '') {
       imageMode: 'expand',
       generationFile: prepared || source,
       imageSize: target.size,
+      imageResolution,
     },
   )
 }
@@ -1223,7 +1294,10 @@ async function handleSend() {
     skillStore.effectiveSkillContents,
     settingsStore.videoResolution,
     batchSize,
-    { mossLayoutMode: isMossImageModel.value && mossLayoutEnabled.value },
+    {
+      mossLayoutMode: isMossImageModel.value && mossLayoutEnabled.value,
+      imageResolution: resolveImageResolution(settingsStore.selectedModel, settingsStore.imageResolution),
+    },
   )
 
   settingsStore.saveToStorage()
@@ -1241,15 +1315,18 @@ async function regenerate(batch: ImageBatch) {
       : []
   const source = sourceFiles[0]
   const ratio = batch.aspectRatio || settingsStore.aspectRatio
+  const model = batch.model || settingsStore.selectedModel
   if (batch.imageMode === 'expand' && source) {
     selectedBatchId.value = null
-    await runExpand(source, ratio, batch.prompt)
+    await runExpand(source, ratio, batch.prompt, model, batch.imageResolution)
+    settingsStore.saveToStorage()
     return
   }
 
-  const model = batch.model || settingsStore.selectedModel
   if (model) settingsStore.selectedModel = model
   settingsStore.aspectRatio = ratio
+  const imageResolution = resolveImageResolution(model, batch.imageResolution)
+  if (imageResolution) settingsStore.imageResolution = imageResolution
   settingsStore.saveToStorage()
 
   const savedLayout = batch.results.find((item) => item.layout)?.layout || null
@@ -1267,7 +1344,7 @@ async function regenerate(batch: ImageBatch) {
     skillStore.effectiveSkillContents,
     settingsStore.videoResolution,
     batch.batchSize || effectiveBatchSize.value,
-    { mossLayout: savedLayout },
+    { mossLayout: savedLayout, imageResolution },
   )
 
   settingsStore.saveToStorage()
@@ -1277,7 +1354,12 @@ watch(
   () => settingsStore.selectedModel,
   () => {
     ensureSupportedAspectRatio()
+    ensureSupportedImageResolution()
     enforceReferenceLimit()
+    if (imageMode.value !== 'text2image' && !supportsImageReferenceMode.value) {
+      imageMode.value = 'text2image'
+      clearUploadedFile()
+    }
   },
 )
 
@@ -1292,6 +1374,7 @@ onMounted(async () => {
     imageMode.value = 'text2image'
   }
   ensureSupportedAspectRatio()
+  ensureSupportedImageResolution()
   restoreLandingReference()
 
   const initialPrompt = typeof route.query.prompt === 'string' ? route.query.prompt.trim() : ''

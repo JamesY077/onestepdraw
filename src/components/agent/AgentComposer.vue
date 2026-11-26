@@ -254,10 +254,10 @@
                 :aria-selected="localAgentStore.selectedId === BUILTIN_ENGINE_ID"
                 @click="chooseEngine(BUILTIN_ENGINE_ID)"
               >
-                <AgentMark :id="BUILTIN_ENGINE_ID" name="AIPing" :size="26" />
+                <AgentMark :id="BUILTIN_ENGINE_ID" :name="BUILTIN_AGENT_NAME" :size="26" />
                 <span class="option-copy">
-                  <strong>AIPing · DeepSeek</strong>
-                  <small>内置模型，无需安装</small>
+                  <strong>{{ BUILTIN_AGENT_NAME }}</strong>
+                  <small>项目内置 · 通过 AIPing 连接</small>
                 </span>
                 <span v-if="localAgentStore.selectedId === BUILTIN_ENGINE_ID" class="option-check">✓</span>
               </button>
@@ -447,7 +447,7 @@ import MentionMenu, { type MentionGroup, type MentionItem } from '@/components/a
 import MentionInput from '@/components/agent/MentionInput.vue'
 import WorkspacePicker from '@/components/workspace/WorkspacePicker.vue'
 import { useMentionRefs } from '@/composables/useMentionRefs'
-import { BUILTIN_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
+import { BUILTIN_AGENT_NAME, BUILTIN_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useTemplateStore } from '@/stores/templateStore'
@@ -631,7 +631,7 @@ const modeTip = computed(() => {
 const engineTitle = computed(() =>
   localAgentStore.isLocalEngine
     ? `${localAgentStore.selectedLabel} · ${localAgentStore.selectedHint}`
-    : 'AIPing · DeepSeek，内置模型',
+    : `${BUILTIN_AGENT_NAME} · 通过 AIPing 连接`,
 )
 
 const filteredModels = computed(() => {

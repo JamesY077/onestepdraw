@@ -7,11 +7,6 @@
             <path d="M14.5 6 8.5 12l6 6" />
           </svg>
         </button>
-        <button type="button" class="es-back is-chat" title="返回对话" aria-label="返回对话" @click="goChat">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.5 6 8.5 12l6 6" />
-          </svg>
-        </button>
         <BrandMark :size="22" />
         <input
           v-if="project"
@@ -474,11 +469,6 @@ function openProject(id: string) {
 function goProjectList() {
   playing.value = false
   void router.push('/edit')
-}
-
-function goChat() {
-  playing.value = false
-  router.push(conversationId.value ? `/chat/${conversationId.value}` : '/chat')
 }
 
 function createNewProject() {

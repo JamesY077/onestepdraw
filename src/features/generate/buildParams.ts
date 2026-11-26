@@ -20,8 +20,10 @@ export async function buildImageParams(
   aspectRatio: string,
   mode: ImageRequestMode | undefined,
   sizeOverride?: string,
-  /** 'multi' 时把多张参考图作为 image 数组下发（Seedream 5.0 Lite 支持）。 */
-  imageReferenceMode?: ModelCapability['imageReferenceMode']
+  /** 'multi' 时保留多张参考图；Seedream 直接下发 image 数组，MiniMax 由适配器转换。 */
+  imageReferenceMode?: ModelCapability['imageReferenceMode'],
+  /** MiniMax H3 Image 的 1K / 2K / 4K 档位，其他模型忽略。 */
+  imageResolution = '2K',
 ): Promise<ImageGenerateRequest> {
   const uploadedFiles = Array.isArray(uploadedFile) ? uploadedFile : uploadedFile ? [uploadedFile] : []
   const uploadValues = (await Promise.all(
@@ -47,10 +49,10 @@ export async function buildImageParams(
     delete imageParams.width
     delete imageParams.height
   } else if (mode === 'minimax-h3') {
-    // MiniMax H3 Image 文生图使用 OpenAI 兼容协议，仅下发其明确支持的参数。
-    imageParams.size = aspectRatioToImageSize(aspectRatio, mode, 'x')
+    // 文生图走 /images/generations；保留参考图时由适配器改走 /images/edits。
+    imageParams.size = aspectRatioToImageSize(aspectRatio, mode, 'x', imageResolution)
     imageParams.response_format = 'url'
-    delete imageParams.image
+    if (!uploadValues.length) delete imageParams.image
     delete imageParams.width
     delete imageParams.height
     delete imageParams.output_format
@@ -92,7 +94,7 @@ export async function buildVideoParams(
   videoRequestMode: ModelCapability['videoRequestMode'],
   // 可灵声音开关：新协议使用 sound=on/off。
   klingSound: 'on' | 'off' = 'off',
-  // 视频分辨率档位（当前仅 MiniMax-H3 使用：768P / 2K）。
+  // 视频分辨率档位（MiniMax-H3、Kling 4.0、Seedance 使用）。
   videoResolution: string | null = null,
   // 视频生成方式（文生 / 图生 / 首尾帧 / 参考 / 编辑等），部分模型需要据此改写参数。
   videoGenerationMode: VideoGenerationMode | null = null
@@ -428,6 +430,7 @@ export async function buildVideoParams(
       if (referenceAudios.length) videoParams.reference_audios = referenceAudios
 
       videoParams.duration = duration || 5
+      videoParams.resolution = videoResolution || '720p'
       videoParams.audio = true
       videoParams.watermark = false
       deleteVideoRatio(videoParams)
@@ -448,7 +451,6 @@ export async function buildVideoParams(
       delete videoParams.images
       delete videoParams.first_frame_url
       delete videoParams.last_frame_url
-      delete videoParams.resolution
       delete videoParams.movement_amplitude
       delete videoParams.off_peak
       delete videoParams.seed

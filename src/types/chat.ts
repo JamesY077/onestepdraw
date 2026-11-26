@@ -56,6 +56,10 @@ export interface Message {
   imageMode?: ImageGenerationMode
   /** 用户发起本轮生成时选择的视频生成方式；重新生成时沿用（如 Seedance 编辑视频）。 */
   videoMode?: VideoGenerationMode
+  /** 本轮视频生成使用的分辨率档位；历史重生成时沿用。 */
+  videoResolution?: string
+  /** MiniMax H3 Image 本轮使用的 1K / 2K / 4K 档位。 */
+  imageResolution?: string
   /** 本轮图片生成使用的 Moss 分层布局；重生成与图层编辑沿用。 */
   layout?: MossLayout
 }

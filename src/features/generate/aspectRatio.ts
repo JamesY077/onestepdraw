@@ -22,27 +22,54 @@ const SEEDREAM_5_LITE_SIZE_MAP: Record<string, { width: number; height: number }
   '9:16': { width: 1600, height: 2848 },
 }
 
-// MiniMax H3 Image 接受任意正整数尺寸；这里统一使用约 2K 像素量级。
-const MINIMAX_H3_IMAGE_SIZE_MAP: Record<string, { width: number; height: number }> = {
-  '21:9': { width: 3136, height: 1344 },
-  '16:9': { width: 2720, height: 1536 },
-  '3:2': { width: 2400, height: 1600 },
-  '4:3': { width: 2304, height: 1728 },
-  '1:1': { width: 2048, height: 2048 },
-  '3:4': { width: 1728, height: 2304 },
-  '2:3': { width: 1600, height: 2400 },
-  '9:16': { width: 1536, height: 2720 },
+type ImageDimensions = { width: number; height: number }
+
+// MiniMax H3 Image 使用约 1 / 4 / 16 百万像素的 1K / 2K / 4K 档位。
+// 4K 采用官方推荐尺寸（如 4096x4096、5472x3072），直接生成而非后期放大。
+const MINIMAX_H3_IMAGE_SIZE_MAPS: Record<string, Record<string, ImageDimensions>> = {
+  '1K': {
+    '21:9': { width: 1568, height: 672 },
+    '16:9': { width: 1360, height: 768 },
+    '3:2': { width: 1200, height: 800 },
+    '4:3': { width: 1152, height: 864 },
+    '1:1': { width: 1024, height: 1024 },
+    '3:4': { width: 864, height: 1152 },
+    '2:3': { width: 800, height: 1200 },
+    '9:16': { width: 768, height: 1360 },
+  },
+  '2K': {
+    '21:9': { width: 3136, height: 1344 },
+    '16:9': { width: 2720, height: 1536 },
+    '3:2': { width: 2400, height: 1600 },
+    '4:3': { width: 2304, height: 1728 },
+    '1:1': { width: 2048, height: 2048 },
+    '3:4': { width: 1728, height: 2304 },
+    '2:3': { width: 1600, height: 2400 },
+    '9:16': { width: 1536, height: 2720 },
+  },
+  '4K': {
+    '21:9': { width: 6272, height: 2688 },
+    '16:9': { width: 5472, height: 3072 },
+    '3:2': { width: 5024, height: 3360 },
+    '4:3': { width: 4736, height: 3552 },
+    '1:1': { width: 4096, height: 4096 },
+    '3:4': { width: 3552, height: 4736 },
+    '2:3': { width: 3360, height: 5024 },
+    '9:16': { width: 3072, height: 5472 },
+  },
 }
 
 export function aspectRatioToDimensions(
   aspectRatio: string,
-  mode: ImageRequestMode = 'default'
-): { width: number; height: number } {
+  mode: ImageRequestMode = 'default',
+  imageResolution = '2K',
+): ImageDimensions {
   if (mode === 'seedream-5-lite') {
     return SEEDREAM_5_LITE_SIZE_MAP[aspectRatio] || SEEDREAM_5_LITE_SIZE_MAP['1:1']
   }
   if (mode === 'minimax-h3') {
-    return MINIMAX_H3_IMAGE_SIZE_MAP[aspectRatio] || MINIMAX_H3_IMAGE_SIZE_MAP['1:1']
+    const sizes = MINIMAX_H3_IMAGE_SIZE_MAPS[imageResolution.toUpperCase()] || MINIMAX_H3_IMAGE_SIZE_MAPS['2K']
+    return sizes[aspectRatio] || sizes['1:1']
   }
   return ASPECT_RATIO_SIZE_MAP[aspectRatio] || ASPECT_RATIO_SIZE_MAP['1:1']
 }
@@ -50,9 +77,10 @@ export function aspectRatioToDimensions(
 export function aspectRatioToImageSize(
   aspectRatio: string,
   mode: ImageRequestMode = 'default',
-  separator: '*' | 'x' = mode === 'moss' ? 'x' : '*'
+  separator: '*' | 'x' = mode === 'moss' ? 'x' : '*',
+  imageResolution = '2K',
 ): string {
-  const { width, height } = aspectRatioToDimensions(aspectRatio, mode)
+  const { width, height } = aspectRatioToDimensions(aspectRatio, mode, imageResolution)
   return `${width}${separator}${height}`
 }
 

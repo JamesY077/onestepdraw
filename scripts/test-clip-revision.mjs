@@ -23,6 +23,41 @@ try {
   const revision = await server.ssrLoadModule('/src/features/agent/clipRevision.ts')
   const routing = await server.ssrLoadModule('/src/features/agent/conversationRouting.ts')
   const { buildImageParams, buildVideoParams } = await server.ssrLoadModule('/src/features/generate/buildParams.ts')
+  const { aspectRatioToDimensions } = await server.ssrLoadModule('/src/features/generate/aspectRatio.ts')
+  const { getDefaultVideoResolution, getModelCapability, PREFERRED_DEFAULT_MODEL_IDS } = await server.ssrLoadModule('/src/types/model.ts')
+  const { buildSeedanceRequestBody } = await server.ssrLoadModule('/src/api/providers/video/seedanceShared.ts')
+  const {
+    buildMinimaxH3ImageRequestBody,
+    getMinimaxH3ImageEndpoint,
+  } = await server.ssrLoadModule('/src/api/providers/image/minimaxH3Shared.ts')
+  const { getExpandTargetSize } = await server.ssrLoadModule('/src/features/generate/expand.ts')
+  const { getCloneDemoModel } = await server.ssrLoadModule('/src/features/voice/models.ts')
+  const {
+    BUILTIN_AGENT_NAME,
+    BUILTIN_ENGINE_ID,
+    useLocalAgentStore,
+  } = await server.ssrLoadModule('/src/stores/localAgentStore.ts')
+
+  setActivePinia(createPinia())
+  const localAgentStore = useLocalAgentStore()
+  localAgentStore.select(BUILTIN_ENGINE_ID)
+  assert.equal(BUILTIN_AGENT_NAME, 'Stepframe Agent')
+  assert.equal(localAgentStore.selectedLabel, BUILTIN_AGENT_NAME)
+  assert.equal(localAgentStore.isLocalEngine, false)
+
+  for (const model of ['MiniMax-Speech-2.8-hd', 'speech-2.8-hd', 'unknown-voice-model']) {
+    assert.equal(getCloneDemoModel(model), 'MiniMax-Speech-2.8-hd')
+  }
+
+  assert.equal(PREFERRED_DEFAULT_MODEL_IDS.image[0], 'Doubao-Seedream-5.0-lite')
+  for (const model of ['MiniMax-H3-Image', 'MiniMax-H3-Image-Highspeed']) {
+    const capability = getModelCapability(model)
+    assert.deepEqual(capability?.imageResolutions, ['1K', '2K', '4K'])
+    assert.deepEqual(capability?.inputs, ['text', 'image'])
+    assert.deepEqual(capability?.localUploadInputs, ['image'])
+    assert.equal(capability?.imageReferenceMode, 'multi')
+    assert.equal(capability?.imageReferenceLimit, 16)
+  }
 
   const base = {
     trackId: 'track-1',
@@ -99,7 +134,7 @@ try {
     const params = await buildImageParams(
       '一只橘猫趴在窗台上晒太阳',
       model,
-      imageReference,
+      null,
       '16:9',
       'minimax-h3',
     )
@@ -109,11 +144,117 @@ try {
       size: '2720x1536',
       response_format: 'url',
     })
+    assert.equal(getMinimaxH3ImageEndpoint(params), '/images/generations')
+
+    const references = Array.from({ length: 16 }, (_, index) => ({
+      ...imageReference,
+      name: `参考图${index + 1}.png`,
+      refLabel: `图片${index + 1}`,
+      url: `https://img.local/reference-${index + 1}.png`,
+    }))
+    const editParams = await buildImageParams(
+      '把 @图片1 的橘猫放进 @图片2 的房间，保留 @图片16 的光线',
+      model,
+      references,
+      '16:9',
+      'minimax-h3',
+      undefined,
+      'multi',
+      '4K',
+    )
+    assert.equal(editParams.image.length, 16)
+    assert.equal(getMinimaxH3ImageEndpoint(editParams), '/images/edits')
+    const editBody = buildMinimaxH3ImageRequestBody(editParams, model)
+    assert.equal(editBody.image, undefined)
+    assert.equal(editBody.images.length, 16)
+    assert.deepEqual(editBody.images[0], { image_url: references[0].url })
+    assert.deepEqual(editBody.images[15], { image_url: references[15].url })
+    assert.equal(editBody.size, '5472x3072')
+    assert.throws(
+      () => buildMinimaxH3ImageRequestBody({
+        ...editParams,
+        image: Array.from({ length: 17 }, (_, index) => `https://img.local/${index}.png`),
+      }, model),
+      /最多支持 16 张/,
+    )
   }
   const portraitParams = await buildImageParams(
     '竖版海报', 'MiniMax-H3-Image-Highspeed', null, '9:16', 'minimax-h3',
   )
   assert.equal(portraitParams.size, '1536x2720')
+
+  const minimax4KSizes = {
+    '21:9': '6272x2688',
+    '16:9': '5472x3072',
+    '3:2': '5024x3360',
+    '4:3': '4736x3552',
+    '1:1': '4096x4096',
+    '3:4': '3552x4736',
+    '2:3': '3360x5024',
+    '9:16': '3072x5472',
+  }
+  for (const [ratio, size] of Object.entries(minimax4KSizes)) {
+    const params = await buildImageParams(
+      '原生 4K 细节测试', 'MiniMax-H3-Image', imageReference, ratio, 'minimax-h3', undefined, undefined, '4K',
+    )
+    assert.equal(params.size, size)
+    assert.equal(params.image, image.url)
+    assert.equal(params.response_format, 'url')
+    const { width, height } = aspectRatioToDimensions(ratio, 'minimax-h3', '4K')
+    assert.equal(`${width}x${height}`, size)
+    assert.ok(width * height >= 16000000 && width * height <= 20000000)
+  }
+  const minimax1KParams = await buildImageParams(
+    '快速草稿', 'MiniMax-H3-Image-Highspeed', null, '1:1', 'minimax-h3', undefined, undefined, '1K',
+  )
+  assert.equal(minimax1KParams.size, '1024x1024')
+  assert.deepEqual(getExpandTargetSize('16:9', 'minimax-h3', '4K'), {
+    width: 5472,
+    height: 3072,
+    size: '5472x3072',
+  })
+  assert.deepEqual(getExpandTargetSize('16:9'), {
+    width: 2848,
+    height: 1600,
+    size: '2848x1600',
+  })
+
+  // 图片档位只属于 MiniMax；默认 Seedream 的尺寸与参考图参数保持原样。
+  const seedreamParams = await buildImageParams(
+    '默认模型回归', PREFERRED_DEFAULT_MODEL_IDS.image[0], imageReference, '1:1', 'seedream-5-lite', undefined, 'multi', '4K',
+  )
+  assert.equal(seedreamParams.size, '2048x2048')
+  assert.deepEqual(seedreamParams.image, [image.url])
+
+  const seedanceResolutionCases = [
+    { model: 'Doubao-Seedance-2.0', options: ['480p', '720p', '1080p', '4k'], selected: '4k' },
+    { model: 'Doubao-Seedance-2.5', options: ['480p', '720p', '1080p', '4k'], selected: '1080p' },
+    { model: 'Doubao-Seedance-2.0-fast', options: ['480p', '720p'], selected: '480p' },
+    { model: 'Doubao-Seedance-2.0-mini', options: ['480p', '720p'], selected: '720p' },
+  ]
+  for (const { model, options, selected } of seedanceResolutionCases) {
+    assert.deepEqual(getModelCapability(model)?.videoResolutions, options)
+    assert.equal(getDefaultVideoResolution(model), '720p')
+    const params = await buildVideoParams(
+      '一朵云缓缓掠过雪山', model, null, '16:9', 5, 'seedance-2', 'off', selected, 'text2video',
+    )
+    assert.equal(params.resolution, selected)
+    assert.equal(params.aspect_ratio, '16:9')
+    const body = buildSeedanceRequestBody(params, model)
+    assert.equal(body.resolution, selected)
+    assert.equal(body.ratio, '16:9')
+  }
+
+  // 未传档位时保持 Seedance 官方默认 720p；Fast / Mini 不错误下发高分辨率。
+  const seedanceDefaultParams = await buildVideoParams(
+    '默认分辨率回归', 'Doubao-Seedance-2.0', null, '16:9', 5, 'seedance-2', 'off', null, 'text2video',
+  )
+  assert.equal(buildSeedanceRequestBody(seedanceDefaultParams, 'Doubao-Seedance-2.0').resolution, '720p')
+  assert.equal(buildSeedanceRequestBody({
+    ...seedanceDefaultParams,
+    model: 'Doubao-Seedance-2.0-fast',
+    resolution: '4k',
+  }, 'Doubao-Seedance-2.0-fast').resolution, '720p')
 
   const videoParams = await buildVideoParams(
     originalRequest,

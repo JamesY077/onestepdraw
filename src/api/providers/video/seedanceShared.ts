@@ -24,6 +24,17 @@ export const SEEDANCE_2_MODEL_IDS = [
 
 export type Seedance2ModelId = (typeof SEEDANCE_2_MODEL_IDS)[number]
 
+/**
+ * Seedance 分辨率遵循火山方舟强校验规则：2.0 / 2.5 支持 1080p 与 4k，
+ * Fast / Mini 仅支持 480p / 720p。缺省或不合法档位回退到官方默认 720p。
+ */
+export function resolveSeedanceResolution(modelId: string, requested?: string | null): string {
+  const normalized = requested?.trim().toLowerCase() || ''
+  const isFastOrMini = /doubao-seedance-2\.0-(?:fast|mini)$/i.test(modelId)
+  const options = isFastOrMini ? ['480p', '720p'] : ['480p', '720p', '1080p', '4k']
+  return options.includes(normalized) ? normalized : '720p'
+}
+
 export function isSeedance2ModelId(modelId: string | null | undefined): boolean {
   if (!modelId) return false
   const normalized = modelId.toLowerCase()
@@ -125,6 +136,7 @@ export function buildSeedanceRequestBody(params: VideoGenerateRequest, canonical
       audios: referenceAudios,
     }),
     generate_audio: typeof params.audio === 'boolean' ? params.audio : true,
+    resolution: resolveSeedanceResolution(params.model || canonicalModel, params.resolution),
     ratio: params.aspect_ratio || params.ratio || '16:9',
     duration: params.duration || params.seconds || 5,
     watermark: typeof params.watermark === 'boolean' ? params.watermark : false,

@@ -145,15 +145,6 @@
         没有匹配「{{ query }}」的模板，换个关键词试试。
       </p>
 
-      <p v-else class="tpl-credit">
-        风格提示词来自
-        <a href="https://github.com/XiaoyeCodes/code-animation-prompts" target="_blank" rel="noreferrer">code-animation-prompts</a>
-        （原素材整理 俯仰观照）· 「华尔街财经解读」融合自
-        <a href="https://github.com/HeyChengC/wallstreet-explainer" target="_blank" rel="noreferrer">wallstreet-explainer</a>
-        （MIT，示例静帧仅作风格参考）· GIF 工厂模板与 Skill 来自
-        <a href="https://github.com/WoYun520/gif-factory" target="_blank" rel="noreferrer">gif-factory</a>
-        （原创说明 MIT；角色、字体、配乐等素材按各自许可，中性示意不冒充原案例）· 没有静帧的条目由 Seedream 5.0 Lite 生成示例图 · 免费分享，请勿转售
-      </p>
     </div>
 
       <div v-else-if="templateStore.tab === 'skill'" class="tpl-body tpl-skill-wrap">
@@ -1019,23 +1010,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.tpl-credit {
-  margin: 14px 2px 0;
-  color: var(--sf-ink-4);
-  font-size: 9px;
-  line-height: 1.6;
-}
-
-.tpl-credit a {
-  color: var(--sf-ink-3);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.tpl-credit a:hover {
-  color: var(--sf-terra);
 }
 
 .tpl-empty {

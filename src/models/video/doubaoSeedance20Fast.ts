@@ -17,6 +17,7 @@ export const doubaoSeedance20FastModel: VideoModelModule = {
     videoRequestMode: 'seedance-2',
     // 实测上限：4-15s
     videoDurations: [4, 5, 6, 8, 10, 12, 15],
+    videoResolutions: ['480p', '720p'],
   },
   adapter: createSeedanceProvider('Doubao-Seedance-2.0-fast'),
   example: createModelExample({

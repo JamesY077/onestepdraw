@@ -53,5 +53,7 @@ const reduced = useReducedMotion()
 .app-main {
   flex: 1;
   min-height: 0;
+  /* 页面进入时的 8px 位移不能撑高根文档，否则会闪现右侧滚动条。 */
+  overflow: clip;
 }
 </style>

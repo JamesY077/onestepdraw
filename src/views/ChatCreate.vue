@@ -52,6 +52,7 @@
                     <span>{{ currentVideoBatch.model || selectedModelLabel }}</span>
                     <span v-if="currentVideoBatch.aspectRatio">{{ currentVideoBatch.aspectRatio }}</span>
                     <span v-if="currentVideoBatch.duration">{{ currentVideoBatch.duration }}s</span>
+                    <span v-if="currentVideoBatch.videoResolution">{{ formatVideoResolution(currentVideoBatch.videoResolution) }}</span>
                     <span v-if="currentVideoBatch.results.length">{{ currentVideoBatch.results.length }} 条</span>
                     <span>{{ formatTime(currentVideoBatch.createdAt) }}</span>
                   </div>
@@ -292,6 +293,9 @@
               </div>
               <p v-if="videoResolutionOptions.length === 1" class="rail-hint">
                 当前模型固定使用 {{ formatVideoResolution(videoResolutionOptions[0]) }} 输出。
+              </p>
+              <p v-else-if="modelCapability?.videoRequestMode === 'seedance-2'" class="rail-hint">
+                Seedance 默认 720P；2.0 / 2.5 支持 1080P 与 4K，Fast / Mini 最高 720P。
               </p>
             </section>
 
@@ -791,6 +795,7 @@
                   <span class="history-meta">
                     {{ formatTime(batch.createdAt) }} · {{ batch.results.length }} 条
                     <template v-if="batch.aspectRatio"> · {{ batch.aspectRatio }}</template>
+                    <template v-if="batch.videoResolution"> · {{ formatVideoResolution(batch.videoResolution) }}</template>
                   </span>
                 </span>
               </button>
@@ -1063,6 +1068,7 @@ interface VideoBatch {
   aspectRatio?: string
   model?: string
   duration?: number
+  videoResolution?: string
   batchSize?: number
 }
 
@@ -1098,6 +1104,7 @@ const videoBatches = computed<VideoBatch[]>(() => {
       aspectRatio: message.aspectRatio,
       model: message.model,
       duration: message.duration,
+      videoResolution: message.videoResolution,
       batchSize: message.batchSize,
     })
   }
@@ -1227,8 +1234,8 @@ function selectVideoBatchSize(size: number) {
 type ImageMode = ImageGenerationMode
 type VideoMode = VideoGenerationMode
 
-/** 扩图固定使用的模型。 */
-const EXPAND_MODEL_ID = 'Doubao-Seedream-5.0-lite'
+/** 当前模型不支持参考图时，扩图回退到 Seedream。 */
+const DEFAULT_EXPAND_MODEL_ID = 'Doubao-Seedream-5.0-lite'
 /** 快捷扩图弹窗当前选中的生成结果。 */
 const quickExpandResult = ref<GenerateResult | null>(null)
 
@@ -1578,6 +1585,28 @@ function formatVideoResolution(value: string) {
 }
 const formattedVideoResolution = computed(() => formatVideoResolution(settingsStore.videoResolution))
 
+function resolveVideoResolution(model: string | null, preferred?: string): string | null {
+  const options = getSupportedVideoResolutions(model)
+  if (!options?.length) return null
+  if (preferred && options.includes(preferred)) return preferred
+  return getDefaultVideoResolution(model) || options[0]
+}
+
+function resolveImageResolution(model: string | null, preferred?: string): string | undefined {
+  const options = getModelCapability(model)?.imageResolutions
+  if (!options?.length) return undefined
+  if (preferred && options.includes(preferred)) return preferred
+  return options.includes('2K') ? '2K' : options[0]
+}
+
+function resolveExpandModel(...candidates: Array<string | null | undefined>): string {
+  const supported = candidates.find((model) => {
+    const capability = getModelCapability(model)
+    return capability?.mediaType === 'image' && capability.localUploadInputs?.includes('image')
+  })
+  return supported || DEFAULT_EXPAND_MODEL_ID
+}
+
 const selectedModelLabel = computed(() => settingsStore.selectedModel || '未选择模型')
 const selectedVideoDurationLabel = computed(() => {
   return videoDurationOptions.value.find((option) => option.value === settingsStore.videoDuration)?.label || `${settingsStore.videoDuration}s`
@@ -1778,12 +1807,12 @@ function ensureSupportedVideoDuration() {
   settingsStore.saveToStorage()
 }
 
-/** 切换模型后校正分辨率档位（MiniMax-H3：768P/2K；Kling 4.0：720p/1080p；Flash：仅 720p）。 */
-function ensureSupportedVideoResolution() {
+/** 切换模型后校正分辨率档位；首次进入 Seedance 时沿用其官方默认 720p。 */
+function ensureSupportedVideoResolution(forceDefault = false) {
   if (settingsStore.mediaType !== 'video') return
   const options = videoResolutionOptions.value
   if (!options.length) return
-  if (options.includes(settingsStore.videoResolution)) return
+  if (!forceDefault && options.includes(settingsStore.videoResolution)) return
   settingsStore.videoResolution = getDefaultVideoResolution(settingsStore.selectedModel) || options[0]
   settingsStore.saveToStorage()
 }
@@ -2473,8 +2502,8 @@ onBeforeUnmount(() => {
 
 watch(
   () => settingsStore.selectedModel,
-  () => {
-    const capability = getModelCapability(settingsStore.selectedModel)
+  (model, previousModel) => {
+    const capability = getModelCapability(model)
     if (!supportsImageReferenceMode.value) {
       imageMode.value = 'text2image'
     }
@@ -2507,7 +2536,10 @@ watch(
     }
     ensureSupportedAspectRatio()
     ensureSupportedVideoDuration()
-    ensureSupportedVideoResolution()
+    const enteredSeedance = !!previousModel
+      && capability?.videoRequestMode === 'seedance-2'
+      && getModelCapability(previousModel)?.videoRequestMode !== 'seedance-2'
+    ensureSupportedVideoResolution(enteredSeedance)
   }
 )
 
@@ -2519,22 +2551,37 @@ watch(
 )
 
 /**
- * 统一的扩图生成入口：先预扩画布，再把扩展后的图片交给 Seedream。
+ * 统一的扩图生成入口：按当前支持参考图的模型预扩画布并调用图像编辑。
  * 若远程结果图因 CORS 无法读入 Canvas，则自动降级为原图直传 + 扩图指令。
  */
-async function runExpandGeneration(source: UploadedFile, ratio: string, prompt = '') {
-  const preparedFile = await createExpandedUploadedFile(source, ratio)
-  const target = getExpandTargetSize(ratio)
+async function runExpandGeneration(
+  source: UploadedFile,
+  ratio: string,
+  prompt = '',
+  requestedModel?: string | null,
+  preferredResolution?: string,
+) {
+  const model = resolveExpandModel(requestedModel, settingsStore.selectedModel)
+  const capability = getModelCapability(model)
+  const imageResolution = resolveImageResolution(model, preferredResolution || settingsStore.imageResolution)
+  const preparedFile = await createExpandedUploadedFile(
+    source,
+    ratio,
+    capability?.imageRequestMode,
+    imageResolution,
+  )
+  const target = getExpandTargetSize(ratio, capability?.imageRequestMode, imageResolution)
 
   settingsStore.setMediaType('image')
-  settingsStore.selectedModel = EXPAND_MODEL_ID
+  settingsStore.selectedModel = model
   settingsStore.aspectRatio = ratio
+  if (imageResolution) settingsStore.imageResolution = imageResolution
   imageMode.value = 'expand'
 
   await generate(
     prompt,
     'image2image',
-    EXPAND_MODEL_ID,
+    model,
     source,
     ratio,
     settingsStore.videoDuration,
@@ -2546,6 +2593,7 @@ async function runExpandGeneration(source: UploadedFile, ratio: string, prompt =
       imageMode: 'expand',
       generationFile: preparedFile || source,
       imageSize: target.size,
+      imageResolution,
     },
   )
 
@@ -2589,7 +2637,10 @@ async function handleLayerRegenerate(layout: MossLayout) {
       null,
       settingsStore.videoResolution,
       1,
-      { mossLayout: layout },
+      {
+        mossLayout: layout,
+        imageResolution: resolveImageResolution(model, settingsStore.imageResolution),
+      },
     )
 
     await nextTick()
@@ -2635,7 +2686,7 @@ async function confirmQuickExpand(ratio: string) {
     size: 0,
     dimensions: result.size,
   }
-  await runExpandGeneration(source, ratio)
+  await runExpandGeneration(source, ratio, '', result.model)
 }
 
 async function handleSend() {
@@ -2757,6 +2808,7 @@ async function handleSend() {
     videoGenerationMode: videoMode.value,
     // Moss 开启分层时，先把自然语言拆成布局再出图；生成后可在结果卡片进入图层编辑。
     mossLayoutMode: isMossImageModel.value && mossLayoutEnabled.value && !isExpandMode.value,
+    imageResolution: resolveImageResolution(settingsStore.selectedModel, settingsStore.imageResolution),
   })
 
 
@@ -2774,15 +2826,23 @@ async function handleRegenerate(message: Message) {
     const aspectRatio = userMsg.aspectRatio || settingsStore.aspectRatio
     const source = userMsg.uploadedFiles?.[0] || userMsg.uploadedFile
 
-    // 扩图消息重生成：仍以原图为源图，重新走预扩画布 + Seedream 扩图链路。
+    // 扩图消息重生成：沿用原图、模型与图片档位，重新走预扩画布链路。
     if (userMsg.imageMode === 'expand' && source) {
-      await runExpandGeneration(source, aspectRatio, userMsg.content)
+      await runExpandGeneration(
+        source,
+        aspectRatio,
+        userMsg.content,
+        userMsg.model,
+        userMsg.imageResolution,
+      )
       return
     }
 
     const model = userMsg.model || settingsStore.selectedModel
     const duration = userMsg.duration || settingsStore.videoDuration
     const batchSize = userMsg.batchSize || settingsStore.batchSize
+    // 新记录沿用本轮档位；旧 Seedance 记录未存档位时回退到当时的默认 720p。
+    const videoResolution = resolveVideoResolution(model, userMsg.videoResolution) || settingsStore.videoResolution
     // Moss 分层结果重生成时沿用原布局，避免退化成普通文生图。
     const savedLayout = message.layout || message.generateResults?.find((item) => item.layout)?.layout || null
     await generate(
@@ -2796,11 +2856,12 @@ async function handleRegenerate(message: Message) {
       message.generateType === 'image'
         ? skillStore.effectiveSkillContents
         : skillStore.videoSkillContents,
-      settingsStore.videoResolution,
+      videoResolution,
       batchSize,
       {
         // 沿用发起时的视频方式，避免编辑视频重新生成时被当成普通生成。
         videoGenerationMode: userMsg.videoMode ?? null,
+        imageResolution: resolveImageResolution(model, userMsg.imageResolution),
         mossLayout: savedLayout,
       },
     )

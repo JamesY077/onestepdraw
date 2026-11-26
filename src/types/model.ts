@@ -30,11 +30,12 @@ export interface ModelCapability {
   imageRequestMode?: 'default' | 'seedream-5-lite' | 'minimax-h3' | 'moss'
   /**
    * 图片参考模式：
-   * - 'multi'：支持多张参考图（通过 image 数组上传），可使用 @ 在提示词中引用；
+   * - 'multi'：支持多张参考图，可使用 @图片N 在提示词中引用；
+   *   Seedream 通过 image 数组上传，MiniMax 请求时转换成 images[].image_url。
    * - 未设置：仅支持单张参考图。
    */
   imageReferenceMode?: 'multi'
-  /** 多图参考的最大张数（默认 10，与 Seedream 5.0 Lite 上限一致）。 */
+  /** 多图参考最大张数：Seedream 5.0 Lite 为 10，MiniMax H3 Image 为 16。 */
   imageReferenceLimit?: number
   videoRequestMode?: 'kling-v26' | 'kling-v3' | 'kling-omni' | 'kling-o1' | 'kling-v4' | 'viduq3-fast' | 'minimax-hailuo' | 'minimax-h3' | 'seedance-2'
   /**
@@ -44,9 +45,12 @@ export interface ModelCapability {
   videoDurations?: number[]
   /**
    * 视频分辨率可选项。未配置时不展示分辨率选择。
-   * 例：MiniMax-H3 为 768P / 2K；Kling 4.0 为 720p / 1080p，Kling 4.0 Flash 仅 720p。
+   * 例：MiniMax-H3 为 768P / 2K；Kling 4.0 为 720p / 1080p；
+   * Seedance 2.0 / 2.5 为 480p / 720p / 1080p / 4k，Fast / Mini 最高 720p。
    */
   videoResolutions?: string[]
+  /** 图片分辨率档位；MiniMax H3 Image 为 1K / 2K / 4K。 */
+  imageResolutions?: string[]
 
 }
 
@@ -280,9 +284,12 @@ export function getSupportedVideoResolutions(modelId: string | null | undefined)
 
 /** 返回指定视频模型的默认清晰度档位；不支持的模型返回 null。 */
 export function getDefaultVideoResolution(modelId: string | null | undefined): string | null {
+  const capability = getModelCapability(modelId)
   const options = getSupportedVideoResolutions(modelId)
   if (!options?.length) return null
-  // 优先 1080P / 768P 这类常规档位，避免默认落到 720P 或 2K。
+  // Seedance 官方默认值为 720p；保持未选档位时的原有输出。
+  if (capability?.videoRequestMode === 'seedance-2') return '720p'
+  // 其他模型优先 1080P / 768P 这类常规档位，避免默认落到 720P 或 2K。
   return options.find((option) => option === '1080p' || option === '768P') ?? options[0]
 }
 

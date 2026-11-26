@@ -20,25 +20,38 @@ html.mac-app body {
 
 /* ---------- 拖动窗口 ---------- */
 
-html.mac-app .es-topbar,
-html.mac-app .chat-header,
-html.mac-app .tpl-head,
-html.mac-app .studio-header,
-html.mac-app .settings-header,
-html.mac-app .login-header,
-html.mac-app .sidebar-head {
+/*
+ * 只有顶部灵动岛周围和剪辑台顶栏的空白用于拖动窗口。
+ * 不把 drag 放在 body 或内容滚动区上，避免时间轴、设置页等区域无法滚动。
+ */
+html.mac-app .app-top-nav,
+html.mac-app .es-topbar {
   -webkit-app-region: drag;
+}
+
+html.mac-app .app-top-nav {
+  pointer-events: auto;
+}
+
+html.mac-app .app-top-nav__glass {
+  -webkit-app-region: no-drag;
 }
 
 html.mac-app button,
 html.mac-app input,
 html.mac-app textarea,
 html.mac-app select,
+html.mac-app audio,
+html.mac-app video,
 html.mac-app a,
 html.mac-app label,
 html.mac-app summary,
+html.mac-app canvas,
+html.mac-app [contenteditable='true'],
+html.mac-app [draggable='true'],
 html.mac-app [role='button'],
 html.mac-app [role='tab'],
+html.mac-app [role='slider'],
 html.mac-app .no-drag {
   -webkit-app-region: no-drag;
 }

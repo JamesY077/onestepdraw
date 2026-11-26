@@ -72,7 +72,7 @@ export interface ChatCompletionResponse {
 export interface ImageGenerateRequest {
   model?: string
   prompt: string
-  /** 参考图：单图传字符串；支持多图参考的模型（Seedream 5.0 Lite）可传数组，最多 10 张。 */
+  /** 参考图：单图传字符串；多图模型传数组（Seedream 最多 10 张，MiniMax H3 最多 16 张）。 */
   image?: string | string[]
   /** 组图输出开关（Seedream 5.0 Lite）：'disabled' 表示每次只返回一张图。 */
   sequential_image_generation?: 'auto' | 'disabled'

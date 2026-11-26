@@ -2,7 +2,7 @@ import { generateImage, generateVideo } from '@/api/aiping'
 import { useChatStore } from '@/stores/chatStore'
 import type { GenerateResult, GenerateType, ImageGenerationMode, UploadedFile } from '@/types/chat'
 import { EXPAND_IMAGE_INSTRUCTION } from '@/stores/settingsStore'
-import { getModelCapability } from '@/types/model'
+import { getDefaultVideoResolution, getModelCapability, getSupportedVideoResolutions } from '@/types/model'
 import type { ModelCapability, ModelIOType, VideoGenerationMode } from '@/types/model'
 import type { ImageGenerateResponse, VideoStatusResponse } from '@/types/api'
 import { validatePromptOrThrow } from '@/utils/errorHandling'
@@ -25,8 +25,10 @@ export interface GenerateOptions {
   imageMode?: ImageGenerationMode
   /** 实际发给模型的图片；可与消息展示的 uploadedFile 不同（扩图时使用预扩画布）。 */
   generationFile?: UploadInput
-  /** 覆盖图片请求的 size（扩图使用 2K 目标尺寸）。 */
+  /** 覆盖图片请求的 size（扩图使用当前模型的目标尺寸）。 */
   imageSize?: string
+  /** MiniMax H3 Image 的 1K / 2K / 4K 输出档位。 */
+  imageResolution?: string
   /** 视频生成方式；部分模型（如 Seedance 编辑视频）需要据此改写比例与时长。 */
   videoGenerationMode?: VideoGenerationMode | null
   /** 直接使用指定布局生成（Moss 图层编辑后重新生成）。 */
@@ -140,7 +142,7 @@ export function useGenerate() {
     // Skill 规范：非空时，实际下发给模型的提示词会携带该 skill 规范，
     // 但聊天区仍展示用户输入的原始 prompt。
     skillContent: string | string[] | null = null,
-    // 视频分辨率档位（MiniMax-H3 使用：768P / 2K，其余模型忽略）。
+    // 视频分辨率档位（MiniMax-H3、Kling 4.0、Seedance 使用，其余模型忽略）。
     videoResolution: string | null = null,
     // 简易模式单轮批量生成数量，限制为 1-5。
     batchSize = 1,
@@ -157,6 +159,7 @@ export function useGenerate() {
     const generateType = ioTypeToGenerateType(ioType)
     // 扩图一次只生成一张，避免批量结果与单个结果卡片的快捷扩图语义冲突。
     const requestedBatchSize = isExpand ? 1 : normalizeBatchSize(batchSize)
+    const supportsVideoResolution = generateType === 'video' && !!getSupportedVideoResolutions(model)?.length
 
     chatStore.addMessage({
       type: 'user',
@@ -170,6 +173,10 @@ export function useGenerate() {
       batchSize: requestedBatchSize,
       imageMode: options.imageMode,
       videoMode: options.videoGenerationMode ?? undefined,
+      videoResolution: supportsVideoResolution
+        ? videoResolution || getDefaultVideoResolution(model) || undefined
+        : undefined,
+      imageResolution: options.imageResolution,
     })
 
     const assistantId = chatStore.addMessage({
@@ -188,7 +195,11 @@ export function useGenerate() {
         ? [EXPAND_IMAGE_INSTRUCTION, prompt.trim()].filter(Boolean).join('\n\n')
         : await buildEffectivePrompt(prompt, skillContent)
       const capability = getModelCapability(model)
-      const outputSize = parseImageSize(options.imageSize)
+      const outputSize = parseImageSize(options.imageSize) || (
+        capability?.imageRequestMode === 'minimax-h3'
+          ? aspectRatioToDimensions(aspectRatio, capability.imageRequestMode, options.imageResolution)
+          : null
+      )
 
       if (generateType === 'image') {
         // Moss 分层：可直接沿用编辑后的布局，或先让文本模型把自然语言拆成布局。
@@ -263,6 +274,7 @@ export function useGenerate() {
           capability?.imageRequestMode,
           options.imageSize,
           capability?.imageReferenceMode,
+          options.imageResolution,
         )
 
         if (requestedBatchSize === 1) {

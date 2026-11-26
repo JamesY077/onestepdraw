@@ -196,8 +196,8 @@
 
             <div class="engine-row builtin-row">
               <div class="engine-row-main">
-                <strong>AIPing · DeepSeek <span class="engine-vendor">内置</span></strong>
-                <span class="engine-meta">不依赖本机 CLI，开箱可用</span>
+                <strong>{{ BUILTIN_AGENT_NAME }} <span class="engine-vendor">项目内置</span></strong>
+                <span class="engine-meta">仅通过 AIPing 连接，不依赖本机 CLI</span>
               </div>
               <button
                 class="btn tiny"
@@ -426,53 +426,6 @@
             </div>
           </section>
 
-          <!-- 安装到 Agent -->
-          <section id="agent" class="panel">
-            <div class="panel-head">
-              <h2>让 Agent 安装步帧</h2>
-              <p>步帧是纯本地项目，不依赖云端托管。把下面的指令交给你的 Agent，它会自己克隆仓库、安装依赖并启动。</p>
-            </div>
-
-            <div class="repo-bar">
-              <span class="repo-label">GitHub</span>
-              <a class="repo-url" :href="repoUrl" target="_blank" rel="noopener">{{ repoUrlLabel }}</a>
-              <button class="btn tiny" type="button" @click="copyRepo">
-                {{ repoCopied ? '已复制' : '复制地址' }}
-              </button>
-            </div>
-
-            <div class="agent-tabs" role="tablist" aria-label="Agent 客户端">
-              <button
-                v-for="tab in agentTabs"
-                :key="tab.key"
-                type="button"
-                role="tab"
-                class="agent-tab"
-                :class="{ active: agentTab === tab.key }"
-                :aria-selected="agentTab === tab.key"
-                @click="agentTab = tab.key"
-              >
-                {{ tab.label }}
-              </button>
-            </div>
-
-            <p class="agent-hint">{{ activeAgentTab.hint }}</p>
-
-            <pre class="agent-code">{{ activeAgentTab.prompt }}</pre>
-
-            <div class="panel-actions">
-              <button class="btn solid" type="button" @click="copyAgentPrompt">
-                {{ agentCopied ? '已复制指令' : '复制指令' }}
-              </button>
-              <a class="text-link" :href="repoUrl" target="_blank" rel="noopener">打开仓库 ↗</a>
-            </div>
-
-            <ul class="agent-notes">
-              <li>指令里不包含任何 API Key。首次打开页面时，由你自己填入或更换密钥。</li>
-              <li>项目只监听本机地址，数据与生成的素材都留在本机。</li>
-              <li>若端口被占用，启动脚本会自动顺延，终端里会打印实际地址。</li>
-            </ul>
-          </section>
         </main>
       </div>
     </div>
@@ -523,7 +476,7 @@ import {
   useSettingsStore,
 } from '@/stores/settingsStore'
 import { useSkillStore } from '@/stores/skillStore'
-import { useLocalAgentStore } from '@/stores/localAgentStore'
+import { BUILTIN_AGENT_NAME, useLocalAgentStore } from '@/stores/localAgentStore'
 import { DEFAULT_QUALITY_SKILLS } from '@/features/skill/builtin'
 import { maskApiKey } from '@/utils/format'
 import { SESSION_SCOPE, STORAGE_SCOPE } from '@/utils/platform'
@@ -628,7 +581,6 @@ const navGroups = [
     label: '安装与接入',
     items: [
       { id: 'agents', label: '本机 Agent' },
-      { id: 'agent', label: '让 Agent 安装步帧' },
     ],
   },
 ]
@@ -658,76 +610,10 @@ function setupSectionObserver() {
   })
 }
 
-/* ---------------------------------- Agent 安装 ---------------------------------- */
+/* ---------------------------------- 仓库与复制 ---------------------------------- */
 
 const repoUrl = 'https://github.com/JamesY077/onestepdraw'
 const repoUrlLabel = 'github.com/JamesY077/onestepdraw'
-const localRootDir = ref('<步帧项目目录>')
-
-type AgentTabKey = 'claude-code' | 'cursor' | 'codex' | 'local'
-const agentTab = ref<AgentTabKey>('claude-code')
-const agentCopied = ref(false)
-const repoCopied = ref(false)
-
-const installPrompt = computed(() =>
-  [
-    '请帮我在这台电脑上安装并运行步帧：',
-    '',
-    `1. 克隆仓库：git clone ${repoUrl}.git ~/onestepdraw`,
-    '2. 进入目录后运行 npm install',
-    '3. 运行 npm start，完成后把访问地址告诉我（默认 http://127.0.0.1:5500，端口被占用会自动顺延）',
-    '4. 打开页面后，由我自己填写 AIPing API Key：https://aiping.cn/user/apikey',
-    '',
-    '注意：这是纯本地离线项目，不需要你读取、写入或向我索要任何密钥，也不要把项目内容上传到第三方服务。',
-  ].join('\n'),
-)
-
-const localPrompt = computed(() =>
-  [
-    '步帧已经安装在这台电脑上：',
-    '',
-    `项目目录：${localRootDir.value}`,
-    '',
-    '请进入这个目录并完成以下事情：',
-    '1. 先阅读 README.md 了解项目结构与启动方式',
-    '2. 运行 npm install（依赖已存在可跳过）',
-    '3. 运行 npm start，完成后把访问地址告诉我',
-    '4. 后续改代码时直接修改 src/ 下的文件，改完运行 npm run build',
-    '',
-    '注意：这是纯本地离线项目，AIPing API Key 由我在页面里自行填写，不需要你处理任何密钥。',
-  ].join('\n'),
-)
-
-const agentTabs = computed<Array<{ key: AgentTabKey; label: string; hint: string; prompt: string }>>(() => [
-  {
-    key: 'claude-code',
-    label: 'Claude Code',
-    hint: '在任意目录运行 claude，然后把指令发给它。',
-    prompt: installPrompt.value,
-  },
-  {
-    key: 'cursor',
-    label: 'Cursor',
-    hint: '在 Cursor 中新开一个对话，把指令粘贴给 Agent。',
-    prompt: installPrompt.value,
-  },
-  {
-    key: 'codex',
-    label: 'Codex',
-    hint: '在终端运行 codex，把指令粘贴进去。',
-    prompt: installPrompt.value,
-  },
-  {
-    key: 'local',
-    label: '本地已安装',
-    hint: '已经下载过本项目时，让 Agent 直接基于本地目录工作。',
-    prompt: localPrompt.value,
-  },
-])
-
-const activeAgentTab = computed(
-  () => agentTabs.value.find((tab) => tab.key === agentTab.value) || agentTabs.value[0],
-)
 
 async function copyText(text: string) {
   try {
@@ -738,42 +624,10 @@ async function copyText(text: string) {
   }
 }
 
-async function copyAgentPrompt() {
-  if (await copyText(activeAgentTab.value.prompt)) {
-    agentCopied.value = true
-    window.setTimeout(() => {
-      agentCopied.value = false
-    }, 1600)
-  }
-}
-
-async function copyRepo() {
-  if (await copyText(repoUrl)) {
-    repoCopied.value = true
-    window.setTimeout(() => {
-      repoCopied.value = false
-    }, 1600)
-  }
-}
-
-async function loadLocalInfo() {
-  try {
-    const response = await fetch('/local/info', { cache: 'no-store' })
-    if (!response.ok) return
-    const data = await response.json()
-    if (typeof data?.rootDir === 'string' && data.rootDir) {
-      localRootDir.value = data.rootDir
-    }
-  } catch {
-    // 静态托管环境下保留占位路径。
-  }
-}
-
 onMounted(() => {
   settingsStore.loadFromStorage()
   skillStore.loadFromStorage()
   localAgentStore.ensureScanned()
-  void loadLocalInfo()
   setupSectionObserver()
   if (window.location.hash === '#agents') {
     window.setTimeout(() => scrollToSection('agents'), 120)
@@ -1017,7 +871,8 @@ function resetTranslationModel() {
 
 .settings-nav {
   position: sticky;
-  top: 24px;
+  /* 72px 顶部导航 + 24px 间距，滚动时不会钻到导航下面。 */
+  top: 96px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1504,99 +1359,6 @@ label {
 
 /* ---------------------------------- Agent ---------------------------------- */
 
-.repo-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--sf-paper-3);
-  border-radius: 11px;
-  background: var(--sf-surface);
-}
-
-.repo-label {
-  flex: 0 0 auto;
-  padding: 2px 7px;
-  border-radius: 5px;
-  background: var(--sf-surface-3);
-  color: var(--sf-ink-2);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.repo-url {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--sf-ink);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11.5px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-decoration: none;
-}
-
-.repo-url:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.agent-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 16px;
-}
-
-.agent-tab {
-  min-height: 30px;
-  padding: 0 13px;
-  border: 1px solid var(--sf-line-soft);
-  border-radius: 999px;
-  background: var(--sf-surface);
-  color: var(--sf-ink-2);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
-}
-
-.agent-tab:hover {
-  border-color: var(--sf-line-strong);
-  color: var(--sf-ink);
-}
-
-.agent-tab.active {
-  border-color: var(--sf-ink);
-  background: var(--sf-ink);
-  color: var(--sf-surface);
-}
-
-.agent-hint {
-  margin: 10px 0 0;
-  color: #9d9d95;
-  font-size: 11.5px;
-}
-
-.agent-code {
-  max-height: 340px;
-  margin: 10px 0 0;
-  padding: 14px 16px;
-  overflow: auto;
-  border: 1px solid var(--sf-paper-3);
-  border-radius: 12px;
-  background: var(--sf-surface);
-  color: #3d3d38;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11.5px;
-  line-height: 1.75;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
 .agent-notes {
   display: flex;
   flex-direction: column;
@@ -1793,15 +1555,6 @@ label {
 
   .skill-row {
     gap: 14px;
-  }
-
-  .repo-bar {
-    flex-wrap: wrap;
-  }
-
-  .repo-url {
-    flex-basis: 100%;
-    order: 3;
   }
 
   .danger-block .btn {

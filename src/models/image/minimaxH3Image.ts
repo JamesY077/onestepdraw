@@ -1,4 +1,9 @@
-import { buildOpenAiImageRequestBody } from '@/api/providers/image/common'
+import {
+  buildMinimaxH3ImageRequestBody,
+  getMinimaxH3ImageEndpoint,
+  MINIMAX_H3_IMAGE_GENERATIONS_ENDPOINT,
+  MINIMAX_H3_IMAGE_REFERENCE_LIMIT,
+} from '@/api/providers/image/minimaxH3Shared'
 import type { ImageModelModule } from '../types'
 import { createModelExample } from '../types'
 
@@ -12,14 +17,21 @@ function createMinimaxH3ImageModel(
     displayName,
     capability: {
       mediaType: 'image',
-      inputs: ['text'],
+      inputs: ['text', 'image'],
+      localUploadInputs: ['image'],
+      availabilityNote: 'supports-image-upload',
       imageRequestMode: 'minimax-h3',
+      imageResolutions: ['1K', '2K', '4K'],
+      // 图像编辑支持 1–16 张参考图；数组顺序对应提示词中的 @图片N。
+      imageReferenceMode: 'multi',
+      imageReferenceLimit: MINIMAX_H3_IMAGE_REFERENCE_LIMIT,
     },
     adapter: {
       provider: 'minimax',
       models: [id],
-      endpoint: '/images/generations',
-      buildRequestBody: (params) => buildOpenAiImageRequestBody(params, id),
+      endpoint: MINIMAX_H3_IMAGE_GENERATIONS_ENDPOINT,
+      getEndpoint: getMinimaxH3ImageEndpoint,
+      buildRequestBody: (params) => buildMinimaxH3ImageRequestBody(params, id),
     },
     example: createModelExample({
       title: `${displayName} 文生图示例`,
@@ -44,7 +56,7 @@ await generateImage({
   }
 }
 
-/** MiniMax H3 Image：OpenAI 兼容的同步文生图接口，尺寸使用 WxH。 */
+/** MiniMax H3 Image：文生图与 1–16 张参考图编辑，尺寸使用 WxH。 */
 export const minimaxH3ImageModel = createMinimaxH3ImageModel(
   'MiniMax-H3-Image',
   'MiniMax H3 Image',

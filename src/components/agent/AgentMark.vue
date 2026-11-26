@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { BUILTIN_ENGINE_ID } from '@/stores/localAgentStore'
-import aipingIcon from '@/assets/agents/aiping.png'
+import BrandMark from '@/components/agent/BrandMark.vue'
 import codebuddyIcon from '@/assets/agents/codebuddy.png'
 import codexIcon from '@/assets/agents/codex.png'
 import dshIcon from '@/assets/agents/dsh.png'
@@ -10,7 +10,7 @@ import qoderIcon from '@/assets/agents/qoder.png'
 
 /**
  * 本机 Agent 图标：优先用从电脑里扫出来的应用图标，没有就退回首字母。
- * AIPing 用官方标志里的图形部分（不含字标）。
+ * 项目内置的 Stepframe Agent 使用步帧品牌图标，AIPing 仅作为后台连接。
  */
 const ICONS: Record<string, string> = {
   codebuddy: codebuddyIcon,
@@ -26,7 +26,7 @@ const props = withDefaults(
 )
 
 const builtin = computed(() => props.id === BUILTIN_ENGINE_ID)
-const icon = computed(() => (builtin.value ? aipingIcon : ICONS[props.id] || ''))
+const icon = computed(() => (builtin.value ? '' : ICONS[props.id] || ''))
 const initial = computed(() => {
   const text = props.name.trim() || props.id.trim()
   const first = [...text][0] || '?'
@@ -47,7 +47,8 @@ const boxStyle = computed(() => ({
     :style="boxStyle"
     aria-hidden="true"
   >
-    <img v-if="icon" :src="icon" alt="" draggable="false" />
+    <BrandMark v-if="builtin" :size="props.size" />
+    <img v-else-if="icon" :src="icon" alt="" draggable="false" />
     <span v-else class="mark-initial">{{ initial }}</span>
   </span>
 </template>
@@ -70,7 +71,8 @@ const boxStyle = computed(() => ({
 }
 
 .agent-mark.is-builtin {
-  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
+  background: transparent;
+  box-shadow: none;
 }
 
 .agent-mark img {

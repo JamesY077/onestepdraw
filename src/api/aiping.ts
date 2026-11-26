@@ -21,6 +21,7 @@ import {
   collectSeedanceReferenceVideos,
   collectSeedanceReferenceAudios,
   normalizeSeedanceResponse,
+  resolveSeedanceResolution,
 } from '@/api/providers/video/seedanceShared'
 import {
   MINIMAX_H3_TASKS_ENDPOINT,
@@ -391,10 +392,11 @@ export async function generateImage(params: ImageGenerateRequest): Promise<Image
   const provider = getImageProvider(params)
   const preparedParams = await prepareImageGenerationParams(params, provider)
   const fullBody = provider.buildRequestBody(preparedParams)
+  const endpoint = provider.getEndpoint?.(preparedParams) || provider.endpoint
 
-  debugLog(`generateImage provider=${provider.provider} trying full body:`, sanitizeDebugBody(fullBody))
+  debugLog(`generateImage provider=${provider.provider} endpoint=${endpoint} trying full body:`, sanitizeDebugBody(fullBody))
   try {
-    const response = await postImageWithRetry(provider.endpoint, fullBody)
+    const response = await postImageWithRetry(endpoint, fullBody)
     return response.data
   } catch (error: any) {
     const detail = JSON.stringify(error.response?.data)
@@ -411,7 +413,7 @@ export async function generateImage(params: ImageGenerateRequest): Promise<Image
           alternateBody.height = size.height
           debugLog('generateImage retry with width/height:', sanitizeDebugBody(alternateBody))
           try {
-            const response = await postImageWithRetry(provider.endpoint, alternateBody)
+            const response = await postImageWithRetry(endpoint, alternateBody)
             return response.data
           } catch (retryError: any) {
             throw new AppError(getApiErrorMessage(retryError, '图片尺寸参数未被当前模型接受，请切换模型或比例后重试。'))
@@ -425,7 +427,7 @@ export async function generateImage(params: ImageGenerateRequest): Promise<Image
         delete alternateBody.height
         debugLog('generateImage retry with size:', sanitizeDebugBody(alternateBody))
         try {
-          const response = await postImageWithRetry(provider.endpoint, alternateBody)
+          const response = await postImageWithRetry(endpoint, alternateBody)
           return response.data
         } catch (retryError: any) {
           throw new AppError(getApiErrorMessage(retryError, '图片尺寸参数未被当前模型接受，请切换模型或比例后重试。'))
@@ -645,6 +647,7 @@ async function generateSeedanceVideo(params: VideoGenerateRequest, canonicalMode
       audios: audioUrls,
     }),
     generate_audio: typeof params.audio === 'boolean' ? params.audio : true,
+    resolution: resolveSeedanceResolution(params.model || canonicalModel, params.resolution),
     ratio,
     duration: params.duration || params.seconds || 5,
     watermark: typeof params.watermark === 'boolean' ? params.watermark : false,

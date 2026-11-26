@@ -1,10 +1,10 @@
 import type { UploadedFile } from '@/types/chat'
 import { canvasToBlob, loadUploadedImage } from '@/features/generate/imageSource'
-import { aspectRatioToDimensions } from '@/features/generate/aspectRatio'
+import { aspectRatioToDimensions, type ImageRequestMode } from '@/features/generate/aspectRatio'
 
 /**
- * 扩图输出尺寸：跟随 Seedream 5.0 Lite 的官方尺寸档位（2K~3K），
- * 请求图片接口时使用 `宽x高` 格式，尽量保留原图细节。
+ * 扩图输出尺寸跟随当前模型的原生尺寸档位；请求时使用 `宽x高` 格式。
+ * Seedream 默认约 2K，MiniMax 可按当前选择输出 1K / 2K / 4K。
  */
 export interface ExpandTargetSize {
   width: number
@@ -13,8 +13,12 @@ export interface ExpandTargetSize {
   size: string
 }
 
-export function getExpandTargetSize(aspectRatio: string): ExpandTargetSize {
-  const { width, height } = aspectRatioToDimensions(aspectRatio, 'seedream-5-lite')
+export function getExpandTargetSize(
+  aspectRatio: string,
+  mode: ImageRequestMode = 'seedream-5-lite',
+  imageResolution = '2K',
+): ExpandTargetSize {
+  const { width, height } = aspectRatioToDimensions(aspectRatio, mode, imageResolution)
   return {
     width,
     height,
@@ -24,11 +28,13 @@ export function getExpandTargetSize(aspectRatio: string): ExpandTargetSize {
 
 /**
  * 把原图放到目标比例的画布中央，四周用原图的模糊放大版本填充，
- * 作为 Seedream 图生图的输入。这样模型能看到完整的画面边界，而不是被裁切。
+ * 作为图生图 / 图像编辑模型的输入，让模型看到完整画面边界而不是裁切图。
  */
 export async function createExpandedUploadedFile(
   source: UploadedFile,
   aspectRatio: string,
+  mode: ImageRequestMode = 'seedream-5-lite',
+  imageResolution = '2K',
 ): Promise<UploadedFile | null> {
   if (typeof document === 'undefined') return null
 
@@ -37,7 +43,7 @@ export async function createExpandedUploadedFile(
     loaded = await loadUploadedImage(source)
     if (!loaded) return null
 
-    const target = getExpandTargetSize(aspectRatio)
+    const target = getExpandTargetSize(aspectRatio, mode, imageResolution)
     const canvas = document.createElement('canvas')
     canvas.width = target.width
     canvas.height = target.height

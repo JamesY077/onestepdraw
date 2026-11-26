@@ -137,21 +137,7 @@ function go(item: NavItem) {
   pointer-events: none;
 }
 
-/*
- * 吸顶时内容会从下面经过，这里铺一条自上而下渐隐的纸色带，
- * 保证导航区域始终干净，同时不显得像一块生硬的横条。
- */
-.app-top-nav::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: rgba(250, 246, 238, 0.86);
-  backdrop-filter: blur(10px);
-  -webkit-mask-image: linear-gradient(180deg, #000 58%, rgba(0, 0, 0, 0) 100%);
-  mask-image: linear-gradient(180deg, #000 58%, rgba(0, 0, 0, 0) 100%);
-  pointer-events: none;
-}
+/* 只保留灵动岛本体，不再铺整宽的渐变底条。 */
 
 /* 只有导航本体接收点击，两侧留白不挡页面 */
 .app-top-nav__glass {

@@ -6,8 +6,9 @@ import {
   type LocalAgentPreset,
 } from '@/api/localAgents'
 
-/** 内置 AIPing 对话的引擎 id；其余 id 都对应本机 CLI Agent。 */
+/** 内置 Stepframe Agent 的引擎 id；请求仍通过 AIPing，其余 id 对应本机 CLI Agent。 */
 export const BUILTIN_ENGINE_ID = 'builtin'
+export const BUILTIN_AGENT_NAME = 'Stepframe Agent'
 export const CUSTOM_ENGINE_ID = 'custom'
 
 const ENGINE_STORAGE_KEY = 'onestep_agent_engine_v1'
@@ -86,10 +87,10 @@ export const useLocalAgentStore = defineStore('localAgent', () => {
 
   const isLocalEngine = computed(() => selectedId.value !== BUILTIN_ENGINE_ID && !!selectedAgent.value)
   const selectedLabel = computed(() =>
-    isLocalEngine.value ? selectedAgent.value?.name || '本机 Agent' : 'AIPing · DeepSeek',
+    isLocalEngine.value ? selectedAgent.value?.name || '本机 Agent' : BUILTIN_AGENT_NAME,
   )
   const selectedHint = computed(() => {
-    if (!isLocalEngine.value) return '内置模型，无需安装任何 CLI'
+    if (!isLocalEngine.value) return '项目内置，通过 AIPing 连接，无需安装 CLI'
     const agent = selectedAgent.value
     if (!agent) return ''
     return [agent.vendor, agent.version].filter(Boolean).join(' · ')
