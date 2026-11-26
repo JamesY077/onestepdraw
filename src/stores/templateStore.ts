@@ -85,7 +85,7 @@ function save(key: string, value: unknown) {
 }
 
 export const useTemplateStore = defineStore('template', () => {
-  const tab = ref<'builtin' | 'custom' | 'skill'>('builtin')
+  const tab = ref<'builtin' | 'custom' | 'skill' | 'openmotion'>('builtin')
   const groups = ref<UserTemplateGroup[]>(loadGroups())
   const applied = ref<AgentTemplateRef[]>(loadApplied())
   const draftGroupId = ref<string | null>(null)

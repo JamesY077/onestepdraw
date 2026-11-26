@@ -152,6 +152,9 @@ function nativeToolsBlock(mode: ConversationMode): string {
 - edit_timeline：直接移动、裁剪、删除片段或调整音量/透明度。
 - update_plan：仅复杂任务使用，维护不超过 6 个可验证阶段；简单任务不要制造计划。
 - open_voice / open_3d：把已确认的文本或建模需求带到对应工作台，不会直接发起生成。
+- list_motion_templates / read_motion_template：检索并读取 OpenMotion 动效模板（含 motion.md、风格、复刻重点、参考视频与工程文件清单）。
+- create_motion_project / read_motion_project / write_motion_project：创建、读取、改写可编辑动效工程（HyperFrames 原生 HTML + GSAP），改的是源码，不是重新生成视频。
+- render_motion_project：本机渲染动效工程为 MP4 并在时间轴原位替换；只在用户要出片或整片合成时调用。
 
 默认模型已固定：图片使用 Seedream 5.0 Lite，视频使用 MiniMax H3。用户指定其他模型时，说明当前只支持这两个默认模型。
 图片/视频工具是异步任务：返回 started 只表示本地后台任务已启动，不代表上游已受理或素材已生成；最终结果由卡片展示。收到工具结果后继续完成剩余必要步骤，最后简短说明已启动或已修改什么，不要编造媒体 URL、进度或完成状态。
@@ -163,7 +166,13 @@ function nativeToolsBlock(mode: ConversationMode): string {
 3. 完整制作单写清 brief、continuity、每个镜头的动作因果和前后承接；不要只追求单镜好看而让整片驴头不对马嘴。生成中的4路并发、失败重试、顺序入轨由宿主处理，不需要模型逐镜监督。
 4. 图片：信息不足时一次只问一个问题，补上画面内容和比例即可生成，不需要走视频那套多轮拷问。
 5. 用户只是讨论创意、要文案、提示词或方案，不需要生成时，不要调用生成工具。
-6. 相互依赖的操作分 Step；同一批普通工具最多4个，避免为了凑步骤调用无意义工具。只有当前环境没有原生工具时，才兼容使用旧 onestep-tool 格式；旧格式不支持完整分镜队列，应说明需要原生工具环境。
+6. 动效复刻（用户说“做同款 / 复刻模板 / 用这个 OpenMotion 模板 / 照这条参考视频做”）：走动效工程，不要改用 generate_video 逐镜生成。
+   - 有模板 ID 时先 read_motion_template 读 motion.md；只有关键词时先 list_motion_templates 选准一条，再读。
+   - create_motion_project 建独立副本；只有参考视频没有工程时，按 motion.md 的镜头顺序、停留点、转场与动效语言重建 index.html。
+   - 工程必须是 HyperFrames 原生格式：根节点 data-composition-id + data-start + data-duration + data-width + data-height；可参数化文案用 <html data-composition-variables> 声明并用 data-var-text / data-var-src 绑定；动画写进 paused 的 GSAP 时间轴并挂到 window.__timelines[场景id]，绝不自动 play()。
+   - 保留参考的镜头顺序、节奏、配色与字体气质，替换为用户的产品名、文案与素材；缺产品截图或 Logo 时先用文字品牌并说明，不要编造界面。
+   - 写回后简述与参考的差距；用户确认要出片才 render_motion_project。
+7. 相互依赖的操作分 Step；同一批普通工具最多4个，避免为了凑步骤调用无意义工具。只有当前环境没有原生工具时，才兼容使用旧 onestep-tool 格式；旧格式不支持完整分镜队列，应说明需要原生工具环境。
 \`\`\`onestep-tool
 {"tool":"generate_image","args":{"prompt":"……","aspect_ratio":"16:9"}}
 \`\`\`

@@ -1,6 +1,8 @@
 import type { AudioBufferSource, CanvasSink } from 'mediabunny'
 import type { EditProject, TimelineClip } from '@/types/edit'
 import { projectDuration } from '@/stores/editProjectStore'
+import { getMotionRenderJob, startMotionRender } from '@/api/motion'
+import { clipOpacityAt, clipVolumeAt } from '@/features/edit/keyframes'
 
 /**
  * mediabunny 只在真正导出时下载，避免剪辑台首屏多背几百 KB。
@@ -49,6 +51,75 @@ function blobFor(url: string): Promise<Blob> {
 
 function throwIfAborted(signal?: AbortSignal) {
   if (signal?.aborted) throw new DOMException('已取消导出', 'AbortError')
+}
+
+function abortableDelay(milliseconds: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(done, milliseconds)
+    function done() {
+      signal?.removeEventListener('abort', aborted)
+      resolve()
+    }
+    function aborted() {
+      window.clearTimeout(timer)
+      signal?.removeEventListener('abort', aborted)
+      reject(new DOMException('已取消导出', 'AbortError'))
+    }
+    if (signal?.aborted) aborted()
+    else signal?.addEventListener('abort', aborted, { once: true })
+  })
+}
+
+async function renderMotionForExport(motionId: string, options: ExportOptions): Promise<string> {
+  const jobId = await startMotionRender(motionId)
+  for (;;) {
+    throwIfAborted(options.signal)
+    const job = await getMotionRenderJob(jobId)
+    if (job.status === 'succeeded' && job.url) return job.url
+    if (job.status === 'failed') throw new Error(job.error || '动效工程渲染失败')
+    await abortableDelay(500, options.signal)
+  }
+}
+
+/**
+ * 浏览器画布无法直接读取 iframe 里的 HyperFrames 画面。导出前先用同一个
+ * HyperFrames CLI 把动效渲染为 MP4，再只替换本次导出的快照；用户时间轴保持可编辑。
+ */
+async function materializeMotionClips(project: EditProject, options: ExportOptions): Promise<EditProject> {
+  const motionIds = new Set<string>()
+  for (const track of project.tracks) {
+    for (const clip of track.clips) {
+      if (clip.kind !== 'motion') continue
+      if (!clip.motionId) throw new Error(`动效片段「${clip.name}」缺少工程 id，请重新添加后再导出`)
+      motionIds.add(clip.motionId)
+    }
+  }
+  if (!motionIds.size) return project
+
+  const rendered = new Map<string, string>()
+  let completed = 0
+  for (const motionId of motionIds) {
+    throwIfAborted(options.signal)
+    options.onProgress?.(0.02, `渲染动效工程 ${completed + 1}/${motionIds.size}`)
+    rendered.set(motionId, await renderMotionForExport(motionId, options))
+    completed += 1
+  }
+  return {
+    ...project,
+    tracks: project.tracks.map((track) => ({
+      ...track,
+      clips: track.clips.map((clip) => clip.kind === 'motion'
+        ? { ...clip, kind: 'video' as const, url: rendered.get(clip.motionId || '') || clip.url }
+        : clip),
+    })),
+  }
+}
+
+function assertExportableClips(project: EditProject) {
+  const unsupported = project.tracks.flatMap((track) => track.clips).filter((clip) => clip.kind === 'animation')
+  if (unsupported.length) {
+    throw new Error(`「${unsupported[0].name}」等代码动画暂不支持整片导出，请先转为动效工程或移除，避免导出黑场`)
+  }
 }
 
 interface FrameSource {
@@ -124,6 +195,14 @@ async function buildFrameSources(
       if (sink) sources.push({ clip, kind: 'video', sink })
     }
   }
+  const loadedIds = new Set(sources.map((source) => source.clip.id))
+  const failed = project.tracks.flatMap((track) => track.clips).filter(
+    (clip) => (clip.kind === 'image' || clip.kind === 'video') && !loadedIds.has(clip.id),
+  )
+  if (failed.length) {
+    for (const source of sources) source.dispose?.()
+    throw new Error(`无法读取素材「${failed[0].name}」，已停止导出以避免黑场`)
+  }
   return sources
 }
 
@@ -143,7 +222,7 @@ async function drawFrame(
   ctx.fillRect(0, 0, width, height)
   for (const source of sources) {
     if (!isActive(source.clip, time)) continue
-    const alpha = source.clip.opacity ?? 1
+    const alpha = clipOpacityAt(source.clip, time - source.clip.start)
     if (source.kind === 'image' && source.image) {
       ctx.globalAlpha = alpha
       const image = source.image as { width: number; height: number }
@@ -264,7 +343,16 @@ async function mixAudio(
     const source = offline.createBufferSource()
     source.buffer = buffer
     const gain = offline.createGain()
-    gain.gain.value = Math.max(0, Math.min(1, clip.volume ?? 1))
+    if (clip.volumeKeyframes?.length) {
+      const count = Math.max(2, Math.ceil(playLength * 30) + 1)
+      const curve = new Float32Array(count)
+      for (let index = 0; index < count; index += 1) {
+        curve[index] = clipVolumeAt(clip, (index / (count - 1)) * playLength)
+      }
+      gain.gain.setValueCurveAtTime(curve, Math.max(0, clip.start), playLength)
+    } else {
+      gain.gain.value = clipVolumeAt(clip, 0)
+    }
     source.connect(gain)
     gain.connect(offline.destination)
     source.start(Math.max(0, clip.start), offset, playLength)
@@ -274,29 +362,74 @@ async function mixAudio(
   return offline.startRendering()
 }
 
+function drawCaption(
+  ctx: CanvasRenderingContext2D,
+  project: EditProject,
+  width: number,
+  height: number,
+  time: number,
+) {
+  const cue = (project.captions || []).find(
+    (item) => time >= item.start && time < item.start + item.duration,
+  )
+  if (!cue?.text.trim()) return
+  const fontSize = Math.max(20, Math.round(height * 0.045))
+  const lineHeight = Math.round(fontSize * 1.4)
+  const maxWidth = width * 0.84
+  ctx.save()
+  ctx.font = `600 ${fontSize}px Inter, "PingFang SC", "Microsoft YaHei", sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'bottom'
+  ctx.lineJoin = 'round'
+  const lines: string[] = []
+  for (const paragraph of cue.text.split('\n')) {
+    let line = ''
+    for (const character of paragraph) {
+      const candidate = line + character
+      if (line && ctx.measureText(candidate).width > maxWidth) {
+        lines.push(line)
+        line = character
+      } else line = candidate
+    }
+    lines.push(line)
+  }
+  const bottom = height * 0.92
+  lines.forEach((line, index) => {
+    const y = bottom - (lines.length - index - 1) * lineHeight
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.86)'
+    ctx.lineWidth = Math.max(3, fontSize * 0.12)
+    ctx.strokeText(line, width / 2, y, maxWidth)
+    ctx.fillStyle = '#fff'
+    ctx.fillText(line, width / 2, y, maxWidth)
+  })
+  ctx.restore()
+}
+
 export async function exportProjectVideo(
   project: EditProject,
   options: ExportOptions = {},
 ): Promise<ExportResult> {
+  assertExportableClips(project)
   if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') {
     throw new Error('当前浏览器不支持 WebCodecs，无法在本地导出视频')
   }
   const supported = await (await loadBunny()).canEncode('avc')
   if (!supported) throw new Error('当前浏览器没有可用的 H.264 编码器，无法导出 MP4')
 
-  const duration = Math.max(1, projectDuration(project))
-  const fps = Math.max(12, Math.min(60, Math.round(project.fps || 30)))
-  const { width, height } = exportOutputSize(project)
+  const exportProject = await materializeMotionClips(project, options)
+  const duration = Math.max(1, projectDuration(exportProject))
+  const fps = Math.max(12, Math.min(60, Math.round(exportProject.fps || 30)))
+  const { width, height } = exportOutputSize(exportProject)
   const totalFrames = Math.max(1, Math.ceil(duration * fps))
 
-  options.onProgress?.(0.02, '读取素材')
-  const sources = await buildFrameSources(project, width, height)
+  options.onProgress?.(0.04, '读取素材')
+  const sources = await buildFrameSources(exportProject, width, height)
   throwIfAborted(options.signal)
 
-  options.onProgress?.(0.04, '混合音频')
+  options.onProgress?.(0.06, '混合音频')
   let mixed: AudioBuffer | null = null
   try {
-    mixed = await mixAudio(project, duration, options)
+    mixed = await mixAudio(exportProject, duration, options)
   } catch (error) {
     if ((error as DOMException)?.name === 'AbortError') throw error
     mixed = null
@@ -333,6 +466,7 @@ export async function exportProjectVideo(
         throwIfAborted(options.signal)
         const time = frame / fps
         await drawFrame(ctx, width, height, time, sources)
+        drawCaption(ctx, exportProject, width, height, time)
         await videoSource.add(time, 1 / fps)
         if (frame % 6 === 0 || frame === totalFrames - 1) {
           options.onProgress?.(0.1 + (frame / totalFrames) * 0.85, `渲染 ${frame + 1}/${totalFrames} 帧`)
@@ -359,5 +493,31 @@ export async function exportProjectVideo(
   } finally {
     // 取消或失败时也要放掉位图和 blob URL，否则连续导出会越积越多。
     for (const source of sources) source.dispose?.()
+  }
+}
+
+/** 独立重读最终 MP4，而不是把编码器自己的返回值当成校验结果。 */
+export async function inspectExportedVideo(blob: Blob): Promise<{
+  width?: number
+  height?: number
+  duration?: number
+  hasAudio?: boolean
+}> {
+  const { ALL_FORMATS, BlobSource, Input } = await loadBunny()
+  const input = new Input({ source: new BlobSource(blob), formats: ALL_FORMATS })
+  try {
+    const [videoTrack, audioTrack, duration] = await Promise.all([
+      input.getPrimaryVideoTrack(),
+      input.getPrimaryAudioTrack(),
+      input.computeDuration(),
+    ])
+    return {
+      width: videoTrack?.displayWidth,
+      height: videoTrack?.displayHeight,
+      duration,
+      hasAudio: !!audioTrack,
+    }
+  } finally {
+    input.dispose()
   }
 }

@@ -45,6 +45,7 @@
               <option :value="60">60</option>
             </select>
           </label>
+          <button type="button" class="top-action json" @click="versionsOpen = true">版本</button>
           <button type="button" class="top-action json" @click="exportProject">导出工程</button>
           <button type="button" class="top-action export" :disabled="exporting" @click="startExport">
             {{ exporting ? `导出 ${Math.round(exportRatio * 100)}%` : '导出视频' }}
@@ -91,6 +92,37 @@
           <button type="button" :class="{ active: railTab === 'assets' }" @click="railTab = 'assets'">
             素材<span v-if="project.assets.length">{{ project.assets.length }}</span>
           </button>
+          <button type="button" :class="{ active: railTab === 'motion' }" @click="openMotionRail">动效</button>
+          <button type="button" :class="{ active: railTab === 'captions' }" @click="railTab = 'captions'">字幕</button>
+        </div>
+
+        <CaptionPanel v-if="railTab === 'captions'" :project="project" />
+
+        <div v-if="railTab === 'motion'" class="rail-assets">
+          <button type="button" class="rail-upload rail-motion-new" @click="createBlankMotion">
+            <span>＋</span> {{ motionCreating ? '正在创建…' : '新建空白动效工程' }}
+          </button>
+          <button type="button" class="rail-motion-library" @click="goMotionTemplates">
+            从 OpenMotion 模板复刻 →
+          </button>
+          <p v-if="motionError" class="rail-empty">{{ motionError }}</p>
+          <p v-if="!motion.projects.length" class="rail-empty">
+            动效工程是 HyperFrames 原生 HTML：可以改文案、配色、镜头和 GSAP 动效，再渲染成 MP4。
+          </p>
+          <button
+            v-for="item in motion.projects"
+            :key="item.id"
+            type="button"
+            class="rail-asset"
+            :title="`${item.name} · 点击加入时间轴`"
+            @click="addMotionToTimeline(item)"
+          >
+            <span class="rail-asset-thumb"><span>动效</span></span>
+            <span class="rail-asset-copy">
+              <strong>{{ item.name }}</strong>
+              <small>{{ item.width }}×{{ item.height }} · {{ relativeTime(item.updatedAt) }}</small>
+            </span>
+          </button>
         </div>
 
         <div v-if="railTab === 'projects'" class="rail-projects">
@@ -122,7 +154,7 @@
           </div>
         </div>
 
-        <div v-else class="rail-assets">
+        <div v-else-if="railTab === 'assets'" class="rail-assets">
           <label class="rail-upload">
             <input type="file" accept="image/*,video/*,audio/*,.html,.htm,.jsx,.tsx,text/html" multiple @change="handleUpload" />
             <span>＋</span> 上传素材
@@ -144,11 +176,11 @@
           >
             <span class="rail-asset-thumb">
               <img v-if="asset.kind === 'image'" :src="asset.thumbnail || asset.url" alt="" />
-              <span v-else>{{ asset.kind === 'video' ? '视频' : asset.kind === 'animation' ? '</>' : '音频' }}</span>
+              <span v-else>{{ asset.kind === 'video' ? '视频' : asset.kind === 'animation' ? '</>' : asset.kind === 'motion' ? '动效' : '音频' }}</span>
             </span>
             <span class="rail-asset-copy">
               <strong>{{ asset.name }}</strong>
-              <small>{{ asset.kind === 'video' ? '视频' : asset.kind === 'image' ? '图片' : asset.kind === 'animation' ? '代码动画' : '音频' }}<template v-if="asset.duration"> · {{ asset.duration.toFixed(1) }}s</template></small>
+              <small>{{ asset.kind === 'video' ? '视频' : asset.kind === 'image' ? '图片' : asset.kind === 'animation' ? '代码动画' : asset.kind === 'motion' ? '动效工程' : '音频' }}<template v-if="asset.duration"> · {{ asset.duration.toFixed(1) }}s</template></small>
             </span>
           </button>
         </div>
@@ -168,6 +200,7 @@
         <ClipInspector
           v-if="inspectorOpen && selectedEntries.length"
           :entries="selectedEntries"
+          :project-id="project?.id || ''"
           @close="inspectorOpen = false"
           @ask-ai="askAiForSelection"
           @update-clip="updateSelectedClip"
@@ -284,6 +317,13 @@
       </ul>
     </div>
 
+    <VersionHistory
+      v-if="project && versionsOpen"
+      :project="project"
+      @close="versionsOpen = false"
+      @restored="onVersionRestored"
+    />
+
     <div v-if="shortcutsOpen" class="shortcuts-backdrop" @click.self="shortcutsOpen = false">
       <section class="shortcuts-panel" role="dialog" aria-modal="true" aria-label="剪辑快捷键">
         <header>
@@ -319,11 +359,16 @@ import StudioPreview from '@/components/edit/StudioPreview.vue'
 import TimelineTracks from '@/components/edit/TimelineTracks.vue'
 import StudioChat from '@/components/edit/StudioChat.vue'
 import ClipInspector from '@/components/edit/ClipInspector.vue'
+import CaptionPanel from '@/components/edit/CaptionPanel.vue'
+import VersionHistory from '@/components/edit/VersionHistory.vue'
 import { useAgentStore } from '@/stores/agentStore'
 import { useEditProjectStore, projectDuration } from '@/stores/editProjectStore'
+import { useMotionStore } from '@/stores/motionStore'
+import { rememberTemplatesReturn } from '@/features/template/navigation'
+import { motionFileUrl, type MotionProject } from '@/api/motion'
 import { playhead, setPlayhead } from '@/features/edit/playhead'
-import { exportProjectVideo } from '@/features/edit/exportVideo'
-import { summarizeIssues, verifyExport, type ExportIssue } from '@/features/edit/exportVerification'
+import { exportProjectVideo, inspectExportedVideo } from '@/features/edit/exportVideo'
+import { summarizeIssues, verifyExport, type ExportActual, type ExportIssue } from '@/features/edit/exportVerification'
 import { confirmDialog } from '@/features/ui/dialog'
 import { consumeTemplatesFlash, describeTemplatesFlash } from '@/features/template/navigation'
 import type { AgentClipRef } from '@/types/agent'
@@ -349,7 +394,7 @@ function openTemplatePage() {
 const projectStore = useEditProjectStore()
 const agentStore = useAgentStore()
 
-const railTab = ref<'projects' | 'assets'>('projects')
+const railTab = ref<'projects' | 'assets' | 'motion' | 'captions'>('projects')
 const mainRef = ref<HTMLElement | null>(null)
 const timelineRef = ref<HTMLElement | null>(null)
 const CHAT_WIDTH_KEY = 'onestep_studio_chat_width_v1'
@@ -358,6 +403,7 @@ const TIMELINE_MIN_HEIGHT = 150
 const chatWidth = ref(readChatWidth())
 const timelineHeight = ref(readTimelineHeight())
 const shortcutsOpen = ref(false)
+const versionsOpen = ref(false)
 const pxPerSec = ref(52)
 const clock = ref('00:00.0')
 const playing = ref(false)
@@ -570,9 +616,9 @@ watch(playing, (value) => {
   }
 })
 
-function moveClip(payload: { clipId: string; start: number }) {
+function moveClip(payload: { clipId: string; start: number; trackId?: string }) {
   if (!project.value) return
-  projectStore.updateClip(project.value.id, payload.clipId, { start: payload.start })
+  projectStore.moveClip(project.value.id, payload.clipId, payload.start, payload.trackId)
 }
 
 function moveClips(payload: { ids: string[]; delta: number }) {
@@ -617,6 +663,49 @@ function addAssetToEnd(assetId: string) {
   if (!project.value) return
   const clip = projectStore.addAssetToTrack(project.value.id, assetId)
   if (clip) showToast(`已加入「${clip.name}」`)
+}
+
+const motion = useMotionStore()
+const motionCreating = ref(false)
+const motionError = ref('')
+
+function openMotionRail() {
+  railTab.value = 'motion'
+  motionError.value = ''
+  void motion.refreshProjects().catch((error) => {
+    motionError.value = `动效服务不可用：${String((error as Error)?.message || error)}`
+  })
+}
+
+function goMotionTemplates() {
+  rememberTemplatesReturn(route.fullPath)
+  void router.push('/templates')
+}
+
+function addMotionToTimeline(item: MotionProject) {
+  if (!project.value) return
+  const clip = projectStore.appendAsset(project.value.id, {
+    kind: 'motion',
+    name: item.name,
+    url: motionFileUrl(item.id),
+    motionId: item.id,
+    source: 'library',
+  })
+  if (clip) showToast(`已加入动效工程「${item.name}」，选中后可改参数与渲染。`)
+}
+
+async function createBlankMotion() {
+  if (!project.value || motionCreating.value) return
+  motionCreating.value = true
+  motionError.value = ''
+  try {
+    const created = await motion.create({ name: `${project.value.name} · 动效` })
+    addMotionToTimeline(created)
+  } catch (error) {
+    motionError.value = `创建失败：${String((error as Error)?.message || error)}`
+  } finally {
+    motionCreating.value = false
+  }
 }
 
 function startAssetDrag(event: DragEvent, assetId: string) {
@@ -688,6 +777,7 @@ const selectedAgentClips = computed<AgentClipRef[]>(() =>
       assetName: asset?.name,
       code: clip.code || asset?.code,
       codeLanguage: clip.codeLanguage || asset?.codeLanguage,
+      motionId: clip.motionId || asset?.motionId,
     }
   }),
 )
@@ -918,6 +1008,15 @@ function redo() {
   if (projectStore.redo(project.value.id)) showToast('已重做')
 }
 
+function onVersionRestored() {
+  versionsOpen.value = false
+  selectedClipId.value = ''
+  selectedClipIds.value = []
+  inspectorOpen.value = false
+  seek(0)
+  showToast('已恢复所选版本；如需返回，可执行撤销')
+}
+
 async function startExport() {
   if (!project.value || exporting.value) return
   if (!project.value.tracks.some((track) => track.clips.length > 0)) {
@@ -943,7 +1042,14 @@ async function startExport() {
         exportNote.value = note
       },
     })
-    // 规格校验：核对分辨率、时长、音轨，问题直接暴露出来而不是静默成功。
+    // 独立解析最终 Blob，核对分辨率、时长、音轨，不把编码器自述当成实测结果。
+    let actual: ExportActual = {}
+    let inspectionError = false
+    try {
+      actual = await inspectExportedVideo(result.blob)
+    } catch {
+      inspectionError = true
+    }
     const issues = verifyExport(
       projectValue,
       {
@@ -953,8 +1059,11 @@ async function startExport() {
         hasAudio: result.hasAudio,
         bytes: result.blob.size,
       },
-      { width: result.width, height: result.height, duration: result.duration, hasAudio: result.hasAudio },
+      actual,
     )
+    if (inspectionError) {
+      issues.push({ level: 'warn', code: 'inspection-failed', message: '最终 MP4 已生成，但浏览器无法重新解析它进行规格校验' })
+    }
     exportIssues.value = issues
     const link = document.createElement('a')
     link.href = URL.createObjectURL(result.blob)
@@ -1205,6 +1314,13 @@ function handleKeydown(event: KeyboardEvent) {
       target.tagName === 'SELECT' ||
       target.isContentEditable)
   if (editing) return
+  if (versionsOpen.value) {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      versionsOpen.value = false
+    }
+    return
+  }
   if (shortcutsOpen.value) {
     if (event.key === 'Escape' || event.key === '?') {
       event.preventDefault()
@@ -1299,6 +1415,7 @@ function handleKeydown(event: KeyboardEvent) {
   }
   if (event.key === 'Escape') {
     shortcutsOpen.value = false
+    versionsOpen.value = false
     clearTimelineSelection()
     return
   }
@@ -1788,6 +1905,27 @@ onBeforeUnmount(() => {
 .rail-upload:hover {
   border-color: var(--sf-line-strong);
   color: var(--sf-ink);
+}
+
+.rail-motion-new {
+  width: 100%;
+  background: transparent;
+}
+
+.rail-motion-library {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 7px;
+  border: 1px solid var(--sf-line);
+  border-radius: 8px;
+  background: #fdf6f1;
+  color: #9c4f31;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.rail-motion-library:hover {
+  border-color: #dcb6a2;
 }
 
 .rail-upload input {

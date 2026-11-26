@@ -307,6 +307,7 @@ function detectTargetsFromText(text: string) {
     assetName: clip.name,
     code: clip.code,
     codeLanguage: clip.codeLanguage,
+    motionId: clip.motionId,
     note: `用户指的是这支片里 ${(clip.start + innerStart).toFixed(1)}s–${(clip.start + innerEnd).toFixed(1)}s 这一段（片段内 ${innerStart.toFixed(1)}s–${innerEnd.toFixed(1)}s）`,
   }))
 }
@@ -360,6 +361,7 @@ function clipThumb(clip: AgentClipRef): string {
 }
 
 function kindLetter(kind: AgentClipRef['kind']): string {
+  if (kind === 'motion') return '动'
   return kind === 'audio' ? '音' : kind === 'image' ? '图' : kind === 'animation' ? '码' : '视'
 }
 

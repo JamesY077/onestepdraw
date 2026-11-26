@@ -215,7 +215,7 @@ import { useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useEditProjectStore } from '@/stores/editProjectStore'
-import { consumeTemplatesFlash, describeTemplatesFlash } from '@/features/template/navigation'
+import { consumeComposerPrompt, consumeTemplatesFlash, describeTemplatesFlash } from '@/features/template/navigation'
 import type { ComposerSubmit } from '@/types/agent'
 
 const store = useAgentStore()
@@ -554,6 +554,15 @@ onMounted(() => {
 
 /** 从模板库回来：说明引用了什么，并把焦点放回输入框。 */
 function announceTemplates() {
+  const pendingPrompt = consumeComposerPrompt()
+  if (pendingPrompt) {
+    draft.value = pendingPrompt
+    void nextTick(() => {
+      composerRef.value?.focus()
+      resetScroll('auto')
+    })
+    return
+  }
   const flash = consumeTemplatesFlash()
   if (!flash) return
   templatesNotice.value = `${describeTemplatesFlash(flash)}，直接说你想改哪里或想拍什么。`

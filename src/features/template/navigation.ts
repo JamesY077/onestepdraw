@@ -75,6 +75,28 @@ export function consumeTemplatesFlash(): TemplatesFlash | null {
   }
 }
 
+const PROMPT_KEY = 'onestep_composer_prompt_v1'
+
+/** 模板复刻 / 参考做同款：把完整交接提示词带进创作对话输入框。 */
+export function flashComposerPrompt(prompt: string): void {
+  try {
+    sessionStorage.setItem(PROMPT_KEY, prompt)
+  } catch {
+    // 忽略。
+  }
+}
+
+export function consumeComposerPrompt(): string {
+  try {
+    const raw = sessionStorage.getItem(PROMPT_KEY)
+    if (!raw) return ''
+    sessionStorage.removeItem(PROMPT_KEY)
+    return raw
+  } catch {
+    return ''
+  }
+}
+
 /** 把「已引用 2 个模板：A、B」拼成一句提示语。 */
 export function describeTemplatesFlash(flash: TemplatesFlash): string {
   const shown = flash.names.slice(0, 3).join('、')

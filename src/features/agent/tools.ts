@@ -31,6 +31,12 @@ export type AgentToolName =
   | 'read_project'
   | 'edit_timeline'
   | 'suggest_create_mode'
+  | 'list_motion_templates'
+  | 'read_motion_template'
+  | 'create_motion_project'
+  | 'read_motion_project'
+  | 'write_motion_project'
+  | 'render_motion_project'
 
 export interface AgentToolCall {
   id?: string
@@ -61,6 +67,12 @@ export const AGENT_TOOL_NAMES: AgentToolName[] = [
   'read_project',
   'edit_timeline',
   'suggest_create_mode',
+  'list_motion_templates',
+  'read_motion_template',
+  'create_motion_project',
+  'read_motion_project',
+  'write_motion_project',
+  'render_motion_project',
 ]
 
 const TIMELINE_FENCE = /```onestep-timeline[ \t]*\r?\n([\s\S]*?)```/g

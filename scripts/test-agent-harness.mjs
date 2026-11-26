@@ -95,7 +95,7 @@ try {
   assert.equal(parsed.toolCalls[1].args.items[0].content, '读取项目')
   assert.equal(parsed.toolCalls[1].rawArguments, '{"items":[{"content":"读取项目","status":"in_progress"}]}')
   assert.equal(requestBody.tool_choice, 'auto')
-  assert.equal(requestBody.tools.length, 8)
+  assert.equal(requestBody.tools.length, 14)
   assert.equal('execute' in requestBody.tools[0].function, false)
 
   // 非流式 JSON 也允许只有 tool call 而没有正文。
@@ -525,7 +525,7 @@ try {
   assert.ok(store.activeConversation.messages.length > originalMessageCount)
   assert.equal(generationRequests.length, 0)
   assert.equal(modelRequests.length, 6)
-  assert.equal(modelRequests[5].tools.length, 8)
+  assert.equal(modelRequests[5].tools.length, 14)
   assert.ok(modelRequests[5].messages.some((message) => message.role === 'user' && message.content === '接下来生成具体视频素材'))
   assert.match(modelRequests[5].messages.filter((message) => message.role === 'user').at(-1).content, /请按上述要求生成具体视频素材/)
 
