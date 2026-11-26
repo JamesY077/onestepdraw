@@ -48,6 +48,8 @@
           @retry="retry"
           @generation-retry="agentStore.retryGeneration"
           @ask-answer="handleAskAnswer"
+          @creative-handoff-accept="agentStore.acceptCreativeHandoff"
+          @creative-handoff-dismiss="agentStore.dismissCreativeHandoff"
         />
       </section>
     </div>

@@ -1,5 +1,8 @@
 <template>
-  <div class="mention-input" :class="{ 'is-placeholder': isEmpty && !focused }">
+  <div
+    class="mention-input"
+    :class="{ 'is-placeholder': isEmpty && !focused, 'is-composing': composing }"
+  >
     <div class="mi-stack">
       <!-- 显示层：垫在输入框下面，负责颜色与 @引用高亮 -->
       <div ref="mirrorRef" class="mi-mirror" aria-hidden="true">
@@ -27,6 +30,8 @@
         @blur="focused = false"
         @keydown="$emit('keydown', $event)"
         @input="handleInput"
+        @compositionstart="composing = true"
+        @compositionend="handleCompositionEnd"
         @scroll="handleScroll"
         @paste="$emit('paste', $event)"
       />
@@ -59,6 +64,7 @@ const model = defineModel<string>({ default: '' })
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const mirrorRef = ref<HTMLElement | null>(null)
 const focused = ref(false)
+const composing = ref(false)
 
 const isEmpty = computed(() => !model.value)
 const segments = computed(() => splitMentionSegments(model.value, props.tokens))
@@ -84,6 +90,11 @@ function resize() {
 function handleInput() {
   resize()
   emit('input')
+}
+
+function handleCompositionEnd() {
+  composing.value = false
+  nextTick(resize)
 }
 
 /** 输入框滚动时让高亮层跟随，避免长文本时两层错位。 */
@@ -154,9 +165,9 @@ defineExpose({ focus, resize, getTextarea, setCaret })
   position: absolute;
   inset: 0;
   overflow: hidden;
-  /* 固定用墨色，避免被外层深色主题的 --sf-ink 改写成白字 */
-  color: var(--sf-ink, #241f19);
-  -webkit-text-fill-color: currentColor;
+  /* 输入区始终是白底，固定使用墨色，避免继承外层主题的白字。 */
+  color: #241f19;
+  -webkit-text-fill-color: #241f19;
   pointer-events: none;
 }
 
@@ -195,6 +206,19 @@ defineExpose({ focus, resize, getTextarea, setCaret })
   -webkit-text-fill-color: transparent !important;
   text-shadow: none;
   caret-color: var(--sf-ink);
+}
+
+/*
+ * 输入法组合文字只存在于原生输入层，尚未同步到镜像层。
+ * 组合期间直接显示原生深色文字并隐藏旧镜像，避免英文拼音透明或两层重影。
+ */
+.mention-input.is-composing .mi-input {
+  color: #241f19 !important;
+  -webkit-text-fill-color: #241f19 !important;
+}
+
+.mention-input.is-composing .mi-mirror {
+  visibility: hidden;
 }
 
 .mi-input::selection {

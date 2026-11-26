@@ -14,6 +14,7 @@ export const CREATE_FLOW_SKILL_CONTENT = videoScriptSkill
 export function createFlowSystemPrompt(base: {
   automation: 'default' | 'auto'
   projectSummary?: string
+  productionSummary?: string
   extraSkills?: Array<{ name: string; content: string }>
 }): string {
   const skills = [
@@ -24,6 +25,7 @@ export function createFlowSystemPrompt(base: {
     mode: 'create',
     automation: base.automation,
     projectSummary: base.projectSummary,
+    productionSummary: base.productionSummary,
     skills,
   })
 }

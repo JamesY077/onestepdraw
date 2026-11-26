@@ -27,7 +27,7 @@
   - Markdown 渲染（标题、列表、表格、代码块与一键复制）；
   - 支持推理模型的「思考过程」折叠展示；
   - 对话自动保存在浏览器本地，不上传服务器。
-- **对话即创作**：在对话里描述需求，Agent 会先追问缺失的比例 / 时长 / 分辨率，再直接调用本项目的图片与视频模型生成结果。
+- **对话即创作**：普通对话完整完成聊天、灵感、文案、脚本、分镜与提示词；需要实际生成或编辑素材时先展示切换确认卡，用户确认后才在同一对话进入创作模式，调用本项目的图片与视频模型。
   - 图片默认 `Seedream 5.0 Lite` + `16:9`；
   - 视频默认 `MiniMax H3` + `16:9` + `768P` + `5s`。
 - **对话模型可选**：选择内置 AIPing 时，输入框会同时出现模型选择器；从 AIPing 模型列表实时拉取对话模型，支持关键字搜索与切换，默认 `DeepSeek-V4.1-Flash-1017`。
@@ -118,19 +118,21 @@ API Key 只保存在当前浏览器会话中，不会写入项目文件或上传
 
 ## 对话内生成
 
-在对话页直接说需求即可，例如：
+普通对话可以直接完成文字任务，例如「写一条咖啡广告文案」或「把这个卖点拆成 5 镜脚本」，不会因此发起素材生成。继续说「按这个脚本做成视频」时，Agent 会给出「是否切换到创作模式继续任务？」确认卡：
 
-- 「帮我生成一张极简白色香水主视觉，16:9」
-- 「做一段 5 秒的视频：雨夜跑车，768P」
+- **切换并继续**：保留同一 conversationId、历史消息、附件与模板，创建或关联剪辑项目，再承接原任务；
+- **暂不切换**：留在普通对话，可以继续讨论和润色，不创建项目、不生成素材。
 
-Agent 会先确认缺失的关键参数，然后调用本机模型。生成结果以卡片形式出现在消息下方，可点击查看原图 / 播放视频。视频生成会显示排队与渲染进度。
+也可以在输入框上方主动选择创作对话，再说「帮我生成一张极简白色香水主视觉，16:9」。Agent 会确认创作所需的关键参数并调用模型。生成结果以卡片形式出现在消息下方，可点击查看原图 / 播放视频；视频生成会显示排队与渲染进度。
+
+内置 Stepframe Agent 已接入轻量 Agent Harness：原生 Function Calling → 工具执行 → 结果回注 → 继续推理，单轮最多 8 步。计划、项目读取、时间轴修改和生成任务都有可折叠执行轨迹；长图片/视频任务仍在后台卡片中运行，不阻塞下一轮对话。不支持原生工具的模型会降级到旧文本协议。架构、权限边界与恢复语义见 [`docs/agent-harness.md`](docs/agent-harness.md)。
 
 ### 两种对话模式
 
 输入框上方是对话模式开关，输入框底部一行是 Agent 与自动程度，模型选择在发送按钮左边：
 
-- **普通对话 / 创作对话**：普通对话只聊不建项目；创作对话在你说完需求后自动创建项目并进入剪辑台。
-- **默认模式 / 完全模式**：默认模式会一次问一个问题；完全模式由模型自己补齐所有细节，在同一条回复里直接生成，不需要你回答任何问题。
+- **普通对话 / 创作对话**：普通对话处理聊天、灵感、建议及文案、脚本、分镜、提示词写作与润色，不直接生成或编辑素材；创作对话复用生成、Skill、素材和剪辑链路，生成结果进入关联项目。
+- **默认模式 / 完全模式**：创作对话的默认模式会一次问一个问题；完全模式由模型自己补齐创作细节并直接执行。普通对话即使选择完全模式，实际创作前仍必须由用户确认切换。
 - 两种对话都保持纯白底，创作对话用这些提示区分：顶栏墨色「创作对话」徽标、衬线标题与 CREATIVE MODE 眉标、编号流程图和 01–04 编号卡片、输入框上方的「创作模式 · 生成结果会自动进入剪辑项目」提示，以及陶土色发送键。
 
 ### 提问卡片
@@ -356,12 +358,15 @@ node scripts/onestep-generate.mjs video --prompt "镜头描述" --ratio 16:9 --r
 
 ```
 src/
-  api/agent.ts            # AIPing /chat/completions 流式对话
+  api/agent.ts            # AIPing 流式对话与原生 tool_calls 聚合
   api/models.ts           # AIPing 对话模型列表与缓存
   api/localAgents.ts      # 本机 Agent 扫描与 SSE 调用
-  components/agent/       # 对话页组件（侧栏、消息、输入框、Markdown、生成结果卡）
+  components/agent/       # 对话组件、执行轨迹、输入框、Markdown、生成结果卡
+  features/agent/harness.ts # 多步 Turn/Step、工具结果回注、取消与上限
+  features/agent/toolDefinitions.ts # 原生工具 JSON Schema 与纯 UI 投影
+  features/agent/recovery.ts # 刷新后的中断状态恢复
   features/agent/prompt.ts# Agent 系统提示词（含工具调用协议与 grill-me 视频澄清）
-  features/agent/tools.ts # 工具块 / 时间轴操作解析、默认参数与生成任务构建
+  features/agent/tools.ts # 旧工具协议 / 时间轴参数、默认参数与生成任务构建
   features/generate/      # 图片 / 视频参数构建与轮询
   components/edit/        # 剪辑台：预览、时间轴、创作对话、波形
   features/edit/          # 播放头状态、吸附、波形峰值、WebCodecs 导出
@@ -384,6 +389,15 @@ server/local/agents.mjs   # Agent 预设、PATH 扫描与进程流式输出
 scripts/onestep-generate.mjs # 供 Agent 调用的图片 / 视频生成脚本
 start-macos.command       # macOS 一键启动
 start-windows.bat         # Windows 一键启动
+```
+
+## 无付费回归测试
+
+```bash
+npm test                   # Agent Harness + 素材/项目事务回归
+npm run test:agent-harness # 原生工具 SSE、多步回注、取消与刷新恢复（全 mock）
+npm run test:clip-revision # 固定片段、附件、模板、Skill 与原素材优先级
+npm run build              # TypeScript 类型检查 + 生产构建
 ```
 
 ## 说明

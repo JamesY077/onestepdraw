@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
-/** 普通对话 = 只聊不做项目；创作对话 = 生成结果进入剪辑项目。 */
+/** 普通对话完成文字任务且不做项目；创作对话复用生成链路，结果进入剪辑项目。 */
 export type ConversationMode = 'chat' | 'create'
 /** 默认模式 = grill-me 分轮提问；完全模式 = 模型自行决策、直接出结果。 */
 export type AutomationMode = 'default' | 'auto'

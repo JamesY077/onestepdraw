@@ -149,6 +149,7 @@ export async function streamLocalAgent(options: LocalAgentStreamOptions): Promis
   let exitCode = 0
   let stderrTail = ''
   let failure = ''
+  let settled = false
 
   const handleEvent = (raw: string) => {
     for (const line of raw.split('\n')) {
@@ -168,9 +169,11 @@ export async function streamLocalAgent(options: LocalAgentStreamOptions): Promis
       } else if (event?.type === 'start' && event.agent) {
         options.onStart?.(event.agent)
       } else if (event?.type === 'done') {
+        settled = true
         exitCode = Number(event.exitCode) || 0
         stderrTail = typeof event.stderrTail === 'string' ? event.stderrTail : ''
       } else if (event?.type === 'error') {
+        settled = true
         failure = event.message || 'Agent 运行失败。'
       }
     }
@@ -192,5 +195,6 @@ export async function streamLocalAgent(options: LocalAgentStreamOptions): Promis
 
   if (buffer.trim()) handleEvent(buffer)
   if (failure) throw new LocalAgentError(failure)
+  if (!settled) throw new LocalAgentError('Agent 连接在返回完成状态前中断，请重试。')
   return { exitCode, stderrTail }
 }

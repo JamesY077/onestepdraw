@@ -95,6 +95,12 @@
           <pre class="reasoning-text">{{ message.logs }}</pre>
         </details>
 
+        <AgentRunTrace
+          v-if="showRunTrace"
+          :run="message.run!"
+          :streaming="isStreaming"
+        />
+
         <details v-if="message.reasoning" class="reasoning-block">
           <summary>
             <span class="reasoning-dot" aria-hidden="true" />
@@ -119,6 +125,15 @@
           @answer="$emit('ask-answer', { messageId: message.id, ...$event })"
         />
 
+        <AgentCreativeHandoffCard
+          v-if="message.creativeHandoff"
+          :handoff="message.creativeHandoff"
+          :compact="compact"
+          :disabled="isStreaming"
+          @accept="$emit('creative-handoff-accept', message.id)"
+          @dismiss="$emit('creative-handoff-dismiss', message.id)"
+        />
+
         <AgentGenerationCard
           v-for="generation in message.generations?.length ? message.generations : (message.generation ? [message.generation] : [])"
           :key="generation.id"
@@ -133,7 +148,7 @@
 
         <div v-else-if="message.status === 'stopped'" class="message-stopped">
           <span>{{ displayContent ? '已停止生成' : '已停止' }}</span>
-          <button v-if="canRetry" type="button" class="text-action" @click="$emit('retry')">继续生成</button>
+          <button v-if="canRetry" type="button" class="text-action" @click="$emit('retry')">重新尝试</button>
         </div>
       </template>
 
@@ -165,6 +180,8 @@ import BrandMark from './BrandMark.vue'
 import MarkdownView from './MarkdownView.vue'
 import AgentGenerationCard from './AgentGenerationCard.vue'
 import AgentAskCard from './AgentAskCard.vue'
+import AgentCreativeHandoffCard from './AgentCreativeHandoffCard.vue'
+import AgentRunTrace from './AgentRunTrace.vue'
 import { stripAgentControlBlocks } from '@/features/agent/tools'
 import { stripAgentAnimationBlocks } from '@/features/agent/clipRevision'
 import type { AgentAttachment, AgentMessage } from '@/types/agent'
@@ -177,11 +194,17 @@ defineEmits<{
   (event: 'retry'): void
   (event: 'generation-retry', id: string, generationId?: string): void
   (event: 'ask-answer', payload: { messageId: string; optionId: string; label: string }): void
+  (event: 'creative-handoff-accept', messageId: string): void
+  (event: 'creative-handoff-dismiss', messageId: string): void
 }>()
 
 const copied = ref(false)
 
 const displayContent = computed(() => stripAgentAnimationBlocks(stripAgentControlBlocks(props.message.content)))
+const showRunTrace = computed(() => {
+  const run = props.message.run
+  return !!run && (props.isStreaming || run.currentStep > 1 || run.plan.length > 0 || run.activities.length > 0)
+})
 
 function hasPreview(item: AgentAttachment): boolean {
   return (item.kind === 'image' && !!item.url) || (item.kind === 'video' && !!item.frames?.length)

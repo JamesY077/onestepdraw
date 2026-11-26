@@ -1,6 +1,12 @@
 import { computed, reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { AGENT_MODEL_ID, AgentApiError, analyzeImages, streamAgentChat } from '@/api/agent'
+import {
+  AGENT_MODEL_ID,
+  AgentApiError,
+  analyzeImages,
+  isAgentToolsUnsupportedError,
+  streamAgentChat,
+} from '@/api/agent'
 import { LocalAgentError, streamLocalAgent, type LocalAgentMessage } from '@/api/localAgents'
 import type {
   AgentAttachment,
@@ -10,7 +16,12 @@ import type {
   AgentConversation,
   AgentGeneration,
   AgentMessage,
+  AgentPlanItem,
+  AgentProduction,
+  AgentRunState,
+  AgentStoryboardShot,
   AgentTemplateRef,
+  AgentToolActivity,
 } from '@/types/agent'
 import { buildAgentSystemPrompt } from '@/features/agent/prompt'
 import {
@@ -40,10 +51,13 @@ import {
   buildAgentGeneration,
   describeAgentGeneration,
   extractAgentAsk,
+  extractAgentCreativeHandoff,
   extractAgentTimelineOps,
   extractAgentToolCalls,
   extractLegacyAsk,
   extractMediaUrls,
+  normalizeAgentCreativeHandoff,
+  normalizeAgentTimelineOps,
   stripAgentAskBlocks,
   stripAgentControlBlocks,
   stripAgentTimelineBlocks,
@@ -55,7 +69,7 @@ import {
   routeConversationRequest,
 } from '@/features/agent/conversationRouting'
 import { buildImageParams, buildVideoParams } from '@/features/generate/buildParams'
-import { pollVideoStatus } from '@/features/generate/video'
+import { pollVideoStatus, VideoTaskFailedError } from '@/features/generate/video'
 import { generateImage, generateVideo } from '@/api/aiping'
 import { CUSTOM_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useApiStore } from '@/stores/apiStore'
@@ -65,6 +79,24 @@ import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { createFlowSystemPrompt } from '@/features/agent/createSkill'
 import { useEditProjectStore } from '@/stores/editProjectStore'
 import type { AutomationMode, ConversationMode } from '@/stores/chatModeStore'
+import type { EditProject } from '@/types/edit'
+import { runAgentHarness } from '@/features/agent/harness'
+import { recoverInterruptedMessage } from '@/features/agent/recovery'
+import {
+  AGENT_GENERATION_CONCURRENCY,
+  AGENT_GENERATION_MAX_ATTEMPTS,
+  describeProduction,
+  normalizeStoryboardToolInput,
+  productionPendingShots,
+  runGenerationQueue,
+  withAccountGenerationSlot,
+} from '@/features/agent/production'
+import {
+  AGENT_CHAT_NATIVE_TOOLS,
+  AGENT_MAX_RUN_STEPS,
+  AGENT_NATIVE_TOOLS,
+  presentAgentToolCall,
+} from '@/features/agent/toolDefinitions'
 
 const STORAGE_KEY = 'onestep_agent_conversations_v1'
 const MAX_CONVERSATIONS = 50
@@ -90,6 +122,18 @@ function messageGenerations(message: AgentMessage): AgentGeneration[] {
   return message.generation ? [message.generation] : []
 }
 
+/** 现有时间轴真正结束的位置；新制作的镜头从这之后预留位置。 */
+function projectTimelineEnd(project: EditProject | null): number {
+  if (!project) return 0
+  return project.tracks.reduce(
+    (end, track) => track.clips.reduce(
+      (trackEnd, clip) => Math.max(trackEnd, clip.start + clip.duration),
+      end,
+    ),
+    0,
+  )
+}
+
 function isConversation(value: any): value is AgentConversation {
   return (
     value &&
@@ -109,9 +153,10 @@ function loadConversations(): AgentConversation[] {
     if (!Array.isArray(parsed)) return []
     return parsed
       .filter(isConversation)
-      .map((conversation) => ({
-        ...conversation,
-        messages: conversation.messages
+      .map((conversation) => {
+        const recovered: AgentConversation = {
+          ...conversation,
+          messages: conversation.messages
           .filter(
             (message: any) =>
               message && typeof message.content === 'string' && typeof message.role === 'string',
@@ -124,9 +169,28 @@ function loadConversations(): AgentConversation[] {
                 ? [message.template]
                 : undefined
             const { template: _legacyTemplate, ...rest } = message
-            return { ...rest, templates }
+            return recoverInterruptedMessage({ ...rest, templates })
           }),
-      }))
+        }
+        if (recovered.production) {
+          const productionShots = Array.isArray(recovered.production.shots)
+            ? recovered.production.shots
+            : []
+          recovered.production.shots = productionShots.map((shot) => {
+            if (shot.status !== 'running') return shot
+            const generation = recovered.messages
+              .flatMap((message) => messageGenerations(message))
+              .find((item) => item.id === shot.generationId)
+            return {
+              ...shot,
+              status: generation?.status === 'succeeded' ? 'succeeded' : 'failed',
+              error: generation?.error || '页面刷新中断了本地等待，请继续生成。',
+            }
+          })
+          if (recovered.production.status === 'running') recovered.production.status = 'paused'
+        }
+        return recovered
+      })
       .sort((a, b) => b.updatedAt - a.updatedAt)
   } catch {
     return []
@@ -154,6 +218,7 @@ export const useAgentStore = defineStore('agent', () => {
 
   let abortController: AbortController | null = null
   let saveTimer: number | null = null
+  const activeProductionRuns = new Set<string>()
 
   const activeConversation = computed(
     () => conversations.value.find((conversation) => conversation.id === activeId.value) || null,
@@ -256,12 +321,13 @@ export const useAgentStore = defineStore('agent', () => {
       content: skill.content,
     }))
     const projectSummary = project ? projects.projectSummary(project) : undefined
+    const productionSummary = describeProduction(conversation.production) || undefined
     const automation = conversation.automation || 'default'
 
     // 创作对话固定带上「短视频脚本导演」（grill-me + video-director）：
     // 任何一次发送都会先按协议问清创作者，再动手做片。
     if ((conversation.mode || 'chat') === 'create') {
-      return createFlowSystemPrompt({ automation, projectSummary, extraSkills: skills })
+      return createFlowSystemPrompt({ automation, projectSummary, productionSummary, extraSkills: skills })
     }
 
     return buildAgentSystemPrompt({
@@ -279,7 +345,7 @@ export const useAgentStore = defineStore('agent', () => {
           `\n\n[系统记录] 已调用${generation.kind === 'image' ? '图片' : '视频'}生成：${describeAgentGeneration(generation)}。`,
         ).join('')
       : ''
-    return `${message.content}${note}${askContext(message)}${describeClipContext(
+    return `${message.content}${note}${askContext(message)}${creativeHandoffContext(message)}${describeClipContext(
       message.clips,
     )}${describeAttachments(message.attachments, { includePaths })}${describeTemplates(
       message.templates,
@@ -399,17 +465,18 @@ export const useAgentStore = defineStore('agent', () => {
       abortController.abort()
       abortController = null
     }
+    // 同步释放会话切换/新对话；旧请求 finally 只会清理属于自己的运行状态。
+    streamingId.value = null
   }
 
   /** 创作对话里生成成功的素材自动进入关联项目的时间轴。 */
   function attachGenerationToProject(
     conversation: AgentConversation,
-    message: AgentMessage,
+    generation: AgentGeneration,
+    options: { at?: number; shot?: AgentStoryboardShot } = {},
   ) {
     if (conversation.mode !== 'create' || !conversation.projectId) return
-    const generation = message.generation
     if (
-      !generation ||
       (generation.intent === 'edit' && generation.targetClipId) ||
       generation.status !== 'succeeded' ||
       generation.attachedToProject
@@ -417,15 +484,52 @@ export const useAgentStore = defineStore('agent', () => {
     const projects = useEditProjectStore()
     const url = generation.kind === 'image' ? generation.images?.[0] : generation.videoUrl
     if (!url) return
+    const name = generation.sceneId
+      ? `${generation.sceneId} · ${generation.prompt.slice(0, 24)}`
+      : generation.prompt.slice(0, 32) || (generation.kind === 'image' ? '生成图片' : '生成视频')
+    const shot = options.shot
+    // 改稿重生成：已有片段存在时原位替换，保留它已经占好的时间轴位置。
+    if (shot?.clipId && shot.clipUrl) {
+      const replaced = projects.replaceClipAsset(
+        conversation.projectId,
+        shot.clipId,
+        {
+          kind: generation.kind === 'image' ? 'image' : 'video',
+          url,
+          thumbnail: generation.thumbnail,
+          duration: generation.kind === 'video' ? generation.duration : undefined,
+          name,
+        },
+        { url: shot.clipUrl },
+      )
+      if (replaced.status === 'applied') {
+        generation.attachedToProject = true
+        shot.clipUrl = url
+        projects.updateClip(conversation.projectId, shot.clipId, {
+          name,
+          ...(generation.kind === 'video' && generation.duration ? { duration: generation.duration } : {}),
+        })
+        return
+      }
+    }
     const clip = projects.appendAsset(conversation.projectId, {
-      name: generation.prompt.slice(0, 32) || (generation.kind === 'image' ? '生成图片' : '生成视频'),
+      name,
       kind: generation.kind,
       url,
       thumbnail: generation.thumbnail,
       duration: generation.kind === 'video' ? generation.duration : undefined,
       source: 'chat',
+    }, {
+      at: options.at,
+      duration: generation.kind === 'video' ? generation.duration : undefined,
     })
-    if (clip) generation.attachedToProject = true
+    if (clip) {
+      generation.attachedToProject = true
+      if (shot) {
+        shot.clipId = clip.id
+        shot.clipUrl = clip.url
+      }
+    }
   }
 
   /** 选择题已经渲染成卡片，但模型下一轮仍需知道问了什么、用户选了什么。 */
@@ -435,6 +539,17 @@ export const useAgentStore = defineStore('agent', () => {
     const list = ask.options.map((option, index) => `${index + 1}. ${option.label}`).join(' / ')
     const picked = ask.answer ? `[用户选择] ${ask.answer}` : '[用户尚未选择]'
     return `\n\n[选择题] ${ask.header} · ${ask.question}\n[选项] ${list}\n${picked}`
+  }
+
+  function creativeHandoffContext(message: AgentMessage): string {
+    const handoff = message.creativeHandoff
+    if (!handoff) return ''
+    const status = handoff.status === 'accepted'
+      ? '用户已确认并切换到创作对话'
+      : handoff.status === 'dismissed'
+        ? '用户暂不切换，继续普通对话'
+        : '等待用户确认，尚未切换或生成'
+    return `\n\n[创作模式交接] ${handoff.reason}\n[交接任务] ${handoff.prompt}\n[状态] ${status}`
   }
 
   /** 把回复里的选择题块解析成卡片数据，并从正文里移除。 */
@@ -450,6 +565,67 @@ export const useAgentStore = defineStore('agent', () => {
       message.ask = legacy.ask
       message.content = legacy.rest
     }
+  }
+
+  /** 普通模式只提议交接；误输出的生成工具也转换成确认卡，绝不在这里执行。 */
+  function applyCreativeHandoffFromReply(conversation: AgentConversation, message: AgentMessage) {
+    if ((conversation.mode || 'chat') !== 'chat') return
+    const block = extractAgentCreativeHandoff(message.content)
+    if (block) message.creativeHandoff = block
+    if (message.creativeHandoff) return
+
+    const call = extractAgentToolCalls(message.content).find((item) =>
+      ['suggest_create_mode', 'generate_image', 'generate_video', 'generate_storyboard', 'open_voice', 'open_3d', 'edit_timeline'].includes(item.name),
+    )
+    if (!call) return
+    if (call.name === 'suggest_create_mode') {
+      message.creativeHandoff = normalizeAgentCreativeHandoff(call.args) || undefined
+      return
+    }
+    const task = String(call.args.prompt || call.args.text || '').trim()
+    const reason = '下一步需要实际生成或编辑素材，并在创作项目中继续。'
+    const prompt = task
+      ? `请在创作模式中继续当前任务：${task}`
+      : '请基于当前对话已经确认的内容，在创作模式中继续实际素材创作。'
+    message.creativeHandoff = normalizeAgentCreativeHandoff({ target: 'create', reason, prompt }) || undefined
+  }
+
+  function dismissCreativeHandoff(messageId: string) {
+    const message = conversations.value.flatMap((item) => item.messages).find((item) => item.id === messageId)
+    if (message?.creativeHandoff?.status !== 'pending') return
+    message.creativeHandoff.status = 'dismissed'
+    persistNow()
+  }
+
+  /** 用户确认后才切换同一对话、创建/关联项目，并带着交接任务继续。 */
+  function acceptCreativeHandoff(messageId: string) {
+    if (streamingId.value) return null
+    const conversation = conversations.value.find((item) => item.messages.some((msg) => msg.id === messageId))
+    const message = conversation?.messages.find((msg) => msg.id === messageId)
+    const handoff = message?.creativeHandoff
+    if (!conversation || !handoff || handoff.status !== 'pending') return null
+
+    for (const item of conversation.messages) {
+      if (item.creativeHandoff?.status === 'pending') item.creativeHandoff.status = 'dismissed'
+    }
+    handoff.status = 'accepted'
+    conversation.mode = 'create'
+    activeId.value = conversation.id
+    const sourceUser = [...conversation.messages].reverse().find((item) => item.role === 'user')
+    const projects = useEditProjectStore()
+    const project = projects.findProjectByConversation(conversation.id) ||
+      projects.createProject(makeTitle(handoff.prompt), conversation.id)
+    conversation.projectId = project.id
+    conversation.updatedAt = Date.now()
+    persistNow()
+    void sendMessage(handoff.prompt, {
+      conversationId: conversation.id,
+      mode: 'create',
+      automation: conversation.automation || 'default',
+      attachments: sourceUser?.attachments,
+      templates: sourceUser?.templates,
+    })
+    return { conversationId: conversation.id, projectId: project.id }
   }
 
   /** 用户点选卡片：先记录答案，再把答案作为一条用户消息发给模型。 */
@@ -590,8 +766,19 @@ export const useAgentStore = defineStore('agent', () => {
           generation.resolution || '768P',
           generation.intent === 'edit' && reference?.type === 'video' ? 'editVideo' : null,
         )
-        const task = await generateVideo(params)
+        const task = generation.taskId
+          ? {
+              id: generation.taskId,
+              provider: generation.provider || 'minimax-h3',
+              providerCreateEndpoint: generation.providerCreateEndpoint,
+            }
+          : await generateVideo(params)
         if (!task.id) throw new Error('视频任务创建成功但未返回任务 ID，请重试。')
+        generation.taskId = task.id
+        generation.provider = task.provider || 'minimax-h3'
+        generation.providerCreateEndpoint = (task as any).providerCreateEndpoint
+        // 建单后立刻落盘；后续轮询失败只恢复这个 taskId，绝不盲目重复建单。
+        persistNow()
         const finalStatus = await pollVideoStatus(
           task.id,
           (progress) => {
@@ -615,7 +802,37 @@ export const useAgentStore = defineStore('agent', () => {
     } catch (error: any) {
       generation.status = 'failed'
       generation.error = error?.message || '生成失败，请稍后重试。'
+      if (error instanceof VideoTaskFailedError) {
+        // 上游已明确失败，原任务不可能再成功，下一次尝试才允许重新建单。
+        generation.taskId = undefined
+        generation.providerCreateEndpoint = undefined
+      }
       if (error instanceof AgentApiError && error.kind === 'auth') authExpired.value = true
+    }
+  }
+
+  /** 普通错误最多自动重试 2 次；鉴权失败直接停，避免无意义重复请求。 */
+  async function executeGenerationWithRetry(generation: AgentGeneration) {
+    generation.maxAttempts = AGENT_GENERATION_MAX_ATTEMPTS
+    generation.autoRetryCount = 0
+    generation.autoRetrying = false
+    for (let attempt = 1; attempt <= AGENT_GENERATION_MAX_ATTEMPTS; attempt += 1) {
+      generation.attempt = attempt
+      generation.lastAttemptAt = Date.now()
+      generation.queued = false
+      await withAccountGenerationSlot(() => executeGeneration(generation))
+      if (generation.status === 'succeeded' || authExpired.value) break
+      if (attempt < AGENT_GENERATION_MAX_ATTEMPTS) {
+        generation.autoRetryCount = attempt
+        generation.autoRetrying = true
+        generation.status = 'running'
+        generation.error = `${generation.error || '生成失败'}；正在自动重试（${attempt + 1}/${AGENT_GENERATION_MAX_ATTEMPTS}）`
+        persistNow()
+      }
+    }
+    generation.autoRetrying = false
+    if (generation.status === 'failed' && (generation.autoRetryCount || 0) > 0) {
+      generation.error = `${generation.error || '生成失败'}（已自动重试 ${generation.autoRetryCount} 次）`
     }
   }
 
@@ -657,9 +874,10 @@ export const useAgentStore = defineStore('agent', () => {
     message: AgentMessage,
     call: AgentToolCall,
     existing?: AgentGeneration,
-  ) {
+    deferProjectAttach = false,
+  ): Promise<AgentGeneration | undefined> {
     const built = existing || buildAgentGeneration(call)
-    if (!built) return
+    if (!built) return undefined
     if (!built.targetSourceUrl) {
       const user = latestUserMessage(conversation.messages)
       const reference = attachmentReferenceForGeneration([
@@ -677,14 +895,255 @@ export const useAgentStore = defineStore('agent', () => {
     conversation.updatedAt = Date.now()
     persistNow()
 
-    await executeGeneration(generation)
-    if (generation.intent === 'edit' && generation.targetClipId) {
-      applyCompletedGeneration(conversation, generation)
-    } else {
-      attachGenerationToProject(conversation, message)
+    await executeGenerationWithRetry(generation)
+    if (!deferProjectAttach) {
+      if (generation.intent === 'edit' && generation.targetClipId) {
+        applyCompletedGeneration(conversation, generation)
+      } else {
+        attachGenerationToProject(conversation, generation)
+      }
     }
     conversation.updatedAt = Date.now()
     persistNow()
+    return generation
+  }
+
+  function syncProductionPlan(message: AgentMessage, production: AgentProduction) {
+    production.updatedAt = Date.now()
+    if (message.run) {
+      message.run.plan = production.shots.map((shot) => ({
+        id: `shot_${shot.id}`,
+        content: `${shot.id} · ${shot.duration}s · ${shot.timelineStart ?? 0}s 起 · ${shot.prompt.slice(0, 48)}`,
+        status: shot.status === 'succeeded'
+          ? 'completed'
+          : shot.status === 'running'
+            ? 'in_progress'
+            : 'pending',
+      }))
+      touchRun(message)
+    }
+  }
+
+  function findGeneration(conversation: AgentConversation, id?: string): AgentGeneration | undefined {
+    if (!id) return undefined
+    for (const message of conversation.messages) {
+      const generation = messageGenerations(message).find((item) => item.id === id)
+      if (generation) return generation
+    }
+    return undefined
+  }
+
+  /**
+   * 每个镜号都有预留时间点：先完成的 S03 可以立即入轨，
+   * 但不会占用 S02 的位置；之后完成的 S02 会回填前面的空档。
+   */
+  function flushStoryboardAttachments(conversation: AgentConversation, production: AgentProduction) {
+    for (const shot of production.shots) {
+      const generation = findGeneration(conversation, shot.generationId)
+      if (generation?.status !== 'succeeded') continue
+      attachGenerationToProject(conversation, generation, { at: shot.timelineStart, shot })
+    }
+  }
+
+  async function runStoryboardProduction(
+    conversation: AgentConversation,
+    assistant: AgentMessage,
+    production: AgentProduction,
+  ) {
+    if (activeProductionRuns.has(production.id)) return
+    activeProductionRuns.add(production.id)
+    try {
+      const pending = productionPendingShots(production)
+      production.status = 'running'
+      const work = pending.map((shot) => {
+        const generation = buildAgentGeneration({
+          name: 'generate_video',
+          args: {
+            prompt: shot.prompt,
+            aspect_ratio: production.aspectRatio,
+            resolution: production.resolution,
+            duration: shot.duration,
+          },
+        })
+        if (!generation) throw new Error(`${shot.id} 缺少可执行的生成参数。`)
+        generation.sceneId = shot.id
+        generation.attempt = 0
+        generation.autoRetryCount = 0
+        generation.queued = true
+        shot.generationId = generation.id
+        shot.status = 'pending'
+        shot.error = undefined
+        return { shot, generation }
+      })
+      // 先一次性建立全部卡片，后续镜头排队中也有持久化记录，不再只出现 S1。
+      for (const { generation } of work) setMessageGeneration(assistant, reactive(generation))
+      syncProductionPlan(assistant, production)
+      conversation.updatedAt = Date.now()
+      persistNow()
+
+      await runGenerationQueue(work, async ({ shot, generation }) => {
+        try {
+          generation.queued = false
+          shot.status = 'running'
+          syncProductionPlan(assistant, production)
+          persistNow()
+          const result = await runGeneration(conversation, assistant, {
+            name: 'generate_video',
+            args: {
+              prompt: shot.prompt,
+              aspect_ratio: production.aspectRatio,
+              resolution: production.resolution,
+              duration: shot.duration,
+            },
+          }, generation, true)
+          shot.status = result?.status === 'succeeded' ? 'succeeded' : 'failed'
+          shot.attempt = result?.attempt
+          shot.error = result?.error
+        } catch (error: any) {
+          // 单镜异常只让这一镜失败，不能把整片队列卡在 running。
+          shot.status = 'failed'
+          shot.error = error?.message || '生成失败，请稍后重试。'
+          generation.status = 'failed'
+          generation.error = shot.error
+        } finally {
+          syncProductionPlan(assistant, production)
+          flushStoryboardAttachments(conversation, production)
+          persistNow()
+        }
+      }, AGENT_GENERATION_CONCURRENCY)
+
+      flushStoryboardAttachments(conversation, production)
+      const succeeded = production.shots.filter((shot) => shot.status === 'succeeded').length
+      const failed = production.shots.filter((shot) => shot.status === 'failed')
+      const total = production.shots.length
+      const remaining = total - succeeded
+      production.status = remaining === 0 ? 'done' : failed.length ? 'failed' : 'paused'
+      syncProductionPlan(assistant, production)
+      const summary = remaining === 0
+        ? `整支视频所需 ${total} 个镜头已全部生成，并按 ${production.shots.map((shot) => shot.id).join(' → ')} 顺序入轨，可在剪辑台预览完整视频。`
+        : failed.length
+          ? `已完成 ${succeeded}/${total} 镜。${failed.map((shot) => shot.id).join('、')} 在自动重试后仍失败；完整需求与进度已保存，可点对应卡片重试，成功后发送“继续生成”完成余镜。`
+          : `本批已完成，整片进度 ${succeeded}/${total}，还剩 ${remaining} 镜。完整制作单已保存，发送“继续生成”即可从下一镜续跑。`
+      assistant.content = `${assistant.content.trim()}\n\n${summary}`.trim()
+      conversation.updatedAt = Date.now()
+      persistNow()
+    } catch (error: any) {
+      // 即使队列本身异常退出，也要把制作单落到明确状态，刷新后仍能继续。
+      production.status = 'failed'
+      const reason = error?.message || '整片队列执行中断。'
+      for (const shot of production.shots) {
+        if (shot.status === 'pending' || shot.status === 'running') {
+          shot.status = 'failed'
+          shot.error = shot.error || reason
+        }
+      }
+      syncProductionPlan(assistant, production)
+      assistant.content = `${assistant.content.trim()}\n\n整片队列执行中断：${reason}。已完成镜头不会重复生成，发送“继续生成”可从未完成镜号续跑。`.trim()
+      conversation.updatedAt = Date.now()
+      persistNow()
+    } finally {
+      activeProductionRuns.delete(production.id)
+    }
+  }
+
+  /** 将完整制作单交给宿主执行；工具结果只表示本地队列启动，不声称素材已完成。 */
+  function startStoryboardProduction(
+    conversation: AgentConversation,
+    assistant: AgentMessage,
+    call: AgentToolCall,
+  ) {
+    const input = normalizeStoryboardToolInput(call.args)
+    const previous = conversation.production
+    if (previous && activeProductionRuns.has(previous.id)) {
+      throw new Error('当前整片任务仍在执行，请等待本批结束后再续跑。')
+    }
+    const now = Date.now()
+    const projects = useEditProjectStore()
+    const project = conversation.projectId ? projects.getProject(conversation.projectId) : null
+    const formatUnchanged = !!previous &&
+      previous.aspectRatio === input.aspectRatio &&
+      previous.resolution === input.resolution
+    // 同一片名与需求，或过半镜号仍是同一提示词，视为续跑/改稿；
+    // 换成另一支片则新建制作单，并从现有时间轴末尾开始，避免覆盖旧片。
+    const matchedShots = previous
+      ? input.shots.filter((shot) =>
+          previous.shots.some((item) => item.id === shot.id && item.prompt === shot.prompt),
+        ).length
+      : 0
+    const isContinuation = !!previous && (
+      (previous.title === input.title && previous.brief === input.brief) ||
+      matchedShots >= Math.ceil(input.shots.length / 2)
+    )
+    // 旧版本制作单可能没有 timelineStart，按已入轨总时长回推起点。
+    const timelineStart = isContinuation
+      ? previous!.timelineStart ?? Math.max(
+          0,
+          projectTimelineEnd(project) - previous!.shots.reduce((sum, item) => sum + (item.duration || 0), 0),
+        )
+      : projectTimelineEnd(project)
+    // 新镜号追加到已预留区域之后；老镜号保留原来的固定位置。
+    let cursor = isContinuation
+      ? previous!.shots.reduce(
+          (end, item) => Math.max(end, (item.timelineStart ?? timelineStart) + (item.duration || 0)),
+          timelineStart,
+        )
+      : timelineStart
+    const shots: AgentStoryboardShot[] = input.shots.map((shot) => {
+      const old = isContinuation ? previous!.shots.find((item) => item.id === shot.id) : undefined
+      // 只有提示词、时长、画幅和分辨率全都没变，才复用已成功的镜头。
+      if (
+        old?.status === 'succeeded' &&
+        old.prompt === shot.prompt &&
+        old.duration === shot.duration &&
+        formatUnchanged
+      ) {
+        return { ...old, timelineStart: old.timelineStart ?? timelineStart }
+      }
+      const shotStart = old?.timelineStart ?? cursor
+      if (old?.timelineStart == null) cursor += shot.duration
+      return {
+        ...shot,
+        // 若该镜号之前已经入轨，保留片段引用，重生成时原位替换。
+        ...(old?.clipId ? { clipId: old.clipId, clipUrl: old.clipUrl } : {}),
+        timelineStart: shotStart,
+        generationId: undefined,
+        status: 'pending' as const,
+        attempt: 0,
+        error: undefined,
+      }
+    })
+    const production = reactive<AgentProduction>({
+      id: isContinuation ? previous!.id : createId(),
+      title: input.title,
+      brief: input.brief,
+      continuity: input.continuity,
+      storyboardText: input.storyboardText,
+      aspectRatio: input.aspectRatio,
+      resolution: input.resolution,
+      delivery: input.delivery,
+      batchSize: AGENT_GENERATION_CONCURRENCY,
+      status: 'running',
+      messageId: assistant.id,
+      timelineStart,
+      shots,
+      createdAt: isContinuation ? previous!.createdAt : now,
+      updatedAt: now,
+    })
+    conversation.production = production
+    const pending = productionPendingShots(production)
+    syncProductionPlan(assistant, production)
+    persistNow()
+    void runStoryboardProduction(conversation, assistant, production)
+    return {
+      ok: true,
+      status: 'started',
+      productionId: production.id,
+      totalShots: production.shots.length,
+      queuedShotIds: pending.map((shot) => shot.id),
+      completedShotIds: production.shots.filter((shot) => shot.status === 'succeeded').map((shot) => shot.id),
+      concurrency: AGENT_GENERATION_CONCURRENCY,
+      message: '完整制作单与所有镜号已持久化，本地队列已启动；每镜最多自动尝试3次，已成功镜头不会重复生成。最终状态以制作单和生成卡片为准。',
+    }
   }
 
   /** 选中媒体跳过聊天模型：原需求 + 原素材直接进图片/多模态视频模型。 */
@@ -717,7 +1176,7 @@ export const useAgentStore = defineStore('agent', () => {
       setMessageGeneration(message, generation)
       conversation.updatedAt = Date.now()
       persistNow()
-      await executeGeneration(generation)
+      await executeGenerationWithRetry(generation)
     }
 
     const succeeded = generations.filter((generation) =>
@@ -793,8 +1252,8 @@ export const useAgentStore = defineStore('agent', () => {
       setMessageGeneration(message, generation)
       conversation.updatedAt = Date.now()
       persistNow()
-      await executeGeneration(generation)
-      attachGenerationToProject(conversation, message)
+      await executeGenerationWithRetry(generation)
+      attachGenerationToProject(conversation, generation)
     }
 
     const succeeded = generations.filter((generation) => generation.status === 'succeeded').length
@@ -876,12 +1335,37 @@ export const useAgentStore = defineStore('agent', () => {
         duration: generation.duration,
       },
     }
+    const production = conversation.production
+    const shot = production?.shots.find((item) => item.generationId === generation.id)
+    if (shot) {
+      shot.status = 'running'
+      shot.error = undefined
+      if (production) production.status = 'running'
+    }
     void runGeneration(
       conversation,
       message,
       call,
-      { ...generation, status: 'running', error: undefined, replacementError: undefined },
-    )
+      { ...generation, status: 'running', error: undefined, replacementError: undefined, attempt: 0, autoRetryCount: 0 },
+      Boolean(shot),
+    ).then((result) => {
+      if (!shot || !production || !result) return
+      shot.status = result.status === 'succeeded' ? 'succeeded' : 'failed'
+      shot.attempt = result.attempt
+      shot.error = result.error
+      flushStoryboardAttachments(conversation, production)
+      const remaining = production.shots.filter((item) => item.status !== 'succeeded').length
+      production.status = remaining === 0
+        ? 'done'
+        : production.shots.some((item) => item.status === 'failed')
+          ? 'failed'
+          : 'paused'
+      syncProductionPlan(message, production)
+      if (remaining === 0) {
+        message.content = `${message.content.trim()}\n\n全部 ${production.shots.length} 个镜头已生成并按镜号顺序入轨，整支视频可以在剪辑台预览。`.trim()
+      }
+      persistNow()
+    })
   }
 
   /** 内置模型与本机 Agent 共用同一套工具路由，选中片段时绝不另起生成任务。 */
@@ -893,8 +1377,9 @@ export const useAgentStore = defineStore('agent', () => {
   ): AgentToolCall | null {
     const visible = message.content
     if (!visible && !toolCalls.length && !timelineHandled) {
-      message.status = 'error'
-      message.error = '模型没有返回内容，请重试。'
+      // 切换卡本身就是完整答复，不能因为没有额外正文而误报空响应。
+      message.status = message.creativeHandoff ? 'done' : 'error'
+      if (!message.creativeHandoff) message.error = '模型没有返回内容，请重试。'
       return null
     }
     message.status = 'done'
@@ -915,6 +1400,195 @@ export const useAgentStore = defineStore('agent', () => {
       message.error = '没有解析到可执行的生成参数，请补充画面内容后重试。'
     }
     return null
+  }
+
+  function createRunState(): AgentRunState {
+    const now = Date.now()
+    return {
+      version: 1,
+      status: 'running',
+      phase: 'thinking',
+      currentStep: 1,
+      maxSteps: AGENT_MAX_RUN_STEPS,
+      plan: [],
+      activities: [],
+      startedAt: now,
+      updatedAt: now,
+    }
+  }
+
+  function touchRun(message: AgentMessage) {
+    if (message.run) message.run.updatedAt = Date.now()
+  }
+
+  function toolResultSummary(call: AgentToolCall, result: unknown, error?: string): string {
+    if (error) return error
+    const value = result && typeof result === 'object' ? result as Record<string, any> : {}
+    if (call.name === 'suggest_create_mode' || value.status === 'confirmation_required') return '等待用户确认，不会自动切换或生成'
+    if (call.name === 'update_plan') return `已更新 ${Array.isArray(value.items) ? value.items.length : 0} 个阶段`
+    if (call.name === 'read_project') return value.project ? '最新项目状态已回注' : '当前对话未关联项目'
+    if (call.name === 'edit_timeline') return `已应用 ${Number(value.applied) || 0} 项，跳过 ${Number(value.skipped) || 0} 项`
+    if (call.name === 'generate_storyboard') {
+      return `完整制作单已启动：${Number(value.totalShots) || 0} 镜，当前执行 ${Array.isArray(value.queuedShotIds) ? value.queuedShotIds.length : 0} 镜`
+    }
+    if (call.name === 'generate_image' || call.name === 'generate_video') {
+      return `本地后台任务 ${String(value.generationId || '')} 已启动`
+    }
+    return '已完成'
+  }
+
+  function recordToolStart(message: AgentMessage, call: AgentToolCall, step: number) {
+    if (!message.run) return
+    const presentation = presentAgentToolCall(call)
+    const activity: AgentToolActivity = {
+      id: call.id || createId(),
+      step,
+      name: call.name,
+      title: presentation.title,
+      detail: presentation.detail,
+      status: 'running',
+      startedAt: Date.now(),
+    }
+    message.run.phase = 'tool'
+    message.run.activities.push(activity)
+    touchRun(message)
+    persistNow()
+  }
+
+  function recordToolEnd(
+    message: AgentMessage,
+    call: AgentToolCall,
+    step: number,
+    result?: unknown,
+    error?: string,
+  ) {
+    if (!message.run) return
+    const activity = [...message.run.activities].reverse().find((item) =>
+      item.id === call.id && item.step === step && item.status === 'running',
+    )
+    if (activity) {
+      activity.status = error ? (error === '已停止' ? 'stopped' : 'failed') : 'succeeded'
+      activity.summary = toolResultSummary(call, result, error)
+      activity.finishedAt = Date.now()
+    }
+    message.run.phase = 'thinking'
+    touchRun(message)
+    persistNow()
+  }
+
+  /** 内置工具宿主：模型 schema 与副作用分离，项目写入复用已有事务接口。 */
+  async function executeBuiltinTool(
+    conversation: AgentConversation,
+    assistant: AgentMessage,
+    call: AgentToolCall,
+    timeline: { revision?: number; allowedClipIds?: Set<string> },
+  ): Promise<unknown> {
+    const mode = conversation.mode || 'chat'
+    if (mode === 'chat' && !['update_plan', 'suggest_create_mode'].includes(call.name)) {
+      const task = String(call.args.prompt || call.args.text || '').trim()
+      const handoff = normalizeAgentCreativeHandoff({
+        target: 'create',
+        reason: '下一步需要实际生成或编辑素材，并在创作项目中继续。',
+        prompt: task
+          ? `请在创作模式中继续当前任务：${task}`
+          : '请基于当前对话已经确认的内容，在创作模式中继续实际素材创作。',
+      })
+      if (handoff && ['generate_image', 'generate_video', 'generate_storyboard', 'open_voice', 'open_3d', 'edit_timeline'].includes(call.name)) {
+        assistant.creativeHandoff = handoff
+        return {
+          ok: true,
+          status: 'confirmation_required',
+          message: '普通对话已阻止该创作工具，仅记录切换建议；等待用户确认，不得执行或声称已经生成。',
+        }
+      }
+      throw new Error('普通对话不执行素材生成、剪辑或工作台跳转；请改用 suggest_create_mode 请求用户确认。')
+    }
+    if (call.name === 'suggest_create_mode') {
+      if (mode !== 'chat') throw new Error('当前已经是创作对话，无需重复切换。')
+      const handoff = normalizeAgentCreativeHandoff(call.args)
+      if (!handoff) throw new Error('切换建议需要 target=create、reason 和承接当前任务的 prompt。')
+      assistant.creativeHandoff = handoff
+      return {
+        ok: true,
+        status: 'confirmation_required',
+        message: '切换建议已记录，等待用户确认；不要自动切换或执行生成，也不要重复调用本工具。',
+      }
+    }
+
+    if (call.name === 'update_plan') {
+      const source = Array.isArray(call.args.items) ? call.args.items.slice(0, 6) : []
+      const plan: AgentPlanItem[] = source.map((raw: any, index) => ({
+        id: `plan_${index + 1}`,
+        content: String(raw?.content || '').trim().slice(0, 80),
+        status: ['pending', 'in_progress', 'completed'].includes(raw?.status)
+          ? raw.status
+          : 'pending',
+      })).filter((item) => item.content)
+      if (assistant.run) assistant.run.plan = plan
+      return { ok: true, items: plan }
+    }
+
+    if (call.name === 'read_project') {
+      const projects = useEditProjectStore()
+      const project = conversation.projectId ? projects.getProject(conversation.projectId) : null
+      if (project && conversation.projectId) {
+        // stale 后模型可按提示 read_project 再重试；版本必须对应刚刚读取的快照。
+        timeline.revision = projects.revisionOf(conversation.projectId)
+      }
+      return {
+        ok: true,
+        project: project ? projects.projectSummary(project) : null,
+        message: project ? '已读取最新项目状态。' : '当前对话没有关联剪辑项目。',
+      }
+    }
+
+    if (call.name === 'edit_timeline') {
+      if (conversation.mode !== 'create' || !conversation.projectId) {
+        throw new Error('当前对话没有关联剪辑项目，未修改时间轴。')
+      }
+      const extracted = normalizeAgentTimelineOps(call.args.ops)
+      const ops = timeline.allowedClipIds
+        ? extracted.filter((op) => timeline.allowedClipIds?.has(op.clipId))
+        : extracted
+      if (!extracted.length) throw new Error('没有合法的时间轴操作。')
+      if (!ops.length) throw new Error('已阻止修改未选中的片段。')
+      const projects = useEditProjectStore()
+      const result = projects.applyTimelineOps(conversation.projectId, ops, timeline.revision)
+      if (result.stale) {
+        throw new Error('时间轴在本轮执行期间已被手动修改，本次没有覆盖；请先 read_project 刷新后再决定。')
+      }
+      if (!result.applied) throw new Error('没有操作成功，请检查片段 ID 与参数。')
+      timeline.revision = projects.revisionOf(conversation.projectId)
+      return {
+        ok: true,
+        ...result,
+        skippedOutsideSelection: extracted.length - ops.length,
+      }
+    }
+
+    if (call.name === 'generate_storyboard') {
+      return startStoryboardProduction(conversation, assistant, call)
+    }
+
+    if (call.name === 'generate_image' || call.name === 'generate_video') {
+      const generation = buildAgentGeneration(call)
+      if (!generation) throw new Error('缺少可执行的 prompt 生成参数。')
+      // 长任务保持既有后台卡片语义；started 仅表示本地任务已启动，不代表上游已受理。
+      void runGeneration(conversation, assistant, call, generation)
+      return {
+        ok: true,
+        status: 'started',
+        generationId: generation.id,
+        message: '本地后台生成任务已启动，尚未确认上游受理；进度、失败和最终结果由生成卡片展示，不要声称已提交成功或已生成完成。',
+      }
+    }
+
+    if (call.name === 'open_voice' || call.name === 'open_3d') {
+      routeToStudio(call)
+      return { ok: true, status: 'opened', workspace: call.name === 'open_voice' ? 'voice' : 'model3d' }
+    }
+
+    throw new Error(`未知或当前不可用的工具：${call.name}`)
   }
 
   async function requestAssistant(conversation: AgentConversation, assistant: AgentMessage) {
@@ -955,7 +1629,7 @@ export const useAgentStore = defineStore('agent', () => {
         assistant.content = `已将 ${selectedClips.length} 个选中片段的原素材与需求提交给对应模型，未经过文生视频改写。`
         assistant.status = 'done'
         pendingMediaClips = selectedClips
-      } else if (requestRoute === 'attachment-media') {
+      } else if (requestRoute === 'attachment-media' && conversation.mode === 'create') {
         assistant.model = '多模态素材编辑'
         assistant.content = `已将 ${targetUser?.attachments?.length || 0} 份原素材与你的原话提交给对应模型，未经过文生视频改写。`
         assistant.status = 'done'
@@ -976,7 +1650,10 @@ export const useAgentStore = defineStore('agent', () => {
           model: modelStore.selectedId,
           mode: conversation.mode || 'chat',
           automation: conversation.automation || 'default',
-          projectSummary: project ? projects.projectSummary(project) : '',
+          projectSummary: [
+            project ? projects.projectSummary(project) : '',
+            describeProduction(conversation.production),
+          ].filter(Boolean).join('\n\n'),
           skills: skillsText,
           custom:
             engine.id === CUSTOM_ENGINE_ID
@@ -996,14 +1673,14 @@ export const useAgentStore = defineStore('agent', () => {
           },
         })
 
-        if (!assistant.content.trim()) {
+        if (!assistant.content.trim() || result.exitCode !== 0) {
           assistant.status = 'error'
           assistant.error =
-            result.exitCode === 0
-              ? `${engine.name} 没有返回内容，请重试或展开运行日志查看。`
-              : `${engine.name} 退出（code ${result.exitCode}）。${
-                  result.stderrTail.split('\n').filter(Boolean).slice(-1)[0] || ''
+            result.exitCode !== 0
+              ? `${engine.name} 退出（code ${result.exitCode}）。${
+                  result.stderrTail.split('\n').filter(Boolean).slice(-1)[0] || '请展开运行日志查看。'
                 }`
+              : `${engine.name} 没有返回内容，请重试或展开运行日志查看。`
         } else {
           assistant.status = 'done'
           if (selectedRoute === 'animation') {
@@ -1019,17 +1696,58 @@ export const useAgentStore = defineStore('agent', () => {
               allowedClipIds,
             )
             applyAskFromReply(assistant)
+            applyCreativeHandoffFromReply(conversation, assistant)
             assistant.content = stripAgentControlBlocks(assistant.content)
-            pendingTool = pendingToolFromReply(assistant, selectedClips, toolCalls, timelineHandled)
+            pendingTool = pendingToolFromReply(
+              assistant,
+              selectedClips,
+              conversation.mode === 'chat' ? [] : toolCalls,
+              timelineHandled,
+            )
             if (!selectedClips.length) attachLocalMediaToProject(conversation, raw)
           }
         }
       } else {
         assistant.model = modelStore.selectedId
-        await streamAgentChat({
+        assistant.run = createRunState()
+        const timeline = { revision: startRevision, allowedClipIds }
+        const createMode = conversation.mode === 'create'
+        const nativeTools = selectedClips.length
+          ? []
+          : createMode
+            ? AGENT_NATIVE_TOOLS
+            : AGENT_CHAT_NATIVE_TOOLS
+        let nativeToolsSupported = true
+        await runAgentHarness({
           messages: await buildContext(conversation, controller.signal),
-          model: modelStore.selectedId,
+          tools: nativeTools,
           signal: controller.signal,
+          legacyToolCalls: createMode && !selectedClips.length,
+          stream: async (request) => {
+            try {
+              return await streamAgentChat({
+                ...request,
+                tools: nativeToolsSupported ? request.tools : [],
+                model: modelStore.selectedId,
+              })
+            } catch (error: any) {
+              // 部分 OpenAI 兼容模型不接受 tools；只在协议被拒绝时降级一次。
+              if (isAgentToolsUnsupportedError(error) && request.tools.length) {
+                nativeToolsSupported = false
+                assistant.logs = `${assistant.logs || ''}\n当前模型未接受原生工具协议，已切换兼容工具格式。`.trim()
+                return streamAgentChat({ ...request, tools: [], model: modelStore.selectedId })
+              }
+              throw error
+            }
+          },
+          executeTool: (call, _step, signal) => {
+            if (signal.aborted) {
+              const error = new Error('已停止生成。')
+              error.name = 'AbortError'
+              throw error
+            }
+            return executeBuiltinTool(conversation, assistant, call, timeline)
+          },
           onDelta: (text) => {
             assistant.content += text
             conversation.updatedAt = Date.now()
@@ -1040,10 +1758,27 @@ export const useAgentStore = defineStore('agent', () => {
             conversation.updatedAt = Date.now()
             schedulePersist()
           },
+          onStepStart: (step) => {
+            if (!assistant.run) return
+            assistant.run.currentStep = step
+            assistant.run.phase = 'thinking'
+            if (step > 1 && assistant.content.trim() && !assistant.content.endsWith('\n\n')) {
+              assistant.content += '\n\n'
+            }
+            touchRun(assistant)
+            schedulePersist()
+          },
+          onToolStart: (call, step) => recordToolStart(assistant, call, step),
+          onToolEnd: ({ call, step, result, error }) => {
+            recordToolEnd(assistant, call, step, result, error)
+            conversation.updatedAt = Date.now()
+          },
         })
 
         const raw = assistant.content
-        const toolCalls = extractAgentToolCalls(raw)
+        // 非固定目标路由的旧 onestep-tool 已由 Harness 执行并回注，收尾不可再次执行。
+        // 固定目标路由没有开放 Harness 工具，仍保留旧的误调用拦截。
+        const toolCalls = selectedClips.length ? extractAgentToolCalls(raw) : []
         assistant.content = raw
         if (selectedRoute === 'animation') {
           // 动画协议只接受固定 clipId 的完整源码；误返回生成工具也绝不执行。
@@ -1053,11 +1788,15 @@ export const useAgentStore = defineStore('agent', () => {
           const timelineHandled = applyTimelineOpsFromReply(
             conversation,
             assistant,
-            startRevision,
+            timeline.revision,
             allowedClipIds,
           )
           applyAskFromReply(assistant)
+          applyCreativeHandoffFromReply(conversation, assistant)
           assistant.content = stripAgentControlBlocks(assistant.content)
+          if (!assistant.content.trim() && assistant.run.activities.length && !assistant.creativeHandoff) {
+            assistant.content = '已完成本轮操作，详细状态见执行轨迹。'
+          }
           pendingTool = pendingToolFromReply(assistant, selectedClips, toolCalls, timelineHandled)
         }
       }
@@ -1081,7 +1820,22 @@ export const useAgentStore = defineStore('agent', () => {
       }
     } finally {
       if (abortController === controller) abortController = null
-      streamingId.value = null
+      if (streamingId.value === assistant.id) streamingId.value = null
+      if (assistant.run?.status === 'running') {
+        assistant.run.status = assistant.status === 'error'
+          ? 'error'
+          : assistant.status === 'stopped'
+            ? 'stopped'
+            : 'done'
+        assistant.run.phase = 'done'
+        for (const activity of assistant.run.activities) {
+          if (activity.status !== 'running') continue
+          activity.status = assistant.status === 'stopped' ? 'stopped' : 'failed'
+          activity.summary = activity.summary || '执行未正常闭合'
+          activity.finishedAt = Date.now()
+        }
+        touchRun(assistant)
+      }
       conversation.updatedAt = Date.now()
       persistNow()
     }
@@ -1185,6 +1939,11 @@ export const useAgentStore = defineStore('agent', () => {
       }
     }
     if (lastUserIndex < 0) return
+    const hasRunningGeneration = conversation.messages
+      .slice(lastUserIndex + 1)
+      .some((message) => messageGenerations(message).some((generation) => generation.status === 'running'))
+    // 停止 Agent 控制循环不会取消已启动的上游任务；不能裁掉卡片后隐形重复付费。
+    if (hasRunningGeneration) return
 
     conversation.messages = conversation.messages.slice(0, lastUserIndex + 1)
     const assistantMessage = reactive<AgentMessage>({
@@ -1231,6 +1990,8 @@ export const useAgentStore = defineStore('agent', () => {
     clearAll,
     sendMessage,
     answerAsk,
+    acceptCreativeHandoff,
+    dismissCreativeHandoff,
     regenerate,
     retryGeneration,
     stopStreaming,

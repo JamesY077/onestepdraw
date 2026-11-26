@@ -14,7 +14,7 @@
       </span>
 
       <div class="generation-titles">
-        <strong>{{ generation.intent === 'edit' ? `${generation.targetClipId ? '修改选中' : '修改'}${generation.kind === 'image' ? '图片' : '视频'}` : generation.kind === 'image' ? '图片生成' : '视频生成' }}</strong>
+        <strong>{{ generation.sceneId ? `${generation.sceneId} · ` : '' }}{{ generation.intent === 'edit' ? `${generation.targetClipId ? '修改选中' : '修改'}${generation.kind === 'image' ? '图片' : '视频'}` : generation.kind === 'image' ? '图片生成' : '视频生成' }}</strong>
         <span class="generation-meta">
           <span>{{ generation.aspectRatio }}</span>
           <template v-if="generation.kind === 'video'">
@@ -119,6 +119,8 @@ const inboxAssets = computed(() => {
 const statusLabel = computed(() => {
   if (props.generation.status === 'succeeded') return '已完成'
   if (props.generation.status === 'failed') return '失败'
+  if (props.generation.queued) return '排队中'
+  if (props.generation.autoRetrying) return `自动重试 ${props.generation.attempt}/${props.generation.maxAttempts || 3}`
   return props.generation.kind === 'video' ? '生成中' : '绘制中'
 })
 

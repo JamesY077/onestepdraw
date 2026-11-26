@@ -83,7 +83,12 @@ export type AgentMessageStatus = 'streaming' | 'done' | 'stopped' | 'error'
 export type AgentGenerationKind = 'image' | 'video'
 export type AgentGenerationStatus = 'running' | 'succeeded' | 'failed'
 
-/** 对话 Agent 调用本机生成能力后附在消息上的结果卡片。 */
+/** 用户本轮选择的生成范围：全片自动完成、只看首镜，或每批最多 4 镜后确认。 */
+export type AgentStoryboardDelivery = 'full' | 'preview' | 'batch'
+export type AgentProductionStatus = 'running' | 'paused' | 'done' | 'failed'
+export type AgentStoryboardShotStatus = 'pending' | 'running' | 'succeeded' | 'failed'
+
+/** Agent 调用本机生成能力后附在消息上的结果卡片。 */
 export interface AgentGeneration {
   id: string
   kind: AgentGenerationKind
@@ -94,6 +99,18 @@ export interface AgentGeneration {
   aspectRatio: string
   resolution?: string
   duration?: number
+  sceneId?: string
+  attempt?: number
+  maxAttempts?: number
+  autoRetryCount?: number
+  autoRetrying?: boolean
+  lastAttemptAt?: number
+  /** 排队等待账号并发槽位；排队不算正在执行。 */
+  queued?: boolean
+  /** 已建单后保留任务 ID，轮询恢复只能查询原任务，不能重复创建。 */
+  taskId?: string
+  provider?: string
+  providerCreateEndpoint?: string
   /** 视频任务的轮询进度（0-100），上游不返回时为 undefined。 */
   progress?: number
   images?: string[]
@@ -136,6 +153,85 @@ export interface AgentAsk {
   answer?: string
 }
 
+/** 一次工具调用的可持久化执行状态，供 Codex 风格执行轨迹与恢复使用。 */
+export type AgentToolActivityStatus = 'running' | 'succeeded' | 'failed' | 'stopped'
+
+export interface AgentToolActivity {
+  id: string
+  step: number
+  name: string
+  title: string
+  detail?: string
+  status: AgentToolActivityStatus
+  summary?: string
+  startedAt: number
+  finishedAt?: number
+}
+
+export interface AgentPlanItem {
+  id: string
+  content: string
+  status: 'pending' | 'in_progress' | 'completed'
+}
+
+/** 一轮用户请求可包含多个模型 Step；run 是该 Turn 的持久化投影。 */
+export interface AgentRunState {
+  version: 1
+  status: 'running' | 'done' | 'stopped' | 'error'
+  phase: 'thinking' | 'tool' | 'done'
+  currentStep: number
+  maxSteps: number
+  plan: AgentPlanItem[]
+  activities: AgentToolActivity[]
+  startedAt: number
+  updatedAt: number
+}
+
+/** 普通对话完成建议/文案后，由模型提议进入实际创作；必须经用户确认。 */
+export interface AgentCreativeHandoff {
+  target: 'create'
+  reason: string
+  /** 用户确认后作为同一对话的下一条创作任务发送。 */
+  prompt: string
+  status: 'pending' | 'accepted' | 'dismissed'
+}
+
+/** 一个镜号的持久化状态。成功的 generationId 在续跑时直接跳过，不重复付费。 */
+export interface AgentStoryboardShot {
+  id: string
+  prompt: string
+  duration: number
+  /** 在时间轴上预留的固定起点（秒）；先完成的镜头不会抢占其他镜号的位置。 */
+  timelineStart?: number
+  /** 已入轨的片段；改稿重生成时原位替换，避免同一镜号留下两段视频。 */
+  clipId?: string
+  clipUrl?: string
+  generationId?: string
+  status: AgentStoryboardShotStatus
+  attempt?: number
+  error?: string
+}
+
+/** 整片需求与执行进度独立于模型记忆，切换、追加消息和刷新后仍能知道缺哪几镜。 */
+export interface AgentProduction {
+  id: string
+  title: string
+  brief: string
+  continuity: string
+  storyboardText?: string
+  aspectRatio: string
+  resolution: string
+  delivery: AgentStoryboardDelivery
+  batchSize: number
+  status: AgentProductionStatus
+  messageId?: string
+  /** 本片在项目时间轴上的起始秒；续跑和刷新后保持不变。 */
+  timelineStart?: number
+  shots: AgentStoryboardShot[]
+  createdAt: number
+  updatedAt: number
+}
+
 export interface AgentMessage {
   id: string
   role: AgentRole
@@ -160,9 +256,13 @@ export interface AgentMessage {
   templates?: AgentTemplateRef[]
   /** 用户这一轮选中的时间轴片段；有值表示只针对这些片段修改。 */
   clips?: AgentClipRef[]
+  /** 内置 Agent 的 Turn/Step 与工具执行投影；本机 CLI Agent 不使用。 */
+  run?: AgentRunState
+  /** 普通对话到创作对话的待确认交接，不会自动切换或生成。 */
+  creativeHandoff?: AgentCreativeHandoff
 }
 
-/** 对话所在的工作模式：普通对话只聊；创作对话的结果进入剪辑项目。 */
+/** 普通对话处理聊天与文字创作；创作对话实际生成素材，结果进入剪辑项目。 */
 export type AgentConversationMode = 'chat' | 'create'
 /** 提问策略：默认分轮澄清；完全模式由模型自行决策并直接产出。 */
 export type AgentAutomationMode = 'default' | 'auto'
@@ -175,6 +275,8 @@ export interface AgentConversation {
   messages: AgentMessage[]
   /** 创作对话关联的剪辑项目。 */
   projectId?: string
+  /** 整片创作需求、每镜任务与生成进度；用于跨轮续跑而不是只记最后一镜。 */
+  production?: AgentProduction
   /** 归属的工作区（本地目录）。缺省表示未分类。 */
   workspaceId?: string
   mode?: AgentConversationMode
@@ -186,8 +288,31 @@ export type AgentContentPart =
   | { type: 'text'; text: string }
   | { type: 'image_url'; image_url: { url: string } }
 
-/** 发送给 /chat/completions 的消息结构。 */
+/** OpenAI 原生 Function Calling 的持久化/传输结构。 */
+export interface AgentChatToolCall {
+  id: string
+  type: 'function'
+  function: {
+    name: string
+    arguments: string
+  }
+}
+
+/** 只包含模型可见的 schema；宿主执行函数、权限与 UI 投影不会进入请求体。 */
+export interface AgentToolDefinition {
+  type: 'function'
+  function: {
+    name: string
+    description: string
+    parameters: Record<string, unknown>
+  }
+}
+
+/** 发送给 /chat/completions 的消息结构，包含工具结果回注。 */
 export interface AgentChatMessage {
-  role: 'system' | 'user' | 'assistant'
-  content: string | AgentContentPart[]
+  role: 'system' | 'user' | 'assistant' | 'tool'
+  content: string | AgentContentPart[] | null
+  tool_calls?: AgentChatToolCall[]
+  tool_call_id?: string
+  name?: string
 }

@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "test": "npm run test:clip-revision && npm run test:agent-harness",
     "test:clip-revision": "node scripts/test-clip-revision.mjs",
+    "test:agent-harness": "node scripts/test-agent-harness.mjs",
     "preview": "vite preview",
     "serve": "node server/local/server.mjs",
     "start": "npm run build && npm run serve",

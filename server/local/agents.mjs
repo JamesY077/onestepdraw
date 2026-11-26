@@ -356,7 +356,7 @@ export function buildRunPrompt({
     .map((message) => {
       const role = message.role === 'user' ? '用户' : '助手'
       const content = message.content.trim()
-      return `${role}：${content.length > 4000 ? `${content.slice(0, 4000)}…` : content}`
+      return `${role}：${content.length > 16000 ? `${content.slice(0, 16000)}…` : content}`
     })
     .join('\n\n')
 
@@ -371,7 +371,10 @@ export function buildRunPrompt({
             ? [
                 '- 当前是完全模式：不要向用户提问，所有未定细节由你按推荐值决定，直接生成。',
               ]
-            : ['- 当前是默认模式：按 grill-me 协议分轮澄清，确认拍摄单后再生成。']),
+            : [
+                '- 当前是默认模式：按 grill-me 协议分轮澄清，确认拍摄单与生成范围后再生成；一次只问一个，已答信息不重复问。',
+                '- 创作模式要额外确认叙事因果、总时长、风格、角色/产品连续性、镜头承接、声音和整片/首镜/每批4镜的交付方式。',
+              ]),
           ...(projectSummary
             ? [
                 '',
@@ -389,11 +392,49 @@ export function buildRunPrompt({
       : [
           '',
           '## 当前模式：普通对话',
-          '- 正常聊天与创作建议。生成结果留在对话里，不自动进入剪辑项目。',
+          '- 处理正常聊天、创作灵感、建议、话题，以及文案、脚本、分镜和提示词的写作与润色。',
+          '- 文案、脚本和分镜要先完整完成，它们本身不等于发起生成，不要因此建议切换。',
+          '- 禁止运行图片/视频生成脚本或调用付费生成接口，不修改剪辑项目，不打开创作工作台。',
+          '- 用户要求实际生成或编辑素材时，先完成可回答的文字部分，再在回复最后输出一个 onestep-mode-handoff 块，等待用户确认；不得自动切换或执行。',
           ...(automation === 'auto'
-            ? ['- 当前是完全模式：不要提问，直接按推荐值产出结果。']
-            : []),
+            ? ['- 当前是完全模式：不要追问非必要细节，直接按推荐值完成文字答案；模式切换仍需用户确认。']
+            : ['- 当前是默认模式：脚本和创意前提不清时也可以使用 grill-me 一次只问一个问题；普通对话只交付文字。']),
         ]
+
+  const generationBlock = mode === 'create'
+    ? [
+        '生成能力（已注入 AIPING_API_KEY 与 AIPING_BASE_URL 环境变量，直接运行即可）：',
+        '- 生成图片：node scripts/onestep-generate.mjs image --prompt "画面描述" --ratio 16:9',
+        '- 生成视频：node scripts/onestep-generate.mjs video --prompt "镜头描述" --ratio 16:9 --resolution 768P --duration 5',
+        '图片可选比例：21:9 / 16:9 / 3:2 / 4:3 / 1:1 / 3:4 / 2:3 / 9:16，默认 16:9。',
+        '视频分辨率只支持 768P 与 2K，时长 4–15 秒，默认 768P / 5 秒。',
+        '脚本会把结果保存到 generated/，并输出 /generated/... 链接；请在最终回复里用 Markdown 图片或视频链接展示结果。',
+        '账号最多同时运行4个生成任务。多镜头完整成片必须保留所有镜号，最多4路并发逐镜执行；失败镜头要重试，全部完成前不得声称整片完成。',
+        '本机 CLI 没有 generate_storyboard 工具；按完整分镜逐镜运行上述脚本，并在回复中记录每镜成功/失败与剩余镜号。',
+      ]
+    : [
+        '普通对话已禁用生成脚本：只能完成文字任务，需要实际生成时由用户在界面确认切换。',
+        '不要尝试绕过 ONESTEP_ALLOW_GENERATION=0 或改用其他付费生成接口。',
+      ]
+
+  const workPrinciples = mode === 'create'
+    ? [
+        '- 视频任务必须先按下面的 grill-me 协议澄清需求：一次只问一个问题，正文一句过渡 + 一个 ```onestep-ask 块（3 个具体选项，其中一个标 recommended），用户点选后客户端会把「2. 选项文字」发回来，再问下一个；说“按推荐 / 直接生成 / 你决定”时立刻用推荐值执行。',
+        '- 澄清完成后先输出完整拍摄单，并用一张 ask 卡确认整支自动生成（推荐）/首镜确认后续跑/每批4镜后确认；用户确认或直接说“生成”后必须真正运行脚本，不要在回复里假装已经生成。',
+        '- 整片任务不能只生成 S01 就停止。保留完整镜号和连续性锚点，逐镜报告进度，有剩余就继续；直接生成表示按推荐的整支自动生成。',
+        '- 图片任务只需补上画面内容和比例，不必走多轮拷问。',
+        '- 需要用户在几个方向里做选择时：一次只问一个，用 ```onestep-ask 块给 3 个具体选项并标出 recommended；不要用 Markdown 列表罗列选项。',
+        '- 生成任务可能耗时数分钟，请耐心等待脚本输出，不要中途放弃。',
+        '- 能直接完成的任务就直接做，不要只给方案。',
+      ]
+    : [
+        '- 普通对话优先直接完成文字答案，不把文案请求升级成生成任务。',
+        '- 只有用户明确要求实际生成或编辑素材时，才在回复最后输出以下交接块，块后不要写其他内容：',
+        '```onestep-mode-handoff',
+        '{"target":"create","reason":"下一步需要生成具体视频素材。","prompt":"请基于上面已经确认的文案生成视频，保持原有卖点、节奏和风格。"}',
+        '```',
+        '- onestep-mode-handoff 只是建议，不代表用户已同意；不要运行生成脚本，不要声称已经切换。',
+      ]
 
   return [
     `你是 ${agentName}，正在步帧的对话区里工作。`,
@@ -404,20 +445,10 @@ export function buildRunPrompt({
     '你可以直接读取、修改工作目录里的文件，也可以运行命令。',
     '步帧（Stepframe）是一个本地 Vue 3 + Vite 项目，界面在 src/，本地服务在 server/local/，构建命令是 npm run build。',
     '',
-    '生成能力（已注入 AIPING_API_KEY 与 AIPING_BASE_URL 环境变量，直接运行即可）：',
-    '- 生成图片：node scripts/onestep-generate.mjs image --prompt "画面描述" --ratio 16:9',
-    '- 生成视频：node scripts/onestep-generate.mjs video --prompt "镜头描述" --ratio 16:9 --resolution 768P --duration 5',
-    '图片可选比例：21:9 / 16:9 / 3:2 / 4:3 / 1:1 / 3:4 / 2:3 / 9:16，默认 16:9。',
-    '视频分辨率只支持 768P 与 2K，时长 4–15 秒，默认 768P / 5 秒。',
-    '脚本会把结果保存到 generated/，并输出 /generated/... 链接；请在最终回复里用 Markdown 图片或视频链接展示结果。',
+    ...generationBlock,
     '',
     '工作原则：',
-    '- 视频任务必须先按下面的 grill-me 协议澄清需求：一次只问一个问题，正文一句过渡 + 一个 ```onestep-ask 块（3 个具体选项，其中一个标 recommended），用户点选后客户端会把「2. 选项文字」发回来，再问下一个；说“按推荐 / 直接生成 / 你决定”时立刻用推荐值执行。',
-    '- 澄清完成后先输出拍摄单并等用户确认；用户确认或直接说“生成”后，必须真正运行脚本，不要在回复里假装已经生成。',
-    '- 图片任务只需补上画面内容和比例，不必走多轮拷问。',
-    '- 需要用户在几个方向里做选择时：一次只问一个，用 ```onestep-ask 块给 3 个具体选项并标出 recommended；不要用 Markdown 列表罗列选项。',
-    '- 生成任务可能耗时数分钟，请耐心等待脚本输出，不要中途放弃。',
-    '- 能直接完成的任务就直接做，不要只给方案。',
+    ...workPrinciples,
     '- 只修改与当前任务相关的文件，不要执行删除类命令，不要提交 git。',
     '- 用中文回答，先说结果，再简要说明改了什么。',
     ...(activeSkills
@@ -430,7 +461,8 @@ export function buildRunPrompt({
       : []),
     ...modeBlock,
     '',
-    '## grill-me 视频创作协议',
+    '## grill-me 创作澄清协议（普通与创作模式都可使用）',
+    mode === 'chat' ? '普通对话仅用于澄清并交付文字，不执行协议末的生成工具。' : '创作模式确认完整拍摄单和生成范围后再执行。',
     readVideoInterviewProtocol(rootDir) || '（协议文件缺失，按上面的工作原则执行。）',
     '',
     ...(videoScriptProtocol
@@ -583,7 +615,7 @@ function buildDshPatch({ baseUrl, model }) {
     '  config:',
     '    providers:',
     '      onestep:',
-    '        apiKeyEnv: AIPING_API_KEY',
+    '        apiKeyEnv: ONESTEP_CHAT_API_KEY',
     '        api: openai-completions',
     `        baseURL: ${JSON.stringify(normalizedBase)}`,
     '        models:',
@@ -611,6 +643,7 @@ export function runAgent({
   model,
   apiKey,
   apiBaseUrl,
+  allowGeneration = true,
   onDelta,
   onLog,
 }) {
@@ -621,8 +654,15 @@ export function runAgent({
     TERM: 'dumb',
     ONESTEP_ROOT: rootDir,
     ONESTEP_BASE_URL: baseUrl,
+    ONESTEP_ALLOW_GENERATION: allowGeneration ? '1' : '0',
   }
-  if (apiKey) env.AIPING_API_KEY = apiKey
+  // DSH 聊天仍需要模型凭据，但普通模式不暴露生成脚本约定的 AIPING_API_KEY。
+  if (apiKey) env.ONESTEP_CHAT_API_KEY = apiKey
+  if (allowGeneration && apiKey) env.AIPING_API_KEY = apiKey
+  if (!allowGeneration) {
+    delete env.AIPING_API_KEY
+    delete env.AIPING_KEY
+  }
   if (apiBaseUrl) env.AIPING_BASE_URL = apiBaseUrl
 
   let patchPath = ''

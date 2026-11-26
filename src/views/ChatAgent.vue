@@ -153,9 +153,7 @@
             {{
               chatMode.isCreate
                 ? '创作对话会自动建立剪辑项目 · 生成的素材按段落入轨'
-                : localAgentStore.isLocalEngine
-                  ? `由 ${localAgentStore.selectedLabel} 执行创作 · 对话只保存在这台设备`
-                  : '已连接 AIPing · 对话只保存在这台设备'
+                : '普通对话 · 文案与灵感直接完成，实际创作需确认切换'
             }}
           </p>
         </section>
@@ -170,6 +168,8 @@
             @retry="handleRetry"
             @generation-retry="handleGenerationRetry"
             @ask-answer="handleAskAnswer"
+            @creative-handoff-accept="handleCreativeHandoffAccept"
+            @creative-handoff-dismiss="store.dismissCreativeHandoff"
           />
         </section>
       </div>
@@ -260,7 +260,7 @@ const chatSuggestions = [
   },
   {
     title: '优化 AI 绘画提示词',
-    description: '从一句灵感到可直接出图',
+    description: '从一句灵感到完整提示词',
     prompt: '把「雨夜霓虹灯下的复古跑车」扩写成一段中文 AI 绘画提示词，包含主体、场景、构图、镜头、光线、色彩和质感。',
     icon: 'M12 4.2 14 9l4.8 2-4.8 2-2 4.8-2-4.8L5.2 11 10 9z',
   },
@@ -272,13 +272,13 @@ const chatSuggestions = [
   },
   {
     title: '生成一张产品主视觉',
-    description: '直接出图，默认 16:9',
+    description: '先确认需求，再切换创作模式',
     prompt: '帮我生成一张极简白色风格的香水产品主视觉，磨砂玻璃瓶身，柔光侧逆光，16:9。',
     icon: 'M4 6.5h16v11H4zM7.5 10.2a1.3 1.3 0 1 0 0 .01M4.6 16.5l4.3-4 3.2 2.8 2.5-2.2 4.8 3.6',
   },
   {
     title: '生成一段 5 秒短片',
-    description: '直接出视频，默认 768P',
+    description: '确认后进入创作模式，默认 768P',
     prompt: '帮我生成一段 5 秒的视频：雨夜霓虹灯下的复古跑车缓缓驶过，镜头低角度跟拍，16:9，768P。',
     icon: 'M4 6.5h16v11H4zM10.2 10 14 12l-3.8 2z',
   },
@@ -448,6 +448,15 @@ function handleAskAnswer(payload: { messageId: string; optionId: string; label: 
   stickToBottom.value = true
   store.answerAsk(payload.messageId, payload.optionId, payload.label)
   nextTick(() => scrollToBottom('smooth'))
+}
+
+async function handleCreativeHandoffAccept(messageId: string) {
+  const result = store.acceptCreativeHandoff(messageId)
+  if (!result) return
+  stickToBottom.value = true
+  chatMode.setConversation('create')
+  await nextTick()
+  void router.push(`/edit/${result.projectId}`)
 }
 
 function applySuggestion(prompt: string) {

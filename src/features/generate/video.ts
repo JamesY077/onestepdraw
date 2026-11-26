@@ -40,6 +40,14 @@ const MINIMAX_H3_2K_LONG_POLL_TIMEOUT_MS = 40 * 60_000
 const KLING_V4_POLL_TIMEOUT_PER_SECOND_MS = 70_000
 const KLING_V4_POLL_TIMEOUT_MS = 10 * 60_000
 
+/** 上游明确终止：允许下一次尝试重新建单；网络/超时不是此错误，必须保留原 taskId。 */
+export class VideoTaskFailedError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'VideoTaskFailedError'
+  }
+}
+
 export interface VideoPollOptions {
   /** 轮询间隔，默认 3000ms。 */
   interval?: number
@@ -206,7 +214,7 @@ export async function pollVideoStatus(
       normalizedStatus === 'expired' ||
       normalizedStatus === 'cancelled'
     ) {
-      throw new Error(status.error || `视频生成失败 (task: ${taskId})`)
+      throw new VideoTaskFailedError(status.error || `视频生成失败 (task: ${taskId})`)
     }
 
     const remaining = deadline - Date.now()

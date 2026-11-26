@@ -384,6 +384,7 @@ async function handleAgentRun(req, res) {
     model,
     apiKey: apiKey.length >= 8 && !/\s/.test(apiKey) ? apiKey : '',
     apiBaseUrl,
+    allowGeneration: mode === 'create',
     onDelta: (text) => send({ type: 'delta', text }),
     onLog: (text) => send({ type: 'log', text }),
   })

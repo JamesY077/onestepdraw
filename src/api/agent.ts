@@ -1,5 +1,6 @@
 import { getApiBaseUrl, getApiKey } from '@/api/config'
-import type { AgentChatMessage } from '@/types/agent'
+import type { AgentChatMessage, AgentChatToolCall, AgentToolDefinition } from '@/types/agent'
+import type { AgentToolCall, AgentToolName } from '@/features/agent/tools'
 
 /** 本地 Agent 当前内嵌的文本模型。 */
 export const AGENT_MODEL_ID = 'DeepSeek-V4.1-Flash-1017'
@@ -20,14 +21,27 @@ export class AgentApiError extends Error {
   }
 }
 
+export function isAgentToolsUnsupportedError(error: unknown): boolean {
+  if (!(error instanceof AgentApiError) || error.status !== 400) return false
+  const message = error.message
+  return /(?:tools?|tool_choice|function calling)[\s\S]{0,100}(?:unsupported|not supported|not support|不支持)|(?:unsupported|unknown|不支持)[\s\S]{0,60}(?:tools?|tool_choice|function calling)/i.test(message)
+}
+
 export interface AgentStreamOptions {
   messages: AgentChatMessage[]
   model?: string
   temperature?: number
   maxTokens?: number
+  tools?: AgentToolDefinition[]
   signal?: AbortSignal
   onDelta: (text: string) => void
   onReasoning?: (text: string) => void
+}
+
+export interface AgentStreamResult {
+  content: string
+  toolCalls: AgentToolCall[]
+  finishReason?: string
 }
 
 /**
@@ -123,11 +137,34 @@ async function readErrorResponse(response: Response): Promise<AgentApiError> {
   return toAgentError(response.status, message)
 }
 
+function parseToolArguments(raw: string): Pick<AgentToolCall, 'args' | 'argumentError'> {
+  if (!raw.trim()) return { args: {} }
+  try {
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return { args: {}, argumentError: '工具参数必须是 JSON 对象。' }
+    }
+    return { args: parsed as Record<string, unknown> }
+  } catch {
+    return { args: {}, argumentError: '工具参数不是合法 JSON，请修正参数后重试。' }
+  }
+}
+
+function toNativeToolCall(raw: AgentChatToolCall, index: number): AgentToolCall {
+  const rawArguments = String(raw.function?.arguments || '')
+  return {
+    id: raw.id || `call_${index + 1}`,
+    name: String(raw.function?.name || '') as AgentToolName,
+    rawArguments,
+    ...parseToolArguments(rawArguments),
+  }
+}
+
 /**
  * 流式调用 AIPing 的 OpenAI 兼容 /chat/completions 接口。
- * 使用 fetch + ReadableStream 读取 SSE，避免整段等待。
+ * 文本与原生 tool_calls 都按 SSE 分片聚合，调用方无需了解 chunk 边界。
  */
-export async function streamAgentChat(options: AgentStreamOptions): Promise<void> {
+export async function streamAgentChat(options: AgentStreamOptions): Promise<AgentStreamResult> {
   const apiKey = getApiKey()
   if (!apiKey) {
     throw new AgentApiError('还没有连接 AIPing，请先返回登录页填写 API Key。', 'auth')
@@ -151,6 +188,7 @@ export async function streamAgentChat(options: AgentStreamOptions): Promise<void
         stream: true,
         temperature: options.temperature ?? 0.7,
         ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}),
+        ...(options.tools?.length ? { tools: options.tools, tool_choice: 'auto' } : {}),
       }),
       signal: options.signal,
     })
@@ -172,12 +210,15 @@ export async function streamAgentChat(options: AgentStreamOptions): Promise<void
       const status = Number(payload.code)
       throw toAgentError(Number.isFinite(status) ? status : 500, String(payload.msg))
     }
-    const message = payload?.choices?.[0]?.message
+    const choice = payload?.choices?.[0]
+    const message = choice?.message
     if (message?.reasoning_content) options.onReasoning?.(String(message.reasoning_content))
-    const content = message?.content
-    if (typeof content === 'string' && content) {
-      options.onDelta(content)
-      return
+    const content = typeof message?.content === 'string' ? message.content : ''
+    if (content) options.onDelta(content)
+    const rawCalls = Array.isArray(message?.tool_calls) ? message.tool_calls : []
+    const toolCalls = rawCalls.map((call: AgentChatToolCall, index: number) => toNativeToolCall(call, index))
+    if (content || toolCalls.length) {
+      return { content, toolCalls, finishReason: choice?.finish_reason }
     }
     throw new AgentApiError('模型没有返回内容，请重试。', 'unknown')
   }
@@ -190,6 +231,32 @@ export async function streamAgentChat(options: AgentStreamOptions): Promise<void
   const decoder = new TextDecoder()
   let buffer = ''
   let receivedAny = false
+  let content = ''
+  let finishReason: string | undefined
+  const callDeltas = new Map<number, { id: string; name: string; arguments: string }>()
+
+  const collectToolCallDelta = (raw: any, position: number) => {
+    const index = Number.isInteger(raw?.index) ? Number(raw.index) : position
+    const current = callDeltas.get(index) || { id: '', name: '', arguments: '' }
+    if (typeof raw?.id === 'string' && raw.id) current.id = raw.id
+    if (typeof raw?.function?.name === 'string') current.name += raw.function.name
+    if (typeof raw?.function?.arguments === 'string') current.arguments += raw.function.arguments
+    callDeltas.set(index, current)
+  }
+
+  const eventData: string[] = []
+  const flushEvent = () => {
+    if (!eventData.length) return
+    handleEvent(eventData.join('\n'))
+    eventData.length = 0
+  }
+  const handleLine = (line: string) => {
+    if (!line) {
+      flushEvent()
+      return
+    }
+    if (line.startsWith('data:')) eventData.push(line.slice(5).trimStart())
+  }
 
   const handleEvent = (raw: string) => {
     const data = raw.trim()
@@ -208,11 +275,18 @@ export async function streamAgentChat(options: AgentStreamOptions): Promise<void
       receivedAny = true
       options.onReasoning?.(reasoning)
     }
-    const content = delta?.content ?? choice?.message?.content
-    if (typeof content === 'string' && content) {
+    const contentDelta = delta?.content ?? choice?.message?.content
+    if (typeof contentDelta === 'string' && contentDelta) {
       receivedAny = true
-      options.onDelta(content)
+      content += contentDelta
+      options.onDelta(contentDelta)
     }
+    const rawCalls = delta?.tool_calls ?? choice?.message?.tool_calls
+    if (Array.isArray(rawCalls) && rawCalls.length) {
+      receivedAny = true
+      rawCalls.forEach(collectToolCallDelta)
+    }
+    if (typeof choice?.finish_reason === 'string') finishReason = choice.finish_reason
     if (payload?.error) {
       throw new AgentApiError(extractErrorMessage(payload, '模型返回了错误。'), 'unknown')
     }
@@ -229,18 +303,27 @@ export async function streamAgentChat(options: AgentStreamOptions): Promise<void
       while (newlineIndex >= 0) {
         const line = buffer.slice(0, newlineIndex).replace(/\r$/, '')
         buffer = buffer.slice(newlineIndex + 1)
-        if (line.startsWith('data:')) handleEvent(line.slice(5))
+        handleLine(line)
         newlineIndex = buffer.indexOf('\n')
       }
     }
 
-    // 处理最后一行没有换行符的残留数据。
-    const tail = buffer.trim()
-    if (tail.startsWith('data:')) handleEvent(tail.slice(5))
+    // 处理最后一行没有换行符的残留数据与未以空行收尾的 SSE 事件。
+    if (buffer.trim()) handleLine(buffer.replace(/\r$/, ''))
+    flushEvent()
 
     if (!receivedAny) {
       throw new AgentApiError('模型没有返回内容，请重试。', 'unknown')
     }
+
+    const toolCalls = [...callDeltas.entries()]
+      .sort(([left], [right]) => left - right)
+      .map(([index, call], position) => toNativeToolCall({
+        id: call.id || `call_${index + 1}`,
+        type: 'function',
+        function: { name: call.name, arguments: call.arguments },
+      }, position))
+    return { content, toolCalls, finishReason }
   } finally {
     reader.releaseLock()
   }

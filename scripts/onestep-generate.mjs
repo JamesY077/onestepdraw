@@ -7,8 +7,9 @@
  *   node scripts/onestep-generate.mjs video --prompt "镜头描述" [--ratio 16:9] [--resolution 768P] [--duration 5]
  *
  * 依赖环境变量：
- *   AIPING_API_KEY    必填
+ *   AIPING_API_KEY    必填（仅创作模式由本地服务注入）
  *   AIPING_BASE_URL   可选，默认 https://aiping.cn/api/v1
+ *   ONESTEP_ALLOW_GENERATION=0 时直接退出，供普通对话 fail-closed
  *
  * 生成结果保存到项目根目录的 generated/，并在 stdout 打印 Markdown 可用的
  * /generated/... 链接（本地服务会托管这个目录）。
@@ -24,6 +25,11 @@ const outputDir = path.join(projectRoot, 'generated')
 
 const API_BASE = (process.env.AIPING_BASE_URL || 'https://aiping.cn/api/v1').replace(/\/+$/, '')
 const API_KEY = process.env.AIPING_API_KEY || process.env.AIPING_KEY || ''
+
+if (process.env.ONESTEP_ALLOW_GENERATION === '0') {
+  console.error('当前是普通对话，素材生成已禁用。请先在界面确认切换到创作模式。')
+  process.exit(1)
+}
 
 const IMAGE_MODEL = process.env.ONESTEP_IMAGE_MODEL || 'Doubao-Seedream-5.0-lite'
 const VIDEO_MODEL = process.env.ONESTEP_VIDEO_MODEL || 'MiniMax-H3'
@@ -261,6 +267,9 @@ async function generateVideo(options) {
 }
 
 async function main() {
+  if (process.env.ONESTEP_ALLOW_GENERATION === '0') {
+    fail('当前是普通对话，素材生成已禁用。请先在界面确认切换到创作模式。')
+  }
   if (!API_KEY) {
     fail('缺少 AIPING_API_KEY。请在步帧页面登录后，由本地服务注入，或手动 export AIPING_API_KEY=sk-...')
   }

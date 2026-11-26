@@ -1,4 +1,10 @@
-import type { AgentAsk, AgentAskOption, AgentGeneration, AgentGenerationKind } from '@/types/agent'
+import type {
+  AgentAsk,
+  AgentAskOption,
+  AgentCreativeHandoff,
+  AgentGeneration,
+  AgentGenerationKind,
+} from '@/types/agent'
 
 /** 对话 Agent 默认使用的图片 / 视频模型。 */
 export const AGENT_IMAGE_MODEL = 'Doubao-Seedream-5.0-lite'
@@ -15,11 +21,25 @@ export const AGENT_VIDEO_DEFAULT_DURATION = 5
 export const AGENT_VIDEO_MIN_DURATION = 4
 export const AGENT_VIDEO_MAX_DURATION = 15
 
-export type AgentToolName = 'generate_image' | 'generate_video' | 'open_voice' | 'open_3d'
+export type AgentToolName =
+  | 'generate_image'
+  | 'generate_video'
+  | 'generate_storyboard'
+  | 'open_voice'
+  | 'open_3d'
+  | 'update_plan'
+  | 'read_project'
+  | 'edit_timeline'
+  | 'suggest_create_mode'
 
 export interface AgentToolCall {
+  id?: string
   name: AgentToolName
   args: Record<string, unknown>
+  /** 原生工具参数原始 JSON，供下一步 assistant/tool 历史无损配对。 */
+  rawArguments?: string
+  /** 原生工具参数不是合法 JSON 时保留错误，回注模型让它自我修正。 */
+  argumentError?: string
 }
 
 /** 对话式时间轴操作：模型只说「怎么改」，由本地直接落到项目里。 */
@@ -31,9 +51,59 @@ export interface AgentTimelineOp {
   value?: number
 }
 
-export const AGENT_TOOL_NAMES: AgentToolName[] = ['generate_image', 'generate_video', 'open_voice', 'open_3d']
+export const AGENT_TOOL_NAMES: AgentToolName[] = [
+  'generate_image',
+  'generate_video',
+  'generate_storyboard',
+  'open_voice',
+  'open_3d',
+  'update_plan',
+  'read_project',
+  'edit_timeline',
+  'suggest_create_mode',
+]
 
 const TIMELINE_FENCE = /```onestep-timeline[ \t]*\r?\n([\s\S]*?)```/g
+
+function optionalNumber(value: unknown): number | undefined {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : undefined
+  }
+  return undefined
+}
+
+/** 原生工具与旧文本协议共用同一份参数白名单和归一化逻辑。 */
+export function normalizeAgentTimelineOps(value: unknown): AgentTimelineOp[] {
+  const list = Array.isArray(value)
+    ? value
+    : value && typeof value === 'object' && Array.isArray((value as any).ops)
+      ? (value as any).ops
+      : []
+  if (list.length > 30) return []
+  const ops: AgentTimelineOp[] = []
+  for (const raw of list) {
+    if (!raw || typeof raw !== 'object') continue
+    const op = String(raw.op || '')
+    const clipId = String(raw.clipId || raw.id || '')
+    if (!clipId || !['move', 'trim', 'delete', 'volume', 'opacity'].includes(op)) continue
+    const start = optionalNumber(raw.start)
+    const duration = optionalNumber(raw.duration)
+    const fieldValue = optionalNumber(raw.value)
+    if (op === 'move' && start === undefined) continue
+    if (op === 'trim' && start === undefined && duration === undefined) continue
+    if ((op === 'volume' || op === 'opacity') && fieldValue === undefined) continue
+    ops.push({
+      op: op as AgentTimelineOp['op'],
+      clipId,
+      start,
+      duration,
+      value: fieldValue,
+    })
+  }
+  return ops
+}
 
 /** 从回复里提取时间轴操作块。 */
 export function extractAgentTimelineOps(content: string): AgentTimelineOp[] {
@@ -41,27 +111,10 @@ export function extractAgentTimelineOps(content: string): AgentTimelineOp[] {
   let match: RegExpExecArray | null
   TIMELINE_FENCE.lastIndex = 0
   while ((match = TIMELINE_FENCE.exec(content))) {
-    let parsed: any
     try {
-      parsed = JSON.parse(match[1].trim())
+      ops.push(...normalizeAgentTimelineOps(JSON.parse(match[1].trim())))
     } catch {
-      continue
-    }
-    const list = Array.isArray(parsed) ? parsed : parsed?.ops
-    if (!Array.isArray(list)) continue
-    for (const raw of list) {
-      if (!raw || typeof raw !== 'object') continue
-      const op = String(raw.op || '')
-      const clipId = String(raw.clipId || raw.id || '')
-      if (!clipId) continue
-      if (!['move', 'trim', 'delete', 'volume', 'opacity'].includes(op)) continue
-      ops.push({
-        op: op as AgentTimelineOp['op'],
-        clipId,
-        start: Number.isFinite(Number(raw.start)) ? Number(raw.start) : undefined,
-        duration: Number.isFinite(Number(raw.duration)) ? Number(raw.duration) : undefined,
-        value: Number.isFinite(Number(raw.value)) ? Number(raw.value) : undefined,
-      })
+      // 旧协议中的非法块不执行；原生协议会把参数错误回注给模型。
     }
   }
   return ops
@@ -73,6 +126,35 @@ export function stripAgentTimelineBlocks(content: string): string {
     .replace(/```onestep-timeline[ \t]*\r?\n[\s\S]*?```/g, '')
     .replace(/```onestep-timeline[\s\S]*$/, '')
     .trim()
+}
+
+const CREATIVE_HANDOFF_FENCE = /```onestep-mode-handoff[ \t]*\r?\n([\s\S]*?)```/
+
+export function normalizeAgentCreativeHandoff(value: unknown): AgentCreativeHandoff | null {
+  if (!value || typeof value !== 'object') return null
+  const raw = value as Record<string, unknown>
+  if (raw.target !== 'create') return null
+  const reason = String(raw.reason || '').trim().slice(0, 120)
+  const prompt = String(raw.prompt || '').trim().slice(0, 12000)
+  if (!reason || !prompt) return null
+  return { target: 'create', reason, prompt, status: 'pending' }
+}
+
+/** 普通模式的结构化交接建议；解析不代表已获用户授权。 */
+export function extractAgentCreativeHandoff(content: string): AgentCreativeHandoff | null {
+  const match = CREATIVE_HANDOFF_FENCE.exec(content)
+  if (!match) return null
+  try {
+    return normalizeAgentCreativeHandoff(JSON.parse(match[1].trim()))
+  } catch {
+    return null
+  }
+}
+
+export function stripAgentCreativeHandoffBlocks(content: string): string {
+  return content
+    .replace(/```onestep-mode-handoff[ \t]*\r?\n[\s\S]*?```/g, '')
+    .replace(/```onestep-mode-handoff[\s\S]*$/, '')
 }
 
 const ASK_FENCE = /```onestep-ask[ \t]*\r?\n([\s\S]*?)```/
@@ -199,7 +281,9 @@ export function extractLegacyAsk(content: string): { ask: AgentAsk; rest: string
 
 /** 展示用：同时去掉生成工具块、时间轴操作块与选择题块。 */
 export function stripAgentControlBlocks(content: string): string {
-  return stripAgentAskBlocks(stripAgentTimelineBlocks(stripAgentToolBlocks(content)))
+  return stripAgentCreativeHandoffBlocks(
+    stripAgentAskBlocks(stripAgentTimelineBlocks(stripAgentToolBlocks(content))),
+  ).trim()
 }
 
 const MEDIA_EXT: Record<string, 'image' | 'video' | 'audio'> = {
@@ -263,7 +347,7 @@ export function stripAgentToolBlocks(content: string): string {
   return text.replace(/\n{3,}/g, '\n\n').trim()
 }
 
-/** 从助手回复中提取工具调用（支持多个，实际只执行第一个）。 */
+/** 从助手回复中提取旧文本工具调用；Harness 按模型顺序执行，旧单步收尾只取首个。 */
 export function extractAgentToolCalls(content: string): AgentToolCall[] {
   const calls: AgentToolCall[] = []
   const fence = /```(?:onestep-tool|json|tool)?[ \t]*\r?\n([\s\S]*?)```/g
@@ -274,15 +358,17 @@ export function extractAgentToolCalls(content: string): AgentToolCall[] {
     if (call) calls.push(call)
   }
 
-  // 兼容模型忘记闭合代码块的情况。
+  // 兼容模型忘记闭合代码块的情况；该区域必须从后续裸 JSON 扫描中排除，避免重复执行。
   const openIndex = content.lastIndexOf('```onestep-tool')
-  if (openIndex >= 0 && content.indexOf('```', openIndex + 3) < 0) {
+  const hasUnclosedTool = openIndex >= 0 && content.indexOf('```', openIndex + 3) < 0
+  if (hasUnclosedTool) {
     const call = parseToolJson(content.slice(openIndex + '```onestep-tool'.length))
     if (call) calls.push(call)
   }
 
   // 兼容模型直接输出裸 JSON 的情况（只在代码块之外扫描）。
-  const withoutFences = content.replace(/```[\s\S]*?```/g, ' ')
+  const withoutFences = (hasUnclosedTool ? content.slice(0, openIndex) : content)
+    .replace(/```[\s\S]*?```/g, ' ')
   calls.push(...collectLooseToolCalls(withoutFences))
 
   return calls
@@ -290,6 +376,7 @@ export function extractAgentToolCalls(content: string): AgentToolCall[] {
 
 /** 把工具调用转换成可直接渲染与执行的生成任务。 */
 export function buildAgentGeneration(call: AgentToolCall): AgentGeneration | null {
+  if (call.name !== 'generate_image' && call.name !== 'generate_video') return null
   const prompt = asText(call.args.prompt || call.args.text || call.args.description)
   if (!prompt) return null
 
