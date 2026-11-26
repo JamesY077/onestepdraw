@@ -1,4 +1,5 @@
 import type { EditProject } from '@/types/edit'
+import { projectDuration } from '@/stores/editProjectStore'
 
 /** 导出后的规格校验结果：只报告问题，不改动文件。 */
 export interface ExportIssue {
@@ -27,13 +28,7 @@ const MAX_DRIFT_SECONDS = 0.25
 const MIN_BYTES = 1024
 
 function expectedDuration(project: EditProject): number {
-  let end = 0
-  for (const track of project.tracks) {
-    for (const clip of track.clips) {
-      end = Math.max(end, clip.start + clip.duration)
-    }
-  }
-  return end
+  return projectDuration(project)
 }
 
 /**
@@ -74,11 +69,14 @@ export function verifyExport(
     }
   }
 
-  if (spec.hasAudio && actual.hasAudio === false) {
+  const expectsAudio = project.tracks.some((track) => !track.muted && track.clips.some(
+    (clip) => clip.kind === 'audio' || clip.kind === 'video',
+  ))
+  if (expectsAudio && actual.hasAudio === false) {
     issues.push({
       level: 'warn',
       code: 'audio-missing',
-      message: '时间轴里有音频，但导出文件没有音轨（部分素材可能不支持混流）',
+      message: '时间轴包含音视频素材，但导出文件没有音轨（源素材可能无声或不支持混流）',
     })
   }
 

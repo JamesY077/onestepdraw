@@ -8,9 +8,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "test": "npm run test:clip-revision && npm run test:agent-harness",
+    "test": "npm run test:clip-revision && npm run test:agent-harness && npm run test:motion",
     "test:clip-revision": "node scripts/test-clip-revision.mjs",
     "test:agent-harness": "node scripts/test-agent-harness.mjs",
+    "test:motion": "node scripts/test-motion.mjs",
     "preview": "vite preview",
     "serve": "node server/local/server.mjs",
     "start": "npm run build && npm run serve",
@@ -20,10 +21,10 @@
     "app:dmg": "npm run build && electron-builder --mac"
   },
   "dependencies": {
-    "@vueuse/core": "^14.2.0",
     "@fontsource-variable/inter": "^5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@fontsource/instrument-serif": "^5.3.0",
+    "@hyperframes/player": "0.9.7",
     "@sparkjsdev/spark": "^2.4.0",
     "@types/three": "^0.181.0",
     "@vueuse/core": "^15.1.0",
@@ -31,6 +32,7 @@
     "dompurify": "^3.5.0",
     "gifenc": "^1.0.3",
     "gsap": "^3.15.1",
+    "hyperframes": "0.9.7",
     "marked": "^18.2.1",
     "mediabunny": "^1.66.2",
     "motion-v": "^2.13.0",

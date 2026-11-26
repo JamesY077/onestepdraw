@@ -9,6 +9,7 @@ const KIND_LABEL: Record<AgentClipRef['kind'], string> = {
   image: '图片',
   audio: '音频',
   animation: '代码动画',
+  motion: '动效工程',
 }
 
 function seconds(value: number): string {
@@ -36,6 +37,7 @@ function clipLine(clip: AgentClipRef, index: number): string {
   ]
   if (clip.assetName) details.push(`素材 ${clip.assetName}`)
   if (clip.kind === 'animation') details.push(`源码 ${clip.codeLanguage || 'html'}`)
+  if (clip.kind === 'motion' && clip.motionId) details.push(`动效工程 motionId=${clip.motionId}`)
   const volume = percent(clip.volume)
   if (volume) details.push(`音量 ${volume}`)
   const opacity = percent(clip.opacity)
@@ -52,13 +54,16 @@ function clipNoteLine(clip: AgentClipRef): string {
 export function describeClipContext(clips?: AgentClipRef[]): string {
   if (!clips?.length) return ''
   const animationOnly = clips.every((clip) => clip.kind === 'animation')
+  const motionOnly = clips.every((clip) => clip.kind === 'motion')
   const lines = [
     `[选中片段 · 只改这些] 用户在本轮选中了 ${clips.length} 个片段，请只针对下面的片段回答和修改；`,
     '不要改动未选中的片段，也不需要重做整支片。带「修改意见」的片段优先按那条意见处理，',
     '每条修改意见只作用于它所属的片段。',
     animationOnly
       ? '代码动画必须返回 onestep-animation 完整源码补丁，clipId 必须使用下面的 id；禁止生成图片或视频。'
-      : '需要移动 / 裁剪 / 删除 / 调音量时，使用 onestep-timeline 操作块，clipId 必须使用下面的 id：',
+      : motionOnly
+        ? '动效工程必须用 read_motion_project 读取源码后再 write_motion_project 改写；禁止改用文生视频重做。'
+        : '需要移动 / 裁剪 / 删除 / 调音量时，使用 onestep-timeline 操作块，clipId 必须使用下面的 id：',
     ...clips.flatMap((clip, index) => {
       const note = clipNoteLine(clip)
       const source = clip.kind === 'animation' && clip.code

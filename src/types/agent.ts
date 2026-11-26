@@ -47,7 +47,7 @@ export interface AgentTemplateRef {
 export interface AgentClipRef {
   id: string
   name: string
-  kind: 'video' | 'image' | 'audio' | 'animation'
+  kind: 'video' | 'image' | 'audio' | 'animation' | 'motion'
   trackId: string
   trackName: string
   trackKind: 'video' | 'overlay' | 'audio'
@@ -67,6 +67,8 @@ export interface AgentClipRef {
   /** 代码动画的完整源码与语言；只用于源码直改，不送入文生视频。 */
   code?: string
   codeLanguage?: AnimationSourceType
+  /** 动效工程 id；Agent 用 motion 工具读写这份工程，不当作视频素材。 */
+  motionId?: string
 }
 
 /** 输入框一次提交的内容。 */

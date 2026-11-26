@@ -315,7 +315,7 @@ try {
   assert.ok(revision.animationEditsForSelection('模型误返回 generate_video', [animation]).error)
 
   setActivePinia(createPinia())
-  const { useEditProjectStore } = await server.ssrLoadModule('/src/stores/editProjectStore.ts')
+  const { useEditProjectStore, projectDuration } = await server.ssrLoadModule('/src/stores/editProjectStore.ts')
   const store = useEditProjectStore()
   const project = store.createProject('片段回写测试')
   const imageClip = store.appendAsset(project.id, {
@@ -395,6 +395,69 @@ try {
   assert.equal(project.tracks.flatMap((track) => track.clips).find((clip) => clip.id === untouched.id)?.name, '用户已改动')
   assert.equal(store.undo(project.id), true)
   assert.equal(project.tracks.flatMap((track) => track.clips).find((clip) => clip.id === animationClip.id)?.code, animation.code)
+
+  const { clipOpacityAt, clipVolumeAt } = await server.ssrLoadModule('/src/features/edit/keyframes.ts')
+  const studio = store.createProject('字幕关键帧与版本测试')
+  const curveClip = store.appendAsset(studio.id, {
+    name: '曲线图片', kind: 'image', url: 'https://img.local/curve.png', source: 'library',
+  }, { at: 0, duration: 4 })
+  assert.ok(curveClip)
+  const keyframes = [
+    { id: 'a', time: 0, value: 0, easing: 'linear' },
+    { id: 'b', time: 2, value: 1, easing: 'ease-in-out' },
+    { id: 'c', time: 4, value: 0.5, easing: 'linear' },
+  ]
+  store.updateClipKeyframes(studio.id, curveClip.id, 'opacity', keyframes)
+  store.updateClipKeyframes(studio.id, curveClip.id, 'volume', keyframes)
+  assert.equal(clipOpacityAt(curveClip, 1), 0.5)
+  assert.equal(clipVolumeAt(curveClip, 3), 0.75)
+  assert.equal(clipOpacityAt(curveClip, -1), 0)
+  assert.equal(clipOpacityAt(curveClip, 5), 0.5)
+  const cue = store.addCaption(studio.id, { text: '第一句字幕', start: 6, duration: 2 })
+  assert.ok(cue)
+  assert.equal(projectDuration(studio), 8)
+  const saved = store.saveVersion(studio.id, '修改前')
+  assert.ok(saved)
+  store.updateCaption(studio.id, cue.id, { text: '改后的字幕', start: 8 })
+  store.updateClip(studio.id, curveClip.id, { start: 3, opacity: 0.2 })
+  assert.equal(projectDuration(studio), 10)
+  assert.equal(store.restoreVersion(studio.id, saved.id), true)
+  const restoredCurve = studio.tracks.flatMap((track) => track.clips).find((clip) => clip.id === curveClip.id)
+  assert.equal(restoredCurve.start, 0)
+  assert.equal(restoredCurve.opacityKeyframes.length, 3)
+  assert.equal(studio.captions[0].text, '第一句字幕')
+  assert.equal(studio.captions[0].start, 6)
+  assert.equal(studio.versions.length, 1)
+  assert.equal(store.undo(studio.id), true)
+  assert.equal(studio.captions[0].text, '改后的字幕')
+
+  const secondCurve = store.appendAsset(studio.id, {
+    name: '跨轨图片', kind: 'image', url: 'https://img.local/track.png', source: 'library',
+  }, { at: 3, duration: 2 })
+  assert.ok(secondCurve)
+  const sourceTrack = studio.tracks.find((track) => track.clips.some((clip) => clip.id === secondCurve.id))
+  const targetTrack = studio.tracks.find((track) => track.clips.some((clip) => clip.id === curveClip.id))
+  assert.ok(sourceTrack && targetTrack && sourceTrack.id !== targetTrack.id)
+  assert.equal(store.moveClip(studio.id, secondCurve.id, 12, targetTrack.id), true)
+  assert.ok(targetTrack.clips.some((clip) => clip.id === secondCurve.id))
+  assert.ok(!studio.tracks.some((track) => track.id === sourceTrack.id))
+  assert.equal(store.undo(studio.id), true)
+  assert.ok(studio.tracks.some((track) => track.id === sourceTrack.id))
+
+  const { verifyExport } = await server.ssrLoadModule('/src/features/edit/exportVerification.ts')
+  const checkProject = store.createProject('导出校验测试')
+  const checkClip = store.appendAsset(checkProject.id, {
+    name: '校验视频', kind: 'video', url: video.url, source: 'library',
+  }, { at: 0, duration: 4 })
+  assert.ok(checkClip)
+  assert.equal(projectDuration(checkProject), 5)
+  assert.deepEqual(verifyExport(checkProject, { width: 1280, height: 720, duration: 5, hasAudio: false, bytes: 10240 }, { width: 1280, height: 720, duration: 5, hasAudio: true }), [])
+  const withCaption = store.addCaption(checkProject.id, { text: '校验字幕', start: 3, duration: 2.5 })
+  assert.ok(withCaption)
+  assert.equal(projectDuration(checkProject), 5.5)
+  const drift = verifyExport(checkProject, { width: 1280, height: 720, duration: 5.5, hasAudio: false, bytes: 10240 }, { width: 1280, height: 720, duration: 4, hasAudio: false })
+  assert.ok(drift.some((issue) => issue.code === 'duration-drift'))
+  assert.ok(drift.some((issue) => issue.code === 'audio-missing'))
 
   const { GIF_FACTORY_CATEGORIES, GIF_FACTORY_TEMPLATES } = await server.ssrLoadModule('/src/features/template/gifFactory.ts')
   const { BUILTIN_TEMPLATES } = await server.ssrLoadModule('/src/features/template/builtin.ts')

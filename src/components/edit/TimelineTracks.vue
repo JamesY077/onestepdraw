@@ -202,6 +202,7 @@
             v-for="track in project.tracks"
             :key="track.id"
             class="tl-row"
+            :data-track-id="track.id"
             :class="[`kind-${track.kind}`, { 'is-drop': dropTrackId === track.id }]"
             @pointerdown="startEmptySelect($event)"
             @contextmenu.prevent="openEmptyMenu($event)"
@@ -344,7 +345,7 @@ const emit = defineEmits<{
   (event: 'seek', time: number): void
   (event: 'select', payload: { ids: string[]; primary: string }): void
   (event: 'update:note', value: string): void
-  (event: 'move-clip', payload: { clipId: string; start: number }): void
+  (event: 'move-clip', payload: { clipId: string; start: number; trackId?: string }): void
   (event: 'move-clips', payload: { ids: string[]; delta: number }): void
   (event: 'trim-clip', payload: { clipId: string; start: number; duration: number }): void
   (event: 'toggle-mute', trackId: string): void
@@ -392,11 +393,15 @@ interface DragState {
   targets: number[]
   preview: { start: number; duration: number }
   moved: boolean
+  origTrackId: string
+  targetTrackId: string
+  trackOffset: number
   /** 多选整体平移时的所有片段（含自己）；单选或裁剪时为 null。 */
   group: Array<{ id: string; el: HTMLElement | null; start: number; end: number }> | null
 }
 
 let dragState: DragState | null = null
+let dragTrackEl: HTMLElement | null = null
 let rafSeek = 0
 let pendingSeek = 0
 let resizeObserver: ResizeObserver | null = null
@@ -795,14 +800,32 @@ function startClipDrag(event: PointerEvent, clip: TimelineClip, mode: DragMode) 
     }),
     preview: { start: clip.start, duration: clip.duration },
     moved: false,
+    origTrackId: findClip(clip.id)?.track.id || '',
+    targetTrackId: findClip(clip.id)?.track.id || '',
+    trackOffset: 0,
     group: group && group.length > 1 ? group : null,
   }
   activeDrag.value = { clipId: clip.id, mode }
+  dragTrackEl = el.closest('.tl-row')
   clipMenu.value = null
   el.setPointerCapture?.(event.pointerId)
   window.addEventListener('pointermove', onDragMove)
   window.addEventListener('pointerup', endDrag)
   window.addEventListener('pointercancel', endDrag)
+}
+
+function compatibleTrackAt(clientY: number, clip: TimelineClip): { id: string; offset: number } | null {
+  if (!dragTrackEl) return null
+  const sourceTop = dragTrackEl.getBoundingClientRect().top
+  const rows = contentRef.value?.querySelectorAll<HTMLElement>('.tl-row') || []
+  for (const row of rows) {
+    const rect = row.getBoundingClientRect()
+    if (clientY < rect.top || clientY > rect.bottom) continue
+    const track = props.project.tracks.find((item) => item.id === row.dataset.trackId)
+    if (!track || (clip.kind === 'audio') !== (track.kind === 'audio')) return null
+    return { id: track.id, offset: rect.top - sourceTop }
+  }
+  return null
 }
 
 function onDragMove(event: PointerEvent) {
@@ -866,18 +889,28 @@ function onDragMove(event: PointerEvent) {
   }
   state.preview = { start, duration: length }
 
+  if (state.mode === 'move' && !state.group) {
+    const clip = findClip(state.clipId)?.clip
+    const target = clip ? compatibleTrackAt(event.clientY, clip) : null
+    if (target) {
+      state.targetTrackId = target.id
+      state.trackOffset = target.offset
+    }
+    dropTrackId.value = state.targetTrackId !== state.origTrackId ? state.targetTrackId : ''
+  }
+
   const shift = (start - state.origStart) * px
   if (state.group && state.mode === 'move') {
     for (const item of state.group) {
       if (item.el?.isConnected) item.el.style.transform = `translate3d(${shift}px, 0, 0)`
     }
   } else {
-    state.el.style.transform = `translate3d(${shift}px, 0, 0)`
+    state.el.style.transform = `translate3d(${shift}px, ${state.trackOffset}px, 0)`
   }
   if (state.mode !== 'move') {
     state.el.style.width = `${Math.max(10, length * px)}px`
   }
-  state.moved = state.moved || Math.abs(shift) > 0.5 || Math.abs(length - state.origDuration) * px > 0.5
+  state.moved = state.moved || Math.abs(shift) > 0.5 || Math.abs(length - state.origDuration) * px > 0.5 || state.targetTrackId !== state.origTrackId
 
   paintGuide(snapped.guide)
   autoScroll(event.clientX)
@@ -910,7 +943,9 @@ function endDrag() {
   const state = dragState
   dragState = null
   activeDrag.value = null
+  dropTrackId.value = ''
   paintGuide(null)
+  dragTrackEl = null
   window.removeEventListener('pointermove', onDragMove)
   window.removeEventListener('pointerup', endDrag)
   window.removeEventListener('pointercancel', endDrag)
@@ -931,7 +966,7 @@ function endDrag() {
         const delta = Math.round((state.preview.start - state.origStart) * 1000) / 1000
         emit('move-clips', { ids: state.group.map((item) => item.id), delta })
       } else {
-        emit('move-clip', { clipId: state.clipId, start })
+        emit('move-clip', { clipId: state.clipId, start, trackId: state.targetTrackId })
       }
     } else {
       emit('trim-clip', { clipId: state.clipId, start, duration: length })
@@ -1590,6 +1625,15 @@ onBeforeUnmount(() => {
 .tl-clip.kind-overlay {
   border-color: #dcdcd2;
   background: repeating-linear-gradient(135deg, var(--sf-surface), var(--sf-surface) 6px, #f7f7f1 6px, #f7f7f1 12px);
+}
+
+.tl-clip.kind-motion {
+  border-color: #e3b79f;
+  background: linear-gradient(180deg, #fff7f1, #fbeade);
+}
+
+.tl-clip.kind-motion .clip-name {
+  color: #8f4a2c;
 }
 
 .tl-clip.kind-audio {

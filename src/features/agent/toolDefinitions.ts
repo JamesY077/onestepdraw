@@ -152,6 +152,106 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
   {
     type: 'function',
     function: {
+      name: 'list_motion_templates',
+      description: '检索 OpenMotion 动效模板目录（HyperFrames 动效：界面动效、文字动效、品牌发布等）。做同款、找动效参考时先用它选准模板，不要凭空编模板名。',
+      parameters: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          query: { type: 'string', description: '关键词，匹配名称、品牌、风格与复刻要点。' },
+          tag: { type: 'string', description: '标签，例如 产品发布 / 界面动效 / 文字动效。' },
+          editableOnly: { type: 'boolean', description: '只看带可编辑工程的模板。' },
+          limit: { type: 'number', minimum: 1, maximum: 12 },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'read_motion_template',
+      description: '读取指定模板的完整资料：风格、复刻重点、参考视频地址、motion.md 动效说明与可编辑工程文件清单。复刻前必须先读。',
+      parameters: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['templateId'],
+        properties: {
+          templateId: { type: 'string', description: '来自 list_motion_templates 或用户给出的 motion- 开头 ID。' },
+          includeDocument: { type: 'boolean', description: '是否拉取 motion.md 正文，默认 true。' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'create_motion_project',
+      description: '创建可编辑动效工程并放入当前时间轴。可基于 OpenMotion 模板创建副本，也可从空白工程开始。产物是 HTML 工程，不是视频文件。',
+      parameters: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['name'],
+        properties: {
+          name: { type: 'string', description: '工程名称。' },
+          templateId: { type: 'string', description: '可选，基于这条 OpenMotion 模板创建副本。' },
+          source: { type: 'string', description: '可选，空白工程时直接给出完整 index.html（HyperFrames 原生格式）。' },
+          at: { type: 'number', minimum: 0, description: '入轨起点秒数，缺省接在视频轨末尾。' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'read_motion_project',
+      description: '读取动效工程的源码与参数契约。修改动效前必须先读，不要凭记忆改写。',
+      parameters: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['motionId'],
+        properties: {
+          motionId: { type: 'string', description: '动效工程 ID，来自片段或 create_motion_project。' },
+          path: { type: 'string', description: '工程内相对路径，默认 index.html。' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'write_motion_project',
+      description: '写回动效工程源码（完整文件，不是 diff）。用于改文案、配色、版式、镜头时长与 GSAP 动效。',
+      parameters: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['motionId', 'source'],
+        properties: {
+          motionId: { type: 'string' },
+          source: { type: 'string', description: '完整可运行源码。' },
+          path: { type: 'string', description: '默认 index.html。' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'render_motion_project',
+      description: '用本机 HyperFrames CLI 把动效工程渲染成 MP4，并在时间轴原位替换为视频片段。耗时较长，只有用户要出片或整片合成时才调用。',
+      parameters: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['motionId'],
+        properties: {
+          motionId: { type: 'string' },
+          clipId: { type: 'string', description: '可选，指定要原位替换的时间轴片段。' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'open_voice',
       description: '把用户确认的配音文本带到配音工作台并预填，不直接发起付费生成。',
       parameters: {
@@ -225,6 +325,18 @@ export function presentAgentToolCall(call: AgentToolCall): { title: string; deta
       const count = Array.isArray(call.args.shots) ? call.args.shots.length : 0
       return { title: '生成完整分镜视频', detail: `${count} 个镜头 · 最多 4 路并发` }
     }
+    case 'list_motion_templates':
+      return { title: '检索动效模板', detail: short(call.args.query || call.args.tag || 'OpenMotion 目录') }
+    case 'read_motion_template':
+      return { title: '读取模板与 motion.md', detail: short(call.args.templateId) }
+    case 'create_motion_project':
+      return { title: '创建动效工程', detail: short(call.args.name) }
+    case 'read_motion_project':
+      return { title: '读取动效工程源码', detail: short(call.args.motionId) }
+    case 'write_motion_project':
+      return { title: '写回动效工程源码', detail: short(call.args.motionId) }
+    case 'render_motion_project':
+      return { title: '渲染动效 MP4', detail: short(call.args.motionId) }
     case 'open_voice':
       return { title: '打开配音工作台', detail: short(call.args.text) }
     case 'open_3d':

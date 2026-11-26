@@ -12,10 +12,14 @@ import {
 } from '@/features/agent/tools'
 
 /** 选中片段的执行路由。代码动画与媒体素材不能共用文生视频工具。 */
-export type SelectedClipRoute = 'animation' | 'media' | 'audio' | 'mixed' | 'none'
+export type SelectedClipRoute = 'animation' | 'motion' | 'media' | 'audio' | 'mixed' | 'none'
 
 export function isAnimationClip(clip: Pick<AgentClipRef, 'kind'>): boolean {
   return clip.kind === 'animation'
+}
+
+export function isMotionClip(clip: Pick<AgentClipRef, 'kind'>): boolean {
+  return clip.kind === 'motion'
 }
 
 export function isEditableMediaClip(clip: Pick<AgentClipRef, 'kind'>): boolean {
@@ -25,6 +29,7 @@ export function isEditableMediaClip(clip: Pick<AgentClipRef, 'kind'>): boolean {
 export function routeSelectedClips(clips: AgentClipRef[] | undefined): SelectedClipRoute {
   if (!clips?.length) return 'none'
   if (clips.every(isAnimationClip)) return 'animation'
+  if (clips.every(isMotionClip)) return 'motion'
   if (clips.every(isEditableMediaClip)) return 'media'
   if (clips.every((clip) => clip.kind === 'audio')) return 'audio'
   return 'mixed'
@@ -168,6 +173,22 @@ export function animationEditsForSelection(
     return { edits: [], error: '源码补丁没有覆盖全部选中片段，为避免部分修改，本次未写入。' }
   }
   return { edits: [...byId.values()] }
+}
+
+/** 动效工程走源码工具：改的是 HTML 工程本身，不是重新生成一支视频。 */
+export function buildMotionEditSystemPrompt(clips: AgentClipRef[]): string {
+  const ids = clips.map((clip) => `${clip.name}（工程 ${clip.motionId || '未知'}）`).join('、')
+  return `你是 Stepframe 剪辑台的动效工程编辑器。本轮只允许修改这些选中工程：${ids}。
+
+动效工程是 HyperFrames 原生 HTML 工程（data-composition-id / data-start / data-duration / data-track-index / window.__timelines 的 GSAP 时间轴），在浏览器里由 hyperframes-player 预览、由 hyperframes CLI 渲染 MP4。
+
+硬性规则：
+- 先用 read_motion_project 读取选中工程的 index.html，再在源码上做最小修改，保持原有结构、依赖、镜头顺序与时间关系。
+- 用 write_motion_project 写回完整可运行源码，不要输出 diff 或片段。
+- 文案类修改优先改 data-composition-variables 里的默认值，保持参数契约不变。
+- 需要交付 MP4 时才调用 render_motion_project；渲染耗时长，先确认用户要出片。
+- 不调用 generate_video / generate_image 来替代动效工程，不改动未选中的片段。
+- 完成后用一两句中文说明改了什么、还差什么。`
 }
 
 /** 代码动画使用独立协议，不能继承通用创作流程里的文生视频工具。 */

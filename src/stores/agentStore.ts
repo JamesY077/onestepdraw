@@ -41,6 +41,7 @@ import {
 import {
   animationEditsForSelection,
   buildAnimationEditSystemPrompt,
+  buildMotionEditSystemPrompt,
   createMediaRevisionGeneration,
   mediaReferenceForClip,
   routeSelectedClips,
@@ -69,6 +70,7 @@ import {
   routeConversationRequest,
 } from '@/features/agent/conversationRouting'
 import { buildImageParams, buildVideoParams } from '@/features/generate/buildParams'
+import { executeMotionTool } from '@/features/agent/motionTools'
 import { pollVideoStatus, VideoTaskFailedError } from '@/features/generate/video'
 import { generateImage, generateVideo } from '@/api/aiping'
 import { CUSTOM_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
@@ -430,7 +432,9 @@ export const useAgentStore = defineStore('agent', () => {
     const selectedRoute = routeSelectedClips(latestUser?.clips)
     const systemPrompt = selectedRoute === 'animation' && latestUser?.clips
       ? buildAnimationEditSystemPrompt(latestUser.clips)
-      : systemPromptFor(conversation)
+      : selectedRoute === 'motion' && latestUser?.clips
+        ? buildMotionEditSystemPrompt(latestUser.clips)
+        : systemPromptFor(conversation)
     return [{ role: 'system', content: systemPrompt }, ...history]
   }
 
@@ -450,9 +454,12 @@ export const useAgentStore = defineStore('agent', () => {
       .slice(-MAX_CONTEXT_MESSAGES)
     const latestUser = latestUserMessage(source)
     return source.map<LocalAgentMessage>((message) => {
-      const animationProtocol = message === latestUser && routeSelectedClips(message.clips) === 'animation'
+      const clipRoute = message === latestUser ? routeSelectedClips(message.clips) : 'none'
+      const animationProtocol = clipRoute === 'animation'
         ? `\n\n[本轮执行协议]\n${buildAnimationEditSystemPrompt(message.clips || [])}`
-        : ''
+        : clipRoute === 'motion'
+          ? `\n\n[本轮执行协议]\n${buildMotionEditSystemPrompt(message.clips || [])}`
+          : ''
       return {
         role: message.role,
         content: `${historyText(message, true)}${animationProtocol}`,
@@ -1484,7 +1491,14 @@ export const useAgentStore = defineStore('agent', () => {
     timeline: { revision?: number; allowedClipIds?: Set<string> },
   ): Promise<unknown> {
     const mode = conversation.mode || 'chat'
-    if (mode === 'chat' && !['update_plan', 'suggest_create_mode'].includes(call.name)) {
+    const CHAT_READ_ONLY_TOOLS = [
+      'update_plan',
+      'suggest_create_mode',
+      'list_motion_templates',
+      'read_motion_template',
+      'read_motion_project',
+    ]
+    if (mode === 'chat' && !CHAT_READ_ONLY_TOOLS.includes(call.name)) {
       const task = String(call.args.prompt || call.args.text || '').trim()
       const handoff = normalizeAgentCreativeHandoff({
         target: 'create',
@@ -1493,7 +1507,18 @@ export const useAgentStore = defineStore('agent', () => {
           ? `请在创作模式中继续当前任务：${task}`
           : '请基于当前对话已经确认的内容，在创作模式中继续实际素材创作。',
       })
-      if (handoff && ['generate_image', 'generate_video', 'generate_storyboard', 'open_voice', 'open_3d', 'edit_timeline'].includes(call.name)) {
+      const CHAT_BLOCKED_TOOLS = [
+        'generate_image',
+        'generate_video',
+        'generate_storyboard',
+        'open_voice',
+        'open_3d',
+        'edit_timeline',
+        'create_motion_project',
+        'write_motion_project',
+        'render_motion_project',
+      ]
+      if (handoff && CHAT_BLOCKED_TOOLS.includes(call.name)) {
         assistant.creativeHandoff = handoff
         return {
           ok: true,
@@ -1513,6 +1538,10 @@ export const useAgentStore = defineStore('agent', () => {
         status: 'confirmation_required',
         message: '切换建议已记录，等待用户确认；不要自动切换或执行生成，也不要重复调用本工具。',
       }
+    }
+
+    if (call.name.includes('motion_')) {
+      return executeMotionTool(call, conversation, timeline)
     }
 
     if (call.name === 'update_plan') {

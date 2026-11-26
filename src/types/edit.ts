@@ -1,8 +1,42 @@
 /** 剪辑项目的数据模型：一个项目 = 一条时间轴 + 一个素材库 + 一段对话。 */
 
-export type ProjectAssetKind = 'video' | 'image' | 'audio' | 'animation'
+export type ProjectAssetKind = 'video' | 'image' | 'audio' | 'animation' | 'motion'
 export type AnimationSourceType = 'html' | 'jsx' | 'tsx'
 export type EditTrackKind = 'video' | 'overlay' | 'audio'
+export type KeyframeEasing = 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out'
+
+export interface ClipKeyframe {
+  id: string
+  /** 相对片段起点的秒数。 */
+  time: number
+  /** 音量或不透明度，范围 0-1。 */
+  value: number
+  /** 到下一个关键帧的插值曲线。 */
+  easing: KeyframeEasing
+}
+
+export interface CaptionCue {
+  id: string
+  text: string
+  start: number
+  duration: number
+}
+
+export interface ProjectVersionSnapshot {
+  name: string
+  aspectRatio: string
+  resolution: '768P' | '2K'
+  fps: number
+  tracks: EditTrack[]
+  captions: CaptionCue[]
+}
+
+export interface ProjectVersion {
+  id: string
+  label: string
+  createdAt: number
+  snapshot: ProjectVersionSnapshot
+}
 
 export interface ProjectAsset {
   id: string
@@ -18,6 +52,8 @@ export interface ProjectAsset {
   /** HTML / React 代码动画的完整源码；选中修改时直接编辑这份源文件。 */
   code?: string
   codeLanguage?: AnimationSourceType
+  /** 动效工程 id（HTML/CSS/JS 组合，由本地 /local/motion 服务托管）。 */
+  motionId?: string
   createdAt: number
 }
 
@@ -38,9 +74,14 @@ export interface TimelineClip {
   volume?: number
   /** 画面不透明度 0-1。 */
   opacity?: number
+  /** 音量 / 不透明度曲线；关键帧时间为片段内时间。 */
+  volumeKeyframes?: ClipKeyframe[]
+  opacityKeyframes?: ClipKeyframe[]
   /** HTML / React 代码动画的完整源码。 */
   code?: string
   codeLanguage?: AnimationSourceType
+  /** 动效工程 id：预览按 iframe 播放，渲染后可用 MP4 原位替换。 */
+  motionId?: string
 }
 
 export interface EditTrack {
@@ -69,6 +110,9 @@ export interface EditProject {
   revision?: number
   tracks: EditTrack[]
   assets: ProjectAsset[]
+  captions?: CaptionCue[]
+  /** 手动保存的命名版本，最多保留最近 8 个。 */
+  versions?: ProjectVersion[]
 }
 
 export const PROJECT_ASPECT_RATIOS = ['16:9', '9:16', '1:1', '4:3', '3:4'] as const
@@ -76,6 +120,8 @@ export const PROJECT_ASPECT_RATIOS = ['16:9', '9:16', '1:1', '4:3', '3:4'] as co
 export const IMAGE_CLIP_SECONDS = 4
 export const VIDEO_CLIP_SECONDS = 5
 export const AUDIO_CLIP_SECONDS = 4
+/** 动效工程默认入轨时长；渲染 MP4 后按实际片长回填。 */
+export const MOTION_CLIP_SECONDS = 6
 export const MIN_CLIP_SECONDS = 0.4
 export const MAX_PROJECT_SECONDS = 300
 

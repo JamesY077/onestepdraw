@@ -20,6 +20,7 @@ import os from 'node:os'
 import { exec } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { buildCustomAgent, buildRunPrompt, detectAgents, getInstalledAgent, runAgent } from './agents.mjs'
+import { createMotionService } from './motion.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '../..')
@@ -469,7 +470,16 @@ if (pathname === '/local/workspace/list' && req.method === 'POST') {
 
 }
 
+const motionService = createMotionService({ dataDir, rootDir, sendJson, sendFile })
+
 const server = http.createServer((req, res) => {
+  if ((req.url || '').startsWith('/local/motion/')) {
+    void motionService.handle(req, res).catch((error) => {
+      sendJson(res, 400, { ok: false, error: String(error?.message || error) })
+    })
+    return
+  }
+
   // 工作区目录接口需要读请求体，交给异步处理，避免在执行器里 await。
   if ((req.url || '').startsWith('/local/workspace/')) {
     void handleWorkspaceRoute(req, res).catch((error) => {

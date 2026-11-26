@@ -22,24 +22,36 @@
               v-else-if="item.clip.kind === 'image'"
               class="stage-media"
               :class="{ 'is-idle': !visibleSet.has(item.clip.id) }"
+              :ref="(el: unknown) => setVisualRef(item.clip.id, el)"
               :src="item.clip.url"
               alt=""
-              :style="{ opacity: visibleSet.has(item.clip.id) ? item.clip.opacity ?? 1 : 0 }"
+            />
+            <hyperframes-player
+              v-else-if="item.clip.kind === 'motion'"
+              :ref="(el: unknown) => setMotionRef(item.clip.id, el)"
+              class="stage-media stage-animation stage-motion"
+              :class="{ 'is-idle': !visibleSet.has(item.clip.id) }"
+              :src="item.clip.url"
+              :poster="item.clip.thumbnail || undefined"
+              :title="item.clip.name"
+              disable-click-to-play
+              low-power-idle
+              @ready="onMotionReady(item.clip)"
             />
             <iframe
               v-else-if="item.clip.kind === 'animation' && item.clip.codeLanguage !== 'jsx' && item.clip.codeLanguage !== 'tsx'"
+              :ref="(el: unknown) => setVisualRef(item.clip.id, el)"
               class="stage-media stage-animation"
               :class="{ 'is-idle': !visibleSet.has(item.clip.id) }"
               :src="item.clip.url"
               :title="item.clip.name"
               sandbox="allow-scripts"
-              :style="{ opacity: visibleSet.has(item.clip.id) ? item.clip.opacity ?? 1 : 0 }"
             />
             <div
               v-else-if="item.clip.kind === 'animation'"
+              :ref="(el: unknown) => setVisualRef(item.clip.id, el)"
               class="stage-media animation-source-placeholder"
               :class="{ 'is-idle': !visibleSet.has(item.clip.id) }"
-              :style="{ opacity: visibleSet.has(item.clip.id) ? item.clip.opacity ?? 1 : 0 }"
             >
               <strong>{{ item.clip.codeLanguage?.toUpperCase() }} 代码动画</strong>
               <span>选中片段发给 AI 可直接修改原源码</span>
@@ -52,6 +64,10 @@
               @loadedmetadata="syncMedia"
             />
           </template>
+
+          <div v-if="activeCaption" class="stage-caption" :key="activeCaption.id">
+            {{ activeCaption.text }}
+          </div>
 
           <div v-if="!visibleSet.size" class="stage-empty">
             <template v-if="hasClips">
@@ -101,9 +117,12 @@ import {
   shallowRef,
   watch,
 } from 'vue'
-import type { EditProject, TimelineClip } from '@/types/edit'
+import '@hyperframes/player'
+import type { HyperframesPlayer as HFPlayer } from '@hyperframes/player'
+import type { CaptionCue, EditProject, TimelineClip } from '@/types/edit'
 import { projectDuration } from '@/stores/editProjectStore'
 import { playhead } from '@/features/edit/playhead'
+import { clipOpacityAt, clipVolumeAt } from '@/features/edit/keyframes'
 
 const props = defineProps<{ project: EditProject; playing: boolean }>()
 
@@ -114,6 +133,8 @@ defineEmits<{
 
 const videoRefs = new Map<string, HTMLVideoElement>()
 const audioRefs = new Map<string, HTMLAudioElement>()
+const motionRefs = new Map<string, HFPlayer>()
+const visualRefs = new Map<string, HTMLElement>()
 
 const duration = computed(() => projectDuration(props.project))
 
@@ -175,6 +196,7 @@ const clipIndex = computed(() => {
 
 /** 当前时间点可见的片段集合：只有集合变化时才触发重渲染。 */
 const visibleSet = shallowRef<Set<string>>(new Set())
+const activeCaption = shallowRef<CaptionCue | null>(null)
 let lastSignature = ''
 
 const timeText = ref('00:00.00 / 00:00.00')
@@ -182,6 +204,12 @@ let lastPaint = -1
 
 function refreshActive() {
   const time = playhead.value
+  const caption = (props.project.captions || []).find(
+    (cue) => time >= cue.start && time < cue.start + cue.duration,
+  ) || null
+  if (caption?.id !== activeCaption.value?.id || caption?.text !== activeCaption.value?.text) {
+    activeCaption.value = caption
+  }
   const ids: string[] = []
   for (const track of props.project.tracks) {
     for (const clip of track.clips) {
@@ -202,13 +230,64 @@ function paintTime() {
 }
 
 function setVideoRef(id: string, el: unknown) {
-  if (el instanceof HTMLVideoElement) videoRefs.set(id, el)
-  else videoRefs.delete(id)
+  if (el instanceof HTMLVideoElement) {
+    videoRefs.set(id, el)
+    visualRefs.set(id, el)
+  } else {
+    videoRefs.delete(id)
+    visualRefs.delete(id)
+  }
+}
+
+function setVisualRef(id: string, el: unknown) {
+  if (el instanceof HTMLElement) visualRefs.set(id, el)
+  else visualRefs.delete(id)
 }
 
 function setAudioRef(id: string, el: unknown) {
   if (el instanceof HTMLAudioElement) audioRefs.set(id, el)
   else audioRefs.delete(id)
+}
+
+function setMotionRef(id: string, el: unknown) {
+  if (el instanceof HTMLElement && el.tagName === 'HYPERFRAMES-PLAYER') {
+    const player = el as HFPlayer
+    motionRefs.set(id, player)
+    visualRefs.set(id, player)
+  } else {
+    motionRefs.delete(id)
+    visualRefs.delete(id)
+  }
+}
+
+/** Player ready 后再下发范围与播放头，避免工程加载期间丢掉第一次 seek。 */
+function onMotionReady(clip: TimelineClip) {
+  syncMotion(clip, true)
+}
+
+function syncMotion(clip: TimelineClip, force = false) {
+  const player = motionRefs.get(clip.id)
+  if (!player?.ready) return
+  const item = clipIndex.value.get(clip.id)
+  const active = visibleSet.value.has(clip.id)
+  const trimStart = clip.trimStart || 0
+  const rangeEnd = trimStart + clip.duration
+  if (player.rangeStart !== trimStart) player.rangeStart = trimStart
+  if (player.rangeEnd !== rangeEnd) player.rangeEnd = rangeEnd
+  player.volume = item?.track.muted ? 0 : clipVolumeAt(clip, playhead.value - clip.start)
+
+  if (!active) {
+    if (!player.paused) player.pause()
+    return
+  }
+  const target = targetTime(clip)
+  // seek() 会暂停 Player；只有拖动播放头或漂移明显时才调用，避免每帧重启动效。
+  const drift = Math.abs(player.currentTime - target)
+  if (force || (!props.playing && drift > 0.025) || (props.playing && drift > 0.3)) {
+    player.seek(target)
+  }
+  if (props.playing && target < rangeEnd - 1 / 30 && player.paused) player.play()
+  else if (!props.playing && !player.paused) player.pause()
 }
 
 function targetTime(clip: TimelineClip): number {
@@ -220,22 +299,35 @@ let previousActive: string[] = []
 
 function syncMedia() {
   const active = visibleSet.value
+  for (const [id, element] of visualRefs) {
+    const clip = clipIndex.value.get(id)?.clip
+    if (!clip) continue
+    element.style.opacity = active.has(id)
+      ? String(clipOpacityAt(clip, playhead.value - clip.start))
+      : '0'
+  }
   for (const id of previousActive) {
     if (active.has(id)) continue
     const el = videoRefs.get(id) || audioRefs.get(id)
     if (el && !el.paused) el.pause()
+    const motionPlayer = motionRefs.get(id)
+    if (motionPlayer && !motionPlayer.paused) motionPlayer.pause()
   }
   for (const id of active) {
     const item = clipIndex.value.get(id)
     if (!item) continue
     const { track, clip } = item
+    if (clip.kind === 'motion') {
+      syncMotion(clip)
+      continue
+    }
     const el = clip.kind === 'video'
       ? videoRefs.get(clip.id)
       : clip.kind === 'audio'
         ? audioRefs.get(clip.id)
         : null
     if (!el) continue
-    el.volume = track.muted ? 0 : Math.min(1, clip.volume ?? 1)
+    el.volume = track.muted ? 0 : clipVolumeAt(clip, playhead.value - clip.start)
     const target = targetTime(clip)
     if (Math.abs(el.currentTime - target) > 0.24 && !el.seeking) {
       try {
@@ -266,6 +358,15 @@ watch(
 watch(
   () => props.playing,
   () => syncMedia(),
+)
+
+watch(
+  () => [props.project.tracks, props.project.captions],
+  () => {
+    refreshActive()
+    void nextTick(syncMedia)
+  },
+  { deep: true, flush: 'post' },
 )
 
 watch(
@@ -372,6 +473,23 @@ function formatTime(seconds: number): string {
 
 .stage-canvas audio {
   display: none;
+}
+
+.stage-caption {
+  position: absolute;
+  z-index: 20;
+  left: 8%;
+  right: 8%;
+  bottom: 7%;
+  color: #fff;
+  font-size: clamp(12px, 2.8vw, 30px);
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: center;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
 }
 
 .stage-empty {

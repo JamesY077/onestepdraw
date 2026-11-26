@@ -114,6 +114,27 @@
         </div>
       </div>
 
+      <template v-if="entries.length === 1">
+        <KeyframeEditor
+          v-if="hasAudio"
+          :project-id="projectId"
+          :clip="primary.clip"
+          property="volume"
+        />
+        <KeyframeEditor
+          v-if="hasVisual"
+          :project-id="projectId"
+          :clip="primary.clip"
+          property="opacity"
+        />
+      </template>
+
+      <MotionInspector
+        v-if="entries.length === 1 && primary.clip.kind === 'motion' && primary.clip.motionId"
+        :project-id="projectId"
+        :clip="primary.clip"
+      />
+
       <p class="ci-hint">
         发给 AI 会把这 {{ entries.length }} 段加入右侧待发送区，只带时间、素材和参数；可以继续选其他片段，最后统一发送。
       </p>
@@ -123,6 +144,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import MotionInspector from '@/components/edit/MotionInspector.vue'
+import KeyframeEditor from '@/components/edit/KeyframeEditor.vue'
 import type { EditTrackKind, TimelineClip } from '@/types/edit'
 
 interface InspectorEntry {
@@ -132,7 +155,7 @@ interface InspectorEntry {
   trackKind: EditTrackKind
 }
 
-const props = defineProps<{ entries: InspectorEntry[] }>()
+const props = defineProps<{ entries: InspectorEntry[]; projectId: string }>()
 
 const emit = defineEmits<{
   (event: 'close'): void
@@ -152,7 +175,7 @@ const emit = defineEmits<{
 const primary = computed(() => props.entries[0])
 const ids = computed(() => props.entries.map((entry) => entry.clip.id))
 const hasAudio = computed(() =>
-  props.entries.every((entry) => entry.clip.kind === 'audio' || entry.clip.kind === 'video'),
+  props.entries.every((entry) => entry.clip.kind === 'audio' || entry.clip.kind === 'video' || entry.clip.kind === 'motion'),
 )
 const hasVisual = computed(() =>
   props.entries.every((entry) => entry.clip.kind !== 'audio'),
@@ -181,10 +204,12 @@ function formatRange(start: number, duration: number): string {
 }
 
 function kindLabel(kind: TimelineClip['kind']): string {
+  if (kind === 'motion') return '动效工程'
   return kind === 'audio' ? '音频' : kind === 'image' ? '图片' : kind === 'animation' ? '代码动画' : '视频'
 }
 
 function kindShort(kind: TimelineClip['kind']): string {
+  if (kind === 'motion') return '动'
   return kind === 'audio' ? '音' : kind === 'image' ? '图' : kind === 'animation' ? '码' : '视'
 }
 

@@ -4,7 +4,12 @@ import { useWorkspaceStore } from '@/stores/workspaceStore'
 import {
   AUDIO_CLIP_SECONDS,
   IMAGE_CLIP_SECONDS,
+  MOTION_CLIP_SECONDS,
   type AnimationSourceType,
+  type CaptionCue,
+  type ClipKeyframe,
+  type ProjectVersion,
+  type ProjectVersionSnapshot,
   MAX_PROJECT_SECONDS,
   MIN_CLIP_SECONDS,
   VIDEO_CLIP_SECONDS,
@@ -70,6 +75,14 @@ function normalizeProject(value: EditProject): EditProject {
     resolution: value.resolution === '2K' ? '2K' : '768P',
     tracks: list,
     assets: value.assets.filter((asset) => asset && typeof asset.url === 'string'),
+    captions: Array.isArray(value.captions)
+      ? value.captions.filter((cue) => cue && typeof cue.text === 'string').map((cue) => ({
+        ...cue,
+        start: Math.max(0, Number(cue.start) || 0),
+        duration: Math.max(MIN_CLIP_SECONDS, Number(cue.duration) || 3),
+      }))
+      : [],
+    versions: Array.isArray(value.versions) ? value.versions.filter((item) => item?.snapshot).slice(0, 8) : [],
   }
 }
 
@@ -88,6 +101,7 @@ function loadProjects(): EditProject[] {
 function defaultClipSeconds(kind: ProjectAssetKind): number {
   if (kind === 'audio') return AUDIO_CLIP_SECONDS
   if (kind === 'image') return IMAGE_CLIP_SECONDS
+  if (kind === 'motion') return MOTION_CLIP_SECONDS
   return VIDEO_CLIP_SECONDS
 }
 
@@ -133,8 +147,12 @@ const HISTORY_LIMIT = 40
 
 export function projectDuration(project: EditProject | null): number {
   if (!project) return DEFAULT_DURATION
-  const end = project.tracks.reduce((value, track) => Math.max(value, trackEnd(track)), 0)
-  return Math.min(MAX_PROJECT_SECONDS, Math.max(DEFAULT_DURATION, end))
+  const trackEndTime = project.tracks.reduce((value, track) => Math.max(value, trackEnd(track)), 0)
+  const captionEndTime = (project.captions || []).reduce(
+    (end, cue) => Math.max(end, cue.start + cue.duration),
+    0,
+  )
+  return Math.min(MAX_PROJECT_SECONDS, Math.max(DEFAULT_DURATION, trackEndTime, captionEndTime))
 }
 
 export function projectAssetClipCount(project: EditProject | null): number {
@@ -248,6 +266,8 @@ export const useEditProjectStore = defineStore('editProject', () => {
       updatedAt: now,
       tracks: defaultTracks(),
       assets: [],
+      captions: [],
+      versions: [],
     }
     projects.value.unshift(project)
     activeProjectId.value = project.id
@@ -427,6 +447,7 @@ export const useEditProjectStore = defineStore('editProject', () => {
       opacity: asset.kind === 'image' || asset.kind === 'animation' ? 1 : undefined,
       code: asset.code,
       codeLanguage: asset.codeLanguage,
+      motionId: asset.motionId,
     }
     track.clips.push(clip)
     touch(project)
@@ -492,6 +513,120 @@ export const useEditProjectStore = defineStore('editProject', () => {
     touch(project)
   }
 
+  function updateClipKeyframes(
+    projectId: string,
+    clipId: string,
+    property: 'volume' | 'opacity',
+    keyframes: ClipKeyframe[],
+  ) {
+    const project = getProject(projectId)
+    const found = project ? findClip(project, clipId) : null
+    if (!project || !found) return
+    recordHistory(project)
+    const points = keyframes.map((point) => ({
+      id: point.id || makeId('kf'),
+      time: Math.max(0, Math.min(found.clip.duration, Number(point.time) || 0)),
+      value: Math.max(0, Math.min(1, Number(point.value) || 0)),
+      easing: point.easing || 'linear',
+    })).sort((a, b) => a.time - b.time)
+    if (property === 'volume') found.clip.volumeKeyframes = points
+    else found.clip.opacityKeyframes = points
+    touch(project)
+  }
+
+  function addCaption(
+    projectId: string,
+    input: { text: string; start: number; duration?: number },
+  ): CaptionCue | null {
+    const project = getProject(projectId)
+    const text = input.text.trim()
+    if (!project || !text) return null
+    recordHistory(project)
+    const cue: CaptionCue = {
+      id: makeId('cap'),
+      text: text.slice(0, 500),
+      start: Math.max(0, Math.min(MAX_PROJECT_SECONDS, input.start)),
+      duration: Math.max(MIN_CLIP_SECONDS, Math.min(MAX_PROJECT_SECONDS, input.duration || 3)),
+    }
+    project.captions ||= []
+    project.captions.push(cue)
+    project.captions.sort((a, b) => a.start - b.start)
+    touch(project)
+    return cue
+  }
+
+  function updateCaption(projectId: string, captionId: string, patch: Partial<Omit<CaptionCue, 'id'>>) {
+    const project = getProject(projectId)
+    const cue = project?.captions?.find((item) => item.id === captionId)
+    if (!project || !cue) return
+    recordHistory(project)
+    if (typeof patch.text === 'string' && patch.text.trim()) cue.text = patch.text.trim().slice(0, 500)
+    if (typeof patch.start === 'number' && Number.isFinite(patch.start)) {
+      cue.start = Math.max(0, Math.min(MAX_PROJECT_SECONDS, patch.start))
+    }
+    if (typeof patch.duration === 'number' && Number.isFinite(patch.duration)) {
+      cue.duration = Math.max(MIN_CLIP_SECONDS, Math.min(MAX_PROJECT_SECONDS, patch.duration))
+    }
+    project.captions?.sort((a, b) => a.start - b.start)
+    touch(project)
+  }
+
+  function removeCaption(projectId: string, captionId: string) {
+    const project = getProject(projectId)
+    if (!project?.captions?.some((item) => item.id === captionId)) return
+    recordHistory(project)
+    project.captions = project.captions?.filter((item) => item.id !== captionId)
+    touch(project)
+  }
+
+  function snapshotOf(project: EditProject): ProjectVersionSnapshot {
+    return JSON.parse(JSON.stringify({
+      name: project.name,
+      aspectRatio: project.aspectRatio,
+      resolution: project.resolution,
+      fps: project.fps,
+      tracks: project.tracks,
+      captions: project.captions || [],
+    })) as ProjectVersionSnapshot
+  }
+
+  function saveVersion(projectId: string, label: string): ProjectVersion | null {
+    const project = getProject(projectId)
+    if (!project) return null
+    const version: ProjectVersion = {
+      id: makeId('ver'),
+      label: label.trim().slice(0, 60) || `版本 ${(project.versions?.length || 0) + 1}`,
+      createdAt: Date.now(),
+      snapshot: snapshotOf(project),
+    }
+    project.versions = [version, ...(project.versions || [])].slice(0, 8)
+    touch(project)
+    return version
+  }
+
+  function restoreVersion(projectId: string, versionId: string): boolean {
+    const project = getProject(projectId)
+    const version = project?.versions?.find((item) => item.id === versionId)
+    if (!project || !version) return false
+    recordHistory(project)
+    const snapshot = JSON.parse(JSON.stringify(version.snapshot)) as ProjectVersionSnapshot
+    project.name = snapshot.name
+    project.aspectRatio = snapshot.aspectRatio
+    project.resolution = snapshot.resolution
+    project.fps = snapshot.fps
+    project.tracks = snapshot.tracks
+    project.captions = snapshot.captions
+    touch(project)
+    return true
+  }
+
+  function removeVersion(projectId: string, versionId: string) {
+    const project = getProject(projectId)
+    if (!project?.versions?.some((item) => item.id === versionId)) return
+    project.versions = project.versions.filter((item) => item.id !== versionId)
+    touch(project)
+  }
+
   interface ClipAssetReplacement {
     clipId: string
     input: {
@@ -550,6 +685,42 @@ export const useEditProjectStore = defineStore('editProject', () => {
     }
     touch(project)
     return { status: 'applied', appliedClipIds: replacements.map((item) => item.clipId) }
+  }
+
+  /**
+   * 动效工程渲染成 MP4 后，把同一个时间轴位置换成普通视频片段。
+   * 这样整片导出仍然走既有视频合成链路，工程源文件保留在磁盘上可继续改。
+   */
+  function replaceMotionClipWithVideo(
+    projectId: string,
+    clipId: string,
+    input: { url: string; duration?: number; name?: string },
+  ): boolean {
+    const project = getProject(projectId)
+    const found = project ? findClip(project, clipId) : null
+    if (!project || !found || found.clip.kind !== 'motion') return false
+    recordHistory(project)
+    const asset: ProjectAsset = {
+      id: makeId('ast'),
+      name: `${input.name || found.clip.name} · 渲染`.slice(0, 80),
+      kind: 'video',
+      url: input.url,
+      duration: input.duration,
+      source: 'library',
+      createdAt: Date.now(),
+    }
+    project.assets.unshift(asset)
+    found.clip.kind = 'video'
+    found.clip.assetId = asset.id
+    found.clip.url = input.url
+    found.clip.name = asset.name
+    found.clip.motionId = undefined
+    found.clip.trimStart = 0
+    if (input.duration && input.duration > 0) {
+      found.clip.duration = Math.max(MIN_CLIP_SECONDS, Math.min(MAX_PROJECT_SECONDS, input.duration))
+    }
+    touch(project)
+    return true
   }
 
   /** 单个媒体替换仍保留给重试等调用方。 */
@@ -739,6 +910,28 @@ export const useEditProjectStore = defineStore('editProject', () => {
     return copy.id
   }
 
+  /** 单个片段平移或跨轨移动；只记一步撤销，并收掉腾空的原轨道。 */
+  function moveClip(projectId: string, clipId: string, start: number, targetTrackId?: string): boolean {
+    const project = getProject(projectId)
+    const found = project ? findClip(project, clipId) : null
+    if (!project || !found || !Number.isFinite(start)) return false
+    const target = targetTrackId
+      ? project.tracks.find((track) => track.id === targetTrackId)
+      : found.track
+    if (!target || !kindFitsTrack(found.clip.kind, target)) return false
+    recordHistory(project)
+    found.clip.start = Math.max(0, Math.min(MAX_PROJECT_SECONDS - found.clip.duration, start))
+    if (target.id !== found.track.id) {
+      found.track.clips = found.track.clips.filter((clip) => clip.id !== clipId)
+      target.clips.push(found.clip)
+      const kept = project.tracks.filter((track) => track.clips.length > 0)
+      project.tracks = kept.length ? kept : defaultTracks()
+      renumberTracks(project)
+    }
+    touch(project)
+    return true
+  }
+
   /** 整段平移，用于方向键微调。 */
   function nudgeClip(projectId: string, clipId: string, delta: number) {
     const project = getProject(projectId)
@@ -922,8 +1115,16 @@ export const useEditProjectStore = defineStore('editProject', () => {
     addAssetOnly,
     addAssetToTrack,
     updateClip,
+    updateClipKeyframes,
+    addCaption,
+    updateCaption,
+    removeCaption,
+    saveVersion,
+    restoreVersion,
+    removeVersion,
     replaceClipAsset,
     replaceClipAssets,
+    replaceMotionClipWithVideo,
     replaceAnimationSource,
     replaceAnimationSources,
     removeClip,
@@ -933,6 +1134,7 @@ export const useEditProjectStore = defineStore('editProject', () => {
     insertClip,
     nudgeClip,
     nudgeClips,
+    moveClip,
     moveClips,
     updateClips,
     setTrackMuted,

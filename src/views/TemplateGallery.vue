@@ -56,6 +56,16 @@
         <button
           type="button"
           role="tab"
+          :aria-selected="templateStore.tab === 'openmotion'"
+          :class="{ active: templateStore.tab === 'openmotion' }"
+          @click="switchTab('openmotion')"
+        >
+          OpenMotion
+          <span class="tpl-count">{{ openMotionCount }}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
           :aria-selected="templateStore.tab === 'custom'"
           :class="{ active: templateStore.tab === 'custom' }"
           @click="switchTab('custom')"
@@ -146,6 +156,10 @@
       </p>
 
     </div>
+
+      <div v-else-if="templateStore.tab === 'openmotion'" class="tpl-body tpl-skill-wrap">
+        <OpenMotionZone />
+      </div>
 
       <div v-else-if="templateStore.tab === 'skill'" class="tpl-body tpl-skill-wrap">
         <SkillZone />
@@ -316,6 +330,8 @@ import { useTemplateStore } from '@/stores/templateStore'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useSkillLibraryStore } from '@/stores/skillLibraryStore'
 import SkillZone from '@/components/template/SkillZone.vue'
+import OpenMotionZone from '@/components/template/OpenMotionZone.vue'
+import { OPENMOTION_TEMPLATES } from '@/features/template/openmotionCatalog'
 import { confirmDialog } from '@/features/ui/dialog'
 import {
   MAX_ATTACHMENTS,
@@ -404,10 +420,12 @@ function toggleSelected(id: string) {
     : [...selectedIds.value, id]
 }
 
-function switchTab(tab: 'builtin' | 'custom' | 'skill') {
+function switchTab(tab: 'builtin' | 'custom' | 'skill' | 'openmotion') {
   templateStore.tab = tab
   selectedIds.value = []
 }
+
+const openMotionCount = OPENMOTION_TEMPLATES.length
 
 /** 打开模板库时带的返回地址（例如从剪辑台进来）。 */
 function fromPath(): string {
