@@ -1703,7 +1703,37 @@ try {
   assert.ok(mentionTemplates.includes('@模板1、@模板2'), '@模板N 必须能对应到模板清单')
   assert.ok(mentionTemplates.includes('已应用模板 1') && mentionTemplates.includes('已应用模板 2'))
 
-  console.log('✓ Agent Harness：SSE、多步回注、普通/创作切换、双引擎确认与持久化、取消、CLI 门禁、刷新恢复、六镜全片、4路并发、失败重试、定位入轨、改稿原位替换、轮询幂等、续跑跳镜与完全模式自动确认全部通过（全部为本地 mock）')
+  // “继续任务”必须续用上一轮计划：不能重建计划，也不能从第一步重读。
+  const planConversation = store.createConversation(false)
+  const planRun = {
+    version: 1, status: 'stopped', phase: 'done', currentStep: 2,
+    plan: [
+      { id: 'plan_1', content: '读取 5 个动效工程', status: 'completed' },
+      { id: 'plan_2', content: 'S01 改为图纸绘制 Logo', status: 'in_progress' },
+      { id: 'plan_3', content: 'S02-S05 去椭圆遮罩并换抠图', status: 'pending' },
+    ],
+    activities: [], startedAt: Date.now() - 4_000, updatedAt: Date.now() - 3_000,
+  }
+  planConversation.messages.push(
+    { id: 'plan_user_1', role: 'user', content: '把这 5 个动效工程按清单改好', createdAt: Date.now() - 5_000, status: 'done' },
+    { id: 'plan_assistant_1', role: 'assistant', content: '已读取 S01，先改蓝图镜头。', createdAt: Date.now() - 3_000, status: 'stopped', run: planRun },
+  )
+  const planRequestStart = modelRequests.length
+  queuedResponses.push({ content: '接着改 S01。', toolCalls: [] })
+  await store.sendMessage('继续任务', { conversationId: planConversation.id })
+  await waitFor(() => !store.isStreaming)
+  const planRequest = modelRequests[planRequestStart]
+  const planNote = planRequest.messages.find(
+    (message) => message.role === 'system' && String(message.content).startsWith('## 当前任务计划（执行事实'),
+  )
+  assert.ok(planNote, '续跑时必须把上一轮计划作为执行事实回注')
+  assert.match(planNote.content, /\[已完成\] 读取 5 个动效工程/)
+  assert.match(planNote.content, /\[进行中\] S01 改为图纸绘制 Logo/)
+  assert.match(planNote.content, /\[待办\] S02-S05/)
+  assert.match(planNote.content, /不要新建计划/, '必须明确告诉模型不要重建计划')
+  assert.match(planNote.content, /不要整份重读/, '已完成的读取步骤不应重复执行')
+
+  console.log('✓ Agent Harness：SSE、多步回注、普通/创作切换、双引擎确认与持久化、取消、CLI 门禁、刷新恢复、六镜全片、4路并发、失败重试、定位入轨、改稿原位替换、轮询幂等、续跑跳镜、计划续跑与完全模式自动确认全部通过（全部为本地 mock）')
 } finally {
   globalThis.fetch = originalFetch
   await server.close()

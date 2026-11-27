@@ -407,6 +407,34 @@ export const useAgentStore = defineStore('agent', () => {
     }).join('\n')
   }
 
+  /**
+   * 最近一轮留下的任务计划。计划原本只挂在 assistant.run 上，历史消息里看不到，
+   * 于是用户每说一次“继续”，模型都会当成新任务重新 update_plan、从头读工程。
+   * 这里把计划提成一条系统事实，让续跑从第一个未完成步骤接上。
+   */
+  function activePlanContext(conversation: AgentConversation): string {
+    for (let index = conversation.messages.length - 1; index >= 0; index -= 1) {
+      const message = conversation.messages[index]
+      const plan = message.run?.plan?.filter((item) => item.content)
+      if (!plan?.length) continue
+      const pending = plan.filter((item) => item.status !== 'completed')
+      if (!pending.length) return ''
+      const lines = plan.map((item, step) => {
+        const mark = item.status === 'completed' ? '已完成' : item.status === 'in_progress' ? '进行中' : '待办'
+        return `${step + 1}. [${mark}] ${item.content}`
+      })
+      return [
+        '## 当前任务计划（执行事实，来自本对话上一轮）',
+        ...lines,
+        '',
+        '- 用户说「继续 / 继续任务 / 接着做」时，从上面第一个未完成步骤接着执行，不要新建计划，也不要把已完成步骤重做。',
+        '- 只有用户提出全新任务、或明确要求换方案时，才允许用 update_plan 重建计划。',
+        '- 已标记完成的步骤，其涉及的文件和结论直接沿用；需要用源码时按 query/offset 定点确认，不要整份重读。',
+      ].join('\n')
+    }
+    return ''
+  }
+
   function latestUserMessage(history: AgentMessage[]): AgentMessage | null {
     for (let index = history.length - 1; index >= 0; index -= 1) {
       if (history[index].role === 'user') return history[index]
@@ -502,7 +530,16 @@ export const useAgentStore = defineStore('agent', () => {
           content: `## 更早对话摘要（自动压缩，逐字记录已省略）\n${digest}\n\n需要细节时重新读取项目或动效工程，不要凭摘要臆测已经改过什么。`,
         }]
       : []
-    return [{ role: 'system', content: systemPrompt }, ...digestMessage, ...history]
+    const planNote = activePlanContext(conversation)
+    const planMessage: AgentChatMessage[] = planNote
+      ? [{ role: 'system', content: planNote }]
+      : []
+    return [
+      { role: 'system', content: systemPrompt },
+      ...planMessage,
+      ...digestMessage,
+      ...history,
+    ]
   }
 
   /** 本机 CLI Agent 使用纯对话记录，系统提示词由本地服务统一拼装。 */

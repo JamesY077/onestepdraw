@@ -178,7 +178,7 @@ function nativeToolsBlock(mode: ConversationMode, creativeEngine: CreativeEngine
 - read_motion_project / write_motion_project：读取并写回工程源码。read 支持 offset/limit 分页和 query 关键字定位，工具结果过长只会返回带 truncated 标记的预览，不会给你半截 JSON；小改动一律用 write 的 mode=patch 替换原文，不要为了改一句文案重写整份文件。图片使用 <img src="assets/..."> 或 data-var-src 绑定，不把 Logo 交给 generate_image。
 - review_motion_project：用官方 HyperFrames check 复查字体、安全区、元素重叠/过近、对比度与运行时错误；按问题修改对应元素，不重写整份工程。
 - render_motion_project：用户确认出片后，才用本机 HyperFrames CLI 渲染 MP4 导出产物（不改时间轴片段）。
-- read_project / edit_timeline / update_plan / open_voice：通用项目、剪辑、规划与配音能力。
+- read_project / edit_timeline / update_plan / open_voice：通用项目、剪辑、规划与配音能力。上下文已有「当前任务计划」时，从第一个未完成步骤继续，不要重建计划。
 
 动画模式没有 generate_image、generate_video、generate_storyboard 或 open_3d。不要尝试用旧 onestep-tool 绕过；需要这些能力时说明应切换 AIGC 模式。
 工具失败会回注，修正参数后继续，不要无限重试。`
@@ -192,7 +192,7 @@ function nativeToolsBlock(mode: ConversationMode, creativeEngine: CreativeEngine
 - generate_storyboard：旧协议兼容入口，同样只制作分镜草案，不会直接启动生成。
 - read_project：读取最新项目与时间轴，项目状态可能已变化时先读再改。
 - edit_timeline：直接移动、裁剪、删除片段或调整音量/透明度。
-- update_plan：仅复杂任务使用，维护不超过 6 个可验证阶段；简单任务不要制造计划。
+- update_plan：仅复杂任务使用，维护不超过 6 个可验证阶段；简单任务不要制造计划。上下文已有「当前任务计划」时沿用并只推进未完成步骤，不要重建。
 - open_voice / open_3d：把已确认的文本或建模需求带到对应工作台，不会直接发起生成。
 
 当前是 AIGC 模式，没有 OpenMotion / HyperFrames 工程工具；动效与模板复刻需求应提示用户切换动画模式。
@@ -248,7 +248,7 @@ export function buildAgentSystemPrompt(options: AgentPromptOptions = {}): string
 - 预计要连续调用 3 个以上工具才能完成。
 
 拆解规则：
-1. 先调用 update_plan 建立 2-12 步计划，每步是一个可验证的阶段，并把它当作本轮的执行清单。
+1. 先调用 update_plan 建立 2-12 步计划，每步是一个可验证的阶段，并把它当作本轮的执行清单。如果上下文里已经有「当前任务计划」，直接沿用并从第一个未完成步骤继续，不要重建计划，也不要重做已完成步骤。
 2. 一个 Step 只推进一个阶段。完成当前阶段的工具调用后，先用一句进度说明再继续，例如「1/5 已完成：改好片头文案；现在做 2/5：调整配色」，不要一声不吭连跑完全部步骤。
 3. 阶段推进时同步更新 update_plan：刚做完的标 completed，正在做的标 in_progress。上一步失败就如实标注，并说明这一步没成、后面是否继续。
 4. 单次输出放不下时不要硬塞：先写最小可用版本，再分次补全（动效源码用 write_motion_project 的 mode=append 分块，最后一块传 final=true），不要输出半截 JSON。
