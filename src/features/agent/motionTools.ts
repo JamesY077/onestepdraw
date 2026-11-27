@@ -1,13 +1,93 @@
 import { OPENMOTION_TEMPLATES } from '@/features/template/openmotionCatalog'
 import { openMotionTags, type OpenMotionTemplate } from '@/features/template/openmotionTypes'
-import { fetchMotionText, motionAssetUrl } from '@/api/motion'
+import { fetchMotionText, motionAssetUrl, checkMotionProject } from '@/api/motion'
 import { useMotionStore } from '@/stores/motionStore'
 import { useEditProjectStore } from '@/stores/editProjectStore'
 import type { AgentToolCall } from './tools'
-import type { AgentConversation } from '@/types/agent'
+import type { AgentConversation, AgentProduction } from '@/types/agent'
+import { aspectSize } from '@/types/edit'
 
 const MAX_DOC_CHARS = 16_000
 const MAX_SOURCE_CHARS = 80_000
+
+export function motionDimensions(production: Pick<AgentProduction, 'aspectRatio' | 'resolution'>) {
+  const base = aspectSize(production.aspectRatio)
+  const scale = production.resolution === '2K' ? 2 : 1
+  return { width: base.width * scale, height: base.height * scale }
+}
+
+function normalizeAssetReference(value: string) {
+  const withoutQuery = value.trim().split(/[?#]/, 1)[0]
+  try {
+    return decodeURIComponent(withoutQuery).replace(/^\.\//, '')
+  } catch {
+    return withoutQuery.replace(/^\.\//, '')
+  }
+}
+
+/** 只接受真实媒体元素属性；注释或 JS 字符串里出现路径不算引用。 */
+export function motionSourceAssetReferences(source: string): Set<string> {
+  const references = new Set<string>()
+  const html = source.replace(/<!--[\s\S]*?-->/g, '')
+  const tags = html.match(/<(?:img|video|audio|source|image|use)\b[^>]*>/gi) || []
+  for (const tag of tags) {
+    const attributes = tag.matchAll(/(?:src|srcset|href|xlink:href|data-var-src)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)
+    for (const match of attributes) {
+      const value = match[1] || match[2] || match[3] || ''
+      for (const candidate of value.split(',')) {
+        const url = candidate.trim().split(/\s+/, 1)[0]
+        if (url) references.add(normalizeAssetReference(url))
+      }
+    }
+  }
+  return references
+}
+
+export function motionSourceHasAsset(source: string, path: string): boolean {
+  return motionSourceAssetReferences(source).has(normalizeAssetReference(path))
+}
+
+function activeAnimationShot(conversation: AgentConversation) {
+  const production = conversation.production
+  if (production?.engine !== 'animation' || production.status !== 'running') return undefined
+  return production.shots.find((shot) => shot.status === 'running')
+}
+
+function validateShotSource(
+  source: string,
+  shot: ReturnType<typeof activeAnimationShot>,
+  conversation: AgentConversation,
+) {
+  if (!shot) return
+  const htmlWithoutComments = source.replace(/<!--[\s\S]*?-->/g, '')
+  if (shot.motionId && !htmlWithoutComments.includes(shot.id)) throw new Error(`${shot.id} 源码必须保留镜号标记 ${shot.id}。`)
+  const production = conversation.production
+  if (production) {
+    const expected = motionDimensions(production)
+    const composition = htmlWithoutComments.match(/<[^>]+data-composition-id\s*=\s*["']main["'][^>]*>/i)?.[0] || ''
+    const width = Number(composition.match(/data-width\s*=\s*["'](\d+)["']/i)?.[1])
+    const height = Number(composition.match(/data-height\s*=\s*["'](\d+)["']/i)?.[1])
+    if (width !== expected.width || height !== expected.height) {
+      throw new Error(`${shot.id} 主 composition 必须为 data-width="${expected.width}" data-height="${expected.height}"（${production.aspectRatio} · ${production.resolution}）。`)
+    }
+  }
+  const missing = (shot.requiredAssetPaths || []).filter((path) => !motionSourceHasAsset(source, path))
+  if (missing.length) throw new Error(`${shot.id} 未在真实媒体元素中引用用户原始素材：${missing.join('、')}。禁止近似重绘 Logo。`)
+  if (shot.requiredAssetPaths?.length && /filter\s*:[^;}]*(?:invert|brightness\s*\(\s*0)/i.test(source)) {
+    throw new Error(`${shot.id} 含有 invert / brightness(0) 滤镜，可能改变用户 Logo 原色，已拒绝写回。`)
+  }
+}
+
+async function importMotionAsset(motionId: string, source: string, fileName = '') {
+  const response = await fetch('/local/motion/import', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: motionId, source, fileName }),
+  })
+  const payload = await response.json()
+  if (!response.ok || payload?.ok === false) throw new Error(payload?.error || '导入动效素材失败。')
+  return payload
+}
 
 function findTemplate(id: unknown): OpenMotionTemplate {
   const key = String(id || '').trim()
@@ -35,10 +115,17 @@ function summarizeTemplate(template: OpenMotionTemplate) {
 export async function executeMotionTool(
   call: AgentToolCall,
   conversation: AgentConversation,
-  timeline: { allowedClipIds?: Set<string> },
+  timeline: { allowedClipIds?: Set<string>; allowedMotionIds?: Set<string> },
 ): Promise<unknown> {
   const motion = useMotionStore()
   const projects = useEditProjectStore()
+  if (
+    timeline.allowedMotionIds &&
+    ['read_motion_project', 'write_motion_project', 'import_motion_asset', 'review_motion_project', 'render_motion_project'].includes(call.name) &&
+    !timeline.allowedMotionIds.has(String(call.args.motionId || ''))
+  ) {
+    throw new Error('已阻止访问未选中的动效工程。')
+  }
 
   if (call.name === 'list_motion_templates') {
     const query = String(call.args.query || '').trim().toLowerCase()
@@ -94,45 +181,112 @@ export async function executeMotionTool(
   }
 
   if (call.name === 'create_motion_project') {
+    if (timeline.allowedMotionIds) throw new Error('已阻止在元素级修改中创建未选中的动效工程。')
     if (!conversation.projectId) throw new Error('当前对话没有关联剪辑项目，无法把动效工程放入时间轴。')
+    const shot = activeAnimationShot(conversation)
+    if (shot?.motionId || shot?.clipId) throw new Error(`${shot.id} 已创建工程 ${shot.motionId || shot.clipId}，请继续写回源码，不要重复创建。`)
+    if (shot) {
+      if (Number(call.args.at) !== shot.timelineStart || Number(call.args.duration) !== shot.duration) {
+        throw new Error(`${shot.id} 必须固定使用 at=${shot.timelineStart ?? 0}、duration=${shot.duration}，不得改变镜头槽位。`)
+      }
+    }
+    if (shot && typeof call.args.source === 'string' && call.args.source.trim()) {
+      throw new Error(`${shot.id} 请分两步执行：先 create_motion_project 获得 motionId 与素材路径，再 write_motion_project 写回完整源码。`)
+    }
     const template = call.args.templateId ? findTemplate(call.args.templateId) : undefined
-    const name = String(call.args.name || template?.name || '未命名动效').slice(0, 80)
+    const rawName = String(call.args.name || template?.name || '未命名动效').slice(0, 72)
+    const name = shot ? `${shot.id} · ${rawName}` : rawName
+    const dimensions = shot && conversation.production ? motionDimensions(conversation.production) : undefined
     const project = await motion.create({
       name,
       template,
-      width: template?.width,
-      height: template?.height,
+      width: dimensions?.width || template?.width,
+      height: dimensions?.height || template?.height,
     })
-    const source = typeof call.args.source === 'string' ? call.args.source.trim() : ''
-    if (source) await motion.saveSource(project.id, source)
-    const clip = projects.appendAsset(
-      conversation.projectId,
-      {
-        kind: 'motion',
-        name,
-        url: project.entryUrl || '',
+    const requiredAssetPaths: string[] = []
+    let clipId = ''
+    try {
+      if (shot) {
+        shot.motionId = project.id
+        for (const source of shot.requiredAssetSources || []) {
+          const imported = await importMotionAsset(project.id, source)
+          requiredAssetPaths.push(String(imported.path))
+        }
+        shot.requiredAssetPaths = requiredAssetPaths
+      }
+      const source = typeof call.args.source === 'string' ? call.args.source.trim() : ''
+      if (source) {
+        validateShotSource(source, shot, conversation)
+        await motion.saveSource(project.id, source)
+        if (shot) shot.motionSourceReady = true
+      }
+      const shotTrack = shot ? projects.createTrack(conversation.projectId, 'video') : null
+      const clip = projects.appendAsset(
+        conversation.projectId,
+        {
+          kind: 'motion',
+          name,
+          url: project.entryUrl || '',
+          motionId: project.id,
+          source: 'chat',
+        },
+        {
+          at: shot?.timelineStart ?? (typeof call.args.at === 'number' ? call.args.at : undefined),
+          duration: shot?.duration || template?.duration || (typeof call.args.duration === 'number' ? call.args.duration : undefined),
+          trackId: shotTrack?.id,
+        },
+      )
+      if (!clip) throw new Error('时间轴片段创建失败。')
+      clipId = clip.id
+      if (shot) shot.clipId = clip.id
+      return {
+        ok: true,
         motionId: project.id,
-        thumbnail: template ? motionAssetUrl(template.cover) : undefined,
-        source: 'chat',
-      },
-      {
-        at: typeof call.args.at === 'number' ? call.args.at : undefined,
-        duration: template?.duration || undefined,
-      },
-    )
+        clipId: clip.id,
+        shotId: shot?.id,
+        requiredAssetPaths,
+        entryUrl: project.entryUrl,
+        missingFiles: project.missingFiles || [],
+        message: requiredAssetPaths.length
+          ? `工程已入轨。用户原始素材已复制到 ${requiredAssetPaths.join('、')}；write_motion_project 的源码必须真实引用这些路径，禁止重绘或改色。`
+          : '动效工程已入轨。改文案与动效用 read_motion_project / write_motion_project；要出片再 render_motion_project。',
+      }
+    } catch (error) {
+      // 创建、素材导入、源码写回和入轨是一个事务；任何一步失败都不留下孤儿工程或半入轨片段。
+      if (clipId) projects.removeClip(conversation.projectId, clipId)
+      if (shot) {
+        shot.motionId = undefined
+        shot.clipId = undefined
+        shot.requiredAssetPaths = undefined
+        shot.motionSourceReady = false
+      }
+      try {
+        await motion.discard(project.id)
+      } catch (rollbackError) {
+        throw new Error(`${(error as Error)?.message || error}；工程回滚失败：${(rollbackError as Error)?.message || rollbackError}`)
+      }
+      throw error
+    }
+  }
+
+  if (call.name === 'import_motion_asset') {
+    const motionId = String(call.args.motionId || '').trim()
+    const source = String(call.args.source || '').trim()
+    if (!motionId || !source) throw new Error('需要 motionId 与上传素材地址 source。')
+    const shot = activeAnimationShot(conversation)
+    if (shot && shot.motionId !== motionId) throw new Error(`${shot.id} 只能导入到自己的工程 ${shot.motionId || '(尚未创建)'}。`)
+    const payload = await importMotionAsset(motionId, source, String(call.args.fileName || ''))
     return {
-      ok: true,
-      motionId: project.id,
-      clipId: clip?.id,
-      entryUrl: project.entryUrl,
-      missingFiles: project.missingFiles || [],
-      message: '动效工程已入轨。改文案与动效用 read_motion_project / write_motion_project；要出片再 render_motion_project。',
+      ...payload,
+      message: `素材已复制到 ${payload.path}。请在 index.html 中使用这个相对路径，不要再调用图片/视频生成。`,
     }
   }
 
   if (call.name === 'read_motion_project') {
     const motionId = String(call.args.motionId || '').trim()
     if (!motionId) throw new Error('缺少 motionId。')
+    const shot = activeAnimationShot(conversation)
+    if (shot && shot.motionId && shot.motionId !== motionId) throw new Error(`${shot.id} 只能读取自己的工程 ${shot.motionId}。`)
     const state = await motion.load(motionId, true)
     if (!state.source) throw new Error(state.error || '读取工程失败。')
     return {
@@ -149,7 +303,11 @@ export async function executeMotionTool(
     const motionId = String(call.args.motionId || '').trim()
     const source = String(call.args.source || '')
     if (!motionId || !source.trim()) throw new Error('需要 motionId 与完整源码 source。')
+    const shot = activeAnimationShot(conversation)
+    if (shot && shot.motionId !== motionId) throw new Error(`${shot.id} 只能写回自己的工程 ${shot.motionId || '(尚未创建)'}。`)
+    validateShotSource(source, shot, conversation)
     const state = await motion.saveSource(motionId, source)
+    if (shot) shot.motionSourceReady = true
     return {
       ok: true,
       motionId,
@@ -158,31 +316,45 @@ export async function executeMotionTool(
     }
   }
 
+  if (call.name === 'review_motion_project') {
+    const motionId = String(call.args.motionId || '').trim()
+    if (!motionId) throw new Error('缺少 motionId。')
+    const report = await checkMotionProject(motionId, Number(call.args.samples) || 5)
+    const actionable = report.findings
+      .filter((finding) => finding.severity !== 'info')
+      .slice(0, 24)
+      .map((finding) => ({
+        severity: finding.severity,
+        stage: finding.stage,
+        code: finding.code,
+        message: finding.message,
+        selector: finding.selector,
+        time: finding.time,
+      }))
+    return {
+      ok: report.passed,
+      motionId,
+      summary: report.summary,
+      browserSkipped: report.browserSkipped,
+      findings: actionable,
+      message: report.ok
+        ? '复查通过；没有 error 级问题。warning 可作为优化项，不必重写整份工程。'
+        : '复查发现 error 级问题：请只在最新源码上修正对应元素（字体、安全区、重叠、对比度），修完再调用 review_motion_project；禁止重做整份工程或回退此前的修改。',
+    }
+  }
+
   if (call.name === 'render_motion_project') {
     const motionId = String(call.args.motionId || '').trim()
     if (!motionId) throw new Error('缺少 motionId。')
     const url = await motion.render(motionId)
-    let replacedClipId = ''
-    if (conversation.projectId) {
-      const project = projects.getProject(conversation.projectId)
-      const candidates = project
-        ? project.tracks.flatMap((track) => track.clips).filter((clip) => clip.motionId === motionId)
-        : []
-      const requested = String(call.args.clipId || '')
-      const target = candidates.find((clip) => clip.id === requested) || candidates[0]
-      if (target) {
-        if (timeline.allowedClipIds && !timeline.allowedClipIds.has(target.id)) {
-          throw new Error('已阻止替换未选中的片段；MP4 已渲染完成，可手动放回时间轴。')
-        }
-        projects.replaceMotionClipWithVideo(conversation.projectId, target.id, {
-          url,
-          name: target.name,
-          duration: target.duration,
-        })
-        replacedClipId = target.id
-      }
+    // 时间轴固定使用 HyperFrames 实时工程预览：渲染只是导出产物，
+    // 不再把片段换成 MP4 快照，避免某次空白/过期渲染长期占住轨道。
+    return {
+      ok: true,
+      url,
+      motionId,
+      message: 'MP4 已渲染完成；时间轴仍使用实时工程预览，导出时按 motionId 现场出片。',
     }
-    return { ok: true, url, clipId: replacedClipId, message: 'MP4 已渲染完成。' }
   }
 
   throw new Error(`未知的动效工具：${call.name}`)

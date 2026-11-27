@@ -56,6 +56,8 @@ export interface LocalAgentStreamOptions {
   mode?: 'chat' | 'create'
   /** default = 分轮提问，auto = 模型自行决策。 */
   automation?: 'default' | 'auto'
+  /** 创作引擎：动画禁用付费生成；AIGC 保持原图片/视频路线。 */
+  creativeEngine?: 'animation' | 'aigc'
   /** 当前剪辑项目摘要，让 Agent 能做时间轴操作。 */
   projectSummary?: string
   /** Skill 专区启用的 Skill 正文，会注入本机 Agent 的提示词。 */
@@ -124,6 +126,7 @@ export async function streamLocalAgent(options: LocalAgentStreamOptions): Promis
       model: options.model || '',
       mode: options.mode || 'chat',
       automation: options.automation || 'default',
+      creativeEngine: options.creativeEngine || 'aigc',
       projectSummary: options.projectSummary || '',
       skills: options.skills || '',
       custom: options.custom || null,

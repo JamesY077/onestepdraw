@@ -13,7 +13,7 @@ source: https://github.com/mattpocock/skills/tree/main/grill-me
 
 ## 平台事实（先记住，不要问平台做不到的事）
 
-- 工具：`generate_video(prompt, aspect_ratio, resolution, duration)`
+- 工具：`prepare_storyboard(...)` 先保存分镜草案；用户在剪辑台确认后，宿主才执行视频生成
 - 比例：`16:9` / `9:16` / `1:1`；分辨率：`768P` / `2K`；时长：`4–15` 秒整数
 - 默认：`16:9` / `768P` / `5` 秒；模型固定 `MiniMax H3`
 - 一次生成**一个连续镜头**，不支持多镜头剪辑；多场景要分多次生成
@@ -84,18 +84,10 @@ source: https://github.com/mattpocock/skills/tree/main/grill-me
 
 **最终提示词**：深夜城市街角便利店门口，一只湿漉漉的橘猫蹲在暖黄灯箱下，抬头看雨；雨逐渐变小，它抖了抖耳朵，转头看向镜头。中景平视 35mm，镜头缓慢推近，便利店灯箱作主光，冷蓝夜色作环境光，电影感实拍，轻微胶片颗粒，低饱和，画面中没有其他人、文字和品牌 logo。
 
-回复「生成」我就开始。
+下一步会在剪辑台展示分镜，确认后才开始生成。
 ```
 
-用户确认（或直接说「生成」）之后，才输出工具块：
-
-````text
-```onestep-tool
-{"tool":"generate_video","args":{"prompt":"……","aspect_ratio":"16:9","resolution":"768P","duration":5}}
-```
-````
-
-工具块必须是回复的最后内容，之后不要再写任何字。
+拍摄单完整后调用 `prepare_storyboard`，单镜使用 S01。该工具只把草案放入剪辑台，不发起付费生成；用户点击「确认分镜并执行」后，宿主才按分镜运行视频生成。
 
 ## 提示词写法（直接决定准确度）
 
@@ -150,7 +142,7 @@ source: https://github.com/mattpocock/skills/tree/main/grill-me
 
 用户：`生成`
 
-助手：输出 `generate_video` 工具块。
+助手：输出 `prepare_storyboard` 工具调用，等待用户在剪辑台确认。
 
 ---
 

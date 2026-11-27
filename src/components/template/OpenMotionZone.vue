@@ -178,7 +178,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { OPENMOTION_TEMPLATES } from '@/features/template/openmotionCatalog'
 import {
   buildOpenMotionHandoff,
@@ -187,7 +187,7 @@ import {
   type OpenMotionTemplate,
 } from '@/features/template/openmotionTypes'
 import { createMotionProject, motionAssetUrl, fetchMotionText } from '@/api/motion'
-import { flashComposerPrompt } from '@/features/template/navigation'
+import { clearTemplatesReturn, flashComposerPrompt, peekTemplatesReturn, sanitizeReturnPath } from '@/features/template/navigation'
 import { useChatModeStore } from '@/stores/chatModeStore'
 import { useEditProjectStore } from '@/stores/editProjectStore'
 
@@ -198,6 +198,7 @@ const SORTS = [
 ] as const
 
 const router = useRouter()
+const route = useRoute()
 const chatMode = useChatModeStore()
 const projects = useEditProjectStore()
 
@@ -272,26 +273,35 @@ function closeDetail() {
   doc.value = ''
 }
 
+function returnToComposer() {
+  const target = sanitizeReturnPath(route.query.from) || peekTemplatesReturn() || '/chat'
+  clearTemplatesReturn()
+  void router.push(target)
+}
+
 function recreate(template: OpenMotionTemplate) {
   chatMode.setConversation('create')
-  flashComposerPrompt(buildOpenMotionHandoff(template))
+  chatMode.setCreativeEngine('animation')
+  flashComposerPrompt(buildOpenMotionHandoff(template), 'animation')
   notice.value = '已把完整复刻要求放进创作对话输入框，确认后发送。'
-  void router.push('/chat')
+  returnToComposer()
 }
 
 function startRemake() {
   const url = remakeUrl.value.trim()
   if (!url) return
   chatMode.setConversation('create')
-  flashComposerPrompt(buildReferenceRemakePrompt(url))
+  chatMode.setCreativeEngine('animation')
+  flashComposerPrompt(buildReferenceRemakePrompt(url), 'animation')
   remakeUrl.value = ''
   notice.value = '已把参考链接和复刻要求放进创作对话输入框。'
-  void router.push('/chat')
+  returnToComposer()
 }
 
 async function createProject() {
   const template = detail.value
   if (!template || creating.value) return
+  chatMode.setCreativeEngine('animation')
   creating.value = true
   try {
     const project = await createMotionProject({
@@ -308,7 +318,6 @@ async function createProject() {
         name: `${template.name}.动效工程`,
         url: project.entryUrl || '',
         motionId: project.id,
-        thumbnail: motionAssetUrl(template.cover),
         source: 'library',
       },
       { duration: template.duration || undefined },

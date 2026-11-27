@@ -95,6 +95,16 @@ npm run app:dmg         # 打包成 release/Stepframe-<version>-arm64.dmg
 
 素材与生成结果都在 `~/Library/Application Support/Stepframe/data/`；聊天记录、项目结构这类小数据仍在 localStorage 里。桌面版固定监听 `127.0.0.1:41739`（可用 `ONESTEP_APP_PORT` 改），因为浏览器数据按 origin 隔离，端口一变项目就会看起来「消失」。
 
+**渲染引擎不依赖用户装 Chrome。** 界面虽然跑在 Electron 里，但导出 MP4 时 HyperFrames 需要一个可被 CDP 驱动的独立 Chromium，Electron 主进程不能直接当无头浏览器用。`npm run app:pack` / `app:dmg` 会先执行 `prepare:runtime`，把官方锁定的 `chrome-headless-shell` 放进 `.runtime/`，再随安装包复制到 `Resources/chrome-headless-shell/`，运行时通过 `HYPERFRAMES_BROWSER_PATH` 指向它。因此：
+
+- 首次导出不会再去 `~/.cache` 下载约 200MB 的浏览器，断网也能渲染；
+- 不会调用系统 Chrome / Edge，也不会受用户浏览器版本影响；
+- 开发态直接用 `npm run app` 时会读取项目里的 `.runtime/`；如果还没准备，执行一次 `npm run prepare:runtime`。
+
+导出还依赖 FFmpeg。默认构建会把 `ffmpeg-static` 与 `@ffprobe-installer/ffprobe` 复制到 `Resources/ffmpeg/`，用户机器不需要另装 FFmpeg；也可以用 `STEPFRAME_FFMPEG_DIR=/path/to/ffmpeg-bin`（目录里同时有 `ffmpeg` 和 `ffprobe`）替换成自己的构建。未内置时才回退到系统 PATH / Homebrew，并在缺失时给出明确提示。`ffmpeg-static` 是带 x264/libpostproc 的 GPL 构建，对外分发前请确认许可证合规；需要 LGPL 构建时用 `STEPFRAME_FFMPEG_DIR` 指定。对外分发还需要 Apple Developer ID 签名与公证，否则其他 Mac 首次打开会被 Gatekeeper 拦截。
+
+打包产物约 750MB（Electron + 依赖 + 内置 Chromium），DMG 会有压缩。
+
 ### 本地服务做了什么
 
 `server/local/server.mjs` 是一个零依赖的 Node 服务：
@@ -125,7 +135,7 @@ API Key 只保存在当前浏览器会话中，不会写入项目文件或上传
 
 也可以在输入框上方主动选择创作对话，再说「帮我生成一张极简白色香水主视觉，16:9」。Agent 会确认创作所需的关键参数并调用模型。生成结果以卡片形式出现在消息下方，可点击查看原图 / 播放视频；视频生成会显示排队与渲染进度。
 
-内置 Stepframe Agent 已接入轻量 Agent Harness：原生 Function Calling → 工具执行 → 结果回注 → 继续推理，单轮最多 8 步。计划、项目读取、时间轴修改和生成任务都有可折叠执行轨迹；长图片/视频任务仍在后台卡片中运行，不阻塞下一轮对话。不支持原生工具的模型会降级到旧文本协议。架构、权限边界与恢复语义见 [`docs/agent-harness.md`](docs/agent-harness.md)。
+内置 Stepframe Agent 已接入轻量 Agent Harness：原生 Function Calling → 工具执行 → 结果回注 → 继续推理，直到任务完成或用户主动停止，不设固定步数上限。计划、项目读取、时间轴修改和生成任务都有可折叠执行轨迹；长图片/视频任务仍在后台卡片中运行，不阻塞下一轮对话。不支持原生工具的模型会降级到旧文本协议。架构、权限边界与恢复语义见 [`docs/agent-harness.md`](docs/agent-harness.md)。
 
 ### 两种对话模式
 

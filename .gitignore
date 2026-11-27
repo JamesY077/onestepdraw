@@ -32,6 +32,10 @@ test-results/
 # 本机 Agent 生成产物
 generated/
 
+# 本地服务运行时数据（动效工程与模板缓存，不入库）
+motion-cache/
+motion-projects/
+
 # 模板导入缓存
 .cache/
 __pycache__/

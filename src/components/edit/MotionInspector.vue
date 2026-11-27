@@ -13,6 +13,7 @@
       <hyperframes-player
         v-if="previewUrl"
         :key="previewKey"
+        ref="playerRef"
         :src="previewUrl"
         :width="state.meta?.width || 1280"
         :height="state.meta?.height || 720"
@@ -78,16 +79,59 @@
     </div>
 
     <div class="mi-block">
+      <div class="mi-review-head">
+        <strong>复查校验</strong>
+        <span v-if="reviewSummary" class="mi-review-summary" :class="{ bad: reviewSummary.errorCount > 0 }">
+          {{ reviewSummary.errorCount }} error · {{ reviewSummary.warningCount }} warning
+        </span>
+      </div>
+      <p class="mi-hint">官方 HyperFrames check 复查字体、运行时与对比度，并额外检查 5% 动作安全区、10% 文字安全区、文字重叠与过近。</p>
+      <div class="mi-row mi-review-actions">
+        <button type="button" class="mi-primary" :disabled="reviewRunning" @click="runReview">
+          {{ reviewRunning ? '正在复查…' : '运行复查校验' }}
+        </button>
+        <button type="button" class="mi-ghost" @click="openStudio">HyperFrames 工作台</button>
+      </div>
+      <p v-if="reviewError" class="mi-error">{{ reviewError }}</p>
+      <ul v-if="reviewIssues.length" class="mi-findings">
+        <li v-for="(issue, index) in reviewIssues.slice(0, 30)" :key="`${issue.code}-${issue.selector}-${index}`" :class="`sev-${issue.severity}`">
+          <button type="button" class="mi-finding" @click="seekReview(issue)">
+            <span class="mi-sev">{{ issue.severity }}</span>
+            <span class="mi-finding-copy">
+              <strong>{{ issue.code }}</strong>
+              <span>{{ issue.message }}</span>
+              <code v-if="issue.selector">{{ issue.selector }}</code>
+            </span>
+          </button>
+        </li>
+      </ul>
+      <p v-else-if="reviewed && !reviewRunning" class="mi-note">没有发现需要处理的问题。</p>
+    </div>
+
+    <div class="mi-block">
       <strong>渲染导出</strong>
       <p class="mi-hint">用 HyperFrames CLI 在本机渲染 MP4，与预览是同一工程、同一组参数。</p>
-      <button type="button" class="mi-primary mi-render" :disabled="state.renderStatus === 'running'" @click="renderNow">
-        {{ state.renderStatus === 'running' ? '正在渲染…' : '渲染为 MP4' }}
+      <button type="button" class="mi-primary mi-render" :disabled="rendering" @click="renderNow">
+        {{ state.renderStatus === 'queued' ? '排队中…' : state.renderStatus === 'running' ? '正在渲染…' : '渲染为 MP4' }}
       </button>
+      <div v-if="rendering" class="mi-progress" role="status" aria-live="polite">
+        <div class="mi-progress-bar"><i :style="{ width: `${state.renderProgress?.pct ?? 0}%` }" /></div>
+        <span>{{ renderStatusText }}</span>
+      </div>
       <p v-if="state.renderError" class="mi-error">{{ state.renderError }}</p>
       <pre v-if="state.renderStatus === 'failed' && state.renderLog" class="mi-log">{{ state.renderLog }}</pre>
       <div v-if="state.renderUrl" class="mi-result">
         <video :src="state.renderUrl" controls playsinline />
-        <button type="button" class="mi-primary" @click="applyRender">把 MP4 放回时间轴原位</button>
+        <!-- 时间轴固定使用 HyperFrames 实时预览，避免某次导出的 MP4 快照变成空白旧画面。 -->
+        <a class="mi-primary" :href="state.renderUrl" :download="`${clip.name || 'motion'}.mp4`">下载 MP4</a>
+        <p v-if="state.renderProbe" class="mi-hint mi-verified">
+          已校验：{{ state.renderProbe.width }}×{{ state.renderProbe.height }} ·
+          {{ state.renderProbe.duration.toFixed(2) }}s · {{ state.renderProbe.frames }} 帧
+        </p>
+        <p v-else-if="state.renderProbeError" class="mi-hint">
+          已生成 MP4，但本机缺少 ffprobe，未能逐帧校验。
+        </p>
+        <p class="mi-hint">时间轴继续使用实时工程预览；这份 MP4 仅作为导出产物。</p>
       </div>
     </div>
   </section>
@@ -97,24 +141,61 @@
 import { computed, reactive, ref, watch } from 'vue'
 import '@hyperframes/player'
 import { useMotionStore } from '@/stores/motionStore'
-import { useEditProjectStore } from '@/stores/editProjectStore'
+import { checkMotionProject, motionFileUrl } from '@/api/motion'
+import type { MotionCheckFinding } from '@/api/motion'
+import { auditMotionDocument, type MotionAuditIssue } from '@/features/edit/motionAudit'
 import type { TimelineClip } from '@/types/edit'
 
 const props = defineProps<{ projectId: string; clip: TimelineClip }>()
 
+const emit = defineEmits<{
+  (event: 'open-studio', motionId: string): void
+}>()
+
 const motion = useMotionStore()
-const projects = useEditProjectStore()
 
 const motionId = computed(() => props.clip.motionId || '')
 const state = computed(() => motion.stateOf(motionId.value))
+const rendering = computed(() =>
+  state.value.renderStatus === 'running' || state.value.renderStatus === 'queued')
+const renderStatusText = computed(() => {
+  if (state.value.renderStatus === 'queued') return '排队中，等待上一个渲染结束'
+  const progress = state.value.renderProgress
+  if (!progress) return '正在渲染…'
+  const count = progress.total ? ` · ${progress.done}/${progress.total}` : ''
+  return `${progress.label} ${progress.pct}%${count}`
+})
 const sourceOpen = ref(false)
 const sourceDraft = ref('')
 const previewKey = ref(0)
 const draft = reactive<Record<string, unknown>>({})
 const paramNotice = ref('')
+const playerRef = ref<HTMLElement | null>(null)
+const reviewRunning = ref(false)
+const reviewed = ref(false)
+const reviewError = ref('')
+const reviewFindings = ref<MotionCheckFinding[]>([])
+const auditIssues = ref<MotionAuditIssue[]>([])
 
+type ReviewIssue = MotionCheckFinding | MotionAuditIssue
+
+const reviewIssues = computed<ReviewIssue[]>(() => [
+  ...reviewFindings.value,
+  ...auditIssues.value,
+])
+
+const reviewSummary = computed(() => {
+  if (!reviewed.value) return null
+  const failures = reviewFindings.value.filter((finding) => finding.severity === 'error').length +
+    auditIssues.value.filter((finding) => finding.severity === 'error').length
+  const warnings = reviewFindings.value.filter((finding) => finding.severity === 'warning').length +
+    auditIssues.value.filter((finding) => finding.severity === 'warning').length
+  return { errorCount: failures, warningCount: warnings }
+})
+
+// 目录式预览地址让 index.html 里的 assets/... 相对路径在检查器里也能正确解析。
 const previewUrl = computed(() =>
-  motionId.value ? `${location.origin}/local/motion/file?id=${encodeURIComponent(motionId.value)}&path=index.html` : '',
+  motionId.value ? `${location.origin}${motionFileUrl(motionId.value)}` : '',
 )
 
 watch(
@@ -158,14 +239,66 @@ async function renderNow() {
   }
 }
 
-function applyRender() {
-  const url = state.value.renderUrl
-  if (!url) return
-  projects.replaceMotionClipWithVideo(props.projectId, props.clip.id, {
-    url,
-    name: props.clip.name,
-    duration: props.clip.duration,
+function openStudio() {
+  if (motionId.value) emit('open-studio', motionId.value)
+}
+
+function seekReview(issue: ReviewIssue) {
+  const player = playerRef.value as (HTMLElement & { seek?: (time: number) => void }) | null
+  if (typeof player?.seek === 'function') player.seek(Math.max(0, Number(issue.time) || 0))
+}
+
+async function auditPreview(): Promise<MotionAuditIssue[]> {
+  const player = playerRef.value as (HTMLElement & {
+    seek?: (time: number) => void
+    currentTime?: number
+    iframeElement?: HTMLIFrameElement
+  }) | null
+  if (!player?.iframeElement?.contentDocument) return []
+  const source = state.value.source || sourceDraft.value || ''
+  const duration = Math.max(0.5, Number(source.match(/data-duration\s*=\s*["']([\d.]+)["']/)?.[1]) || 5)
+  const times = [0, duration * 0.34, duration * 0.67, Math.max(0, duration - 0.05)]
+  const original = Number(player.currentTime) || 0
+  const issues: MotionAuditIssue[] = []
+  for (const time of times) {
+    player.seek?.(time)
+    await new Promise((resolve) => setTimeout(resolve, 220))
+    issues.push(...auditMotionDocument(player.iframeElement?.contentDocument, Math.round(time * 100) / 100))
+  }
+  player.seek?.(original)
+  const seen = new Set<string>()
+  return issues.filter((issue) => {
+    const key = `${issue.code}|${issue.selector}|${issue.message}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
   })
+}
+
+async function runReview() {
+  if (reviewRunning.value || !motionId.value) return
+  reviewRunning.value = true
+  reviewError.value = ''
+  auditIssues.value = []
+  reviewFindings.value = []
+  try {
+    const [report, localIssues] = await Promise.allSettled([
+      checkMotionProject(motionId.value, 5),
+      auditPreview(),
+    ])
+    if (report.status === 'fulfilled') {
+      reviewFindings.value = report.value.findings
+      if (!report.value.passed) {
+        reviewError.value = `官方复查发现 ${report.value.summary.errorCount} 个 error。`
+      }
+    } else {
+      reviewError.value = `官方复查失败：${(report.reason as Error)?.message || report.reason}`
+    }
+    auditIssues.value = localIssues.status === 'fulfilled' ? localIssues.value : []
+  } finally {
+    reviewed.value = true
+    reviewRunning.value = false
+  }
 }
 </script>
 
@@ -215,6 +348,114 @@ function applyRender() {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.mi-review-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--sf-ink-2, #4c413a);
+}
+
+.mi-review-summary {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #eef6ef;
+  color: #3f7a4b;
+  font-size: 10px;
+}
+
+.mi-review-summary.bad {
+  background: #fbeae5;
+  color: #b4472c;
+}
+
+.mi-review-actions {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.mi-review-actions button {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.mi-findings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.mi-finding {
+  display: flex;
+  gap: 7px;
+  width: 100%;
+  padding: 6px 7px;
+  border: 1px solid #eee3dc;
+  border-radius: 7px;
+  background: #fffaf7;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mi-finding:hover {
+  border-color: #d9b9a8;
+}
+
+.mi-sev {
+  flex: none;
+  height: 15px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: #f1ece7;
+  color: #6a584d;
+  font-size: 9px;
+  line-height: 15px;
+  text-transform: uppercase;
+}
+
+.sev-error .mi-sev {
+  background: #fbe1da;
+  color: #a3321c;
+}
+
+.sev-warning .mi-sev {
+  background: #fdf0d8;
+  color: #8a5a12;
+}
+
+.mi-finding-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mi-finding-copy strong {
+  font-size: 10px;
+  color: #8a7c73;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.mi-finding-copy span {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #4c413a;
+}
+
+.mi-finding-copy code {
+  overflow: hidden;
+  font-size: 9.5px;
+  color: #a3948a;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mi-block > strong {
@@ -315,6 +556,33 @@ function applyRender() {
 
 .mi-render {
   align-self: flex-start;
+}
+
+.mi-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 10.5px;
+  color: #6a584d;
+}
+
+.mi-progress-bar {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #efe2d9;
+}
+
+.mi-progress-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #b45f3c;
+  transition: width 0.3s ease;
+}
+
+.mi-verified {
+  color: #2f7a4f;
 }
 
 .mi-error {

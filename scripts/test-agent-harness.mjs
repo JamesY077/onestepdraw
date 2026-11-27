@@ -52,8 +52,8 @@ function event(payload) {
 try {
   const { streamAgentChat, AgentApiError } = await server.ssrLoadModule('/src/api/agent.ts')
   const { runAgentHarness, AgentHarnessError } = await server.ssrLoadModule('/src/features/agent/harness.ts')
-  const { AGENT_NATIVE_TOOLS } = await server.ssrLoadModule('/src/features/agent/toolDefinitions.ts')
-  const { normalizeAgentTimelineOps } = await server.ssrLoadModule('/src/features/agent/tools.ts')
+  const { AGENT_NATIVE_TOOLS, agentToolsForMode } = await server.ssrLoadModule('/src/features/agent/toolDefinitions.ts')
+  const { normalizeAgentTimelineOps, normalizeAgentCreativeHandoff } = await server.ssrLoadModule('/src/features/agent/tools.ts')
   const { streamLocalAgent } = await server.ssrLoadModule('/src/api/localAgents.ts')
   const { buildRunPrompt, runAgent } = await server.ssrLoadModule('/server/local/agents.mjs')
 
@@ -95,8 +95,30 @@ try {
   assert.equal(parsed.toolCalls[1].args.items[0].content, '读取项目')
   assert.equal(parsed.toolCalls[1].rawArguments, '{"items":[{"content":"读取项目","status":"in_progress"}]}')
   assert.equal(requestBody.tool_choice, 'auto')
-  assert.equal(requestBody.tools.length, 14)
+  assert.equal(requestBody.tools.length, 17)
   assert.equal('execute' in requestBody.tools[0].function, false)
+  const animationTools = agentToolsForMode('create', 'animation').map((tool) => tool.function.name)
+  const aigcTools = agentToolsForMode('create', 'aigc').map((tool) => tool.function.name)
+  assert.equal(animationTools.length, 13)
+  assert.ok(animationTools.includes('create_motion_project'))
+  assert.ok(animationTools.includes('prepare_storyboard'))
+  assert.ok(animationTools.includes('import_motion_asset'))
+  assert.ok(animationTools.every((name) => !['generate_image', 'generate_video', 'generate_storyboard', 'open_3d'].includes(name)))
+  assert.ok(animationTools.includes('review_motion_project'), '动画模式必须提供复查校验工具')
+  assert.equal(aigcTools.length, 9)
+  assert.ok(aigcTools.includes('generate_image'))
+  assert.ok(aigcTools.includes('prepare_storyboard'))
+  assert.ok(aigcTools.every((name) => !name.includes('motion_')))
+  assert.equal(agentToolsForMode('chat', 'animation').length, 2)
+  assert.equal(normalizeAgentCreativeHandoff({
+    target: 'create', engine: 'animation', reason: '复刻动效', prompt: '用 OpenMotion 复刻并替换 Logo',
+  }).engine, 'animation')
+  assert.equal(normalizeAgentCreativeHandoff({
+    target: 'create', reason: '生成视频', prompt: '生成 5 秒视频',
+  }).engine, 'aigc')
+  assert.equal(normalizeAgentCreativeHandoff({
+    target: 'create', reason: '模板复刻', prompt: '用 HyperFrames 做同款',
+  }).engine, 'animation')
 
   // 非流式 JSON 也允许只有 tool call 而没有正文。
   globalThis.fetch = async () => new Response(JSON.stringify({
@@ -197,7 +219,7 @@ try {
   assert.equal(legacyNextMessages.at(-1).role, 'tool')
   assert.match(legacyNextMessages.at(-1).content, /gen_mock/)
 
-  // 取消、步数上限、截断与批量上限都不会留下后续模型调用或危险执行。
+  // 取消、截断与批量上限都不会留下后续模型调用或危险执行。
   const controller = new AbortController()
   let streamsAfterCancel = 0
   await assert.rejects(() => runAgentHarness({
@@ -211,15 +233,23 @@ try {
   }), (error) => error.name === 'AbortError')
   assert.equal(streamsAfterCancel, 0)
 
-  await assert.rejects(() => runAgentHarness({
+  // 已确认任务可以连续执行超过旧的 8 步上限，直到模型结束。
+  let unlimitedToolCalls = 0
+  const unlimitedResult = await runAgentHarness({
     messages: [],
-    maxSteps: 1,
     signal: new AbortController().signal,
-    stream: async () => ({ content: '', toolCalls: [{ id: 'loop', name: 'read_project', args: {} }] }),
-    executeTool: async () => ({ ok: true }),
+    stream: async (request) => request.step <= 12
+      ? { content: '', toolCalls: [{ id: `step_${request.step}`, name: 'read_project', args: {} }] }
+      : { content: '全部执行完成。', toolCalls: [] },
+    executeTool: async () => {
+      unlimitedToolCalls += 1
+      return { ok: true }
+    },
     onDelta: () => {},
     onReasoning: () => {},
-  }), (error) => error instanceof AgentHarnessError && error.code === 'max_steps')
+  })
+  assert.equal(unlimitedToolCalls, 12)
+  assert.equal(unlimitedResult.steps, 13)
 
   let executedIncomplete = false
   await assert.rejects(() => runAgentHarness({
@@ -249,11 +279,15 @@ try {
   // 本机 CLI 同样 fail-closed：普通模式没有生成说明，脚本在读取 API Key 前退出。
   const chatLocalPrompt = buildRunPrompt({ mode: 'chat' })
   const createLocalPrompt = buildRunPrompt({ mode: 'create' })
+  const animationLocalPrompt = buildRunPrompt({ mode: 'create', creativeEngine: 'animation' })
   assert.equal(chatLocalPrompt.includes('node scripts/onestep-generate.mjs image'), false)
   assert.match(chatLocalPrompt, /onestep-mode-handoff/)
   assert.match(chatLocalPrompt, /grill-me 创作澄清协议/)
   assert.match(createLocalPrompt, /node scripts\/onestep-generate\.mjs image/)
   assert.match(createLocalPrompt, /grill-me 创作澄清协议/)
+  assert.match(animationLocalPrompt, /HyperFrames/)
+  assert.equal(animationLocalPrompt.includes('node scripts/onestep-generate.mjs image'), false)
+  assert.match(animationLocalPrompt, /ONESTEP_ALLOW_GENERATION=0/)
   const blockedLocalGeneration = spawnSync(process.execPath, ['scripts/onestep-generate.mjs', 'image', '--prompt', 'mock'], {
     cwd: process.cwd(),
     env: { ...process.env, ONESTEP_ALLOW_GENERATION: '0', AIPING_API_KEY: 'mock-only-key' },
@@ -335,6 +369,10 @@ try {
   }
   const axios = (await import('axios')).default
   const modelRequests = []
+  const motionCreateRequests = []
+  const motionImportRequests = []
+  const motionDiscardRequests = []
+  const motionSources = new Map()
   const generationRequests = []
   const videoCreateRequests = []
   const videoStatusRequests = []
@@ -467,17 +505,89 @@ try {
     }
     assert.ok(check(), JSON.stringify({ message: store.activeConversation?.messages.at(-1), generationRequests }))
   }
+  const confirmStoryboardDraft = (engine = 'aigc') => {
+    const conversation = store.activeConversation
+    assert.equal(conversation.storyboard?.status, 'draft', JSON.stringify(conversation.storyboard))
+    assert.equal(conversation.storyboard?.engine, engine)
+    const result = store.confirmStoryboard(conversation.id)
+    assert.ok(result, JSON.stringify(conversation.storyboard))
+    assert.equal(result.engine, engine)
+    assert.notEqual(result.status, 'error', result.error)
+    assert.equal(conversation.storyboard.status, 'confirmed')
+    const persisted = JSON.parse(localStorage.getItem('onestep_agent_conversations_v1') || '[]')
+    assert.equal(persisted.find((item) => item.id === conversation.id)?.storyboard?.status, 'confirmed')
+    return result
+  }
   globalThis.fetch = async (url, init = {}) => {
     const href = String(url)
     if (href.includes('/chat/completions')) {
       const request = JSON.parse(init.body)
       modelRequests.push(request)
       const payload = queuedResponses.shift() || { content: '完成。', toolCalls: [] }
+      if (payload.waitForAbort) {
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(event({ choices: [{ delta: { content: '等待停止信号' } }] })))
+            init.signal?.addEventListener('abort', () => {
+              controller.error(init.signal.reason || new DOMException('已停止生成。', 'AbortError'))
+            }, { once: true })
+          },
+        })
+        return new Response(stream, { headers: { 'Content-Type': 'text/event-stream' } })
+      }
       if (payload.content !== undefined) return streamedResponse(event({ choices: [{ delta: { content: payload.content }, finish_reason: 'stop' }] }))
       return streamedResponse([
-        event({ choices: [{ delta: { tool_calls: [{ index: 0, id: 'store_tool', type: 'function', function: { name: payload.name, arguments: JSON.stringify(payload.args || {}) } }] }, finish_reason: 'tool_calls' }] }),
+        event({ choices: [{ delta: { tool_calls: [{ index: 0, id: `store_tool_${modelRequests.length}`, type: 'function', function: { name: payload.name, arguments: JSON.stringify(payload.args || {}) } }] }, finish_reason: 'tool_calls' }] }),
         'data: [DONE]\n\n',
       ].join(''))
+    }
+    if (href.includes('/local/motion/create')) {
+      const body = JSON.parse(init.body)
+      motionCreateRequests.push(body)
+      const id = `motion_mock_${motionCreateRequests.length}`
+      motionSources.set(id, '<html><body><div data-composition-id="main" data-start="0" data-duration="4"><section class="clip" data-start="0" data-duration="4" data-track-index="1"></section></div></body></html>')
+      return new Response(JSON.stringify({
+        project: {
+          id, name: body.name, entry: 'index.html', entryUrl: `/local/motion/view/${id}/index.html`,
+          templateId: '', sourceUrl: '', width: body.width || 1280, height: body.height || 720, fps: 30,
+          createdAt: Date.now(), updatedAt: Date.now(), params: {}, missingFiles: [],
+        },
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+    if (href.includes('/local/motion/import')) {
+      const body = JSON.parse(init.body)
+      motionImportRequests.push(body)
+      if (body.source.includes('Fail.svg')) {
+        return new Response(JSON.stringify({ ok: false, error: 'mock 素材导入失败' }), {
+          status: 500, headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      return new Response(JSON.stringify({ ok: true, path: 'assets/uploads/Logo.svg' }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      })
+    }
+    if (href.includes('/local/motion/check')) {
+      const body = JSON.parse(init.body)
+      return new Response(JSON.stringify({
+        ok: true, passed: true, motionId: body.id, checkedAt: Date.now(), durationMs: 1,
+        browserSkipped: true, summary: { errorCount: 0, warningCount: 0, infoCount: 0, findings: 0 },
+        findings: [], log: '',
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+    if (href.includes('/local/motion/discard')) {
+      const body = JSON.parse(init.body)
+      motionDiscardRequests.push(body)
+      motionSources.delete(body.id)
+      return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+    if (href.includes('/local/motion/write')) {
+      const body = JSON.parse(init.body)
+      motionSources.set(body.id, body.content)
+      return new Response(JSON.stringify({ project: { id: body.id } }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+    if (href.includes('/local/motion/read')) {
+      const body = JSON.parse(init.body)
+      return new Response(JSON.stringify({ content: motionSources.get(body.id) || '' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
     }
     throw new Error(`未拦截的请求：${href}`)
   }
@@ -496,6 +606,7 @@ try {
   assert.ok(handoffMessage.creativeHandoff, JSON.stringify(handoffMessage))
   assert.equal(handoffMessage.creativeHandoff.target, 'create')
   assert.equal(handoffMessage.creativeHandoff.status, 'pending')
+  assert.equal(handoffMessage.creativeHandoff.engine, 'aigc')
   assert.equal(store.activeConversation.mode || 'chat', 'chat')
   assert.equal(store.activeConversation.projectId || null, null)
   assert.equal(generationRequests.length, 0)
@@ -514,6 +625,7 @@ try {
   await store.sendMessage('接下来生成具体视频素材')
   const pendingMessage = store.activeConversation.messages.at(-1)
   assert.equal(pendingMessage.creativeHandoff.status, 'pending')
+  assert.equal(pendingMessage.creativeHandoff.engine, 'aigc')
   const originalMessageCount = store.activeConversation.messages.length
   queuedResponses.push({ content: '已切换到创作模式，将继续处理。', toolCalls: [] })
   const accepted = store.acceptCreativeHandoff(pendingMessage.id)
@@ -521,13 +633,192 @@ try {
   await waitFor(() => !store.isStreaming)
   assert.equal(store.activeId, textConversationId)
   assert.equal(store.activeConversation.mode, 'create')
+  assert.equal(store.activeConversation.creativeEngine, 'aigc')
   assert.ok(store.activeConversation.projectId)
   assert.ok(store.activeConversation.messages.length > originalMessageCount)
   assert.equal(generationRequests.length, 0)
   assert.equal(modelRequests.length, 6)
-  assert.equal(modelRequests[5].tools.length, 14)
+  assert.equal(modelRequests[5].tools.length, 9)
   assert.ok(modelRequests[5].messages.some((message) => message.role === 'user' && message.content === '接下来生成具体视频素材'))
   assert.match(modelRequests[5].messages.filter((message) => message.role === 'user').at(-1).content, /请按上述要求生成具体视频素材/)
+
+  // OpenMotion + Logo：动画模式必须进入 Agent 和 motion 工具，不得被“替换”字样送入旧图片编辑。
+  store.setCreativeEngine(textConversationId, 'animation')
+  const animationRequestStart = modelRequests.length
+  queuedResponses.push(
+    { name: 'read_motion_template', args: { templateId: 'motion-dac924da-010f-4445-baf3-a39cb033e48f', includeDocument: false } },
+    { content: '已读取 OpenMotion 模板，下一步创建 HyperFrames 工程。', toolCalls: [] },
+  )
+  await store.sendMessage('使用 OpenMotion 做同款，替换为我的 Logo、文案与品牌', {
+    attachments: [{
+      id: 'mock-logo', kind: 'image', name: 'Logo.svg', mime: 'image/svg+xml', size: 3,
+      url: '/generated/uploads/Logo.svg', createdAt: Date.now(),
+    }],
+  })
+  assert.equal(store.activeConversation.creativeEngine, 'animation')
+  assert.equal(generationRequests.length, 0)
+  assert.notEqual(store.activeConversation.messages.at(-1).model, '多模态素材编辑')
+  assert.ok(store.activeConversation.messages.at(-1).run.activities.some((item) => item.name === 'read_motion_template'))
+  const animationRequest = modelRequests[animationRequestStart]
+  assert.ok(animationRequest.tools.some((tool) => tool.function.name === 'import_motion_asset'))
+  assert.ok(animationRequest.tools.every((tool) => !['generate_image', 'generate_video', 'generate_storyboard'].includes(tool.function.name)))
+
+  // 即使模型返回跨引擎工具，宿主也 fail-closed，且不会启动付费任务。
+  queuedResponses.push(
+    { name: 'generate_video', args: { prompt: '动画模式不应执行', duration: 5 } },
+    { content: '已阻止跨引擎工具。', toolCalls: [] },
+  )
+  await store.sendMessage('尝试错误的视频生成工具')
+  assert.equal(generationRequests.length, 0)
+  assert.match(store.activeConversation.messages.at(-1).run.activities.at(-1).summary, /动画模式只使用/)
+
+  // 动画同样先出分镜：草案内偷跑 create 会被拦截，确认后四镜各自建工程；失败只续跑缺镜。
+  const animationStoryboardArgs = {
+    title: '四镜品牌动画', brief: '用品牌 Logo 制作四镜产品发布动画。', continuity: '统一赤陶色品牌背景，始终引用原始 Logo 素材。',
+    storyboard_text: 'S01 Logo 入场\nS02 产品标语\nS03 产品细节\nS04 品牌落版', aspect_ratio: '16:9', resolution: '768P', delivery: 'full',
+    shots: [
+      { id: 'S01', prompt: 'Logo 从画面中心缩放进入，停留后向左退场。', duration: 4, reference_svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720"><rect width="1280" height="720" fill="#eee"/><text id="brand-custom" x="100" y="100">AI Ping</text></svg>' },
+      { id: 'S02', prompt: '承接 S01，产品标语从右侧进入并定格。', duration: 4 },
+      { id: 'S03', prompt: '产品细节推近，Logo 保持在右上角。', duration: 4 },
+      { id: 'S04', prompt: '产品与原始 Logo 一起落版。', duration: 4 },
+    ],
+  }
+  const motionCreatesBeforeDraft = motionCreateRequests.length
+  const motionImportsBeforeDraft = motionImportRequests.length
+  queuedResponses.push(
+    { name: 'prepare_storyboard', args: animationStoryboardArgs },
+    { name: 'create_motion_project', args: { name: '不应创建的草案工程' } },
+    { content: '分镜仍待确认，工程创建已阻止。', toolCalls: [] },
+  )
+  await store.sendMessage('制作四镜品牌动画')
+  assert.equal(store.activeConversation.storyboard.status, 'draft')
+  assert.equal(store.activeConversation.storyboard.engine, 'animation')
+  assert.ok(store.activeConversation.storyboard.shots.every((shot) => shot.referenceStatus === 'ready' && shot.referenceSource === 'code' && shot.referenceImage.startsWith('data:image/svg+xml')))
+  assert.ok(decodeURIComponent(store.activeConversation.storyboard.shots[0].referenceImage).includes('brand-custom'))
+  assert.equal(motionCreateRequests.length, motionCreatesBeforeDraft)
+  assert.equal(generationRequests.length, 0)
+  assert.match(store.activeConversation.messages.at(-1).run.activities.at(-1).summary, /分镜仍等待/)
+  const motionSource = (shot, includeLogo = true) => `<html><body><div data-composition-id="main" data-start="0" data-duration="4" data-width="1280" data-height="720"><section class="clip" data-start="0" data-duration="4" data-track-index="1"><h1>${shot}</h1>${includeLogo ? '<img id="brand-logo" src="assets/uploads/Logo.svg">' : ''}</section></div><script>window.__timelines = {}</script></body></html>`
+  for (const [index, shot] of ['S01', 'S02', 'S03', 'S04'].entries()) {
+    queuedResponses.push(
+      { name: 'create_motion_project', args: { name: `确认后的品牌动画 ${shot}`, at: index * 4, duration: 4 } },
+      { name: 'write_motion_project', args: { motionId: `motion_mock_${motionCreatesBeforeDraft + index + 1}`, source: motionSource(shot, shot !== 'S03') } },
+      { content: `${shot} 本轮结束。`, toolCalls: [] },
+    )
+  }
+  confirmStoryboardDraft('animation')
+  await waitFor(() => !store.isStreaming && store.activeConversation.production?.status === 'failed')
+  assert.equal(motionCreateRequests.length, motionCreatesBeforeDraft + 4)
+  assert.deepEqual(motionCreateRequests.slice(-4).map((request) => request.name), ['S01', 'S02', 'S03', 'S04'].map((shot) => `${shot} · 确认后的品牌动画 ${shot}`))
+  assert.ok(motionCreateRequests.slice(-4).every((request) => request.width === 1280 && request.height === 720))
+  let animationProduction = store.activeConversation.production
+  assert.equal(animationProduction.engine, 'animation')
+  assert.equal(animationProduction.shots.length, 4)
+  assert.deepEqual(animationProduction.shots.map((shot) => shot.status), ['succeeded', 'succeeded', 'failed', 'succeeded'])
+  assert.ok(animationProduction.shots.every((shot) => shot.motionId && shot.clipId))
+  assert.equal(new Set(animationProduction.shots.map((shot) => shot.motionId)).size, 4)
+  assert.ok(animationProduction.shots.filter((shot) => shot.status === 'succeeded').every((shot) => shot.motionSourceReady))
+  assert.deepEqual(animationProduction.shots.map((shot) => shot.timelineStart), [0, 4, 8, 12])
+  assert.equal(motionImportRequests.length - motionImportsBeforeDraft, 4, '每镜都应自动导入早期消息里的原始 Logo')
+  assert.ok(animationProduction.shots.every((shot) => shot.requiredAssetSources.includes('/generated/uploads/Logo.svg')))
+  assert.ok(animationProduction.shots.every((shot) => shot.requiredAssetPaths.includes('assets/uploads/Logo.svg')))
+  assert.ok(motionSources.get(animationProduction.shots[0].motionId).includes('src="assets/uploads/Logo.svg"'))
+  assert.equal(generationRequests.length, 0)
+
+  const failedMotionId = animationProduction.shots[2].motionId
+  queuedResponses.push(
+    { name: 'read_motion_project', args: { motionId: failedMotionId } },
+    { name: 'write_motion_project', args: { motionId: failedMotionId, source: motionSource('S03') } },
+    { content: 'S03 已补回原始 Logo 并完成。', toolCalls: [] },
+  )
+  const resumed = store.resumeProduction(textConversationId)
+  assert.equal(resumed.remaining, 1)
+  await waitFor(() => !store.isStreaming && store.activeConversation.production?.status === 'done')
+  animationProduction = store.activeConversation.production
+  assert.equal(motionCreateRequests.length, motionCreatesBeforeDraft + 4, '续跑不得重建任何工程')
+  assert.equal(motionImportRequests.length - motionImportsBeforeDraft, 4, '续跑不得重复导入素材')
+  assert.equal(animationProduction.shots[2].motionId, failedMotionId)
+  assert.equal(animationProduction.shots[2].attempt, 2)
+  assert.deepEqual(animationProduction.shots.map((shot) => shot.attempt), [1, 1, 2, 1])
+  assert.ok(animationProduction.shots.every((shot) => shot.status === 'succeeded' && shot.motionSourceReady))
+  assert.ok([...motionSources.values()].every((source) => !/invert|brightness\s*\(\s*0/i.test(source)))
+
+  const animationProjects = (await server.ssrLoadModule('/src/stores/editProjectStore.ts')).useEditProjectStore()
+  const animationProject = animationProjects.getProject(store.activeConversation.projectId)
+  const animationClips = animationProduction.shots.map((shot) => animationProject.tracks.flatMap((track) => track.clips).find((clip) => clip.id === shot.clipId))
+  assert.ok(animationClips.every(Boolean))
+  assert.equal(new Set(animationClips.map((clip) => clip.trackId || animationProject.tracks.find((track) => track.clips.includes(clip))?.id)).size, 4, '相邻镜头必须在独立轨道重叠转场')
+  assert.deepEqual(animationClips.map((clip) => Number(clip.start.toFixed(1))), [0, 3.6, 7.2, 10.8])
+  assert.ok(animationClips.every((clip) => clip.duration === 4))
+  assert.deepEqual(animationClips[0].opacityKeyframes.map((point) => [point.time, point.value]), [[3.6, 1], [4, 0]])
+  assert.deepEqual(animationClips[1].opacityKeyframes.map((point) => [point.time, point.value]), [[0, 0], [0.4, 1], [3.6, 1], [4, 0]])
+  assert.deepEqual(animationClips[3].opacityKeyframes.map((point) => [point.time, point.value]), [[0, 0], [0.4, 1]])
+  assert.ok(modelRequests.at(-1).messages.some((message) => message.role === 'system' && String(message.content).includes('状态：用户已确认')))
+
+  // 主画面多元素上下文：只允许读写选中的 motion，越权写回失败，合法写回推进主 Player 的 sourceVersion。
+  const selectedMotionClip = animationClips[0]
+  const selectedMotionTrack = animationProject.tracks.find((track) => track.clips.includes(selectedMotionClip))
+  const untouchedMotionId = animationProduction.shots[1].motionId
+  const untouchedSource = motionSources.get(untouchedMotionId)
+  const selectedMotionId = animationProduction.shots[0].motionId
+  const { useMotionStore } = await server.ssrLoadModule('/src/stores/motionStore.ts')
+  const motionStore = useMotionStore()
+  const sourceVersionBefore = motionStore.stateOf(selectedMotionId).sourceVersion
+  const selectedElements = [
+    { hfId: 'hero-title', selector: '[data-hf-id="hero-title"]', label: '主标题', tagName: 'h1', textContent: '旧标题', sourceFile: 'index.html', selectedAtMotionTime: 1.2, boundingBox: { x: 10, y: 20, width: 300, height: 60 }, sectionId: 's01', sectionLabel: 'S01 · 身份亮相', sectionSelector: 'section#s01.clip', parentPath: 'div.copy', region: '画面中央', role: '文字' },
+    { hfId: 'brand-logo', selector: '[data-hf-id="brand-logo"]', label: '品牌 Logo', tagName: 'img', src: 'assets/uploads/Logo.svg', sourceFile: 'index.html', selectedAtMotionTime: 1.2, boundingBox: { x: 500, y: 20, width: 80, height: 80 }, sectionId: 's01', sectionLabel: 'S01 · 身份亮相', sectionSelector: 'section#s01.clip', parentPath: 'header.brand', region: '右上方', role: 'Logo' },
+  ]
+  const targetedSource = motionSource('S01').replace('<h1>S01</h1>', '<h1 data-hf-id="hero-title">只改选中标题</h1>')
+  const targetedRequestStart = modelRequests.length
+  const createsBeforeTargeted = motionCreateRequests.length
+  queuedResponses.push(
+    { name: 'create_motion_project', args: { name: '原生越权创建', at: 0, duration: 4 } },
+    { content: '```onestep-tool\n{"tool":"create_motion_project","args":{"name":"旧文本越权创建","at":0,"duration":4}}\n```' },
+    { name: 'read_motion_project', args: { motionId: untouchedMotionId } },
+    { name: 'write_motion_project', args: { motionId: untouchedMotionId, source: motionSource('越权修改') } },
+    { name: 'read_motion_project', args: { motionId: selectedMotionId } },
+    { name: 'write_motion_project', args: { motionId: selectedMotionId, source: targetedSource } },
+    { content: '只更新了选中的标题与 Logo 元素。', toolCalls: [] },
+  )
+  await store.sendMessage('只修改选中的两个元素，其他内容保持不变', {
+    clips: [{
+      id: selectedMotionClip.id, name: selectedMotionClip.name, kind: 'motion',
+      trackId: selectedMotionTrack.id, trackName: selectedMotionTrack.name, trackKind: selectedMotionTrack.kind,
+      start: selectedMotionClip.start, duration: selectedMotionClip.duration, url: selectedMotionClip.url,
+      motionId: selectedMotionId, motionElements: selectedElements,
+      motionElementEdits: [
+        { note: '标题改成新文案', elements: [selectedElements[0]] },
+        { note: 'Logo 只调整位置，不重绘、不改色。', elements: [selectedElements[1]] },
+      ],
+      note: '标题改成新文案，Logo 只调整位置，不重绘、不改色。',
+    }],
+  })
+  const targetedRequest = modelRequests[targetedRequestStart]
+  assert.deepEqual(targetedRequest.tools.map((tool) => tool.function.name), ['read_project', 'read_motion_project', 'write_motion_project', 'review_motion_project'])
+  const targetedActivities = store.activeConversation.messages.at(-1).run.activities
+  assert.equal(targetedActivities.filter((activity) => activity.summary === '本轮未开放工具 create_motion_project，已阻止越权调用。').length, 2, '原生与旧文本创建都必须 fail-closed')
+  assert.equal(targetedActivities.filter((activity) => activity.summary === '已阻止访问未选中的动效工程。').length, 2, '未选工程读取与写回都必须 fail-closed')
+  assert.equal(motionCreateRequests.length, createsBeforeTargeted, '越权创建不得留下新工程')
+  const targetedUserContext = targetedRequest.messages.filter((message) => message.role === 'user').at(-1).content
+  assert.match(targetedUserContext, /选中元素 1：主标题/)
+  assert.match(targetedUserContext, /选中元素 2：品牌 Logo/)
+  assert.match(targetedUserContext, /所属部分：S01 · 身份亮相/)
+  assert.match(targetedUserContext, /画面位置：画面中央/)
+  assert.match(targetedUserContext, /本轮要求：标题改成新文案/)
+  assert.match(targetedUserContext, /本轮要求：Logo 只调整位置，不重绘、不改色。/)
+  assert.ok(
+    targetedUserContext.indexOf('本轮要求：标题改成新文案')
+      < targetedUserContext.indexOf('本轮要求：Logo 只调整位置'),
+    '同一工程的多条元素意见必须各自绑定到对应元素',
+  )
+  assert.match(targetedUserContext, /data-hf-id=hero-title/)
+  assert.match(targetedUserContext, /data-hf-id=brand-logo/)
+  assert.match(targetedUserContext, /只允许修改这个元素及其直接动画/)
+  assert.equal(motionSources.get(untouchedMotionId), untouchedSource, '未选中的工程绝不能被写回')
+  assert.equal(motionSources.get(selectedMotionId), targetedSource)
+  assert.ok(motionStore.stateOf(selectedMotionId).sourceVersion > sourceVersionBefore)
+  assert.equal(generationRequests.length, 0)
+  store.setCreativeEngine(textConversationId, 'aigc')
 
   // 新一轮实际生成才开放工具，但这里只返回本地后台任务，不发真实图片/视频请求。
   queuedResponses.push(
@@ -543,7 +834,17 @@ try {
   }
   assert.equal(store.activeConversation.messages.at(-1).generation.status, 'succeeded')
 
-  // 完整分镜：6 个镜头全部执行；S03 先于 S02 完成时立即入轨，但保留 S02 的固定位置。
+  // 新视频不能绕过草案直接生成；宿主拒绝时不产生任何视频建单。
+  const createsBeforeDirectVideo = videoCreateRequests.length
+  queuedResponses.push(
+    { name: 'generate_video', args: { prompt: '未确认分镜，不应执行', duration: 5 } },
+    { content: '已阻止未确认的视频生成。', toolCalls: [] },
+  )
+  await store.sendMessage('尝试直接生成未确认的视频')
+  assert.equal(videoCreateRequests.length, createsBeforeDirectVideo)
+  assert.match(store.activeConversation.messages.at(-1).run.activities.at(-1).summary, /prepare_storyboard/)
+
+  // 完整分镜：先确认草案，6 个镜头再全部执行；S03 先于 S02 完成时仍保留 S02 的固定位置。
   const { useEditProjectStore } = await server.ssrLoadModule('/src/stores/editProjectStore.ts')
   const projects = useEditProjectStore()
   const project = projects.getProject(store.activeConversation.projectId)
@@ -577,7 +878,7 @@ try {
   const recordedClipStarts = () => projects
     .getProject(store.activeConversation.projectId)
     ?.tracks.flatMap((track) => track.clips)
-    .filter((clip) => /^S0[1-6] ·/.test(clip.name))
+    .filter((clip) => clip.kind === 'video' && /^S0[1-6] ·/.test(clip.name))
     .map((clip) => clip.start) || []
   const waitForStoryboard = async (finalStatuses = ['done']) => {
     for (let index = 0; index < 6000; index += 1) {
@@ -612,11 +913,17 @@ try {
       0,
     ) || 0
 
+  const createsBeforeFirstStoryboard = videoCreateRequests.length
+  const referenceImagesBeforeFirstStoryboard = generationRequests.length
   queuedResponses.push(
-    { name: 'generate_storyboard', args: storyboardArgs },
-    { content: '完整制作单已启动，宿主会按镜号完成整片。', toolCalls: [] },
+    { name: 'prepare_storyboard', args: storyboardArgs },
+    { content: '完整分镜草案已保存，请在剪辑台确认。', toolCalls: [] },
   )
-  await store.sendMessage('按完整分镜生成整支视频')
+  await store.sendMessage('按完整分镜生成整支视频', { automation: 'default' })
+  assert.equal(videoCreateRequests.length, createsBeforeFirstStoryboard, '确认前不得创建任何视频任务')
+  assert.equal(generationRequests.length - referenceImagesBeforeFirstStoryboard, 6, 'AIGC 应先为每镜生成参考图')
+  assert.ok(store.activeConversation.storyboard.shots.every((shot) => shot.referenceStatus === 'ready' && shot.referenceImage))
+  confirmStoryboardDraft()
   await waitForStoryboard()
 
   const production = store.activeConversation.production
@@ -638,6 +945,7 @@ try {
   assert.ok(maxActiveVideoCreates >= 2)
   assert.equal(videoCreateRequests.length, 7, JSON.stringify(videoCreateRequests))
   assert.equal(videoCreateAttempts.get('S05'), 2)
+  assert.ok(videoCreateRequests.every((request) => request.body.content?.some((part) => part.role === 'first_frame')), '正式视频必须使用对应分镜参考图作为首帧')
   assert.ok([...videoCreateAttempts.entries()].filter(([shot]) => shot !== 'S05').every(([, count]) => count === 1))
   const videoStarts = recordedClipStarts().sort((a, b) => a - b)
   assert.deepEqual(videoStarts, [
@@ -659,11 +967,15 @@ try {
 
   // 续跑相同完整制作单：已成功镜头全部跳过，不再新建视频任务或重复扣费。
   const createsBeforeContinue = videoCreateRequests.length
+  const referenceImagesBeforeContinue = generationRequests.length
   queuedResponses.push(
     { name: 'generate_storyboard', args: storyboardArgs },
     { content: '整片已全部完成，无需重复生成。', toolCalls: [] },
   )
-  await store.sendMessage('继续生成未完成镜头')
+  await store.sendMessage('继续生成未完成镜头', { automation: 'default' })
+  assert.equal(videoCreateRequests.length, createsBeforeContinue)
+  assert.equal(generationRequests.length, referenceImagesBeforeContinue, '相同分镜续跑不得重复生成参考图')
+  confirmStoryboardDraft()
   await waitForStoryboard()
   assert.equal(videoCreateRequests.length, createsBeforeContinue)
   assert.equal(store.activeConversation.production.timelineStart, timelineBase)
@@ -676,7 +988,9 @@ try {
     { name: 'generate_storyboard', args: formatArgs },
     { content: '已按 2K 重新生成整片。', toolCalls: [] },
   )
-  await store.sendMessage('换成 2K 重新生成整片')
+  await store.sendMessage('换成 2K 重新生成整片', { automation: 'default' })
+  assert.equal(videoCreateRequests.length, createsBeforeFormat)
+  confirmStoryboardDraft()
   await waitForStoryboard()
   assert.equal(videoCreateRequests.length - createsBeforeFormat, 6)
   assert.equal(store.activeConversation.production.resolution, '2K')
@@ -697,7 +1011,9 @@ try {
     { name: 'generate_storyboard', args: reviseArgs },
     { content: 'S03 已按改稿重新生成。', toolCalls: [] },
   )
-  await store.sendMessage('只改 S03 的镜头角度')
+  await store.sendMessage('只改 S03 的镜头角度', { automation: 'default' })
+  assert.equal(videoCreateRequests.length, createsBeforeRevise)
+  confirmStoryboardDraft()
   await waitForStoryboard()
   assert.equal(videoCreateRequests.length - createsBeforeRevise, 1)
   assert.equal(recordedClipStarts().length, 6)
@@ -728,7 +1044,9 @@ try {
     { name: 'generate_storyboard', args: recoveryArgs },
     { content: '已启动失败恢复回归制作单。', toolCalls: [] },
   )
-  await store.sendMessage('生成失败恢复回归整片')
+  await store.sendMessage('生成失败恢复回归整片', { automation: 'default' })
+  assert.equal(videoCreateRequests.length, createsBeforeRecovery)
+  confirmStoryboardDraft()
   await waitForStoryboard(['failed'])
   const failedProduction = store.activeConversation.production
   assert.equal(failedProduction.title, '失败恢复回归')
@@ -777,7 +1095,9 @@ try {
     { name: 'generate_storyboard', args: recoveryArgs },
     { content: '继续完成剩余镜头。', toolCalls: [] },
   )
-  await store.sendMessage('继续生成未完成镜头')
+  await store.sendMessage('继续生成未完成镜头', { automation: 'default' })
+  assert.equal(videoCreateRequests.length, createsBeforeRecoveryContinue)
+  confirmStoryboardDraft()
   await waitForStoryboard()
   assert.equal(videoCreateRequests.length - createsBeforeRecoveryContinue, 1)
   assert.equal(videoCreateRequests.at(-1).shot, 'S03')
@@ -790,7 +1110,322 @@ try {
     timelineBeforeRecovery + 8,
   ])
 
-  console.log('✓ Agent Harness：SSE、多步回注、普通/创作切换、取消、CLI 门禁、刷新恢复、六镜全片、4路并发、失败重试、定位入轨、改稿原位替换、轮询幂等与续跑跳镜全部通过（全部为本地 mock）')
+  // 逐镜编辑与单镜 AI 重做：未更新参考图不能总确认，其他镜头和参考图不被模型顺带改掉。
+  const modularArgs = {
+    title: '逐镜编辑回归', brief: '两镜产品片，验证逐卡编辑和单镜重做。', continuity: '同一产品与暖色背景。',
+    storyboard_text: 'S01 产品出现\nS02 Logo 落版', aspect_ratio: '16:9', resolution: '768P', delivery: 'full',
+    shots: [
+      { id: 'S01', prompt: '产品从左侧进入并停在中央。', duration: 4 },
+      { id: 'S02', prompt: 'Logo 在产品右侧落版。', duration: 4 },
+    ],
+  }
+  const modularVideoCreates = videoCreateRequests.length
+  queuedResponses.push(
+    { name: 'prepare_storyboard', args: modularArgs },
+    { content: '两镜参考图已准备。', toolCalls: [] },
+  )
+  await store.sendMessage('先制作两镜分镜参考图')
+  assert.equal(videoCreateRequests.length, modularVideoCreates)
+  const modularConversationId = store.activeConversation.id
+  const untouchedReference = store.activeConversation.storyboard.shots[0].referenceImage
+  store.updateStoryboardShot(modularConversationId, 'S02', { prompt: '手动改过的 S02 脚本。' })
+  assert.equal(store.activeConversation.storyboard.shots[1].referenceStatus, 'pending')
+  const blockedConfirmation = store.confirmStoryboard(modularConversationId)
+  assert.equal(blockedConfirmation.status, 'error')
+  assert.equal(store.activeConversation.storyboard.status, 'draft')
+  assert.equal(videoCreateRequests.length, modularVideoCreates)
+  const referenceImagesBeforeSingleRevision = generationRequests.length
+  queuedResponses.push(
+    {
+      name: 'prepare_storyboard',
+      args: {
+        ...modularArgs,
+        shots: [
+          { id: 'S01', prompt: '模型不应修改的 S01。', duration: 4 },
+          { id: 'S02', prompt: 'AI 单镜重做：Logo 从产品后方翻入并落版。', duration: 4 },
+        ],
+      },
+    },
+    { content: '只重做了 S02。', toolCalls: [] },
+  )
+  await store.regenerateStoryboardShot(modularConversationId, 'S02', '让 Logo 从产品后方翻入')
+  assert.equal(store.activeConversation.storyboard.shots[0].prompt, modularArgs.shots[0].prompt)
+  assert.equal(store.activeConversation.storyboard.shots[0].referenceImage, untouchedReference)
+  assert.match(store.activeConversation.storyboard.shots[1].prompt, /产品后方翻入/)
+  assert.ok(store.activeConversation.storyboard.shots.every((shot) => shot.referenceStatus === 'ready'))
+  assert.equal(generationRequests.length - referenceImagesBeforeSingleRevision, 1)
+  assert.equal(videoCreateRequests.length, modularVideoCreates)
+
+  const generationBeforeUserReference = generationRequests.length
+  queuedResponses.push(
+    {
+      name: 'prepare_storyboard',
+      args: { ...modularArgs, shots: [modularArgs.shots[0]] },
+    },
+    { content: '已优先使用用户参考图。', toolCalls: [] },
+  )
+  await store.sendMessage('用我的图片作为分镜参考', {
+    attachments: [{ id: 'storyboard-user-ref', kind: 'image', name: '用户产品图.png', mime: 'image/png', size: 3, url: 'https://mock.local/user-reference.png', createdAt: Date.now() }],
+  })
+  assert.equal(store.activeConversation.storyboard.shots[0].referenceImage, 'https://mock.local/user-reference.png')
+  assert.equal(store.activeConversation.storyboard.shots[0].referenceSource, 'user')
+  assert.equal(generationRequests.length, generationBeforeUserReference)
+
+  // 普通对话确认卡必须把目标引擎带入会话，并持久化；接受后只开放动画工具。
+  const animationConversation = store.createConversation()
+  const animationConversationId = animationConversation.id
+  queuedResponses.push(
+    {
+      name: 'suggest_create_mode',
+      args: {
+        target: 'create', engine: 'animation', reason: '需要复刻 OpenMotion 动效',
+        prompt: '用指定 OpenMotion 模板创建 HyperFrames 工程并替换 Logo',
+      },
+    },
+    { content: '是否切换到动画模式？', toolCalls: [] },
+  )
+  await store.sendMessage('帮我用 OpenMotion 复刻这个模板')
+  const animationHandoff = store.activeConversation.messages.at(-1).creativeHandoff
+  assert.equal(animationHandoff.engine, 'animation')
+  queuedResponses.push({ content: '已进入动画模式。', toolCalls: [] })
+  const acceptedAnimation = store.acceptCreativeHandoff(store.activeConversation.messages.at(-1).id)
+  assert.equal(acceptedAnimation.creativeEngine, 'animation')
+  await waitFor(() => !store.isStreaming)
+  assert.equal(store.activeId, animationConversationId)
+  assert.equal(store.activeConversation.creativeEngine, 'animation')
+  assert.ok(store.activeConversation.projectId)
+  assert.ok(modelRequests.at(-1).tools.some((tool) => tool.function.name === 'create_motion_project'))
+  assert.ok(modelRequests.at(-1).tools.every((tool) => !['generate_image', 'generate_video', 'generate_storyboard'].includes(tool.function.name)))
+  const persistedConversations = JSON.parse(localStorage.getItem('onestep_agent_conversations_v1') || '[]')
+  assert.equal(persistedConversations.find((item) => item.id === animationConversationId)?.creativeEngine, 'animation')
+
+  // 旧式 motion 工具在普通对话只形成动画交接卡，接受后不能误进 AIGC。
+  const motionHandoffConversation = store.createConversation()
+  const motionHandoffConversationId = motionHandoffConversation.id
+  queuedResponses.push(
+    { name: 'create_motion_project', args: { name: '普通对话里的动效请求' } },
+    { content: '需要切换到动画创作模式。', toolCalls: [] },
+  )
+  await store.sendMessage('创建一个 HyperFrames 工程')
+  const motionHandoff = store.activeConversation.messages.at(-1).creativeHandoff
+  assert.equal(motionHandoff.engine, 'animation')
+  queuedResponses.push({ content: '已进入动画模式。', toolCalls: [] })
+  const acceptedMotionHandoff = store.acceptCreativeHandoff(store.activeConversation.messages.at(-1).id)
+  assert.equal(acceptedMotionHandoff.creativeEngine, 'animation')
+  await waitFor(() => !store.isStreaming)
+  assert.equal(store.activeConversation.id, motionHandoffConversationId)
+  assert.equal(store.activeConversation.creativeEngine, 'animation')
+
+  // 即使用户选择了本机 CLI，创作也统一经受控 Harness；旧文本生成协议仍被动画权限拦截。
+  const { useLocalAgentStore } = await server.ssrLoadModule('/src/stores/localAgentStore.ts')
+  const localAgents = useLocalAgentStore()
+  localAgents.saveCustomAgent({ name: 'Mock CLI', command: 'mock-cli' })
+  const generationsBeforeLocalAnimation = generationRequests.length
+  queuedResponses.push(
+    { content: '```onestep-tool\n{"tool":"generate_video","args":{"prompt":"本机动画偷跑","duration":5}}\n```' },
+    { content: '已阻止旧协议生成。', toolCalls: [] },
+  )
+  await store.sendMessage('本机 Agent 尝试旧协议生成视频')
+  assert.equal(generationRequests.length, generationsBeforeLocalAnimation)
+  assert.match(store.activeConversation.messages.at(-1).run.activities.at(-1).summary, /动画模式只使用/)
+  assert.equal(store.activeConversation.messages.at(-1).model, 'DeepSeek-V4.1-Flash-1017')
+  localAgents.select('builtin')
+
+  const { useChatModeStore } = await server.ssrLoadModule('/src/stores/chatModeStore.ts')
+  const chatMode = useChatModeStore()
+  chatMode.setCreativeEngine('animation')
+  assert.equal(JSON.parse(localStorage.getItem('onestep_chat_mode_v1') || '{}').creativeEngine, 'animation')
+
+  // 停止当前镜必须同时暂停宿主队列；续跑沿用已建工程，并按 9:16 固定尺寸创建。
+  const stoppedConversation = store.createConversation()
+  stoppedConversation.mode = 'create'
+  stoppedConversation.creativeEngine = 'animation'
+  stoppedConversation.projectId = projects.createProject('动画停止与画幅回归').id
+  const stopArgs = {
+    title: '停止队列回归', brief: '两镜竖屏动画，停止后不得启动下一镜。', continuity: '统一竖屏构图。',
+    storyboard_text: 'S01 第一镜\nS02 第二镜', aspect_ratio: '9:16', resolution: '768P', delivery: 'full',
+    shots: [
+      { id: 'S01', prompt: '第一镜标题进入。', duration: 4 },
+      { id: 'S02', prompt: '第二镜标题落版。', duration: 4 },
+    ],
+  }
+  queuedResponses.push(
+    { name: 'prepare_storyboard', args: stopArgs },
+    { content: '竖屏分镜已准备。', toolCalls: [] },
+  )
+  await store.sendMessage('制作两镜竖屏动画')
+  const requestsBeforeStoppedRun = modelRequests.length
+  const createsBeforeStoppedRun = motionCreateRequests.length
+  queuedResponses.push(
+    { name: 'create_motion_project', args: { name: '竖屏 S01', at: 0, duration: 4 } },
+    { waitForAbort: true },
+  )
+  confirmStoryboardDraft('animation')
+  await waitFor(() => store.isStreaming && motionCreateRequests.length === createsBeforeStoppedRun + 1)
+  const requestsBeforeRejectedSend = modelRequests.length
+  assert.equal(await store.sendMessage('这一轮不应被受理'), false, '流式期间必须明确返回未受理，Composer 才能保留草稿')
+  assert.equal(modelRequests.length, requestsBeforeRejectedSend)
+  store.stopStreaming()
+  await waitFor(() => !store.isStreaming && store.activeConversation.production?.status === 'paused')
+  const requestsAfterStop = modelRequests.length
+  assert.equal(requestsAfterStop, requestsBeforeStoppedRun + 2, '停止只能结束当前镜请求，不能启动 S02')
+  assert.equal(motionCreateRequests.length, createsBeforeStoppedRun + 1)
+  assert.deepEqual(store.activeConversation.production.shots.map((shot) => shot.status), ['pending', 'pending'])
+  assert.ok(store.activeConversation.production.shots[0].motionId && store.activeConversation.production.shots[0].clipId)
+  const stoppedS01MotionId = store.activeConversation.production.shots[0].motionId
+  const portraitSource = (shot) => `<html><body><div data-composition-id="main" data-start="0" data-duration="4" data-width="720" data-height="1280"><section class="clip" data-start="0" data-duration="4" data-track-index="1"><h1>${shot}</h1></section></div><script>window.__timelines={}</script></body></html>`
+  queuedResponses.push(
+    { name: 'read_motion_project', args: { motionId: stoppedS01MotionId } },
+    { name: 'write_motion_project', args: { motionId: stoppedS01MotionId, source: portraitSource('S01') } },
+    { content: 'S01 已完成。', toolCalls: [] },
+    { name: 'create_motion_project', args: { name: '竖屏 S02', at: 4, duration: 4 } },
+    { name: 'write_motion_project', args: { motionId: `motion_mock_${createsBeforeStoppedRun + 2}`, source: portraitSource('S02') } },
+    { content: 'S02 已完成。', toolCalls: [] },
+  )
+  const stoppedProjectId = store.activeConversation.projectId
+  const stoppedConversationId = store.activeConversation.id
+  const resumedStopped = store.resumeProduction(stoppedConversationId)
+  assert.equal(resumedStopped.remaining, 2)
+  await waitFor(() => !store.isStreaming && store.activeConversation.production?.status === 'done')
+  assert.equal(modelRequests.length, requestsAfterStop + 6)
+  assert.equal(motionCreateRequests.length, createsBeforeStoppedRun + 2, 'S01 续跑不得重建工程')
+  assert.equal(store.activeConversation.production.shots[0].motionId, stoppedS01MotionId)
+  assert.deepEqual(motionCreateRequests.slice(-2).map((request) => [request.width, request.height]), [[720, 1280], [720, 1280]])
+
+  // 相同签名可复用；只改画幅必须重建，且新工程验收后移除旧片段而不是叠两份。
+  const beforeReuseCreates = motionCreateRequests.length
+  store.activeConversation.storyboard.status = 'draft'
+  confirmStoryboardDraft('animation')
+  await waitFor(() => store.activeConversation.production?.status === 'done')
+  assert.equal(motionCreateRequests.length, beforeReuseCreates, '画幅与素材签名不变时必须复用成功工程')
+  const oldFormatMotionIds = store.activeConversation.production.shots.map((shot) => shot.motionId)
+  store.activeConversation.storyboard.status = 'draft'
+  store.activeConversation.storyboard.aspectRatio = '16:9'
+  queuedResponses.push(
+    { name: 'create_motion_project', args: { name: '横屏 S01', at: 0, duration: 4 } },
+    { name: 'write_motion_project', args: { motionId: `motion_mock_${beforeReuseCreates + 1}`, source: motionSource('S01', false) } },
+    { content: '横屏 S01 已完成。', toolCalls: [] },
+    { name: 'create_motion_project', args: { name: '横屏 S02', at: 4, duration: 4 } },
+    { name: 'write_motion_project', args: { motionId: `motion_mock_${beforeReuseCreates + 2}`, source: motionSource('S02', false) } },
+    { content: '横屏 S02 已完成。', toolCalls: [] },
+  )
+  confirmStoryboardDraft('animation')
+  await waitFor(() => !store.isStreaming && store.activeConversation.production?.status === 'done')
+  assert.equal(motionCreateRequests.length, beforeReuseCreates + 2, '只改画幅也不能复用旧工程')
+  assert.deepEqual(motionCreateRequests.slice(-2).map((request) => [request.width, request.height]), [[1280, 720], [1280, 720]])
+  assert.ok(store.activeConversation.production.shots.every((shot, index) => shot.motionId !== oldFormatMotionIds[index]))
+  assert.equal(projects.getProject(stoppedProjectId).tracks.flatMap((track) => track.clips).filter((clip) => clip.kind === 'motion').length, 2, '改画幅后不得保留重复旧片段')
+
+  // 参考 SVG 属于单镜签名：只改 S01 时 S02 仍复用。
+  const beforeSvgCreates = motionCreateRequests.length
+  const beforeSvgMotionIds = store.activeConversation.production.shots.map((shot) => shot.motionId)
+  store.activeConversation.storyboard.status = 'draft'
+  store.activeConversation.storyboard.shots[0].referenceSvg = '<svg viewBox="0 0 1280 720"><text x="20" y="40">新的构图</text></svg>'
+  queuedResponses.push(
+    { name: 'create_motion_project', args: { name: '新参考 S01', at: 0, duration: 4 } },
+    { name: 'write_motion_project', args: { motionId: `motion_mock_${beforeSvgCreates + 1}`, source: motionSource('S01', false) } },
+    { content: '新参考 S01 已完成。', toolCalls: [] },
+  )
+  confirmStoryboardDraft('animation')
+  await waitFor(() => !store.isStreaming && store.activeConversation.production?.status === 'done')
+  assert.equal(motionCreateRequests.length, beforeSvgCreates + 1, '参考 SVG 变化必须使对应工程失效')
+  assert.notEqual(store.activeConversation.production.shots[0].motionId, beforeSvgMotionIds[0])
+  assert.equal(store.activeConversation.production.shots[1].motionId, beforeSvgMotionIds[1], '其他镜头签名未变，不得重建')
+
+  // 更换正式 Logo 素材后，所有受影响镜头都必须重建并引用新导入路径。
+  const beforeLogoCreates = motionCreateRequests.length
+  const beforeLogoMotionIds = store.activeConversation.production.shots.map((shot) => shot.motionId)
+  store.activeConversation.messages.push({
+    id: 'replacement-brand-message', role: 'user', content: '改用新的正式 Logo', createdAt: Date.now(), status: 'done',
+    attachments: [{ id: 'replacement-logo', kind: 'image', name: 'NewLogo.svg', mime: 'image/svg+xml', size: 3, url: '/generated/uploads/NewLogo.svg', createdAt: Date.now() }],
+  })
+  store.activeConversation.storyboard.status = 'draft'
+  queuedResponses.push(
+    { name: 'create_motion_project', args: { name: '新 Logo S01', at: 0, duration: 4 } },
+    { name: 'write_motion_project', args: { motionId: `motion_mock_${beforeLogoCreates + 1}`, source: motionSource('S01') } },
+    { content: '新 Logo S01 已完成。', toolCalls: [] },
+    { name: 'create_motion_project', args: { name: '新 Logo S02', at: 4, duration: 4 } },
+    { name: 'write_motion_project', args: { motionId: `motion_mock_${beforeLogoCreates + 2}`, source: motionSource('S02') } },
+    { content: '新 Logo S02 已完成。', toolCalls: [] },
+  )
+  confirmStoryboardDraft('animation')
+  await waitFor(() => !store.isStreaming && store.activeConversation.production?.status === 'done')
+  assert.equal(motionCreateRequests.length, beforeLogoCreates + 2, '正式素材集合变化不得复用旧工程')
+  assert.ok(store.activeConversation.production.shots.every((shot, index) => shot.motionId !== beforeLogoMotionIds[index]))
+  assert.ok(store.activeConversation.production.shots.every((shot) => shot.requiredAssetSources.includes('/generated/uploads/NewLogo.svg')))
+
+  // 建工程后的素材导入失败必须回滚工程与片段，续跑可以从干净状态重试。
+  const orphanConversation = store.createConversation()
+  orphanConversation.mode = 'create'
+  orphanConversation.creativeEngine = 'animation'
+  orphanConversation.projectId = projects.createProject('动画失败回滚').id
+  const orphanConversationId = orphanConversation.id
+  const orphanProjectId = orphanConversation.projectId
+  const orphanArgs = {
+    title: '失败回滚', brief: '导入失败不得留下孤儿工程。', continuity: '单一镜头。',
+    storyboard_text: 'S01 导入失败', aspect_ratio: '16:9', resolution: '768P', delivery: 'full',
+    shots: [{ id: 'S01', prompt: '引用正式 Logo。', duration: 4 }],
+  }
+  queuedResponses.push(
+    { name: 'prepare_storyboard', args: orphanArgs },
+    { content: '分镜已准备。', toolCalls: [] },
+  )
+  const generationRequestsBeforeOrphan = generationRequests.length
+  await store.sendMessage('制作单镜动画', {
+    attachments: [{ id: 'bad-logo', kind: 'image', name: 'Fail.svg', mime: 'image/svg+xml', size: 3, url: '/generated/uploads/Fail.svg', createdAt: Date.now() }],
+  })
+  const createsBeforeOrphan = motionCreateRequests.length
+  const discardsBeforeOrphan = motionDiscardRequests.length
+  queuedResponses.push(
+    { name: 'create_motion_project', args: { name: '将回滚的工程', at: 0, duration: 4 } },
+    { content: '素材导入失败，本轮结束。', toolCalls: [] },
+  )
+  confirmStoryboardDraft('animation')
+  await waitFor(() => !store.isStreaming && store.activeConversation.production?.status === 'failed')
+  assert.equal(motionCreateRequests.length, createsBeforeOrphan + 1)
+  assert.equal(motionDiscardRequests.length, discardsBeforeOrphan + 1)
+  assert.equal(motionDiscardRequests.at(-1).id, `motion_mock_${createsBeforeOrphan + 1}`)
+  assert.ok(!motionSources.has(`motion_mock_${createsBeforeOrphan + 1}`), '失败工程必须从本地工程中删除')
+  assert.equal(store.activeConversation.production.shots[0].motionId, undefined)
+  assert.equal(store.activeConversation.production.shots[0].clipId, undefined)
+  assert.equal(projects.getProject(orphanProjectId).tracks.flatMap((track) => track.clips).filter((clip) => clip.kind === 'motion').length, 0)
+  assert.equal(generationRequests.length, generationRequestsBeforeOrphan, '回滚测试不得触发任何付费生成')
+  assert.equal(store.activeConversation.id, orphanConversationId)
+
+  // 完全模式：分镜与参考图就绪后不再等待人工确认，直接逐镜执行并自动复查。
+  const autoConversation = store.createConversation()
+  autoConversation.mode = 'create'
+  autoConversation.creativeEngine = 'animation'
+  autoConversation.projectId = projects.createProject('完全模式自治').id
+  const autoCreatesBefore = motionCreateRequests.length
+  queuedResponses.push(
+    {
+      name: 'prepare_storyboard',
+      args: {
+        title: '完全模式单镜动画', brief: '完全模式自动完成单镜动画。', continuity: '单镜。',
+        storyboard_text: 'S01 完全模式自动完成', aspect_ratio: '16:9', resolution: '768P', delivery: 'full',
+        shots: [{ id: 'S01', prompt: '标题与 Logo 依次进入并定格。', duration: 4 }],
+      },
+    },
+    { content: '分镜已提交。', toolCalls: [] },
+    { name: 'create_motion_project', args: { name: '完全模式 S01', at: 0, duration: 4 } },
+    { name: 'write_motion_project', args: { motionId: `motion_mock_${autoCreatesBefore + 1}`, source: motionSource('S01') } },
+    { content: 'S01 已完成。', toolCalls: [] },
+  )
+  await store.sendMessage('完全模式制作一镜动画', {
+    conversationId: autoConversation.id,
+    automation: 'auto',
+    creativeEngine: 'animation',
+    projectId: autoConversation.projectId,
+  })
+  assert.equal(autoConversation.storyboard.status, 'confirmed', '完全模式不得停在草案等待人工确认')
+  await waitFor(() => !store.isStreaming && autoConversation.production?.status === 'done')
+  assert.equal(motionCreateRequests.length, autoCreatesBefore + 1, '自动确认后必须直接开始逐镜制作')
+  assert.equal(autoConversation.production.shots[0].status, 'succeeded')
+  assert.equal(autoConversation.production.shots[0].review?.ok, true, '完全模式每镜完成后应自动复查')
+  assert.ok(autoConversation.messages.at(-1).content.includes('S01 已完成'))
+
+  console.log('✓ Agent Harness：SSE、多步回注、普通/创作切换、双引擎确认与持久化、取消、CLI 门禁、刷新恢复、六镜全片、4路并发、失败重试、定位入轨、改稿原位替换、轮询幂等、续跑跳镜与完全模式自动确认全部通过（全部为本地 mock）')
 } finally {
   globalThis.fetch = originalFetch
   await server.close()

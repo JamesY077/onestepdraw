@@ -182,14 +182,16 @@
           </p>
           <p v-else-if="chatMode.isCreate" class="composer-mode-note">
             <i class="note-dot" aria-hidden="true" />
-            创作模式 · 生成结果会自动进入剪辑项目
+            {{ chatMode.isAnimation ? '动画模式 · HyperFrames 工程会自动进入剪辑项目' : 'AIGC 模式 · 生成结果会自动进入剪辑项目' }}
           </p>
           <AgentComposer
             ref="composerRef"
             v-model="draft"
+            :draft-key="`chat:${store.activeId || 'new'}`"
             :disabled="store.isStreaming"
             @send="handleSend"
             @stop="store.stopStreaming"
+            @engine-change="handleEngineChange"
           />
         </div>
       </div>
@@ -213,10 +215,10 @@ import { useAgentStore } from '@/stores/agentStore'
 import { useApiStore } from '@/stores/apiStore'
 import { useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
-import { useChatModeStore } from '@/stores/chatModeStore'
+import { useChatModeStore, type CreativeEngineMode } from '@/stores/chatModeStore'
 import { useEditProjectStore } from '@/stores/editProjectStore'
-import { consumeComposerPrompt, consumeTemplatesFlash, describeTemplatesFlash } from '@/features/template/navigation'
-import type { ComposerSubmit } from '@/types/agent'
+import { consumeComposerPromptContext, consumeTemplatesFlash, describeTemplatesFlash, mergeComposerPrompt } from '@/features/template/navigation'
+import type { ComposerSendAck, ComposerSubmit } from '@/types/agent'
 
 const store = useAgentStore()
 const apiStore = useApiStore()
@@ -392,7 +394,11 @@ async function handleLogout() {
   router.replace('/login')
 }
 
-async function handleSend(payload: ComposerSubmit) {
+function handleEngineChange(engine: CreativeEngineMode) {
+  if (store.activeConversation) store.setCreativeEngine(store.activeConversation.id, engine)
+}
+
+async function handleSend(payload: ComposerSubmit, acknowledge: ComposerSendAck) {
   const { content, attachments, templates } = payload
   stickToBottom.value = true
   if (chatMode.isCreate) {
@@ -402,26 +408,30 @@ async function handleSend(payload: ComposerSubmit) {
       projectStore.findProjectByConversation(conversation.id) ||
       projectStore.createProject(projectTitle(titleSource), conversation.id)
     store.attachProject(conversation.id, project.id)
+    store.setCreativeEngine(conversation.id, chatMode.creativeEngine)
     void store.sendMessage(content, {
       conversationId: conversation.id,
       mode: 'create',
       automation: chatMode.automation,
+      creativeEngine: chatMode.creativeEngine,
       attachments,
       templates,
-    })
+    }).then(acknowledge)
     // 先让 activeId 监听把 /chat 路由同步完，再进剪辑台，避免被 replace 抢回。
     await nextTick()
     void router.push(`/edit/${project.id}`)
     return
   }
 
-  await store.sendMessage(content, {
+  const accepted = await store.sendMessage(content, {
     conversationId: store.activeId || undefined,
     mode: 'chat',
     automation: chatMode.automation,
     attachments,
     templates,
   })
+  acknowledge(accepted)
+  if (!accepted) return
   syncRouteWithActive()
   await nextTick()
   scrollToBottom('smooth')
@@ -455,6 +465,7 @@ async function handleCreativeHandoffAccept(messageId: string) {
   if (!result) return
   stickToBottom.value = true
   chatMode.setConversation('create')
+  chatMode.setCreativeEngine(result.creativeEngine || 'aigc')
   await nextTick()
   void router.push(`/edit/${result.projectId}`)
 }
@@ -514,10 +525,17 @@ watch(
 
 // 打开已有会话时跟随它记录的模式，避免把创作对话误当成普通聊天继续发。
 watch(
-  () => [store.activeConversation?.mode, store.activeConversation?.automation] as const,
-  ([mode, automation]) => {
+  () => [
+    store.activeConversation?.id,
+    store.activeConversation?.mode,
+    store.activeConversation?.automation,
+    store.activeConversation?.creativeEngine,
+  ] as const,
+  ([_id, mode, automation, creativeEngine]) => {
     if (mode === 'create' || mode === 'chat') chatMode.setConversation(mode)
     if (automation === 'auto' || automation === 'default') chatMode.setAutomation(automation)
+    if (creativeEngine === 'animation' || creativeEngine === 'aigc') chatMode.setCreativeEngine(creativeEngine)
+    else if (mode === 'create') chatMode.setCreativeEngine('aigc')
   },
   { immediate: true },
 )
@@ -554,9 +572,14 @@ onMounted(() => {
 
 /** 从模板库回来：说明引用了什么，并把焦点放回输入框。 */
 function announceTemplates() {
-  const pendingPrompt = consumeComposerPrompt()
-  if (pendingPrompt) {
-    draft.value = pendingPrompt
+  const pending = consumeComposerPromptContext()
+  if (pending.prompt) {
+    if (pending.creativeEngine) {
+      chatMode.setConversation('create')
+      chatMode.setCreativeEngine(pending.creativeEngine)
+      if (store.activeConversation) store.setCreativeEngine(store.activeConversation.id, pending.creativeEngine)
+    }
+    draft.value = mergeComposerPrompt(pending.prompt, draft.value)
     void nextTick(() => {
       composerRef.value?.focus()
       resetScroll('auto')

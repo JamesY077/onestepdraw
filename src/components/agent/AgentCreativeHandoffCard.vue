@@ -6,8 +6,8 @@
       </svg>
     </div>
     <div class="handoff-copy">
-      <span class="handoff-eyebrow">创作模式建议</span>
-      <h3>是否切换到创作模式继续任务？</h3>
+      <span class="handoff-eyebrow">{{ handoff.engine === 'animation' ? '动画模式建议' : 'AIGC 模式建议' }}</span>
+      <h3>是否切换到{{ handoff.engine === 'animation' ? '动画' : ' AIGC ' }}模式继续任务？</h3>
       <p>{{ handoff.reason }}</p>
       <div v-if="!settled" class="handoff-task">{{ handoff.prompt }}</div>
       <div v-if="!settled" class="handoff-actions">
@@ -18,7 +18,7 @@
         <button type="button" class="handoff-secondary" :disabled="disabled" @click="$emit('dismiss')">暂不切换</button>
       </div>
       <span v-else class="handoff-status">
-        {{ handoff.status === 'accepted' ? '已切换到创作模式，并在当前对话中继续' : '已保留在普通对话' }}
+        {{ handoff.status === 'accepted' ? `已切换到${handoff.engine === 'animation' ? '动画' : 'AIGC'}模式，并在当前对话中继续` : '已保留在普通对话' }}
       </span>
     </div>
   </section>

@@ -76,25 +76,52 @@ export function consumeTemplatesFlash(): TemplatesFlash | null {
 }
 
 const PROMPT_KEY = 'onestep_composer_prompt_v1'
+const PROMPT_ENGINE_KEY = 'onestep_composer_engine_v1'
 
-/** 模板复刻 / 参考做同款：把完整交接提示词带进创作对话输入框。 */
-export function flashComposerPrompt(prompt: string): void {
+export interface ComposerPromptContext {
+  prompt: string
+  creativeEngine?: 'animation' | 'aigc'
+}
+
+/** 模板复刻 / 参考做同款：提示词和真实引擎一起交接，不能只改变界面文案。 */
+export function flashComposerPrompt(prompt: string, engine?: 'animation' | 'aigc'): void {
   try {
     sessionStorage.setItem(PROMPT_KEY, prompt)
+    if (engine) sessionStorage.setItem(PROMPT_ENGINE_KEY, engine)
+    else sessionStorage.removeItem(PROMPT_ENGINE_KEY)
   } catch {
     // 忽略。
   }
 }
 
-export function consumeComposerPrompt(): string {
+export function consumeComposerPromptContext(): ComposerPromptContext {
   try {
-    const raw = sessionStorage.getItem(PROMPT_KEY)
-    if (!raw) return ''
+    const prompt = sessionStorage.getItem(PROMPT_KEY) || ''
+    const storedEngine = sessionStorage.getItem(PROMPT_ENGINE_KEY)
     sessionStorage.removeItem(PROMPT_KEY)
-    return raw
+    sessionStorage.removeItem(PROMPT_ENGINE_KEY)
+    if (!prompt) return { prompt: '' }
+    return {
+      prompt,
+      creativeEngine: storedEngine === 'animation' || storedEngine === 'aigc' ? storedEngine : undefined,
+    }
   } catch {
-    return ''
+    return { prompt: '' }
   }
+}
+
+export function consumeComposerPrompt(): string {
+  return consumeComposerPromptContext().prompt
+}
+
+/** 模板说明不能覆盖进入模板库前已经写好的需求。 */
+export function mergeComposerPrompt(handoff: string, existing: string): string {
+  const addition = existing.trim()
+  if (!addition) return handoff
+  if (!handoff.trim()) return addition
+  const marker = /我的要求：\s*$/.exec(handoff)
+  if (marker) return `${handoff.slice(0, marker.index)}我的要求：\n${addition}`
+  return `${handoff.trimEnd()}\n\n我的原需求：\n${addition}`
 }
 
 /** 把「已引用 2 个模板：A、B」拼成一句提示语。 */

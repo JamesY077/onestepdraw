@@ -10,8 +10,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { isZip, readZipEntries, findMotionDocument } from './zip.mjs'
+
+const MODULE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 const ALLOWED_HOSTS = new Set([
   'r.open-design.ai',
@@ -52,6 +55,285 @@ function ffmpegEnv() {
     HYPERFRAMES_FFMPEG_PATH: found,
     HYPERFRAMES_FFPROBE_PATH: found.replace(/ffmpeg$/, 'ffprobe'),
   }
+}
+
+/** 平台可执行文件名；Windows 必须带 .exe，否则 spawn 失败。 */
+function toolFileName(name, platform = process.platform) {
+  return platform === 'win32' ? `${name}.exe` : name
+}
+
+/** 与 Chromium 一样，允许把 ffmpeg/ffprobe 随安装包放进 Resources/ffmpeg。 */
+export function bundledToolPath(name, {
+  rootDir = MODULE_ROOT,
+  resourcesPath = process.resourcesPath,
+  platform = process.platform,
+} = {}) {
+  const file = toolFileName(name, platform)
+  const roots = []
+  if (resourcesPath) roots.push(path.join(resourcesPath, 'ffmpeg'))
+  if (rootDir) roots.push(path.join(rootDir, '.runtime', 'ffmpeg'))
+  for (const root of roots) {
+    const candidate = path.join(root, file)
+    if (fs.existsSync(candidate)) return candidate
+  }
+  return ''
+}
+
+/** ffmpeg 在 PATH 里也算可用：HyperFrames 自己会解析 PATH。 */
+function commandAvailable(binary) {
+  if (!binary) return false
+  if (binary.includes(path.sep) && !fs.existsSync(binary)) return false
+  try {
+    const result = spawnSync(binary, ['-version'], { stdio: 'ignore', timeout: 8000 })
+    return result.status === 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 渲染用的 headless Chrome 随 App 一起分发。
+ *
+ * UI 跑在 Electron 里，但 HyperFrames 渲染必须另起一个可被 CDP 驱动的
+ * Chromium（Electron 主进程不能直接当无头浏览器用）。官方默认做法是
+ * 首次渲染时下载 chrome-headless-shell 到 ~/.cache，那相当于让用户
+ * 装完 App 再偷偷下 200MB，离线还会直接失败。
+ *
+ * 打包脚本会把官方锁定的 chrome-headless-shell 放进
+ * `Resources/chrome-headless-shell/`，开发态则读 `.runtime/`，运行时
+ * 通过 HYPERFRAMES_BROWSER_PATH 指过去即可，不复用系统 Chrome。
+ */
+export function bundledBrowserPath({
+  rootDir = MODULE_ROOT,
+  resourcesPath = process.resourcesPath,
+  platform = process.platform,
+} = {}) {
+  const binary = platform === 'win32' ? 'chrome-headless-shell.exe' : 'chrome-headless-shell'
+  const roots = []
+  if (resourcesPath) roots.push(path.join(resourcesPath, 'chrome-headless-shell'))
+  if (rootDir) roots.push(path.join(rootDir, '.runtime', 'chrome-headless-shell'))
+  for (const root of roots) {
+    const direct = path.join(root, binary)
+    if (fs.existsSync(direct)) return direct
+    // 兼容未整理的 puppeteer 缓存布局（<root>/chrome-headless-shell-<platform>/<binary>）。
+    try {
+      for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+        if (!entry.isDirectory() || !entry.name.startsWith('chrome-headless-shell')) continue
+        const candidate = path.join(root, entry.name, binary)
+        if (fs.existsSync(candidate)) return candidate
+      }
+    } catch {
+      // 目录不存在就继续看下一个候选位置。
+    }
+  }
+  return ''
+}
+
+/**
+ * Electron 的 process.execPath 是 Electron.app，不是系统 node。
+ * CLI 及其内部 reaper/browser 子进程都必须以 Node 模式启动，否则 Electron
+ * 会把 `-e` 后的进程清理脚本当成应用目录，报 Unable to find Electron app。
+ */
+export function motionRenderEnvironment(baseEnv = process.env, options = {}) {
+  const env = {
+    ...baseEnv,
+    ELECTRON_RUN_AS_NODE: '1',
+    HYPERFRAMES_NO_TELEMETRY: '1',
+  }
+  if (!env.HYPERFRAMES_BROWSER_PATH) {
+    const bundled = bundledBrowserPath(options)
+    if (bundled) env.HYPERFRAMES_BROWSER_PATH = bundled
+  }
+  if (!env.HYPERFRAMES_FFMPEG_PATH) {
+    const bundledFfmpeg = bundledToolPath('ffmpeg', options)
+    if (bundledFfmpeg) {
+      env.HYPERFRAMES_FFMPEG_PATH = bundledFfmpeg
+      const bundledProbe = bundledToolPath('ffprobe', options)
+      if (bundledProbe) env.HYPERFRAMES_FFPROBE_PATH = bundledProbe
+    } else {
+      Object.assign(env, ffmpegEnv())
+    }
+  }
+  return env
+}
+
+/** 渲染链路自检：CLI、内置 Chromium、ffmpeg 是否齐全，用于打包验收和失败提示。 */
+export function motionRenderRuntime({
+  rootDir = MODULE_ROOT,
+  resourcesPath = process.resourcesPath,
+} = {}) {
+  const env = motionRenderEnvironment(process.env, { rootDir, resourcesPath })
+  const cli = path.join(rootDir, 'node_modules', 'hyperframes', 'bin', 'hyperframes.mjs')
+  const ffmpeg = env.HYPERFRAMES_FFMPEG_PATH || 'ffmpeg'
+  const ffprobe = env.HYPERFRAMES_FFPROBE_PATH || 'ffprobe'
+  const cliReady = fs.existsSync(cli)
+  const browserReady = !!env.HYPERFRAMES_BROWSER_PATH && fs.existsSync(env.HYPERFRAMES_BROWSER_PATH)
+  const ffmpegReady = commandAvailable(ffmpeg)
+  return {
+    cliReady,
+    cli,
+    browserReady,
+    browser: env.HYPERFRAMES_BROWSER_PATH || '',
+    ffmpegReady,
+    ffmpeg,
+    ffprobe,
+    ready: cliReady && browserReady && ffmpegReady,
+  }
+}
+
+const RENDER_PHASE_LABELS = {
+  compile: '编译工程',
+  extract_video: '提取素材',
+  process_audio: '处理音频',
+  start_browsers: '启动渲染器',
+  capture: '渲染画面',
+  encode: '编码视频',
+  assemble: '合成输出',
+}
+
+/**
+ * HyperFrames 的 drawElement 快速捕获只在单 worker 时默认开启。
+ * `--workers auto` 会为此启动 6 个 Chrome 并退回逐帧截图：6 秒短片实测
+ * 自动 6 worker 需要 134s，单 worker 只要 20s。短片固定 1 个 worker，
+ * 长片再按帧数放大，避免为了并行反而失去快速捕获。
+ */
+export function resolveRenderWorkers({ durationSeconds, fps } = {}) {
+  const seconds = Number(durationSeconds) || 0
+  const rate = Number(fps) || 30
+  const frames = Math.round(seconds * rate)
+  if (!Number.isFinite(frames) || frames <= 0) return 1
+  if (frames <= 900) return 1
+  if (frames <= 2700) return 2
+  return 4
+}
+
+/** 读根合成的 data-duration，渲染后用真实成片时长和它对比。 */
+export function compositionDuration(dir) {
+  try {
+    const html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8')
+    const root = html.match(/<[a-z][^>]*\bdata-composition-id\s*=\s*['"][^'"]+['"][^>]*>/i)
+    const match = (root ? root[0] : html).match(/\bdata-duration\s*=\s*['"](\d+(?:\.\d+)?)['"]/i)
+    return match ? Number(match[1]) : 0
+  } catch {
+    return 0
+  }
+}
+
+/** CLI 每次进度都会写 `@hf-progress {...}`；取最后一条当作真实进度。 */
+export function parseRenderProgress(text) {
+  const lines = String(text || '').match(/@hf-progress\s+\{[^\n]*\}/g) || []
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    try {
+      const data = JSON.parse(lines[index].replace(/^@hf-progress\s+/, ''))
+      if (typeof data?.pct !== 'number') continue
+      const code = String(data.code || '')
+      return {
+        pct: Math.max(0, Math.min(100, Math.round(data.pct))),
+        code,
+        label: RENDER_PHASE_LABELS[code] || '渲染中',
+        done: Number(data.done) || 0,
+        total: Number(data.total) || 0,
+      }
+    } catch {
+      // 进度行可能被 chunk 切断，跳过半行继续找上一条完整记录。
+    }
+  }
+  return null
+}
+
+/** 渲染参数集中在这里，测试和真实导出用同一份规则。 */
+export function buildRenderArgs({ cli, dir, output, fps, duration, params } = {}) {
+  const rate = Number(fps) || 30
+  const workers = resolveRenderWorkers({ durationSeconds: duration, fps: rate })
+  const args = [
+    cli,
+    'render',
+    dir,
+    '--output',
+    output,
+    '--format',
+    'mp4',
+    '-f',
+    String(rate),
+    // 固定 worker 数：auto 会关掉 drawElement 快速捕获并多起 6 个 Chrome。
+    '--workers',
+    String(workers),
+  ]
+  if (params && Object.keys(params).length) {
+    args.push('--variables', JSON.stringify(params))
+  }
+  return { args, workers }
+}
+
+function ffprobeBinary(env) {
+  if (env?.HYPERFRAMES_FFPROBE_PATH) return env.HYPERFRAMES_FFPROBE_PATH
+  const found = ['/opt/homebrew/bin/ffprobe', '/usr/local/bin/ffprobe'].find((file) => fs.existsSync(file))
+  return found || 'ffprobe'
+}
+
+/** 渲染成功后用 ffprobe 实测分辨率/时长/帧数，避免“有文件但没画面”。 */
+function probeVideo(file, bin, timeoutMs = 20000) {
+  return new Promise((resolve) => {
+    let output = ''
+    let child
+    try {
+      child = spawn(
+        bin,
+        ['-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', file],
+        { shell: false },
+      )
+    } catch (error) {
+      resolve({ ok: false, error: `无法执行 ffprobe：${error?.message || error}` })
+      return
+    }
+    const timer = setTimeout(() => {
+      try { child.kill('SIGKILL') } catch { /* ignore */ }
+    }, timeoutMs)
+    child.stdout.on('data', (chunk) => { output += String(chunk) })
+    child.on('error', (error) => {
+      clearTimeout(timer)
+      resolve({ ok: false, error: `无法执行 ffprobe：${error?.message || error}` })
+    })
+    child.on('close', () => {
+      clearTimeout(timer)
+      try {
+        const data = JSON.parse(output)
+        const video = (data.streams || []).find((stream) => stream.codec_type === 'video')
+        if (!video) {
+          resolve({ ok: false, error: '导出文件没有视频流' })
+          return
+        }
+        const duration = Number(data.format?.duration) || Number(video.duration) || 0
+        const [num, den] = String(video.avg_frame_rate || video.r_frame_rate || '').split('/')
+        const rate = Number(num) / (Number(den) || 1)
+        const frames = Number(video.nb_frames) || (rate > 0 ? Math.round(duration * rate) : 0)
+        resolve({
+          ok: true,
+          width: Number(video.width) || 0,
+          height: Number(video.height) || 0,
+          codec: String(video.codec_name || ''),
+          duration: Math.round(duration * 1000) / 1000,
+          frames,
+        })
+      } catch {
+        resolve({ ok: false, error: 'ffprobe 返回内容无法解析' })
+      }
+    })
+  })
+}
+
+/** 写入前拒绝会退回「把这一屏幕换成你的故事」占位页的伪工程。 */
+export function validateMotionCompositionSource(source) {
+  const html = String(source || '')
+  const missing = []
+  if (!/<[a-z][^>]*\bdata-composition-id\s*=\s*['"][^'"]+['"]/i.test(html)) missing.push('data-composition-id')
+  if (!/<[a-z][^>]*\bdata-duration\s*=\s*['"]\d+(?:\.\d+)?['"]/i.test(html)) missing.push('根合成 data-duration')
+  if (!/<[a-z][^>]*\bdata-start\s*=\s*['"]\d+(?:\.\d+)?['"]/i.test(html)) missing.push('片段 data-start')
+  if (!/<[a-z][^>]*\bdata-track-index\s*=\s*['"]\d+['"]/i.test(html)) missing.push('轨道 data-track-index')
+  if (missing.length) {
+    throw new Error(`HyperFrames 合成结构不完整：缺少 ${missing.join('、')}。请补齐单一合成根与轨道片段后再写回；当前内容未保存。`)
+  }
+  return true
 }
 
 export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
@@ -206,7 +488,14 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
       fs.copyFileSync(gsapSource, path.join(dir, 'assets', 'gsap.min.js'))
     }
 
-    if (!fs.existsSync(path.join(dir, 'index.html'))) fs.writeFileSync(path.join(dir, 'index.html'), STARTER_HTML)
+    const width = Number(body?.width) || 1280
+    const height = Number(body?.height) || 720
+    if (!fs.existsSync(path.join(dir, 'index.html'))) {
+      const starter = STARTER_HTML
+        .replace('data-width="1280"', `data-width="${width}"`)
+        .replace('data-height="720"', `data-height="${height}"`)
+      fs.writeFileSync(path.join(dir, 'index.html'), starter)
+    }
     // 参考包解到 reference/，Agent 可以读 motion.md、看参考图与 demo，不必重复下载。
     const docUrl = template?.motionDoc || template?.motionGuide
     if (docUrl) {
@@ -230,8 +519,8 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
       entry: 'index.html',
       templateId: typeof template?.id === 'string' ? template.id : '',
       sourceUrl: typeof template?.sourceUrl === 'string' ? template.sourceUrl : '',
-      width: Number(body?.width) || 1280,
-      height: Number(body?.height) || 720,
+      width,
+      height,
       fps: Number(body?.fps) || 30,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -239,42 +528,287 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
       missingFiles: failures,
     }
     writeMeta(id, meta)
-    return { ...meta, entryUrl: `/local/motion/file?id=${id}&path=index.html` }
+    return { ...meta, entryUrl: `/local/motion/view/${encodeURIComponent(id)}/index.html` }
   }
 
-  function runRender(job, args) {
-    return new Promise((resolve) => {
-      const child = spawn(args.command, args.args, {
-        cwd: job.dir,
+  function importAsset(body) {
+    const id = safeId(body?.id)
+    if (!readMeta(id)) throw new Error('动效工程不存在')
+    const source = String(body?.source || '').trim()
+    let parsed
+    try {
+      parsed = new URL(source, 'http://127.0.0.1')
+    } catch {
+      throw new Error('素材地址不合法')
+    }
+    // 旧项目可能把上传地址存成带端口或 localhost 的绝对 URL；这里只读取本机文件，
+    // 因此按 host 白名单和固定目录判断，不再因为端口/主机写法不同误拦截。
+    const localHosts = new Set(['127.0.0.1', 'localhost', '[::1]'])
+    if (!localHosts.has(parsed.hostname) || !parsed.pathname.startsWith('/generated/uploads/')) {
+      throw new Error('只允许导入本机 generated/uploads 里的上传素材')
+    }
+    const uploadRoot = path.join(dataDir, 'generated', 'uploads')
+    let relative
+    try {
+      relative = decodeURIComponent(parsed.pathname.slice('/generated/uploads/'.length))
+    } catch {
+      throw new Error('素材地址编码不合法')
+    }
+    const sourceFile = path.resolve(uploadRoot, relative)
+    if (!sourceFile.startsWith(uploadRoot + path.sep) || !fs.existsSync(sourceFile) || !fs.statSync(sourceFile).isFile()) {
+      throw new Error('上传素材不存在或路径不合法')
+    }
+    const requested = path.basename(String(body?.fileName || path.basename(sourceFile)))
+    const extension = path.extname(sourceFile).toLowerCase()
+    const stem = path.basename(requested, path.extname(requested))
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, '-')
+      .trim()
+      .slice(0, 72) || 'asset'
+    const key = crypto.createHash('sha256').update(sourceFile).digest('hex').slice(0, 8)
+    const relativeTarget = `assets/uploads/${key}-${stem}${extension}`
+    const target = resolveInside(id, relativeTarget)
+    if (!target) throw new Error('工程素材路径不合法')
+    fs.mkdirSync(path.dirname(target), { recursive: true })
+    fs.copyFileSync(sourceFile, target)
+    writeMeta(id, {})
+    return {
+      ok: true,
+      motionId: id,
+      path: relativeTarget,
+      url: `/local/motion/view/${encodeURIComponent(id)}/${relativeTarget.split('/').map(encodeURIComponent).join('/')}`,
+    }
+  }
+
+  /** 运行 HyperFrames CLI 并收集输出；check / preview 都需要 JSON 结果。 */
+  function runHyperframesCli(args, { timeoutMs = 120_000 } = {}) {
+    const cli = path.join(rootDir, 'node_modules', 'hyperframes', 'bin', 'hyperframes.mjs')
+    if (!fs.existsSync(cli)) throw new Error('未安装 hyperframes CLI，请先在项目目录执行 npm install。')
+    return new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [cli, ...args], {
+        cwd: rootDir,
         shell: false,
-        env: {
-          ...process.env,
-          HYPERFRAMES_NO_TELEMETRY: '1',
-          ...(process.env.HYPERFRAMES_FFMPEG_PATH ? {} : ffmpegEnv()),
-        },
+        env: motionRenderEnvironment(),
       })
+      let stdout = ''
       let stderr = ''
+      const timer = setTimeout(() => {
+        child.kill('SIGKILL')
+        reject(new Error(`HyperFrames 命令超时（${Math.round(timeoutMs / 1000)}s）`))
+      }, timeoutMs)
       child.stdout.on('data', (chunk) => {
-        job.log = (job.log + String(chunk)).slice(-4000)
+        stdout = (stdout + String(chunk)).slice(-4_000_000)
       })
       child.stderr.on('data', (chunk) => {
-        stderr = (stderr + String(chunk)).slice(-4000)
-        job.log = stderr
+        stderr = (stderr + String(chunk)).slice(-200_000)
       })
+      child.on('error', (error) => {
+        clearTimeout(timer)
+        reject(error)
+      })
+      child.on('close', (code) => {
+        clearTimeout(timer)
+        resolve({ code, stdout, stderr })
+      })
+    })
+  }
+
+  function parseCliJson(stdout) {
+    const text = String(stdout || '').trim()
+    if (!text) return null
+    try {
+      return JSON.parse(text)
+    } catch {
+      // CLI 偶尔在 JSON 前后打印提示行，取最后一段完整 JSON。
+      const lines = text.split('\n').filter((line) => line.trim().startsWith('{'))
+      for (let index = lines.length - 1; index >= 0; index -= 1) {
+        try {
+          return JSON.parse(lines[index])
+        } catch {
+          // 继续向前找。
+        }
+      }
+      const start = text.indexOf('{')
+      const end = text.lastIndexOf('}')
+      if (start >= 0 && end > start) {
+        try {
+          return JSON.parse(text.slice(start, end + 1))
+        } catch {
+          return null
+        }
+      }
+      return null
+    }
+  }
+
+  const REVIEW_STAGES = ['lint', 'runtime', 'layout', 'motion', 'contrast', 'craft', 'audio']
+
+  /**
+   * 复查校验：复用官方 hyperframes check（lint / runtime / layout / 对比度）。
+   * 返回扁平问题列表，前端可直接渲染；CLI 失败时保留日志供排查。
+   */
+  async function checkProject(body) {
+    const id = safeId(body?.id)
+    if (!id || !readMeta(id)) throw new Error('动效工程不存在')
+    const samples = Math.max(1, Math.min(12, Number(body?.samples) || 5))
+    const startedAt = Date.now()
+    const { code, stdout, stderr } = await runHyperframesCli(
+      ['check', projectDir(id), '--json', '--samples', String(samples), '--max-issues', '60'],
+      { timeoutMs: 240_000 },
+    )
+    const report = parseCliJson(stdout)
+    if (!report) {
+      throw new Error(`复查校验没有返回可解析结果（退出码 ${code}）：${stderr.trim().slice(-600) || '无输出'}`)
+    }
+    const findings = []
+    for (const stage of REVIEW_STAGES) {
+      const section = report[stage] || {}
+      for (const finding of section.findings || []) {
+        findings.push({
+          stage,
+          severity: finding.severity || 'warning',
+          code: finding.code || stage,
+          message: finding.message || '',
+          selector: finding.selector || '',
+          sourceFile: finding.sourceFile || 'index.html',
+          time: Number(finding.time) || 0,
+        })
+      }
+    }
+    const count = (severity) => findings.filter((item) => item.severity === severity).length
+    return {
+      // 传输成功固定为 ok:true；是否通过复查用 passed，避免前端把“有 error”误判成接口失败。
+      ok: true,
+      passed: findings.every((item) => item.severity !== 'error'),
+      motionId: id,
+      checkedAt: Date.now(),
+      durationMs: Date.now() - startedAt,
+      browserSkipped: !!report.browserSkipped,
+      summary: {
+        errorCount: count('error'),
+        warningCount: count('warning'),
+        infoCount: count('info'),
+        findings: findings.length,
+      },
+      findings,
+      log: stderr.trim().slice(-4000),
+    }
+  }
+
+  /** 官方 HyperFrames Studio：启动（或复用）该工程的预览服务，前端直接嵌入同一套 UI。 */
+  const studioSessions = new Map()
+
+  async function startStudio(body) {
+    const id = safeId(body?.id)
+    if (!id || !readMeta(id)) throw new Error('动效工程不存在')
+    const cached = studioSessions.get(id)
+    if (cached?.url) {
+      try {
+        const response = await fetch(cached.url, { signal: AbortSignal.timeout(1500) })
+        if (response.ok) return { ok: true, ...cached, reused: true }
+      } catch {
+        studioSessions.delete(id)
+      }
+    }
+    const { code, stdout, stderr } = await runHyperframesCli(
+      ['preview', projectDir(id), '--no-open', '--background', '--json'],
+      { timeoutMs: 90_000 },
+    )
+    const parsed = parseCliJson(stdout)
+    const result = parsed?.result || parsed
+    const url = result?.studioUrl || result?.serverUrl || ''
+    if (code !== 0 || !url) {
+      throw new Error(`HyperFrames Studio 启动失败（退出码 ${code}）：${stderr.trim().slice(-600) || stdout.trim().slice(-600) || '无输出'}`)
+    }
+    const session = {
+      url: String(url),
+      serverUrl: String(result.serverUrl || url),
+      port: Number(result.port) || 0,
+      pid: Number(result.pid) || 0,
+      projectDir: projectDir(id),
+      startedAt: Date.now(),
+    }
+    studioSessions.set(id, session)
+    return { ok: true, ...session, reused: false }
+  }
+
+  const renderQueue = []
+  let activeRender = null
+
+  /** 渲染是重 CPU 任务：串行排队，避免两个工程各起一套 Chrome 互相拖慢。 */
+  function pumpRenderQueue() {
+    if (activeRender) return
+    const next = renderQueue.shift()
+    if (!next) return
+    activeRender = next
+    next.status = 'running'
+    next.startedRenderingAt = Date.now()
+    void runRender(next).finally(() => {
+      activeRender = null
+      pumpRenderQueue()
+    })
+  }
+
+  function runRender(job) {
+    return new Promise((resolve) => {
+      const child = spawn(process.execPath, job.args, {
+        cwd: job.dir,
+        shell: false,
+        env: motionRenderEnvironment(),
+      })
+      const append = (text) => {
+        job.log = (job.log + text).slice(-8000)
+        const progress = parseRenderProgress(text)
+        if (progress) job.progress = progress
+      }
+      child.stdout.on('data', (chunk) => append(String(chunk)))
+      child.stderr.on('data', (chunk) => append(String(chunk)))
       child.on('error', (error) => {
         job.status = 'failed'
         job.error = String(error?.message || error)
+        job.finishedAt = Date.now()
         resolve()
       })
-      child.on('close', (code) => {
-        if (code === 0 && fs.existsSync(job.output)) {
-          job.status = 'succeeded'
-          job.url = `/generated/${path.basename(job.output)}`
-        } else {
+      child.on('close', async (code) => {
+        job.finishedAt = Date.now()
+        if (code !== 0 || !fs.existsSync(job.output)) {
           job.status = 'failed'
           job.error = job.error || `渲染进程退出码 ${code}`
+          resolve()
+          return
         }
-        job.finishedAt = Date.now()
+        // 有文件不等于有画面：用 ffprobe 实测时长/帧数，和工程时长对齐后才算成功。
+        const probe = await probeVideo(job.output, ffprobeBinary(motionRenderEnvironment()))
+        if (!probe.ok) {
+          job.probeError = probe.error
+          job.status = 'succeeded'
+          job.url = `/generated/${path.basename(job.output)}`
+          resolve()
+          return
+        }
+        job.probe = {
+          width: probe.width,
+          height: probe.height,
+          codec: probe.codec,
+          duration: probe.duration,
+          frames: probe.frames,
+        }
+        const expected = Number(job.duration) || 0
+        const tolerance = Math.max(0.2, 2 / (Number(job.fps) || 30))
+        if (expected > 0 && Math.abs(probe.duration - expected) > tolerance) {
+          job.status = 'failed'
+          job.error = `导出时长 ${probe.duration.toFixed(2)}s 与工程 ${expected}s 不一致`
+          resolve()
+          return
+        }
+        job.progress = {
+          pct: 100,
+          code: 'done',
+          label: '完成',
+          done: probe.frames,
+          total: probe.frames,
+        }
+        job.status = 'succeeded'
+        job.url = `/generated/${path.basename(job.output)}`
         resolve()
       })
     })
@@ -284,38 +818,74 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
     const id = safeId(body?.id)
     const meta = readMeta(id)
     if (!meta) throw new Error('动效工程不存在')
+    const cli = path.join(rootDir, 'node_modules', 'hyperframes', 'bin', 'hyperframes.mjs')
+    if (!fs.existsSync(cli)) {
+      throw new Error('渲染组件缺失：安装包里没有 HyperFrames CLI。请重新安装 Stepframe。')
+    }
+    const runtime = motionRenderRuntime({ rootDir })
+    if (!runtime.ffmpegReady) {
+      throw new Error(
+        '导出 MP4 需要 FFmpeg：当前设备没有可用的 ffmpeg。macOS 可执行 brew install ffmpeg，或把 ffmpeg/ffprobe 放进安装包的 Resources/ffmpeg。',
+      )
+    }
+
+    const dir = projectDir(id)
+    const fps = Number(meta.fps) || 30
+    const duration = compositionDuration(dir)
     const output = path.join(exportRoot, `${id}-${Date.now()}.mp4`)
+    const { args, workers } = buildRenderArgs({
+      cli,
+      dir,
+      output,
+      fps,
+      duration,
+      params: meta.params,
+    })
+
     const job = {
       id: `render_${crypto.randomUUID().slice(0, 8)}`,
       projectId: id,
-      dir: projectDir(id),
+      dir,
       output,
-      status: 'running',
+      args,
+      fps,
+      duration,
+      workers,
+      status: 'queued',
       log: '',
-      startedAt: Date.now(),
+      progress: { pct: 0, code: 'queued', label: '排队中', done: 0, total: 0 },
+      createdAt: Date.now(),
     }
     jobs.set(job.id, job)
+    renderQueue.push(job)
+    pumpRenderQueue()
+    return { jobId: job.id, workers, duration, queued: job.status === 'queued' }
+  }
 
-    const cli = path.join(rootDir, 'node_modules', 'hyperframes', 'bin', 'hyperframes.mjs')
-    if (!fs.existsSync(cli)) {
-      throw new Error('未安装 hyperframes CLI，请先在项目目录执行 npm install。')
+  /** 让旧项目能在打开时把丢失的渲染片段重新接回最近一次真实产物。 */
+  function latestRender(id) {
+    if (!readMeta(id)) throw new Error('动效工程不存在')
+    const prefix = `${id}-`
+    const renders = fs.readdirSync(exportRoot)
+      .filter((name) => name.startsWith(prefix) && name.endsWith('.mp4'))
+      .map((name) => {
+        const file = path.join(exportRoot, name)
+        const stat = fs.statSync(file)
+        return { name, file, mtime: stat.mtimeMs }
+      })
+      .sort((left, right) => right.mtime - left.mtime)
+    const newest = renders[0]
+    if (!newest) return { ok: true, url: '', updatedAt: 0, stale: false }
+    const entry = resolveInside(id, 'index.html')
+    const sourceMtime = entry && fs.existsSync(entry) ? fs.statSync(entry).mtimeMs : 0
+    return {
+      ok: true,
+      url: `/generated/${newest.name}`,
+      updatedAt: newest.mtime,
+      sourceUpdatedAt: sourceMtime,
+      // 源码在最近一次渲染后又被改过：保留片段但不自动换成过期产物。
+      stale: sourceMtime > newest.mtime + 1000,
     }
-    const args = [
-      cli,
-      'render',
-      projectDir(id),
-      '--output',
-      output,
-      '--format',
-      'mp4',
-      '-f',
-      String(meta.fps || 30),
-    ]
-    if (meta.params && Object.keys(meta.params).length) {
-      args.push('--variables', JSON.stringify(meta.params))
-    }
-    void runRender(job, { command: process.execPath, args })
-    return { jobId: job.id }
   }
 
   return {
@@ -364,6 +934,31 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
         return
       }
 
+      /**
+       * 目录式预览地址：必须让 index.html 里的相对路径（assets/logo.svg 等）能正常解析。
+       * 查询串式的 /file 会让浏览器把 assets/... 解析到 /local/motion/assets/...，Logo 与照片全部 404。
+       */
+      const viewMatch = pathname.match(/^\/local\/motion\/view\/([^/]+)\/?(.*)$/)
+      if (viewMatch && req.method === 'GET') {
+        let id = ''
+        let relative = ''
+        try {
+          id = decodeURIComponent(viewMatch[1] || '')
+          relative = decodeURIComponent(viewMatch[2] || '') || 'index.html'
+        } catch {
+          throw new Error('预览路径编码不合法')
+        }
+        const target = resolveInside(id, relative)
+        if (!target || !fs.existsSync(target) || !fs.statSync(target).isFile()) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+          res.end('Not Found')
+          return
+        }
+        res.setHeader('Cache-Control', 'no-store')
+        sendFile(res, target)
+        return
+      }
+
       if (pathname === '/local/motion/list' && req.method === 'GET') {
         sendJson(res, 200, { ok: true, projects: listProjects() })
         return
@@ -372,6 +967,20 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
       if (pathname === '/local/motion/create' && req.method === 'POST') {
         const meta = await createProject(await readBody())
         sendJson(res, 200, { ok: true, project: meta })
+        return
+      }
+
+      if (pathname === '/local/motion/import' && req.method === 'POST') {
+        sendJson(res, 200, importAsset(await readBody()))
+        return
+      }
+
+      if (pathname === '/local/motion/discard' && req.method === 'POST') {
+        const body = await readBody()
+        const id = safeId(body.id)
+        if (!id || !readMeta(id)) throw new Error('动效工程不存在')
+        fs.rmSync(projectDir(id), { recursive: true, force: true })
+        sendJson(res, 200, { ok: true })
         return
       }
 
@@ -387,6 +996,7 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
         const body = await readBody()
         const target = resolveInside(body.id, body.path || 'index.html')
         if (!target) throw new Error('路径不合法')
+        if ((body.path || 'index.html') === 'index.html') validateMotionCompositionSource(body.content)
         fs.mkdirSync(path.dirname(target), { recursive: true })
         fs.writeFileSync(target, String(body.content ?? ''))
         sendJson(res, 200, { ok: true, project: writeMeta(body.id, {}) })
@@ -432,6 +1042,26 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
         return
       }
 
+      if (pathname === '/local/motion/runtime' && req.method === 'GET') {
+        sendJson(res, 200, { ok: true, runtime: motionRenderRuntime({ rootDir }) })
+        return
+      }
+
+      if (pathname === '/local/motion/check' && req.method === 'POST') {
+        sendJson(res, 200, await checkProject(await readBody()))
+        return
+      }
+
+      if (pathname === '/local/motion/studio' && req.method === 'POST') {
+        sendJson(res, 200, await startStudio(await readBody()))
+        return
+      }
+
+      if (pathname === '/local/motion/render/latest' && req.method === 'GET') {
+        sendJson(res, 200, latestRender(url.searchParams.get('id') || ''))
+        return
+      }
+
       if (pathname === '/local/motion/render' && req.method === 'POST') {
         sendJson(res, 200, { ok: true, ...(await startRender(await readBody())) })
         return
@@ -451,7 +1081,12 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
             url: job.url,
             error: job.error,
             log: job.log,
-            startedAt: job.startedAt,
+            progress: job.progress,
+            probe: job.probe,
+            probeError: job.probeError,
+            duration: job.duration,
+            workers: job.workers,
+            startedAt: job.startedRenderingAt || job.createdAt,
             finishedAt: job.finishedAt,
           },
         })

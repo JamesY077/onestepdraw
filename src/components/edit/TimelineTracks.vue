@@ -730,12 +730,17 @@ function startScrub(event: PointerEvent) {
   const target = event.currentTarget as HTMLElement | null
   target?.setPointerCapture?.(event.pointerId)
   emitSeek(timeFromClientX(event.clientX))
-  const move = (pointer: PointerEvent) => emitSeek(timeFromClientX(pointer.clientX))
+  const move = (pointer: PointerEvent) => {
+    emitSeek(timeFromClientX(pointer.clientX))
+    beginAutoScroll('scrub', pointer.clientX)
+  }
   const stop = () => {
+    stopAutoScroll()
     window.removeEventListener('pointermove', move)
     window.removeEventListener('pointerup', stop)
     window.removeEventListener('pointercancel', stop)
   }
+  beginAutoScroll('scrub', event.clientX)
   window.addEventListener('pointermove', move)
   window.addEventListener('pointerup', stop)
   window.addEventListener('pointercancel', stop)
@@ -829,10 +834,15 @@ function compatibleTrackAt(clientY: number, clip: TimelineClip): { id: string; o
 }
 
 function onDragMove(event: PointerEvent) {
+  updateDrag(event.clientX, event.clientY)
+  beginAutoScroll('drag', event.clientX, event.clientY)
+}
+
+function updateDrag(clientX: number, clientY: number) {
   const state = dragState
   if (!state) return
   const scrollDelta = (scrollRef.value?.scrollLeft ?? state.scrollStart) - state.scrollStart
-  const deltaTime = (event.clientX - state.startClientX + scrollDelta) / state.pxPerSec
+  const deltaTime = (clientX - state.startClientX + scrollDelta) / state.pxPerSec
   const px = state.pxPerSec
   let start = state.origStart
   let length = state.origDuration
@@ -891,7 +901,7 @@ function onDragMove(event: PointerEvent) {
 
   if (state.mode === 'move' && !state.group) {
     const clip = findClip(state.clipId)?.clip
-    const target = clip ? compatibleTrackAt(event.clientY, clip) : null
+    const target = clip ? compatibleTrackAt(clientY, clip) : null
     if (target) {
       state.targetTrackId = target.id
       state.trackOffset = target.offset
@@ -913,7 +923,6 @@ function onDragMove(event: PointerEvent) {
   state.moved = state.moved || Math.abs(shift) > 0.5 || Math.abs(length - state.origDuration) * px > 0.5 || state.targetTrackId !== state.origTrackId
 
   paintGuide(snapped.guide)
-  autoScroll(event.clientX)
 }
 
 function paintGuide(time: number | null) {
@@ -927,15 +936,53 @@ function paintGuide(time: number | null) {
   guide.style.transform = `translate3d(${time * props.pxPerSec}px, 0, 0)`
 }
 
-function autoScroll(clientX: number) {
+/**
+ * 拖动播放头或片段到视口左右边缘时，时间轴持续滑动。
+ * 速度随指针进入边缘的深度增加，不依赖 pointermove 的频率。
+ */
+let autoScrollMode: 'scrub' | 'drag' | '' = ''
+let autoScrollX = 0
+let autoScrollY = 0
+let autoScrollFrame = 0
+
+function autoScrollTick() {
+  autoScrollFrame = 0
   const element = scrollRef.value
-  if (!element) return
+  const mode = autoScrollMode
+  if (!element || !mode) return
   const rect = element.getBoundingClientRect()
-  const edge = 42
-  if (clientX > rect.right - edge && element.scrollLeft < element.scrollWidth) {
-    element.scrollLeft += 14
-  } else if (clientX < rect.left + edge && element.scrollLeft > 0) {
-    element.scrollLeft -= 14
+  const edge = Math.min(64, Math.max(30, rect.width * 0.08))
+  const max = Math.max(0, element.scrollWidth - element.clientWidth)
+  let speed = 0
+  if (autoScrollX > rect.right - edge) {
+    speed = Math.ceil(((autoScrollX - (rect.right - edge)) / edge) * 24)
+  } else if (autoScrollX < rect.left + edge) {
+    speed = -Math.ceil(((rect.left + edge - autoScrollX) / edge) * 24)
+  }
+  if (speed && max > 0) {
+    const next = Math.max(0, Math.min(max, element.scrollLeft + speed))
+    if (next !== element.scrollLeft) {
+      element.scrollLeft = next
+      scrollLeft.value = next
+      if (mode === 'scrub') emitSeek(timeFromClientX(autoScrollX))
+      else updateDrag(autoScrollX, autoScrollY)
+    }
+  }
+  autoScrollFrame = requestAnimationFrame(autoScrollTick)
+}
+
+function beginAutoScroll(mode: 'scrub' | 'drag', clientX: number, clientY = 0) {
+  autoScrollMode = mode
+  autoScrollX = clientX
+  autoScrollY = clientY
+  if (!autoScrollFrame) autoScrollFrame = requestAnimationFrame(autoScrollTick)
+}
+
+function stopAutoScroll() {
+  autoScrollMode = ''
+  if (autoScrollFrame) {
+    cancelAnimationFrame(autoScrollFrame)
+    autoScrollFrame = 0
   }
 }
 
@@ -946,6 +993,7 @@ function endDrag() {
   dropTrackId.value = ''
   paintGuide(null)
   dragTrackEl = null
+  stopAutoScroll()
   window.removeEventListener('pointermove', onDragMove)
   window.removeEventListener('pointerup', endDrag)
   window.removeEventListener('pointercancel', endDrag)
@@ -1085,6 +1133,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(rafSeek)
+  stopAutoScroll()
   resizeObserver?.disconnect()
   window.removeEventListener('keydown', closeClipMenuOnKey)
   window.removeEventListener('pointerdown', closeClipMenu, true)

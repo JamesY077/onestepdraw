@@ -1,7 +1,7 @@
 import type { AudioBufferSource, CanvasSink } from 'mediabunny'
 import type { EditProject, TimelineClip } from '@/types/edit'
 import { projectDuration } from '@/stores/editProjectStore'
-import { getMotionRenderJob, startMotionRender } from '@/api/motion'
+import { getLatestMotionRender, getMotionRenderJob, startMotionRender } from '@/api/motion'
 import { clipOpacityAt, clipVolumeAt } from '@/features/edit/keyframes'
 
 /**
@@ -70,14 +70,42 @@ function abortableDelay(milliseconds: number, signal?: AbortSignal): Promise<voi
   })
 }
 
-async function renderMotionForExport(motionId: string, options: ExportOptions): Promise<string> {
+async function renderMotionForExport(
+  motionId: string,
+  options: ExportOptions,
+  onPhase?: (note: string) => void,
+): Promise<string> {
   const jobId = await startMotionRender(motionId)
+  let last = ''
   for (;;) {
     throwIfAborted(options.signal)
     const job = await getMotionRenderJob(jobId)
+    const progress = job.progress
+    const phase = job.status === 'queued'
+      ? '排队中'
+      : progress
+        ? `${progress.label} ${progress.pct}%`
+        : '渲染中'
+    if (phase !== last) {
+      onPhase?.(phase)
+      last = phase
+    }
     if (job.status === 'succeeded' && job.url) return job.url
     if (job.status === 'failed') throw new Error(job.error || '动效工程渲染失败')
     await abortableDelay(500, options.signal)
+  }
+}
+
+/**
+ * 工程源码没变就不必重渲染：上一份 MP4 仍然对应当前 HTML。
+ * 只复用服务端确认没有过期（stale=false）的产物，编辑过源码会自动重渲染。
+ */
+async function reusableRender(motionId: string): Promise<string> {
+  try {
+    const latest = await getLatestMotionRender(motionId)
+    return latest.url && !latest.stale ? latest.url : ''
+  } catch {
+    return ''
   }
 }
 
@@ -100,8 +128,18 @@ async function materializeMotionClips(project: EditProject, options: ExportOptio
   let completed = 0
   for (const motionId of motionIds) {
     throwIfAborted(options.signal)
-    options.onProgress?.(0.02, `渲染动效工程 ${completed + 1}/${motionIds.size}`)
-    rendered.set(motionId, await renderMotionForExport(motionId, options))
+    const label = `渲染动效工程 ${completed + 1}/${motionIds.size}`
+    const reused = await reusableRender(motionId)
+    if (reused) {
+      rendered.set(motionId, reused)
+      options.onProgress?.(0.02, `复用已渲染的${label.slice(2)}`)
+      completed += 1
+      continue
+    }
+    options.onProgress?.(0.02, label)
+    rendered.set(motionId, await renderMotionForExport(motionId, options, (phase) => {
+      options.onProgress?.(0.02, `${label} · ${phase}`)
+    }))
     completed += 1
   }
   return {

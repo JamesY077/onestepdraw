@@ -1,4 +1,5 @@
 import videoScriptSkill from '../../../skills/video-script/SKILL.md?raw'
+import type { CreativeEngineMode } from '@/stores/chatModeStore'
 import { buildAgentSystemPrompt } from './prompt'
 
 /**
@@ -13,19 +14,25 @@ export const CREATE_FLOW_SKILL_CONTENT = videoScriptSkill
 /** 把默认 Skill 拼进系统提示词；只对创作对话生效。 */
 export function createFlowSystemPrompt(base: {
   automation: 'default' | 'auto'
+  creativeEngine?: CreativeEngineMode
   projectSummary?: string
   productionSummary?: string
+  storyboardSummary?: string
   extraSkills?: Array<{ name: string; content: string }>
 }): string {
   const skills = [
-    { name: CREATE_FLOW_SKILL_NAME, content: CREATE_FLOW_SKILL_CONTENT },
+    ...(base.creativeEngine === 'animation'
+      ? []
+      : [{ name: CREATE_FLOW_SKILL_NAME, content: CREATE_FLOW_SKILL_CONTENT }]),
     ...(base.extraSkills || []),
   ]
   return buildAgentSystemPrompt({
     mode: 'create',
     automation: base.automation,
+    creativeEngine: base.creativeEngine || 'aigc',
     projectSummary: base.projectSummary,
     productionSummary: base.productionSummary,
+    storyboardSummary: base.storyboardSummary,
     skills,
   })
 }
