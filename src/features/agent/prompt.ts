@@ -48,7 +48,7 @@ function modeBlock(mode: ConversationMode, automation: AutomationMode, creativeE
           ? '完全模式下宿主会在本轮结束后自动确认并逐镜制作，不要等待用户点击；'
           : '等用户逐镜编辑并总确认；') +
         '有模板 ID 可先 read_motion_template，但确认前不得 create/write/render。确认后再 create_motion_project；上传 Logo/截图后用 import_motion_asset 复制进工程。',
-      '- 用 read_motion_project 读取后，再通过 write_motion_project 写完整源码；保留参考镜头顺序、节奏、配色、字幕与原作署名。单次写回要控制体积：不要内嵌超大 base64，图片用 assets/ 路径；工程很大时先写最小可运行版本，再分次补全。',
+      '- 用 read_motion_project 读取后，再通过 write_motion_project 写回源码；保留参考镜头顺序、节奏、配色、字幕与原作署名。单次写回要控制体积：不要内嵌超大 base64，图片用 assets/ 路径；工程很大时先用 mode=replace 写最小可运行骨架，再用 mode=append 分块补全，最后一块传 final=true。多镜工程按镜推进，每完成一镜先汇报进度再继续下一镜。',
       '- 动画使用 paused GSAP 时间轴并注册 window.__timelines，不自动 play()。时间轴 key 必须与根合成的 data-composition-id 完全一致（通常是 main），不要额外注册镜号别名，否则播放器找不到时间轴。用户确认出片后才 render_motion_project。',
       '- 写回后用 review_motion_project 复查字体、安全区、元素重叠/过近、对比度与运行时错误；只修正问题元素，不要重做整份工程。',
       automation === 'auto'
@@ -174,7 +174,7 @@ function nativeToolsBlock(mode: ConversationMode, creativeEngine: CreativeEngine
 - prepare_storyboard：动画先制作完整分镜脚本，并在每个 shot 的 reference_svg 中编写该镜代表帧的静态自包含 SVG（主体、构图、字幕要具体对应 prompt，禁止脚本、外链、位图）；用户可在卡片编辑脚本、替换图片/视频或单镜 AI 重做。确认前不得创建或写回工程（完全模式由宿主自动确认）。
 - create_motion_project：分镜确认后，复制模板或创建独立 HyperFrames 工程并放入时间轴。
 - import_motion_asset：把本轮上传的 Logo、截图、音视频从素材地址复制到工程，返回 assets/ 相对路径；写 HTML 前完成导入。
-- read_motion_project / write_motion_project：读取并写回完整工程源码。图片使用 <img src="assets/..."> 或 data-var-src 绑定，不把 Logo 交给 generate_image。
+- read_motion_project / write_motion_project：读取并写回工程源码。图片使用 <img src="assets/..."> 或 data-var-src 绑定，不把 Logo 交给 generate_image。源码较长时不要一次塞完：先用 mode=replace 写最小可运行骨架，再用 mode=append 按顺序追加，最后一块传 final=true；单次超过约 24000 字符会被拒绝并要求拆块。
 - review_motion_project：用官方 HyperFrames check 复查字体、安全区、元素重叠/过近、对比度与运行时错误；按问题修改对应元素，不重写整份工程。
 - render_motion_project：用户确认出片后，才用本机 HyperFrames CLI 渲染 MP4 导出产物（不改时间轴片段）。
 - read_project / edit_timeline / update_plan / open_voice：通用项目、剪辑、规划与配音能力。
@@ -238,6 +238,20 @@ export function buildAgentSystemPrompt(options: AgentPromptOptions = {}): string
 - 需要用户做选择时，用下面的「提问卡片」一次只问一个问题；不要用 Markdown 列表罗列选项，选项会渲染成可点击的卡片。
 - 不确定的信息要明确说明，不要编造。
 - 默认使用简体中文回答，除非用户使用其他语言。
+
+## 任务拆解与进度汇报
+接到需求后先判断要不要拆：一次工具调用（或一次生成）就能完成的小事直接做，不要为了显得完整而建计划。下面任一情况成立就拆：
+- 用户一次给了 3 件以上彼此独立的修改/素材/镜头；
+- 需要「先读后改」「先建后写」「先生成再入轨」这类有先后依赖的多阶段流程；
+- 单次工具参数可能很长（例如写整份动效工程源码、长脚本、大段文案）；
+- 预计要连续调用 3 个以上工具才能完成。
+
+拆解规则：
+1. 先调用 update_plan 建立 2-12 步计划，每步是一个可验证的阶段，并把它当作本轮的执行清单。
+2. 一个 Step 只推进一个阶段。完成当前阶段的工具调用后，先用一句进度说明再继续，例如「1/5 已完成：改好片头文案；现在做 2/5：调整配色」，不要一声不吭连跑完全部步骤。
+3. 阶段推进时同步更新 update_plan：刚做完的标 completed，正在做的标 in_progress。上一步失败就如实标注，并说明这一步没成、后面是否继续。
+4. 单次输出放不下时不要硬塞：先写最小可用版本，再分次补全（动效源码用 write_motion_project 的 mode=append 分块，最后一块传 final=true），不要输出半截 JSON。
+5. 全部阶段结束后给一次汇总：按计划逐条说明每项结果（改了什么、产物在哪、有没有遗留），不要只回一句「已完成」。
 
 ${modeBlock(mode, automation, creativeEngine)}${skillsBlock(options.skills)}
 

@@ -11,7 +11,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
     type: 'function',
     function: {
       name: 'update_plan',
-      description: '更新当前创作任务的简短计划。仅在任务确实需要两个以上阶段时使用；简单聊天或直接生成不要调用。',
+      description: '接到需求后先判断是否需要拆解：需要两个以上阶段、多个素材/镜头或整支片时，先调用本工具建立 2-12 步计划；每完成一步立即更新状态并继续下一步。简单聊天或一次生成能完成的任务不要调用。',
       parameters: {
         type: 'object',
         additionalProperties: false,
@@ -19,7 +19,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
         properties: {
           items: {
             type: 'array',
-            maxItems: 6,
+            maxItems: 12,
             items: {
               type: 'object',
               additionalProperties: false,
@@ -274,15 +274,17 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
     type: 'function',
     function: {
       name: 'write_motion_project',
-      description: '写回动效工程源码（完整文件，不是 diff）。用于改文案、配色、版式、镜头时长与 GSAP 动效。',
+      description: '写回动效工程源码。小工程用 mode=replace 一次写完整文件；大工程必须拆块：先用 mode=replace 写最小可用骨架，再用 mode=append 按顺序追加剩余 HTML/CSS/JS，最后一块传 final=true 触发完整校验。禁止一次塞入超大源码。',
       parameters: {
         type: 'object',
         additionalProperties: false,
         required: ['motionId', 'source'],
         properties: {
           motionId: { type: 'string' },
-          source: { type: 'string', description: '完整可运行源码。' },
+          source: { type: 'string', description: '本次写入的源码或源码片段。' },
           path: { type: 'string', description: '默认 index.html。' },
+          mode: { type: 'string', enum: ['replace', 'append'], description: 'replace 覆盖整个文件；append 追加到当前文件末尾。默认 replace。' },
+          final: { type: 'boolean', description: 'append 的最后一块传 true，宿主会校验完整源码。' },
         },
       },
     },

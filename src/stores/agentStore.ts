@@ -2327,7 +2327,7 @@ export const useAgentStore = defineStore('agent', () => {
     }
 
     if (call.name === 'update_plan') {
-      const source = Array.isArray(call.args.items) ? call.args.items.slice(0, 6) : []
+      const source = Array.isArray(call.args.items) ? call.args.items.slice(0, 12) : []
       const plan: AgentPlanItem[] = source.map((raw: any, index) => ({
         id: `plan_${index + 1}`,
         content: String(raw?.content || '').trim().slice(0, 80),

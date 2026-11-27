@@ -9,6 +9,8 @@ import { aspectSize } from '@/types/edit'
 
 const MAX_DOC_CHARS = 16_000
 const MAX_SOURCE_CHARS = 80_000
+/** 单次工具参数过大很容易撞上模型输出上限；超过这个长度必须分块写入。 */
+const MAX_SINGLE_WRITE_CHARS = 24_000
 
 export function motionDimensions(production: Pick<AgentProduction, 'aspectRatio' | 'resolution'>) {
   const base = aspectSize(production.aspectRatio)
@@ -342,14 +344,51 @@ export async function executeMotionTool(
     if (!motionId || !source.trim()) throw new Error('需要 motionId 与完整源码 source。')
     const shot = activeAnimationShot(conversation)
     if (shot && shot.motionId !== motionId) throw new Error(`${shot.id} 只能写回自己的工程 ${shot.motionId || '(尚未创建)'}。`)
-    validateShotSource(source, shot, conversation)
-    const state = await motion.saveSource(motionId, source)
-    if (shot) shot.motionSourceReady = true
+    const mode = call.args.mode === 'append' ? 'append' : 'replace'
+    const final = call.args.final === true
+
+    if (mode === 'replace') {
+      if (source.length > MAX_SINGLE_WRITE_CHARS) {
+        throw new Error(
+          `单次写回 ${source.length} 字符，超过安全上限 ${MAX_SINGLE_WRITE_CHARS}。`
+          + ' 请先用 update_plan 把写回拆成阶段：第一次 mode=replace 写最小可运行骨架，'
+          + '之后每次 mode=append 追加一块，最后一块传 final=true；不要一次塞入整份大源码。',
+        )
+      }
+      validateShotSource(source, shot, conversation)
+      const state = await motion.saveSource(motionId, source)
+      if (shot) shot.motionSourceReady = true
+      return {
+        ok: true,
+        motionId,
+        mode,
+        chars: source.length,
+        variables: state.variables,
+        message: '工程已写回磁盘，预览会重新加载。未渲染 MP4；需要出片时再调用 render_motion_project。',
+      }
+    }
+
+    // append：每次只追加一段，最后一块再校验完整源码，避免半成品被当成成品。
+    const state = await motion.load(motionId, true)
+    if (!state.source?.trim()) throw new Error('append 之前必须先用 mode=replace 写入最小可运行骨架。')
+    const combined = `${state.source}${source}`
+    if (combined.length > MAX_SOURCE_CHARS) {
+      throw new Error(`工程源码已达到 ${combined.length} 字符，超过 ${MAX_SOURCE_CHARS} 上限。请精简内容，不要继续追加内嵌大文件。`)
+    }
+    if (final) validateShotSource(combined, shot, conversation)
+    const saved = await motion.saveSource(motionId, combined)
+    if (shot && final) shot.motionSourceReady = true
     return {
       ok: true,
       motionId,
-      variables: state.variables,
-      message: '工程已写回磁盘，预览会重新加载。未渲染 MP4；需要出片时再调用 render_motion_project。',
+      mode,
+      final,
+      chars: combined.length,
+      appended: source.length,
+      variables: saved.variables,
+      message: final
+        ? '最后一块已追加并完成完整校验，工程可预览；继续用 review_motion_project 复查。'
+        : `本次追加 ${source.length} 字符，当前共 ${combined.length} 字符。继续追加下一块；最后一块必须传 final=true。`,
     }
   }
 

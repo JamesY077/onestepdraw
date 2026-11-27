@@ -134,6 +134,8 @@ src/components/agent/AgentRunTrace.vue
 - 非法工具 JSON：不让 SSE/调度器崩溃，作为参数错误回注。
 - 输出 `length/max_tokens`：不执行 tool calls，避免运行半个 JSON。
 - 单步工具数量、单轮生成任务和总步数都不设上限；持续执行到模型结束或用户停止，只保留取消、参数截断和重复调用 ID 的保护。工具参数被输出上限截断时先自动重试 2 次，并提示模型拆小任务；仍截断才停止，且绝不执行半成品 JSON。
+- 任务拆解：接到需求先判断阶段数，多阶段时用 `update_plan` 建立 2-12 步计划，一个 Step 只推进一个阶段，并在完成时用一句进度说明（“2/5 已完成…”）继续下一步。单步一次执行 4 个以上工具时，宿主在最后一条 tool result 追加 `[进度提醒]`，要求模型先汇报阶段成果再继续，避免静默跑完。
+- 大源码写回：`write_motion_project` 单次 `replace` 超过 24000 字符会被拒绝，并提示改用 `mode=replace` 写骨架、`mode=append` 分块追加、最后一块 `final=true` 再校验完整工程。
 - 用户停止：abort 当前模型/工具循环；同步释放会话切换，新请求不会被旧 finally 清除。
 - 页面刷新：遗留 streaming → stopped；running Activity/Run → stopped；本地等待中的 Generation → failed，并明确“远端状态未知”，提供重试；已落盘的制作单与逐镜状态保留，已成功镜头仍可继续跳过。
 - 本机 CLI：非零退出即使有正文也显示错误；EOF 未收到 done/error 判定为连接中断。

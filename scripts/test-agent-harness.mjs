@@ -54,6 +54,7 @@ try {
   const { runAgentHarness, AgentHarnessError } = await server.ssrLoadModule('/src/features/agent/harness.ts')
   const { AGENT_NATIVE_TOOLS, agentToolsForMode } = await server.ssrLoadModule('/src/features/agent/toolDefinitions.ts')
   const { normalizeAgentTimelineOps, normalizeAgentCreativeHandoff } = await server.ssrLoadModule('/src/features/agent/tools.ts')
+  const { executeMotionTool } = await server.ssrLoadModule('/src/features/agent/motionTools.ts')
   const { streamLocalAgent } = await server.ssrLoadModule('/src/api/localAgents.ts')
   const { buildRunPrompt, runAgent } = await server.ssrLoadModule('/server/local/agents.mjs')
   const { splitMentionSegments } = await server.ssrLoadModule('/src/composables/useMentionRefs.ts')
@@ -317,21 +318,41 @@ try {
   assert.ok(!JSON.stringify(recoveredRun.messages).includes('内部提示'), '重试提示只给模型看，不写入正式历史')
 
   let executedLargeBatch = 0
+  let largeBatchFollowUp = null
   const largeBatchResult = await runAgentHarness({
     messages: [],
     signal: new AbortController().signal,
-    stream: async (request) => request.step === 1
-      ? {
+    stream: async (request) => {
+      if (request.step === 1) {
+        return {
           content: '',
           toolCalls: Array.from({ length: 9 }, (_, index) => ({ id: `c${index}`, name: 'read_project', args: {} })),
         }
-      : { content: '九个大批次工具已全部执行。', toolCalls: [] },
+      }
+      largeBatchFollowUp = request.messages
+      return { content: '九个大批次工具已全部执行。', toolCalls: [] }
+    },
     executeTool: async () => { executedLargeBatch += 1; return { ok: true } },
     onDelta: () => {},
     onReasoning: () => {},
   })
   assert.equal(executedLargeBatch, 9, '单步工具数量不再设上限')
   assert.equal(largeBatchResult.steps, 2)
+  assert.ok(
+    largeBatchFollowUp?.some((message) => message.role === 'tool' && String(message.content).includes('[进度提醒]')),
+    '单步大批次执行后提醒模型汇报进度，而不是静默跑完',
+  )
+
+  // 拒绝一次塞入超大源码，要求改用 append 分块，避免再次撞上输出上限。
+  setActivePinia(createPinia())
+  const oversizedWrite = await executeMotionTool({
+    name: 'write_motion_project',
+    args: { motionId: 'motion_big', source: 'x'.repeat(24001) },
+  }, { messages: [], production: null }, { revision: 0 }).then(
+    () => null,
+    (error) => error,
+  )
+  assert.match(String(oversizedWrite?.message || ''), /mode=append/, '超大源码必须提示分块写入')
 
   // 本机 CLI 同样 fail-closed：普通模式没有生成说明，脚本在读取 API Key 前退出。
   const chatLocalPrompt = buildRunPrompt({ mode: 'chat' })

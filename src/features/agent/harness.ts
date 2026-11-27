@@ -12,6 +12,19 @@ const TRUNCATION_HINT = [
   '不要重复已经成功完成的步骤，也不要输出半截 JSON。',
 ].join('')
 
+/**
+ * 一次 Step 塞进太多工具时，模型往往一口气跑完、中间不汇报。
+ * 在最后一条工具结果后面加一句进度提醒，要求它先说明阶段成果再继续。
+ */
+const PROGRESS_HINT = [
+  '[进度提醒] 本步一次性执行了多个工具。',
+  '如果后面还有阶段，先用一句话说明已完成哪部分、接下来做哪部分，并调用 update_plan 同步状态；',
+  '不要把剩余步骤全部塞进同一步静默跑完。',
+].join('')
+
+/** 单步工具数量达到这个值时，追加进度提醒。 */
+const PROGRESS_HINT_MIN_CALLS = 4
+
 export class AgentHarnessError extends Error {
   code: 'incomplete_tool_call'
 
@@ -181,6 +194,12 @@ export async function runAgentHarness(options: AgentHarnessOptions): Promise<Age
       }
       // 普通业务错误也回注，让下一 Step 能修正参数或向用户解释。
       messages.push({ role: 'tool', tool_call_id: id, name: call.name, content })
+    }
+
+    // 大批次执行后提醒模型汇报阶段进度，而不是默默做完全部任务。
+    if (calls.length >= PROGRESS_HINT_MIN_CALLS) {
+      const last = messages[messages.length - 1]
+      if (last?.role === 'tool') last.content = `${last.content || ''}\n\n${PROGRESS_HINT}`
     }
   }
 }
