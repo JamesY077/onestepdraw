@@ -100,8 +100,11 @@ function commandAvailable(binary) {
  * 装完 App 再偷偷下 200MB，离线还会直接失败。
  *
  * 打包脚本会把官方锁定的 chrome-headless-shell 放进
- * `Resources/chrome-headless-shell/`，开发态则读 `.runtime/`，运行时
+ * `Resources/chromium/`，开发态则读 `.runtime/chromium/`，运行时
  * 通过 HYPERFRAMES_BROWSER_PATH 指过去即可，不复用系统 Chrome。
+ *
+ * 目录名不用 `chrome-headless-shell`：当目录名和里面的可执行文件同名时，
+ * codesign 会把可执行文件当成 bundle 去校验同目录的 .pak，导致 App 签名失败。
  */
 export function bundledBrowserPath({
   rootDir = MODULE_ROOT,
@@ -110,8 +113,14 @@ export function bundledBrowserPath({
 } = {}) {
   const binary = platform === 'win32' ? 'chrome-headless-shell.exe' : 'chrome-headless-shell'
   const roots = []
-  if (resourcesPath) roots.push(path.join(resourcesPath, 'chrome-headless-shell'))
-  if (rootDir) roots.push(path.join(rootDir, '.runtime', 'chrome-headless-shell'))
+  if (resourcesPath) {
+    roots.push(path.join(resourcesPath, 'chromium'))
+    roots.push(path.join(resourcesPath, 'chrome-headless-shell'))
+  }
+  if (rootDir) {
+    roots.push(path.join(rootDir, '.runtime', 'chromium'))
+    roots.push(path.join(rootDir, '.runtime', 'chrome-headless-shell'))
+  }
   for (const root of roots) {
     const direct = path.join(root, binary)
     if (fs.existsSync(direct)) return direct

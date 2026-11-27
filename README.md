@@ -95,13 +95,15 @@ npm run app:dmg         # 打包成 release/Stepframe-<version>-arm64.dmg
 
 素材与生成结果都在 `~/Library/Application Support/Stepframe/data/`；聊天记录、项目结构这类小数据仍在 localStorage 里。桌面版固定监听 `127.0.0.1:41739`（可用 `ONESTEP_APP_PORT` 改），因为浏览器数据按 origin 隔离，端口一变项目就会看起来「消失」。
 
-**渲染引擎不依赖用户装 Chrome。** 界面虽然跑在 Electron 里，但导出 MP4 时 HyperFrames 需要一个可被 CDP 驱动的独立 Chromium，Electron 主进程不能直接当无头浏览器用。`npm run app:pack` / `app:dmg` 会先执行 `prepare:runtime`，把官方锁定的 `chrome-headless-shell` 放进 `.runtime/`，再随安装包复制到 `Resources/chrome-headless-shell/`，运行时通过 `HYPERFRAMES_BROWSER_PATH` 指向它。因此：
+**渲染引擎不依赖用户装 Chrome。** 界面虽然跑在 Electron 里，但导出 MP4 时 HyperFrames 需要一个可被 CDP 驱动的独立 Chromium，Electron 主进程不能直接当无头浏览器用。`npm run app:pack` / `app:dmg` 会先执行 `prepare:runtime`，把官方锁定的 `chrome-headless-shell` 放进 `.runtime/`，再随安装包复制到 `Resources/chromium/`，运行时通过 `HYPERFRAMES_BROWSER_PATH` 指向它。因此：
 
 - 首次导出不会再去 `~/.cache` 下载约 200MB 的浏览器，断网也能渲染；
 - 不会调用系统 Chrome / Edge，也不会受用户浏览器版本影响；
 - 开发态直接用 `npm run app` 时会读取项目里的 `.runtime/`；如果还没准备，执行一次 `npm run prepare:runtime`。
 
-导出还依赖 FFmpeg。默认构建会把 `ffmpeg-static` 与 `@ffprobe-installer/ffprobe` 复制到 `Resources/ffmpeg/`，用户机器不需要另装 FFmpeg；也可以用 `STEPFRAME_FFMPEG_DIR=/path/to/ffmpeg-bin`（目录里同时有 `ffmpeg` 和 `ffprobe`）替换成自己的构建。未内置时才回退到系统 PATH / Homebrew，并在缺失时给出明确提示。`ffmpeg-static` 是带 x264/libpostproc 的 GPL 构建，对外分发前请确认许可证合规；需要 LGPL 构建时用 `STEPFRAME_FFMPEG_DIR` 指定。对外分发还需要 Apple Developer ID 签名与公证，否则其他 Mac 首次打开会被 Gatekeeper 拦截。
+导出还依赖 FFmpeg。默认构建会把 `ffmpeg-static` 与 `@ffprobe-installer/ffprobe` 复制到 `Resources/ffmpeg/`，用户机器不需要另装 FFmpeg；也可以用 `STEPFRAME_FFMPEG_DIR=/path/to/ffmpeg-bin`（目录里同时有 `ffmpeg` 和 `ffprobe`）替换成自己的构建。未内置时才回退到系统 PATH / Homebrew，并在缺失时给出明确提示。`ffmpeg-static` 是带 x264/libpostproc 的 GPL 构建，对外分发前请确认许可证合规；需要 LGPL 构建时用 `STEPFRAME_FFMPEG_DIR` 指定。
+
+打包默认做 ad-hoc 签名（`mac.identity: "-"`），能保证 App 包内资源与签名一致，其他 Mac 上右键「打开」或在「系统设置 → 隐私与安全性」里放行即可运行。要彻底避免 Gatekeeper 提示，仍需 Apple Developer ID 签名并公证：准备好证书后用 `CSC_LINK` / `CSC_NAME` 重新执行 `npm run app:dmg`，再 `xcrun notarytool submit` + `xcrun stapler staple`。未做完这一步时，用户也可以先执行 `xattr -dr com.apple.quarantine /Applications/Stepframe.app`。
 
 打包产物约 750MB（Electron + 依赖 + 内置 Chromium），DMG 会有压缩。
 

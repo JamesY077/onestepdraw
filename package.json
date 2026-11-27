@@ -78,8 +78,8 @@
     ],
     "extraResources": [
       {
-        "from": ".runtime/chrome-headless-shell",
-        "to": "chrome-headless-shell",
+        "from": ".runtime/chromium",
+        "to": "chromium",
         "filter": [
           "**/*"
         ]
@@ -95,6 +95,8 @@
     "mac": {
       "category": "public.app-category.video",
       "icon": "build/icon.icns",
+      "identity": "-",
+      "hardenedRuntime": false,
       "target": [
         {
           "target": "dmg",

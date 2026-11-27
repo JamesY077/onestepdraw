@@ -133,11 +133,11 @@ try {
   // 不能等到首次渲染再下载，也不能依赖用户装 Chrome。
   const binaryName = process.platform === 'win32' ? 'chrome-headless-shell.exe' : 'chrome-headless-shell'
   const runtimeRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'stepframe-browser-'))
-  const devRuntime = path.join(runtimeRoot, '.runtime', 'chrome-headless-shell')
+  const devRuntime = path.join(runtimeRoot, '.runtime', 'chromium')
   fs.mkdirSync(devRuntime, { recursive: true })
   fs.writeFileSync(path.join(devRuntime, binaryName), '')
   assert.equal(bundledBrowserPath({ rootDir: runtimeRoot, resourcesPath: '' }), path.join(devRuntime, binaryName))
-  const packedRoot = path.join(runtimeRoot, 'resources', 'chrome-headless-shell')
+  const packedRoot = path.join(runtimeRoot, 'resources', 'chromium')
   fs.mkdirSync(packedRoot, { recursive: true })
   fs.writeFileSync(path.join(packedRoot, binaryName), '')
   assert.equal(
@@ -146,6 +146,12 @@ try {
     '打包后必须优先使用 App 内自带的 Chromium',
   )
   assert.equal(bundledBrowserPath({ rootDir: runtimeRoot, resourcesPath: path.join(runtimeRoot, 'missing') }), path.join(devRuntime, binaryName))
+  // 旧版本的 .runtime/chrome-headless-shell 布局仍要能找到，避免升级后失效。
+  const legacyRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'stepframe-browser-legacy-'))
+  const legacyDir = path.join(legacyRoot, '.runtime', 'chrome-headless-shell')
+  fs.mkdirSync(legacyDir, { recursive: true })
+  fs.writeFileSync(path.join(legacyDir, binaryName), '')
+  assert.equal(bundledBrowserPath({ rootDir: legacyRoot, resourcesPath: '' }), path.join(legacyDir, binaryName))
   const bundledEnv = motionRenderEnvironment({ PATH: '/mock/bin' }, { rootDir: runtimeRoot, resourcesPath: '' })
   assert.equal(bundledEnv.HYPERFRAMES_BROWSER_PATH, path.join(devRuntime, binaryName), '渲染前必须把内置 Chromium 指给 HyperFrames')
   const explicitEnv = motionRenderEnvironment(

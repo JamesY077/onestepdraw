@@ -5,7 +5,7 @@
  * HyperFrames 驱动一个真正的无头 Chromium 逐帧出图。官方 CLI 默认在
  * 首次渲染时把 chrome-headless-shell 下载到 ~/.cache，用户装完 App
  * 再等 200MB 下载、离线还导不出来。这里在构建阶段取到官方锁定的版本，
- * 由 electron-builder 一起塞进 Resources/chrome-headless-shell。
+ * 由 electron-builder 一起塞进 Resources/chromium。
  *
  *   npm run prepare:runtime           # 首次会下载（约 200MB），之后秒过
  *   npm run prepare:runtime -- --force
@@ -19,7 +19,9 @@ import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const cli = path.join(root, 'node_modules', 'hyperframes', 'bin', 'hyperframes.mjs')
-const targetDir = path.join(root, '.runtime', 'chrome-headless-shell')
+// 目录名故意不叫 chrome-headless-shell：与可执行文件同名时 codesign 会把
+// 可执行文件当成 bundle，去校验同目录的 .pak，App 签名会直接失败。
+const targetDir = path.join(root, '.runtime', 'chromium')
 const binaryName = process.platform === 'win32' ? 'chrome-headless-shell.exe' : 'chrome-headless-shell'
 const force = process.argv.includes('--force')
 
@@ -97,6 +99,35 @@ if (!force && fs.existsSync(path.join(targetDir, binaryName))) {
 }
 
 /**
+ * macOS 上给随包的二进制做 ad-hoc 签名。
+ *
+ * chrome-headless-shell 从官方包解出来时是 linker-signed，资源信封和文件
+ * 对不上；外层 App 做 ad-hoc 签名时会因为它直接失败（code has no resources
+ * but signature indicates they must be present）。重签一次就能通过校验，
+ * 也让安装包在别的 Mac 上不会显示「已损坏」。
+ */
+function adhocSign(file) {
+  if (process.platform !== 'darwin') return
+  if (!fs.existsSync(file)) return
+  // Chrome for Testing 的二进制带的是 linker 签名 + 资源信封，直接重签会被
+  // codesign 当成 bundle，要求同目录的 .pak 也有签名而失败。先摘掉旧签名，
+  // 变成普通可执行文件后再做 ad-hoc 签名。
+  spawnSync('codesign', ['--remove-signature', file], { encoding: 'utf8' })
+  const signed = spawnSync('codesign', ['--force', '--sign', '-', '--timestamp=none', file], {
+    encoding: 'utf8',
+  })
+  if (signed.status !== 0) {
+    fail(`ad-hoc 签名失败：${file}\n${(signed.stderr || signed.stdout || '').slice(-2000)}`)
+  }
+  const verified = spawnSync('codesign', ['--verify', '--verbose=2', file], { encoding: 'utf8' })
+  if (verified.status !== 0) {
+    fail(`ad-hoc 签名校验失败：${file}\n${(verified.stderr || verified.stdout || '').slice(-2000)}`)
+  }
+}
+
+adhocSign(path.join(targetDir, binaryName))
+
+/**
  * FFmpeg 随包分发。优先用 STEPFRAME_FFMPEG_DIR 指定的目录；否则使用
  * devDependencies 里的 ffmpeg-static / @ffprobe-installer（安装时就按当前
  * 平台下载好），复制到 Resources/ffmpeg，用户机器不需要再装 FFmpeg。
@@ -142,3 +173,6 @@ if (ffmpegSources?.dir) {
 } else if (!fs.existsSync(path.join(ffmpegTarget, ffmpegName))) {
   console.log('[prepare-runtime] 未找到可打包的 FFmpeg，安装包将使用用户系统的 ffmpeg。')
 }
+
+adhocSign(path.join(ffmpegTarget, ffmpegName))
+adhocSign(path.join(ffmpegTarget, ffprobeName))
