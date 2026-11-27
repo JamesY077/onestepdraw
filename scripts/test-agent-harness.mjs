@@ -54,7 +54,7 @@ try {
   const { runAgentHarness, AgentHarnessError, compactAgentMessages } = await server.ssrLoadModule('/src/features/agent/harness.ts')
   const { AGENT_NATIVE_TOOLS, agentToolsForMode } = await server.ssrLoadModule('/src/features/agent/toolDefinitions.ts')
   const { normalizeAgentTimelineOps, normalizeAgentCreativeHandoff } = await server.ssrLoadModule('/src/features/agent/tools.ts')
-  const { executeMotionTool } = await server.ssrLoadModule('/src/features/agent/motionTools.ts')
+  const { executeMotionTool, applyMotionEdits } = await server.ssrLoadModule('/src/features/agent/motionTools.ts')
   const { streamLocalAgent } = await server.ssrLoadModule('/src/api/localAgents.ts')
   const { buildRunPrompt, runAgent } = await server.ssrLoadModule('/server/local/agents.mjs')
   const { splitMentionSegments } = await server.ssrLoadModule('/src/composables/useMentionRefs.ts')
@@ -421,6 +421,75 @@ try {
     compacted.some((message) => String(message.content).includes('历史工具结果已压缩')),
     '较早的工具结果要标注已压缩',
   )
+
+  // 工具结果超长时必须是合法 JSON 预览，不能给模型半截 JSON（那会表现为“源码被截断”）。
+  let oversizedToolMessages = null
+  await runAgentHarness({
+    messages: [],
+    signal: new AbortController().signal,
+    stream: async (request) => {
+      if (request.step === 1) {
+        return { content: '', toolCalls: [{ id: 'huge', name: 'read_motion_project', args: {} }] }
+      }
+      oversizedToolMessages = request.messages
+      return { content: '读完。', toolCalls: [], finishReason: 'stop' }
+    },
+    executeTool: async () => ({ ok: true, source: 'x'.repeat(40_000) }),
+    onDelta: () => {},
+    onReasoning: () => {},
+  })
+  const oversizedToolMessage = oversizedToolMessages.find((message) => message.role === 'tool')
+  const oversizedPayload = JSON.parse(oversizedToolMessage.content)
+  assert.equal(oversizedPayload.truncated, true)
+  assert.ok(oversizedPayload.chars > 40_000)
+  assert.match(oversizedPayload.note, /offset\/limit/, '超长结果要告诉模型怎么分页读取')
+  assert.ok(oversizedPayload.preview.length > 0)
+
+  // patch 模式：只替换命中的原文；重复命中与找不到都要明确报错。
+  const patched = applyMotionEdits(
+    '<h1 id="title">旧标题</h1><p class="sub">副标题</p>',
+    [{ find: '旧标题', replace: '新标题' }],
+  )
+  assert.equal(patched.source, '<h1 id="title">新标题</h1><p class="sub">副标题</p>')
+  assert.equal(patched.applied.length, 1)
+  assert.throws(
+    () => applyMotionEdits('<i></i><i></i>', [{ find: '<i></i>', replace: '<b></b>' }]),
+    /命中 2 次/,
+  )
+  assert.equal(
+    applyMotionEdits('<i></i><i></i>', [{ find: '<i></i>', replace: '<b></b>', all: true }]).source,
+    '<b></b><b></b>',
+  )
+  assert.throws(
+    () => applyMotionEdits('<i></i>', [{ find: '<u></u>', replace: 'x' }]),
+    /没有找到目标原文/,
+  )
+
+  // 网关报上下文超限时自动压得更狠再试，而不是让整轮任务中断。
+  const longMessages = [{ role: 'system', content: '系统提示' }]
+  for (let turn = 1; turn <= 16; turn += 1) {
+    longMessages.push({ role: 'user', content: `第 ${turn} 轮需求 ${'甲'.repeat(2_000)}` })
+    longMessages.push({ role: 'assistant', content: `第 ${turn} 轮结果 ${'乙'.repeat(2_000)}` })
+  }
+  const contextSizes = []
+  const contextRetries = []
+  const shrunkRun = await runAgentHarness({
+    messages: longMessages,
+    signal: new AbortController().signal,
+    stream: async (request) => {
+      contextSizes.push(JSON.stringify(request.messages).length)
+      if (contextSizes.length === 1) throw new Error("This model's maximum context length is 8192 tokens")
+      return { content: '压缩后继续完成。', toolCalls: [], finishReason: 'stop' }
+    },
+    executeTool: async () => ({}),
+    onDelta: () => {},
+    onReasoning: () => {},
+    onStepRetry: ({ reason }) => contextRetries.push(reason),
+  })
+  assert.deepEqual(contextRetries, ['context'])
+  assert.equal(contextSizes.length, 2)
+  assert.ok(contextSizes[1] < contextSizes[0], '上下文超限后必须压得更小再重试')
+  assert.equal(shrunkRun.messages.at(-1).content, '压缩后继续完成。')
 
   let executedLargeBatch = 0
   let largeBatchFollowUp = null

@@ -258,7 +258,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
     type: 'function',
     function: {
       name: 'read_motion_project',
-      description: '读取动效工程的源码与参数契约。修改动效前必须先读，不要凭记忆改写。',
+      description: '读取动效工程源码与参数契约。修改前必须先读；大工程不要一次要全量，用 offset/limit 分页，或用 query 按关键字定位要改的那几行。',
       parameters: {
         type: 'object',
         additionalProperties: false,
@@ -266,6 +266,9 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
         properties: {
           motionId: { type: 'string', description: '动效工程 ID，来自片段或 create_motion_project。' },
           path: { type: 'string', description: '工程内相对路径，默认 index.html。' },
+          offset: { type: 'number', description: '从第几个字符开始读，默认 0。' },
+          limit: { type: 'number', description: '本次最多读取多少字符，默认 8000，上限 12000。' },
+          query: { type: 'string', description: '按关键字查找，返回命中的行号与原文；适合只改某段文案、某个元素时定位。' },
         },
       },
     },
@@ -274,16 +277,30 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
     type: 'function',
     function: {
       name: 'write_motion_project',
-      description: '写回动效工程源码。小工程用 mode=replace 一次写完整文件；大工程必须拆块：先用 mode=replace 写最小可用骨架，再用 mode=append 按顺序追加剩余 HTML/CSS/JS，最后一块传 final=true 触发完整校验。禁止一次塞入超大源码。',
+      description: '写回动效工程源码。小改动优先用 mode=patch（按原文替换），不用整份重写；新建或大改用 mode=replace 写最小骨架，再用 mode=append 分块追加，最后一块传 final=true。禁止一次塞入超大源码。',
       parameters: {
         type: 'object',
         additionalProperties: false,
-        required: ['motionId', 'source'],
+        required: ['motionId'],
         properties: {
           motionId: { type: 'string' },
-          source: { type: 'string', description: '本次写入的源码或源码片段。' },
+          source: { type: 'string', description: 'replace / append 时本次写入的源码或源码片段。' },
           path: { type: 'string', description: '默认 index.html。' },
-          mode: { type: 'string', enum: ['replace', 'append'], description: 'replace 覆盖整个文件；append 追加到当前文件末尾。默认 replace。' },
+          mode: { type: 'string', enum: ['patch', 'replace', 'append'], description: 'patch 局部替换；replace 覆盖整个文件；append 追加到末尾。默认 replace。' },
+          edits: {
+            type: 'array',
+            description: 'patch 模式的修改列表，每项把工程里唯一的原文 find 替换成 replace。',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['find', 'replace'],
+              properties: {
+                find: { type: 'string', description: '要替换的原文，必须能在源码里唯一定位。' },
+                replace: { type: 'string', description: '替换后的文本；删除内容时传空字符串。' },
+                all: { type: 'boolean', description: '原文出现多次时是否全部替换，默认 false。' },
+              },
+            },
+          },
           final: { type: 'boolean', description: 'append 的最后一块传 true，宿主会校验完整源码。' },
         },
       },

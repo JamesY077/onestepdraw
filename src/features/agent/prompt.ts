@@ -48,7 +48,8 @@ function modeBlock(mode: ConversationMode, automation: AutomationMode, creativeE
           ? '完全模式下宿主会在本轮结束后自动确认并逐镜制作，不要等待用户点击；'
           : '等用户逐镜编辑并总确认；') +
         '有模板 ID 可先 read_motion_template，但确认前不得 create/write/render。确认后再 create_motion_project；上传 Logo/截图后用 import_motion_asset 复制进工程。',
-      '- 用 read_motion_project 读取后，再通过 write_motion_project 写回源码；保留参考镜头顺序、节奏、配色、字幕与原作署名。单次写回要控制体积：不要内嵌超大 base64，图片用 assets/ 路径；工程很大时先用 mode=replace 写最小可运行骨架，再用 mode=append 分块补全，最后一块传 final=true。多镜工程按镜推进，每完成一镜先汇报进度再继续下一镜。',
+      '- 用 read_motion_project 读取工程：大工程不要一次要全量，传 offset/limit 分页，或用 query 按关键字定位要改的行；写回小改动用 write_motion_project 的 mode=patch（find/replace），只有新建或大改才用 replace 写最小骨架、append 分块补全（最后一块 final=true）。不要因为源码长就声称“无法读取/被截断”，按分页继续读即可。',
+      '- 修改动效时保留参考镜头顺序、节奏、配色、字幕与原作署名；不要内嵌超大 base64，图片用 assets/ 路径。',
       '- 动画使用 paused GSAP 时间轴并注册 window.__timelines，不自动 play()。时间轴 key 必须与根合成的 data-composition-id 完全一致（通常是 main），不要额外注册镜号别名，否则播放器找不到时间轴。用户确认出片后才 render_motion_project。',
       '- 写回后用 review_motion_project 复查字体、安全区、元素重叠/过近、对比度与运行时错误；只修正问题元素，不要重做整份工程。',
       automation === 'auto'
@@ -174,7 +175,7 @@ function nativeToolsBlock(mode: ConversationMode, creativeEngine: CreativeEngine
 - prepare_storyboard：动画先制作完整分镜脚本，并在每个 shot 的 reference_svg 中编写该镜代表帧的静态自包含 SVG（主体、构图、字幕要具体对应 prompt，禁止脚本、外链、位图）；用户可在卡片编辑脚本、替换图片/视频或单镜 AI 重做。确认前不得创建或写回工程（完全模式由宿主自动确认）。
 - create_motion_project：分镜确认后，复制模板或创建独立 HyperFrames 工程并放入时间轴。
 - import_motion_asset：把本轮上传的 Logo、截图、音视频从素材地址复制到工程，返回 assets/ 相对路径；写 HTML 前完成导入。
-- read_motion_project / write_motion_project：读取并写回工程源码。图片使用 <img src="assets/..."> 或 data-var-src 绑定，不把 Logo 交给 generate_image。源码较长时不要一次塞完：先用 mode=replace 写最小可运行骨架，再用 mode=append 按顺序追加，最后一块传 final=true；单次超过约 24000 字符会被拒绝并要求拆块。
+- read_motion_project / write_motion_project：读取并写回工程源码。read 支持 offset/limit 分页和 query 关键字定位，工具结果过长只会返回带 truncated 标记的预览，不会给你半截 JSON；小改动一律用 write 的 mode=patch 替换原文，不要为了改一句文案重写整份文件。图片使用 <img src="assets/..."> 或 data-var-src 绑定，不把 Logo 交给 generate_image。
 - review_motion_project：用官方 HyperFrames check 复查字体、安全区、元素重叠/过近、对比度与运行时错误；按问题修改对应元素，不重写整份工程。
 - render_motion_project：用户确认出片后，才用本机 HyperFrames CLI 渲染 MP4 导出产物（不改时间轴片段）。
 - read_project / edit_timeline / update_plan / open_voice：通用项目、剪辑、规划与配音能力。

@@ -78,7 +78,7 @@ export interface AgentHarnessOptions {
   onReasoning: (text: string) => void
   onStepStart?: (step: number) => void
   /** 流中断/截断需要重来一步时，让宿主回滚已经流到界面的半截内容。 */
-  onStepRetry?: (info: { reason: 'interrupted' | 'truncated' | 'network'; attempt: number }) => void
+  onStepRetry?: (info: { reason: 'interrupted' | 'truncated' | 'network' | 'context'; attempt: number }) => void
   onToolStart?: (call: AgentToolCall, step: number) => void
   onToolEnd?: (event: AgentHarnessToolEvent) => void
 }
@@ -101,7 +101,17 @@ function throwIfAborted(signal: AbortSignal) {
 function serializedToolResult(value: unknown): string {
   const text = typeof value === 'string' ? value : JSON.stringify(value ?? { ok: true })
   if (!text) return '{"ok":true}'
-  return text.length > MAX_TOOL_RESULT_CHARS ? `${text.slice(0, MAX_TOOL_RESULT_CHARS)}…` : text
+  if (text.length <= MAX_TOOL_RESULT_CHARS) return text
+  // 直接把 JSON 切一半会让模型收到无法解析的残片，只能看到“源码被截断”。
+  // 这里改成合法 JSON：保留预览，并明确告诉模型怎么拿全量。
+  const preview = text.slice(0, MAX_TOOL_RESULT_CHARS - 600)
+  return JSON.stringify({
+    ok: (value as { ok?: boolean } | null)?.ok ?? true,
+    truncated: true,
+    chars: text.length,
+    preview,
+    note: '工具结果过长，这里只有预览，不是完整内容。请用 read_motion_project 的 offset/limit/query 分页读取，或改用 write_motion_project 的 patch 做局部修改。',
+  })
 }
 
 function transcriptChars(messages: AgentChatMessage[]): number {
@@ -120,7 +130,10 @@ function transcriptChars(messages: AgentChatMessage[]): number {
  * 每步发送前压缩一次：先截断较早的工具结果，再从最早的整轮对话开始丢弃；
  * 只在高层的 user 边界切，保证 assistant tool_calls 与 tool 结果不被拆散。
  */
-export function compactAgentMessages(input: AgentChatMessage[]): AgentChatMessage[] {
+export function compactAgentMessages(
+  input: AgentChatMessage[],
+  budget = CONTEXT_CHAR_BUDGET,
+): AgentChatMessage[] {
   const system = input[0]?.role === 'system' ? [input[0]] : []
   let rest = input.slice(system.length)
   const recentFrom = Math.max(0, rest.length - 6)
@@ -133,7 +146,7 @@ export function compactAgentMessages(input: AgentChatMessage[]): AgentChatMessag
       content: `${message.content.slice(0, OLD_TOOL_RESULT_CHARS)}\n…[历史工具结果已压缩，需要原文请重新读取]`,
     }
   })
-  while (transcriptChars([...system, ...rest]) > CONTEXT_CHAR_BUDGET) {
+  while (transcriptChars([...system, ...rest]) > budget) {
     const nextUser = rest.findIndex((message, index) => index > 0 && message.role === 'user')
     if (nextUser <= 0 || nextUser >= rest.length - 1) break
     rest = rest.slice(nextUser)
@@ -157,6 +170,12 @@ function isRetryableStreamError(error: unknown): boolean {
   return kind === 'network' || kind === 'server'
 }
 
+/** 网关直接报上下文超限时，压得更狠再试一次，而不是把整轮任务判死。 */
+function isContextOverflowError(error: unknown): boolean {
+  const message = String((error as { message?: string } | null)?.message || '')
+  return /context.{0,24}(length|window|size|limit|token)|maximum context|too many tokens|prompt.{0,16}too long|上下文.{0,10}(过长|太长|超限)/i.test(message)
+}
+
 /**
  * 取一次模型输出。连接被切断、网关没有给出结束标记时自动重来一步；
  * 重试前通过 onStepRetry 让宿主回滚已经流出去的半截内容，避免界面重复。
@@ -166,11 +185,13 @@ async function streamStep(
   messages: AgentChatMessage[],
   tools: AgentToolDefinition[],
   step: number,
+  initialBudget = CONTEXT_CHAR_BUDGET,
 ): Promise<AgentStreamResult> {
+  let budget = initialBudget
   for (let attempt = 0; ; attempt += 1) {
     try {
       const result = await options.stream({
-        messages: compactAgentMessages(messages),
+        messages: compactAgentMessages(messages, budget),
         tools,
         step,
         signal: options.signal,
@@ -188,6 +209,11 @@ async function streamStep(
       return result
     } catch (error: any) {
       if (error?.name === 'AbortError' || options.signal.aborted) throw error
+      if (isContextOverflowError(error) && attempt < MAX_STREAM_RETRIES) {
+        budget = Math.max(8_000, Math.floor(budget / 2))
+        options.onStepRetry?.({ reason: 'context', attempt: attempt + 1 })
+        continue
+      }
       if (isRetryableStreamError(error) && attempt < MAX_STREAM_RETRIES) {
         options.onStepRetry?.({ reason: 'network', attempt: attempt + 1 })
         continue

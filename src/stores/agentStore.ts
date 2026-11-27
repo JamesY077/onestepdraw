@@ -390,6 +390,23 @@ export const useAgentStore = defineStore('agent', () => {
     )}${describeAttachments(templateAssets(message.templates), { includePaths })}`.trim()
   }
 
+  /**
+   * 更早的轮次只保留“谁要做什么、最后交付了什么”。
+   * 长对话逐条重发会把请求体越堆越大，最后被网关超时或 400 踢断。
+   */
+  function historyDigest(messages: AgentMessage[]): string {
+    return messages.map((message, index) => {
+      const text = historyText(message).replace(/\s+/g, ' ').trim()
+      const limit = message.role === 'user' ? 120 : 160
+      const summary = text.length > limit ? `${text.slice(0, limit)}…` : text
+      const artifacts = messageGenerations(message)
+        .map((generation) => `${generation.kind === 'image' ? '图片' : '视频'}(${generation.status})`)
+        .join('、')
+      const prefix = message.role === 'user' ? '用户' : '助手'
+      return `${index + 1}. ${prefix}：${summary || '（无文字）'}${artifacts ? `（产物：${artifacts}）` : ''}`
+    }).join('\n')
+  }
+
   function latestUserMessage(history: AgentMessage[]): AgentMessage | null {
     for (let index = history.length - 1; index >= 0; index -= 1) {
       if (history[index].role === 'user') return history[index]
@@ -448,7 +465,14 @@ export const useAgentStore = defineStore('agent', () => {
       }
     }
 
-    const history = source.map<AgentChatMessage>((message) => {
+    // 最近 8 条消息逐字保留，更早的轮次压成摘要；最新的用户消息必须落在逐字区。
+    const recentLimit = 8
+    const latestIndex = latestUser ? source.indexOf(latestUser) : source.length
+    const cut = Math.max(0, Math.min(source.length - recentLimit, latestIndex))
+    const older = source.slice(0, cut)
+    const recent = source.slice(cut)
+
+    const history = recent.map<AgentChatMessage>((message) => {
       const text = historyText(message)
       // 只有本轮用户消息带图片，历史里保留文字清单，避免每轮都重传。
       if (message === latestUser) {
@@ -471,7 +495,14 @@ export const useAgentStore = defineStore('agent', () => {
       : selectedRoute === 'motion' && latestUser?.clips
         ? buildMotionEditSystemPrompt(latestUser.clips)
         : systemPromptFor(conversation)
-    return [{ role: 'system', content: systemPrompt }, ...history]
+    const digest = historyDigest(older)
+    const digestMessage: AgentChatMessage[] = digest
+      ? [{
+          role: 'system',
+          content: `## 更早对话摘要（自动压缩，逐字记录已省略）\n${digest}\n\n需要细节时重新读取项目或动效工程，不要凭摘要臆测已经改过什么。`,
+        }]
+      : []
+    return [{ role: 'system', content: systemPrompt }, ...digestMessage, ...history]
   }
 
   /** 本机 CLI Agent 使用纯对话记录，系统提示词由本地服务统一拼装。 */
@@ -2610,7 +2641,9 @@ export const useAgentStore = defineStore('agent', () => {
               ? '连接中断'
               : reason === 'truncated'
                 ? '达到输出上限'
-                : '传输不完整'
+                : reason === 'context'
+                  ? '上下文超限'
+                  : '传输不完整'
             const note = `模型响应${label}，已自动重试（${attempt}）。`
             assistant.logs = [assistant.logs, note].filter(Boolean).join('\n')
             conversation.updatedAt = Date.now()
