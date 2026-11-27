@@ -9,14 +9,14 @@ export interface MentionEntry {
   index: number
 }
 
-/** 从光标往前找 '@'，返回触发位置；空白之后才算一次新的引用输入。 */
+/** 从光标往前找 '@'，返回触发位置；空白或中文标点之后算一次新的引用输入。 */
 function findMentionStart(value: string, caret: number): number {
   for (let i = caret - 1; i >= 0 && caret - i <= 24; i -= 1) {
     const ch = value[i]
     if (ch === '@') {
       const before = value[i - 1]
-      // 邮箱、已插入的 @模板1 不再触发
-      if (before && !/\s/.test(before)) return -1
+      // 邮箱/英文单词里的 @ 不触发；中文没有空格习惯，汉字或标点后的 @ 仍应打开引用。
+      if (before && /[A-Za-z0-9._%+-]/.test(before)) return -1
       return i
     }
     if (/\s/.test(ch)) return -1
@@ -60,13 +60,20 @@ export function useMentionRefs(textarea: Ref<HTMLTextAreaElement | null>) {
   /** 把光标处的 @查询 替换成完整引用文本，并把光标放到后面。 */
   function insert(token: string) {
     const el = textarea.value
-    if (!el || start.value < 0) return
-    const before = el.value.slice(0, start.value)
-    const caret = el.selectionStart
+    if (!el) return
+    // 菜单打开后用户可能用方向键移动过光标；插入前按当前光标重新定位 @。
+    const caret = el.selectionEnd ?? el.selectionStart ?? 0
+    const at = findMentionStart(el.value, caret)
+    const from = at >= 0 ? at : start.value
+    if (from < 0) return
+    const before = el.value.slice(0, from)
     const after = el.value.slice(caret)
-    const next = `${before}${token} ${after}`
+    // 已经紧跟空格或中文标点时不再重复补空格。
+    const suffix = !after || !/^[\s，。！？、；：,.!?;:]/.test(after) ? ' ' : ''
+    const insertText = `${token}${suffix}`
+    const next = `${before}${insertText}${after}`
     el.value = next
-    const pos = before.length + token.length + 1
+    const pos = before.length + insertText.length
     nextTick(() => {
       el.focus()
       el.setSelectionRange(pos, pos)
@@ -96,9 +103,12 @@ export function useMentionRefs(textarea: Ref<HTMLTextAreaElement | null>) {
 /** 在渲染预览里把 @引用 高亮成小标签。 */
 export function splitMentionSegments(text: string, tokens: string[]): { text: string; mention: boolean }[] {
   if (!tokens.length) return [{ text, mention: false }]
+  // 长的 token 优先，避免 @模板1 抢先匹配 @模板10 的前缀；重复 token 只保留一个。
+  const unique = [...new Set(tokens.filter(Boolean))].sort((a, b) => b.length - a.length)
+  if (!unique.length) return [{ text, mention: false }]
   let pattern: RegExp
   try {
-    pattern = new RegExp(`(${tokens.map((token) => token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g')
+    pattern = new RegExp(`(${unique.map((token) => token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g')
   } catch {
     return [{ text, mention: false }]
   }

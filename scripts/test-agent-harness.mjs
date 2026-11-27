@@ -56,6 +56,8 @@ try {
   const { normalizeAgentTimelineOps, normalizeAgentCreativeHandoff } = await server.ssrLoadModule('/src/features/agent/tools.ts')
   const { streamLocalAgent } = await server.ssrLoadModule('/src/api/localAgents.ts')
   const { buildRunPrompt, runAgent } = await server.ssrLoadModule('/server/local/agents.mjs')
+  const { splitMentionSegments } = await server.ssrLoadModule('/src/composables/useMentionRefs.ts')
+  const { describeAttachments, describeTemplates } = await server.ssrLoadModule('/src/features/agent/attachments.ts')
 
   // 原生 tool_calls：任意字节分片、中文、CRLF、多行 data、两个调用按 index 聚合。
   let requestBody
@@ -1424,6 +1426,30 @@ try {
   assert.equal(autoConversation.production.shots[0].status, 'succeeded')
   assert.equal(autoConversation.production.shots[0].review?.ok, true, '完全模式每镜完成后应自动复查')
   assert.ok(autoConversation.messages.at(-1).content.includes('S01 已完成'))
+
+  // @ 引用：多个引用同句共存；@模板10 不能被 @模板1 前缀截断。
+  const mentionSegments = splitMentionSegments(
+    '用 @模板10 做开场，再用 @模板1 收尾。',
+    ['@模板1', '@模板10'],
+  )
+  assert.deepEqual(
+    mentionSegments.filter((segment) => segment.mention).map((segment) => segment.text),
+    ['@模板10', '@模板1'],
+    '多个 @引用 必须各自完整高亮',
+  )
+  assert.equal(mentionSegments.map((segment) => segment.text).join(''), '用 @模板10 做开场，再用 @模板1 收尾。')
+  const mentionAttachments = describeAttachments(
+    [{ id: 'a1', kind: 'image', name: '场景.png', url: '/generated/uploads/a.png' }, { id: 'a2', kind: 'video', name: '动作.mp4', url: '/generated/uploads/b.mp4' }],
+    { mentionable: true },
+  )
+  assert.ok(mentionAttachments.includes('@素材1、@素材2'), '@素材N 必须能对应到素材清单')
+  assert.ok(mentionAttachments.includes('参考图 1：场景.png') && mentionAttachments.includes('参考视频 2：动作.mp4'))
+  const mentionTemplates = describeTemplates([
+    { name: '纸感手写', category: '风格', guide: '手写纸感。', images: [] },
+    { name: '极简白底', category: '版式', guide: '极简白底。', images: [] },
+  ])
+  assert.ok(mentionTemplates.includes('@模板1、@模板2'), '@模板N 必须能对应到模板清单')
+  assert.ok(mentionTemplates.includes('已应用模板 1') && mentionTemplates.includes('已应用模板 2'))
 
   console.log('✓ Agent Harness：SSE、多步回注、普通/创作切换、双引擎确认与持久化、取消、CLI 门禁、刷新恢复、六镜全片、4路并发、失败重试、定位入轨、改稿原位替换、轮询幂等、续跑跳镜与完全模式自动确认全部通过（全部为本地 mock）')
 } finally {

@@ -181,6 +181,7 @@
           :groups="mentionGroups"
           :active-key="mention.activeKey.value"
           :position="mentionPosition"
+          :empty-hint="mentionEmptyHint"
           @pick="insertMention"
           @hover="setMentionActive"
         />
@@ -578,15 +579,25 @@ const mentionGroups = computed<MentionGroup[]>(() => {
     })),
   })
 
+  const query = mention.query.value.trim().toLowerCase()
   return groups.map((group) => ({
     ...group,
-    items: group.items.filter(
-      (item) => !mention.query.value || item.label.toLowerCase().includes(mention.query.value.toLowerCase()),
-    ),
+    items: group.items.filter((item) => {
+      if (!query) return true
+      // 菜单里的名字、说明和 @标签 都能搜，输入「素材2」「模板」「Skill1」都能命中。
+      return [item.label, item.hint, item.token, item.tag].some((value) =>
+        value ? value.toLowerCase().includes(query) : false,
+      )
+    }),
   }))
 })
 
 const mentionFlat = computed(() => mentionGroups.value.flatMap((group) => group.items))
+const mentionEmptyHint = computed(() =>
+  mention.query.value.trim()
+    ? `没有匹配「${mention.query.value.trim()}」的引用，换个关键词试试。`
+    : '还没有可引用的内容：先在下方添加参考素材、模板或 Skill。',
+)
 
 /**
  * 输入框里实际出现的 @引用。

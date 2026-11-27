@@ -277,7 +277,7 @@ export function attachmentKindLabel(kind: AgentAttachmentKind): string {
 /** 给模型看的素材清单；本机 Agent 额外拿到绝对路径。 */
 export function describeAttachments(
   attachments: AgentAttachment[] | undefined,
-  options: { includePaths?: boolean } = {},
+  options: { includePaths?: boolean; mentionable?: boolean } = {},
 ): string {
   if (!attachments?.length) return ''
   const lines = attachments.map((item, index) => {
@@ -295,7 +295,10 @@ export function describeAttachments(
     const textLine = item.text ? `\n  文件内容：\n${item.text}` : ''
     return `${head}${sourceLine}${pathLine}${textLine}`
   })
-  return `\n\n[用户上传的参考素材]\n${lines.join('\n')}`
+  const mentionLine = options.mentionable
+    ? '\n消息里的 @素材1、@素材2 … 依次指下面清单的第 1、2 … 项；不要把它们当成新文件。'
+    : ''
+  return `\n\n[用户上传的参考素材]${mentionLine}\n${lines.join('\n')}`
 }
 
 type TemplateLike = { name: string; category: string; guide: string; images: string[] }
@@ -303,9 +306,10 @@ type TemplateLike = { name: string; category: string; guide: string; images: str
 /** 模板参考说明，放在用户消息后面一起交给模型；引用多个时逐条列出来。 */
 export function describeTemplates(templates: TemplateLike[] | undefined | null): string {
   if (!templates?.length) return ''
-  return templates
+  const note = '\n消息里的 @模板1、@模板2 … 依次指下面第 1、2 … 个模板。'
+  return note + templates
     .map((template, index) => {
-      const label = templates.length > 1 ? `模板 ${index + 1}` : '模板'
+      const label = `模板 ${index + 1}`
       const images = template.images.length
         ? `\n参考图：${template.images.length} 张（已随消息附带）`
         : ''

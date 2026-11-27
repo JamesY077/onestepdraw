@@ -382,7 +382,10 @@ export const useAgentStore = defineStore('agent', () => {
       : ''
     return `${message.content}${note}${askContext(message)}${creativeHandoffContext(message)}${describeClipContext(
       message.clips,
-    )}${describeAttachments(message.attachments, { includePaths })}${describeTemplates(
+    )}${describeAttachments(message.attachments, {
+      includePaths,
+      mentionable: /@素材\d+/.test(message.content),
+    })}${describeTemplates(
       message.templates,
     )}${describeAttachments(templateAssets(message.templates), { includePaths })}`.trim()
   }

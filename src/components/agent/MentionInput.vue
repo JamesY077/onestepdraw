@@ -15,7 +15,6 @@
             :key="index"
             :class="segment.mention ? 'mi-mention' : ''"
           >{{ segment.text }}</span>
-          <span class="mi-caret">&nbsp;</span>
         </template>
       </div>
 
@@ -26,8 +25,8 @@
         class="mi-input"
         rows="1"
         spellcheck="false"
-        @focus="focused = true"
-        @blur="focused = false"
+        @focus="handleFocus"
+        @blur="handleBlur"
         @keydown="$emit('keydown', $event)"
         @input="handleInput"
         @compositionstart="composing = true"
@@ -58,6 +57,9 @@ const emit = defineEmits<{
   (event: 'keydown', payload: KeyboardEvent): void
   (event: 'paste', payload: ClipboardEvent): void
   (event: 'input'): void
+  (event: 'focus'): void
+  (event: 'blur'): void
+  (event: 'scroll'): void
 }>()
 
 const model = defineModel<string>({ default: '' })
@@ -92,15 +94,30 @@ function handleInput() {
   emit('input')
 }
 
+function handleFocus() {
+  focused.value = true
+  emit('focus')
+}
+
+function handleBlur() {
+  focused.value = false
+  emit('blur')
+}
+
 function handleCompositionEnd() {
-  composing.value = false
-  nextTick(resize)
+  // 等 v-model 把组合结果写进 model 后再切回镜像层，避免中间一帧新文字不可见。
+  nextTick(() => {
+    composing.value = false
+    resize()
+  })
 }
 
 /** 输入框滚动时让高亮层跟随，避免长文本时两层错位。 */
 function handleScroll() {
-  if (!mirrorRef.value || !textareaRef.value) return
-  mirrorRef.value.scrollTop = textareaRef.value.scrollTop
+  if (mirrorRef.value && textareaRef.value) {
+    mirrorRef.value.scrollTop = textareaRef.value.scrollTop
+  }
+  emit('scroll')
 }
 
 watch(model, () => nextTick(resize))
@@ -175,19 +192,18 @@ defineExpose({ focus, resize, getTextarea, setCaret })
   color: var(--sf-ink-3);
 }
 
-/* @引用与普通文字区分：强调色 + 底色 */
+/* @引用与普通文字区分：只改变颜色和底色，绝不改变字宽与行盒， */
+/* 否则镜像层会比 textarea 里的透明文字多出 padding，光标就会错位。 */
 .mi-mention {
-  display: inline-block;
-  margin: 0 1px;
-  padding: 0 4px;
-  border-radius: 5px;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border-radius: 3px;
   background: var(--sf-terra-wash);
   color: var(--sf-terra);
-  font-weight: 600;
-}
-
-.mi-caret {
-  color: transparent;
+  font-weight: inherit;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 /*

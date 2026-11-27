@@ -149,7 +149,7 @@ function skillsBlock(skills?: AgentPromptSkill[]): string {
     .map((skill, index) => `### ${index + 1}. ${skill.name}\n${skill.content.trim().slice(0, 5000)}`)
     .join('\n\n')
   return `\n\n## 已启用 Skill（高优先级）
-用户从模板库的 Skill 专区带入了以下能力。回答、脚本和提示词都要按这些规范执行；与通用风格冲突时以 Skill 为准，与用户当轮要求冲突时以用户为准。
+用户从模板库的 Skill 专区带入了以下能力。用户消息里的 @Skill1、@Skill2 … 依次指下面第 1、2 … 个 Skill。回答、脚本和提示词都要按这些规范执行；与通用风格冲突时以 Skill 为准，与用户当轮要求冲突时以用户为准。
 ${body}`
 }
 
