@@ -33,6 +33,7 @@
     </template>
 
     <p v-if="!hasItems" class="mention-empty">{{ emptyHint }}</p>
+    <p v-else class="mention-foot">可继续输入 @ 连续引用多个</p>
   </div>
 </template>
 
@@ -209,5 +210,14 @@ defineExpose({ hasItems })
   color: var(--sf-ink-3);
   font-size: 12px;
   line-height: 1.6;
+}
+
+.mention-foot {
+  margin: 6px 8px 3px;
+  padding-top: 6px;
+  border-top: 1px solid var(--sf-line-soft);
+  color: var(--sf-ink-3);
+  font-size: 11px;
+  line-height: 1.5;
 }
 </style>

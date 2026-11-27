@@ -58,9 +58,9 @@ function updateNumber(cue: CaptionCue, field: 'start' | 'duration', event: Event
 </script>
 
 <style scoped>
-.captions { display: flex; flex-direction: column; gap: 9px; }
+.captions { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow-y: auto; gap: 9px; padding: 8px; scrollbar-width: thin; }
 .caption-create { padding: 9px; border: 1px solid #eadfd7; border-radius: 9px; background: #fffaf7; }
-.caption-create textarea, .caption-cue textarea { width: 100%; resize: vertical; border: 0; outline: none; background: transparent; color: #40352f; font: 11px/1.6 inherit; }
+.caption-create textarea, .caption-cue textarea { box-sizing: border-box; width: 100%; min-width: 0; resize: vertical; border: 0; outline: none; background: transparent; color: #40352f; font-family: inherit; font-size: 11px; line-height: 1.6; }
 .caption-create-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; }
 .caption-create-meta span { color: #a3948a; font-size: 8.5px; }
 .caption-create-meta button { flex: none; padding: 5px 8px; border: 0; border-radius: 6px; background: #b45f3c; color: #fff; font-size: 9.5px; cursor: pointer; }
@@ -73,6 +73,6 @@ function updateNumber(cue: CaptionCue, field: 'start' | 'duration', event: Event
 .caption-delete { margin-left: auto; padding: 0 3px; border: 0; background: transparent; color: #b2a39a; font-size: 15px; cursor: pointer; }
 .caption-cue textarea { margin: 5px 0; padding: 4px 0; border-top: 1px solid #f5f0ec; border-bottom: 1px solid #f5f0ec; }
 .caption-times { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.caption-times label { display: flex; align-items: center; gap: 4px; color: #aa9b91; font-size: 8.5px; }
-.caption-times input { width: 100%; min-width: 0; height: 23px; padding: 0 5px; border: 1px solid #eee4dd; border-radius: 5px; color: #5d4d43; font-size: 9px; }
+.caption-times label { display: flex; min-width: 0; align-items: center; gap: 4px; color: #aa9b91; font-size: 8.5px; }
+.caption-times input { flex: 1 1 0; width: auto; min-width: 0; height: 23px; padding: 0 5px; border: 1px solid #eee4dd; border-radius: 5px; color: #5d4d43; font-size: 9px; }
 </style>

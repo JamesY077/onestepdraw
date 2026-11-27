@@ -99,6 +99,11 @@ export interface AgentClipRef {
   codeLanguage?: AnimationSourceType
   /** 动效工程 id；Agent 用 motion 工具读写这份工程，不当作视频素材。 */
   motionId?: string
+  /**
+   * 本轮选择的粒度：元素级只改点选元素，片段级改整段，轨道级改整条轨道。
+   * 模型据此判断修改范围，不能把元素级请求扩大成整段重做。
+   */
+  scope?: 'element' | 'clip' | 'track'
   /** 主画面中实际点选/框选的工程元素；仍归属于同一个片段，不伪装成多个片段。 */
   motionElements?: AgentMotionElementRef[]
   /** 每条意见对应的元素快照；同一片段多批修改时逐条绑定，不能互相覆盖。 */

@@ -141,7 +141,7 @@
 
             <div class="prompt-field">
               <div
-                v-if="showMentionMenu && mentionableAssets.length"
+                v-if="showMentionMenu && mentionCandidates.length"
                 ref="mentionMenuRef"
                 class="mention-menu"
                 :style="mentionMenuStyle"
@@ -149,7 +149,7 @@
                 aria-label="选择参考素材"
               >
                 <button
-                  v-for="(item, index) in mentionableAssets"
+                  v-for="(item, index) in mentionCandidates"
                   :key="item.url"
                   type="button"
                   class="mention-item"
@@ -1275,6 +1275,8 @@ const editImageInput = ref<HTMLInputElement | null>(null)
 // @ 引用菜单状态
 const showMentionMenu = ref(false)
 const mentionAtIndex = ref(-1)
+// @ 后面已经输入的筛选词，用来在多个素材里快速定位
+const mentionQuery = ref('')
 // 当前高亮的引用项索引（用于键盘上下选择）
 const activeMentionIndex = ref(0)
 const mentionMenuRef = ref<HTMLElement | null>(null)
@@ -1470,6 +1472,15 @@ const mentionableAssets = computed<UploadedFile[]>(() => {
     ...multimodalVideos.value,
     ...multimodalAudios.value,
   ]
+})
+
+/** 菜单里实际显示的候选：按 @ 后面的筛选词过滤标签和文件名。 */
+const mentionCandidates = computed<UploadedFile[]>(() => {
+  const query = mentionQuery.value.trim().toLowerCase()
+  if (!query) return mentionableAssets.value
+  return mentionableAssets.value.filter((item) =>
+    [item.refLabel, item.name].some((value) => value ? value.toLowerCase().includes(query) : false),
+  )
 })
 
 
@@ -2269,9 +2280,9 @@ function clearMultimodalAssets(options: { revoke?: boolean } = {}) {
  */
 function handleComposerKeydown(event: KeyboardEvent) {
   if (event.isComposing) return
-  if (!showMentionMenu.value || !mentionableAssets.value.length) return
+  if (!showMentionMenu.value || !mentionCandidates.value.length) return
 
-  const total = mentionableAssets.value.length
+  const total = mentionCandidates.value.length
   switch (event.key) {
     case 'ArrowDown':
       event.preventDefault()
@@ -2284,7 +2295,7 @@ function handleComposerKeydown(event: KeyboardEvent) {
     case 'Enter':
     case 'Tab': {
       event.preventDefault()
-      const item = mentionableAssets.value[activeMentionIndex.value]
+      const item = mentionCandidates.value[activeMentionIndex.value]
       if (item) insertMentionReference(item)
       break
     }
@@ -2292,6 +2303,7 @@ function handleComposerKeydown(event: KeyboardEvent) {
       event.preventDefault()
       showMentionMenu.value = false
       mentionAtIndex.value = -1
+      mentionQuery.value = ''
       break
     default:
       break
@@ -2303,19 +2315,29 @@ function insertMentionReference(item: UploadedFile) {
   const label = item.refLabel || item.name
   const textarea = promptInputRef.value
   const insertText = `@${label} `
+  let caretPosition = inputText.value.length + insertText.length
   if (!textarea) {
     inputText.value += insertText
   } else {
     const currentValue = textarea.value ?? inputText.value
     const start = mentionAtIndex.value >= 0 ? mentionAtIndex.value : textarea.selectionStart
-    const end = textarea.selectionStart
+    const end = textarea.selectionEnd
     const before = currentValue.slice(0, start)
     const after = currentValue.slice(end)
+    caretPosition = before.length + insertText.length
     inputText.value = `${before}${insertText}${after}`
   }
   showMentionMenu.value = false
   mentionAtIndex.value = -1
-  nextTick(() => promptInputRef.value?.focus())
+  mentionQuery.value = ''
+  nextTick(() => {
+    const el = promptInputRef.value
+    el?.focus()
+    // v-model 更新后把光标放到插入内容之后，连续输入 @ 才能接在正确位置。
+    el?.setSelectionRange(caretPosition, caretPosition)
+    autoGrowPrompt()
+    handlePromptInput()
+  })
 }
 
 /** 监听输入，检测末尾的 @ 以触发引用菜单。 */
@@ -2331,6 +2353,8 @@ function handlePromptInput(event?: Event) {
   autoGrowPrompt()
   if (!isMentionReferenceMode.value || !mentionableAssets.value.length) {
     showMentionMenu.value = false
+    mentionAtIndex.value = -1
+    mentionQuery.value = ''
     return
   }
 
@@ -2344,15 +2368,17 @@ function handlePromptInput(event?: Event) {
   const atIndex = textBefore.lastIndexOf('@')
   if (atIndex >= 0 && !/\s/.test(textBefore.slice(atIndex + 1))) {
     mentionAtIndex.value = atIndex
+    mentionQuery.value = textBefore.slice(atIndex + 1)
     // 菜单（重新）打开时，若高亮索引越界则复位到第一项
-    if (!showMentionMenu.value || activeMentionIndex.value >= mentionableAssets.value.length) {
+    if (!showMentionMenu.value || activeMentionIndex.value >= mentionCandidates.value.length) {
       activeMentionIndex.value = 0
     }
-    showMentionMenu.value = true
+    showMentionMenu.value = mentionCandidates.value.length > 0
     void positionMentionMenu()
   } else {
     showMentionMenu.value = false
     mentionAtIndex.value = -1
+    mentionQuery.value = ''
   }
 }
 

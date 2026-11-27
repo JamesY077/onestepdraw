@@ -9,11 +9,44 @@ import { aspectSize } from '@/types/edit'
 
 const MAX_DOC_CHARS = 16_000
 const MAX_SOURCE_CHARS = 80_000
+/** 单次工具参数过大很容易撞上模型输出上限；超过这个长度必须分块写入。 */
+const MAX_SINGLE_WRITE_CHARS = 24_000
+/** 单次读取的源码分页大小：要小于 Harness 的工具结果上限，避免变成残片。 */
+const DEFAULT_READ_CHARS = 8_000
+const MAX_READ_CHARS = 12_000
+
+/** patch 模式的最小单元：把工程里唯一的原文替换成新文本。 */
+export interface MotionSourceEdit {
+  find: string
+  replace?: string
+  all?: boolean
+}
+
+/** 在原文件上做精确替换；找不到或命中过多都直接报错，避免悄悄改错位置。 */
+export function applyMotionEdits(source: string, edits: MotionSourceEdit[]) {
+  let next = source
+  const applied: string[] = []
+  for (const [index, edit] of edits.entries()) {
+    const find = String(edit?.find || '')
+    const replace = String(edit?.replace ?? '')
+    if (!find) throw new Error(`第 ${index + 1} 处修改缺少 find。`)
+    const occurrences = next.split(find).length - 1
+    if (!occurrences) {
+      throw new Error(`第 ${index + 1} 处修改没有找到目标原文。请先用 read_motion_project 的 query/offset 确认原文后再改。`)
+    }
+    if (occurrences > 1 && edit?.all !== true) {
+      throw new Error(`第 ${index + 1} 处修改命中 ${occurrences} 次，请带上更多上下文使其唯一，或传 all=true。`)
+    }
+    next = edit?.all ? next.split(find).join(replace) : next.replace(find, replace)
+    applied.push(find.replace(/\s+/g, ' ').slice(0, 40))
+  }
+  return { source: next, applied }
+}
 
 export function motionDimensions(production: Pick<AgentProduction, 'aspectRatio' | 'resolution'>) {
   const base = aspectSize(production.aspectRatio)
-  const scale = production.resolution === '2K' ? 2 : 1
-  return { width: base.width * scale, height: base.height * scale }
+  const scale = production.resolution === '2K' ? 2 : production.resolution === '1080P' ? 1.5 : 1
+  return { width: Math.round(base.width * scale), height: Math.round(base.height * scale) }
 }
 
 function normalizeAssetReference(value: string) {
@@ -326,30 +359,135 @@ export async function executeMotionTool(
     if (shot && shot.motionId && shot.motionId !== motionId) throw new Error(`${shot.id} 只能读取自己的工程 ${shot.motionId}。`)
     const state = await motion.load(motionId, true)
     if (!state.source) throw new Error(state.error || '读取工程失败。')
+
+    // 按关键字定位：只改某个文案/元素时，不必把整份源码塞进上下文。
+    const query = String(call.args.query || '').trim()
+    if (query) {
+      const lines = state.source.split('\n')
+      const matches: Array<{ line: number; text: string }> = []
+      lines.forEach((line, index) => {
+        if (matches.length >= 20) return
+        if (line.includes(query)) matches.push({ line: index + 1, text: line.slice(0, 600) })
+      })
+      return {
+        ok: true,
+        motionId,
+        meta: state.meta,
+        variables: state.variables,
+        totalChars: state.source.length,
+        totalLines: lines.length,
+        query,
+        matches,
+        hint: matches.length
+          ? '把命中的原文（可带相邻行）作为 write_motion_project 的 patch find，只改这一段。'
+          : '没有命中的行，换一个关键字，或先用 offset/limit 读取目标区域。',
+      }
+    }
+
+    const total = state.source.length
+    const offset = Math.max(0, Math.min(total, Number(call.args.offset) || 0))
+    const limit = Math.max(1_000, Math.min(MAX_READ_CHARS, Number(call.args.limit) || DEFAULT_READ_CHARS))
+    const end = Math.min(total, offset + limit)
+    const hasMore = end < total
     return {
       ok: true,
       motionId,
       meta: state.meta,
       variables: state.variables,
-      source: state.source.slice(0, MAX_SOURCE_CHARS),
-      truncated: state.source.length > MAX_SOURCE_CHARS,
+      offset,
+      totalChars: total,
+      hasMore,
+      ...(hasMore ? { nextOffset: end } : {}),
+      source: state.source.slice(offset, end),
+      hint: hasMore
+        ? `源码共 ${total} 字符，本次返回 ${offset}-${end}。继续读取传 offset=${end}；只改局部可以改用 query 定位。`
+        : `源码共 ${total} 字符，已全部返回。`,
     }
   }
 
   if (call.name === 'write_motion_project') {
     const motionId = String(call.args.motionId || '').trim()
-    const source = String(call.args.source || '')
-    if (!motionId || !source.trim()) throw new Error('需要 motionId 与完整源码 source。')
+    if (!motionId) throw new Error('缺少 motionId。')
     const shot = activeAnimationShot(conversation)
     if (shot && shot.motionId !== motionId) throw new Error(`${shot.id} 只能写回自己的工程 ${shot.motionId || '(尚未创建)'}。`)
-    validateShotSource(source, shot, conversation)
-    const state = await motion.saveSource(motionId, source)
-    if (shot) shot.motionSourceReady = true
+    const mode = ['patch', 'append'].includes(String(call.args.mode))
+      ? String(call.args.mode) as 'patch' | 'append'
+      : 'replace'
+
+    // patch：小改动只替换原文，不重写整份源码；这是长工程最稳的改法。
+    if (mode === 'patch') {
+      const edits = Array.isArray(call.args.edits) ? call.args.edits.slice(0, 20) : []
+      if (!edits.length) throw new Error('patch 模式需要 edits 数组，每项包含 find 与 replace。')
+      const state = await motion.load(motionId, true)
+      if (!state.source?.trim()) throw new Error('工程还没有源码，先用 mode=replace 写入最小可运行骨架。')
+      const { source: next, applied } = applyMotionEdits(
+        state.source,
+        edits as MotionSourceEdit[],
+      )
+      if (next.length > MAX_SOURCE_CHARS) {
+        throw new Error(`修改后源码 ${next.length} 字符，超过 ${MAX_SOURCE_CHARS} 上限。请精简内容，不要内嵌大文件。`)
+      }
+      validateShotSource(next, shot, conversation)
+      const saved = await motion.saveSource(motionId, next)
+      if (shot) shot.motionSourceReady = true
+      return {
+        ok: true,
+        motionId,
+        mode,
+        applied: applied.length,
+        targets: applied,
+        chars: next.length,
+        variables: saved.variables,
+        message: '已在原文件上局部替换并写回，预览会重新加载。',
+      }
+    }
+
+    const source = String(call.args.source || '')
+    if (!source.trim()) throw new Error('replace / append 模式需要 source。')
+    const final = call.args.final === true
+
+    if (mode === 'replace') {
+      if (source.length > MAX_SINGLE_WRITE_CHARS) {
+        throw new Error(
+          `单次写回 ${source.length} 字符，超过安全上限 ${MAX_SINGLE_WRITE_CHARS}。`
+          + ' 只改局部时请用 mode=patch 按原文替换；确实要重写时，先用 mode=replace 写最小骨架，'
+          + '之后每次 mode=append 追加一块，最后一块传 final=true。',
+        )
+      }
+      validateShotSource(source, shot, conversation)
+      const state = await motion.saveSource(motionId, source)
+      if (shot) shot.motionSourceReady = true
+      return {
+        ok: true,
+        motionId,
+        mode,
+        chars: source.length,
+        variables: state.variables,
+        message: '工程已写回磁盘，预览会重新加载。未渲染 MP4；需要出片时再调用 render_motion_project。',
+      }
+    }
+
+    // append：每次只追加一段，最后一块再校验完整源码，避免半成品被当成成品。
+    const state = await motion.load(motionId, true)
+    if (!state.source?.trim()) throw new Error('append 之前必须先用 mode=replace 写入最小可运行骨架。')
+    const combined = `${state.source}${source}`
+    if (combined.length > MAX_SOURCE_CHARS) {
+      throw new Error(`工程源码已达到 ${combined.length} 字符，超过 ${MAX_SOURCE_CHARS} 上限。请精简内容，不要继续追加内嵌大文件。`)
+    }
+    if (final) validateShotSource(combined, shot, conversation)
+    const saved = await motion.saveSource(motionId, combined)
+    if (shot && final) shot.motionSourceReady = true
     return {
       ok: true,
       motionId,
-      variables: state.variables,
-      message: '工程已写回磁盘，预览会重新加载。未渲染 MP4；需要出片时再调用 render_motion_project。',
+      mode,
+      final,
+      chars: combined.length,
+      appended: source.length,
+      variables: saved.variables,
+      message: final
+        ? '最后一块已追加并完成完整校验，工程可预览；继续用 review_motion_project 复查。'
+        : `本次追加 ${source.length} 字符，当前共 ${combined.length} 字符。继续追加下一块；最后一块必须传 final=true。`,
     }
   }
 

@@ -63,7 +63,7 @@ export function normalizeStoryboardToolInput(value: unknown): StoryboardToolInpu
   const aspectRatio = ['16:9', '9:16', '1:1'].includes(raw.aspect_ratio)
     ? raw.aspect_ratio
     : '16:9'
-  const resolution = ['768P', '2K'].includes(raw.resolution) ? raw.resolution : '768P'
+  const resolution = ['768P', '1080P', '2K'].includes(raw.resolution) ? raw.resolution : '768P'
   return {
     title: requiredText(raw.title, '片名', 80),
     brief: requiredText(raw.brief, '完整创作需求', 12000),

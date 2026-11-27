@@ -33,6 +33,7 @@
             <span>分辨率</span>
             <select :value="project.resolution" @change="setResolution">
               <option value="768P">768P</option>
+              <option value="1080P">1080P</option>
               <option value="2K">2K</option>
             </select>
           </label>
@@ -220,7 +221,6 @@
               @pause="playing = false"
               @seek="seek"
               @select-motion-elements="handleMotionElementSelect"
-              @open-studio="openMotionStudioPanel"
             />
           </div>
           <StoryboardPanel
@@ -240,13 +240,14 @@
             v-if="inspectorOpen && selectedEntries.length"
             :entries="selectedEntries"
             :project-id="project?.id || ''"
+            :selected-motion-elements="selectedMotionElements"
             @close="inspectorOpen = false"
             @ask-ai="askAiForSelection"
+            @select-elements="handleMotionElementSelect"
             @update-clip="updateSelectedClip"
             @duplicate="duplicateSelected"
             @split="splitAtPlayhead"
             @remove="removeSelectedClip"
-            @open-studio="openMotionStudioPanel"
           />
       </main>
 
@@ -268,11 +269,15 @@
           :project="project"
           :selected-clip-id="selectedClipId"
           :selected-clip-ids="selectedClipIds"
+          :selected-motion-elements="selectedMotionElements"
+          :selected-motion-element-clip-id="motionElementScopeClipId"
           :playing="playing"
+          :selected-track-id="selectedTrackId"
           :can-undo="canUndo"
           :can-redo="canRedo"
           @seek="seek"
           @select="handleTimelineSelect"
+          @select-track="handleTrackSelect"
           @move-clip="moveClip"
           @move-clips="moveClips"
           @trim-clip="trimClip"
@@ -386,32 +391,6 @@
       </section>
     </div>
 
-    <div v-if="motionStudioOpen" class="hf-studio-backdrop" role="dialog" aria-modal="true" aria-label="HyperFrames Studio">
-      <section class="hf-studio-panel">
-        <header class="hf-studio-head">
-          <div class="hf-studio-title">
-            <strong>HyperFrames Studio</strong>
-            <span>{{ motionStudioName }}</span>
-          </div>
-          <div class="hf-studio-actions">
-            <button type="button" :disabled="motionStudioBusy" @click="reloadMotionStudio">重新加载</button>
-            <button type="button" @click="closeMotionStudio">关闭</button>
-          </div>
-        </header>
-        <p v-if="motionStudioError" class="hf-studio-error">{{ motionStudioError }}</p>
-        <div v-else-if="motionStudioBusy && !motionStudioUrl" class="hf-studio-loading">
-          正在启动官方 HyperFrames Studio…
-        </div>
-        <iframe
-          v-if="motionStudioUrl"
-          :key="motionStudioKey"
-          class="hf-studio-frame"
-          :src="motionStudioUrl"
-          title="HyperFrames Studio"
-        />
-      </section>
-    </div>
-
     <div v-if="toast" class="es-toast" role="status">{{ toast }}</div>
 
   </div>
@@ -432,7 +411,7 @@ import { useAgentStore } from '@/stores/agentStore'
 import { useEditProjectStore, projectDuration } from '@/stores/editProjectStore'
 import { useMotionStore } from '@/stores/motionStore'
 import { rememberTemplatesReturn } from '@/features/template/navigation'
-import { motionFileUrl, openMotionStudio, type MotionProject } from '@/api/motion'
+import { motionFileUrl, type MotionProject } from '@/api/motion'
 import { playhead, setPlayhead } from '@/features/edit/playhead'
 import { motionElementKey } from '@/features/edit/motionElements'
 import { exportProjectVideo, inspectExportedVideo } from '@/features/edit/exportVideo'
@@ -446,6 +425,7 @@ import {
   PROJECT_ASPECT_RATIOS,
   type EditTrackKind,
   type ProjectAsset,
+  type ProjectResolution,
   type TimelineClip,
 } from '@/types/edit'
 
@@ -478,6 +458,9 @@ const clock = ref('00:00.0')
 const playing = ref(false)
 const selectedClipId = ref('')
 const selectedClipIds = ref<string[]>([])
+/** 时间轴当前选择粒度：片段 / 整条轨道；元素级由主画面点选单独标记。 */
+const selectionScope = ref<'clip' | 'track'>('clip')
+const selectedTrackId = ref('')
 const inspectorOpen = ref(false)
 const studioChatRef = ref<InstanceType<typeof StudioChat> | null>(null)
 const mobileChatOpen = ref(false)
@@ -689,7 +672,8 @@ function setAspect(event: Event) {
 
 function setResolution(event: Event) {
   if (!project.value) return
-  const value = (event.target as HTMLSelectElement).value === '2K' ? '2K' : '768P'
+  const raw = (event.target as HTMLSelectElement).value
+  const value: ProjectResolution = raw === '2K' ? '2K' : raw === '1080P' ? '1080P' : '768P'
   projectStore.updateProject(project.value.id, { resolution: value })
 }
 
@@ -898,60 +882,6 @@ const selectedEntries = computed<SelectedClipEntry[]>(() => {
 const motionElementScopeClipId = ref('')
 const selectedMotionElements = ref<AgentMotionElementRef[]>([])
 
-/** 官方 HyperFrames Studio：同一套 UI、时间轴、元素编辑与 Lint，直接嵌入剪辑台。 */
-const motionStudioOpen = ref(false)
-const motionStudioBusy = ref(false)
-const motionStudioError = ref('')
-const motionStudioUrl = ref('')
-const motionStudioKey = ref(0)
-const motionStudioId = ref('')
-const motionStudioName = ref('')
-const motionStudioCache = new Map<string, string>()
-
-async function loadMotionStudio(motionId: string) {
-  motionStudioBusy.value = true
-  motionStudioError.value = ''
-  try {
-    const session = await openMotionStudio(motionId)
-    motionStudioCache.set(motionId, session.url)
-    motionStudioUrl.value = session.url
-    motionStudioKey.value += 1
-  } catch (error) {
-    motionStudioUrl.value = ''
-    motionStudioError.value = `HyperFrames Studio 启动失败：${(error as Error)?.message || error}`
-  } finally {
-    motionStudioBusy.value = false
-  }
-}
-
-function openMotionStudioPanel(motionId: string) {
-  if (!motionId) return
-  motionStudioOpen.value = true
-  motionStudioId.value = motionId
-  motionStudioName.value = motion.projects.find((item) => item.id === motionId)?.name || motionId
-  const cached = motionStudioCache.get(motionId)
-  if (cached) {
-    motionStudioUrl.value = cached
-    motionStudioKey.value += 1
-    return
-  }
-  void loadMotionStudio(motionId)
-}
-
-function reloadMotionStudio() {
-  const motionId = motionStudioId.value
-  if (!motionId) return
-  motionStudioCache.delete(motionId)
-  void loadMotionStudio(motionId)
-}
-
-function closeMotionStudio() {
-  const id = motionStudioId.value
-  motionStudioOpen.value = false
-  // Studio 的改动直接落在工程文件上；关闭时同步回主画面，避免看到旧版。
-  if (id) void motion.load(id, true)
-}
-
 const selectedAgentClips = computed<AgentClipRef[]>(() =>
   selectedEntries.value.map(({ clip, trackId, trackName, trackKind }) => {
     const asset = clip.assetId
@@ -975,6 +905,11 @@ const selectedAgentClips = computed<AgentClipRef[]>(() =>
       code: clip.code || asset?.code,
       codeLanguage: clip.codeLanguage || asset?.codeLanguage,
       motionId: clip.motionId || asset?.motionId,
+      scope: clip.id === motionElementScopeClipId.value && selectedMotionElements.value.length
+        ? 'element'
+        : selectionScope.value === 'track' && trackId === selectedTrackId.value
+          ? 'track'
+          : 'clip',
       motionElements: clip.id === motionElementScopeClipId.value && selectedMotionElements.value.length
         ? selectedMotionElements.value.map((element) => ({ ...element }))
         : undefined,
@@ -1004,6 +939,8 @@ function handleMotionElementSelect(payload: {
 }) {
   if (motionElementScopeClipId.value !== payload.clipId) selectedMotionElements.value = []
   motionElementScopeClipId.value = payload.clipId
+  selectionScope.value = 'clip'
+  selectedTrackId.value = ''
   selectedClipIds.value = [payload.clipId]
   selectedClipId.value = payload.clipId
   previewTab.value = 'main'
@@ -1016,11 +953,16 @@ function handleMotionElementSelect(payload: {
   }
   selectedMotionElements.value = [...current.values()]
   // 追加/取消元素时只更新自动生成的默认说明，不覆盖用户已经写好的修改意见。
-  const autoNote = /^只修改主画面选中的 \d+ 个元素（按所属部分与画面位置区分），其他元素保持不变。$/
+  const autoNote = /^只修改(?:主画面)?选中的 \d+ 个元素(?:：.*?)?；其他元素保持不变。$/
   if (selectedMotionElements.value.length) {
+    const labels = selectedMotionElements.value.map((element) => element.label).filter(Boolean)
     if (!clipNote.value.trim() || autoNote.test(clipNote.value.trim())) {
-      clipNote.value = `只修改主画面选中的 ${selectedMotionElements.value.length} 个元素（按所属部分与画面位置区分），其他元素保持不变。`
+      clipNote.value = `只修改选中的 ${selectedMotionElements.value.length} 个元素：${labels.join('、')}；其他元素保持不变。`
     }
+    // 元素级选择直接把元素名回显给用户，避免误以为选中的是整段。
+    showToast(labels.length === 1
+      ? `已选中元素「${labels[0]}」，本轮只改这个元素`
+      : `已选中 ${labels.length} 个元素：${labels.slice(0, 2).join('、')}${labels.length > 2 ? ' 等' : ''}`)
   } else if (autoNote.test(clipNote.value.trim())) {
     clipNote.value = ''
   }
@@ -1031,9 +973,26 @@ function handleTimelineSelect(payload: { ids: string[]; primary: string }) {
   if (nextIds.join('|') !== selectedClipIds.value.join('|')) clipNote.value = ''
   motionElementScopeClipId.value = ''
   selectedMotionElements.value = []
+  selectionScope.value = 'clip'
+  selectedTrackId.value = ''
   selectedClipIds.value = nextIds
   selectedClipId.value = payload.primary || nextIds[nextIds.length - 1] || ''
   if (!nextIds.length) inspectorOpen.value = false
+}
+
+/** 点轨道头 = 选中整条轨道，修改范围比单个片段更大。 */
+function handleTrackSelect(trackId: string) {
+  const track = project.value?.tracks.find((item) => item.id === trackId)
+  if (!track) return
+  clipNote.value = ''
+  motionElementScopeClipId.value = ''
+  selectedMotionElements.value = []
+  selectionScope.value = 'track'
+  selectedTrackId.value = trackId
+  selectedClipIds.value = track.clips.map((clip) => clip.id)
+  selectedClipId.value = track.clips[0]?.id || ''
+  previewTab.value = 'main'
+  showToast(`已选中整条轨道「${track.name}」，本轮修改会作用于这条轨道上的所有片段`)
 }
 
 function clearTimelineSelection() {
@@ -1041,6 +1000,8 @@ function clearTimelineSelection() {
   selectedClipId.value = ''
   motionElementScopeClipId.value = ''
   selectedMotionElements.value = []
+  selectionScope.value = 'clip'
+  selectedTrackId.value = ''
   inspectorOpen.value = false
 }
 
@@ -2368,101 +2329,6 @@ onBeforeUnmount(() => {
   font-size: 10px;
 }
 
-.hf-studio-backdrop {
-  position: fixed;
-  z-index: 300;
-  inset: 0;
-  display: flex;
-  padding: 18px;
-  background: rgba(28, 23, 20, 0.55);
-  backdrop-filter: blur(3px);
-}
-
-.hf-studio-panel {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  flex-direction: column;
-  overflow: hidden;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 24px 70px -30px rgba(28, 20, 15, 0.6);
-}
-
-.hf-studio-head {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 9px 12px;
-  border-bottom: 1px solid #eee5de;
-  background: #fffaf6;
-}
-
-.hf-studio-title {
-  display: flex;
-  min-width: 0;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.hf-studio-title strong {
-  font-size: 12.5px;
-  color: #2c2521;
-}
-
-.hf-studio-title span {
-  overflow: hidden;
-  font-size: 10.5px;
-  color: #a3948a;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hf-studio-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.hf-studio-actions button {
-  padding: 5px 10px;
-  border: 1px solid #e3d6cc;
-  border-radius: 7px;
-  background: #fff;
-  color: #6a584d;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.hf-studio-actions button:hover {
-  border-color: #c9a58f;
-}
-
-.hf-studio-actions button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.hf-studio-error,
-.hf-studio-loading {
-  margin: 24px;
-  font-size: 12px;
-  color: #8a7c73;
-}
-
-.hf-studio-error {
-  color: #b4472c;
-}
-
-.hf-studio-frame {
-  flex: 1;
-  width: 100%;
-  min-height: 0;
-  border: 0;
-  background: #fff;
-}
 
 .es-toast {
   position: fixed;

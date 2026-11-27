@@ -42,7 +42,12 @@ export interface AgentStreamResult {
   content: string
   toolCalls: AgentToolCall[]
   finishReason?: string
+  /** 流在没有 [DONE] / finish_reason 的情况下结束：可能被网关或代理切断。 */
+  incomplete?: boolean
 }
+
+/** 流式读取长时间没有新数据就判定为连接中断，避免任务永远卡住。 */
+const STREAM_IDLE_TIMEOUT_MS = 5 * 60_000
 
 /**
  * 用多模态模型快速描述参考图，供当前文本模型使用。
@@ -174,27 +179,47 @@ export async function streamAgentChat(options: AgentStreamOptions): Promise<Agen
   const url = `${baseUrl}/chat/completions`
   const model = options.model || AGENT_MODEL_ID
 
+  /** 智能体要用工具写源码，默认给足输出额度；网关不接受时再退回服务端默认值。 */
+  const DEFAULT_AGENT_MAX_TOKENS = 8192
+  const requestedMaxTokens = options.maxTokens ?? DEFAULT_AGENT_MAX_TOKENS
+  const post = (maxTokens?: number) => fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: options.messages,
+      stream: true,
+      temperature: options.temperature ?? 0.7,
+      ...(maxTokens ? { max_tokens: maxTokens } : {}),
+      ...(options.tools?.length ? { tools: options.tools, tool_choice: 'auto' } : {}),
+    }),
+    signal: options.signal,
+  })
+
   let response: Response
   try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: options.messages,
-        stream: true,
-        temperature: options.temperature ?? 0.7,
-        ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}),
-        ...(options.tools?.length ? { tools: options.tools, tool_choice: 'auto' } : {}),
-      }),
-      signal: options.signal,
-    })
+    response = await post(requestedMaxTokens)
   } catch (error: any) {
     if (error?.name === 'AbortError') throw error
     throw new AgentApiError('网络连接失败，请检查本机网络或服务地址后重试。', 'network')
+  }
+
+  if (!response.ok && options.maxTokens === undefined && response.status === 400) {
+    const error = await readErrorResponse(response)
+    // 有些模型不支持 8K 输出，明确报 max_tokens 超限时退回服务端默认值，避免整轮不可用。
+    if (/max[_ ]?tokens|output.{0,20}tokens?|token.{0,20}(?:too large|exceed|limit)/i.test(error.message)) {
+      try {
+        response = await post(undefined)
+      } catch (networkError: any) {
+        if (networkError?.name === 'AbortError') throw networkError
+        throw new AgentApiError('网络连接失败，请检查本机网络或服务地址后重试。', 'network')
+      }
+    } else {
+      throw error
+    }
   }
 
   if (!response.ok) {
@@ -231,6 +256,7 @@ export async function streamAgentChat(options: AgentStreamOptions): Promise<Agen
   const decoder = new TextDecoder()
   let buffer = ''
   let receivedAny = false
+  let sawDone = false
   let content = ''
   let finishReason: string | undefined
   const callDeltas = new Map<number, { id: string; name: string; arguments: string }>()
@@ -260,7 +286,11 @@ export async function streamAgentChat(options: AgentStreamOptions): Promise<Agen
 
   const handleEvent = (raw: string) => {
     const data = raw.trim()
-    if (!data || data === '[DONE]') return
+    if (!data) return
+    if (data === '[DONE]') {
+      sawDone = true
+      return
+    }
     let payload: any
     try {
       payload = JSON.parse(data)
@@ -286,15 +316,45 @@ export async function streamAgentChat(options: AgentStreamOptions): Promise<Agen
       receivedAny = true
       rawCalls.forEach(collectToolCallDelta)
     }
-    if (typeof choice?.finish_reason === 'string') finishReason = choice.finish_reason
+    if (typeof choice?.finish_reason === 'string') {
+      finishReason = choice.finish_reason
+      sawDone = true
+    }
     if (payload?.error) {
       throw new AgentApiError(extractErrorMessage(payload, '模型返回了错误。'), 'unknown')
     }
   }
 
+  /**
+   * 读取一块数据，超过 5 分钟没有任何新字节就判定连接被切断。
+   * 没有这个看门狗时，代理层静默丢连接会让任务一直转圈，只能手动刷新。
+   */
+  const readWithIdleTimeout = async () => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+      return await Promise.race([
+        reader.read(),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            reject(new AgentApiError('模型响应长时间没有新内容，连接可能已中断。', 'network'))
+          }, STREAM_IDLE_TIMEOUT_MS)
+        }),
+      ])
+    } finally {
+      if (timer) clearTimeout(timer)
+    }
+  }
+
   try {
     while (true) {
-      const { done, value } = await reader.read()
+      let chunk: ReadableStreamReadResult<Uint8Array>
+      try {
+        chunk = await readWithIdleTimeout()
+      } catch (error) {
+        void reader.cancel().catch(() => {})
+        throw error
+      }
+      const { done, value } = chunk
       if (done) break
 
       buffer += decoder.decode(value, { stream: true })
@@ -323,7 +383,8 @@ export async function streamAgentChat(options: AgentStreamOptions): Promise<Agen
         type: 'function',
         function: { name: call.name, arguments: call.arguments },
       }, position))
-    return { content, toolCalls, finishReason }
+    // 没有结束标记就断开：工具参数可能是半截 JSON，交给 Harness 自动重试。
+    return { content, toolCalls, finishReason, incomplete: !sawDone && !finishReason }
   } finally {
     reader.releaseLock()
   }

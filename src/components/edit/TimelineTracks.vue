@@ -49,7 +49,9 @@
           type="button"
           class="tl-action ai"
           :disabled="!selectedClipIds.length"
-          title="把选中片段加入右侧待发送区（⌘ Enter）"
+          :title="selectionElementNames.length
+            ? '把选中元素加入右侧待发送区（⌘ Enter）'
+            : '把选中片段加入右侧待发送区（⌘ Enter）'"
           @click="$emit('ask-ai')"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -107,16 +109,22 @@
 
     <div v-if="selectedClipIds.length" class="tl-selectbar">
       <div class="tl-selectsummary">
-        <span class="tl-selectcount">{{ selectedClipIds.length }} 段已选</span>
-        <span class="tl-selectnames">{{ selectedSummary }}</span>
+        <span class="tl-selectcount">
+          <template v-if="selectionElementNames.length">{{ selectionElementNames.length }} 个元素已选</template>
+          <template v-else-if="selectedTrackId">整条轨道已选</template>
+          <template v-else>{{ selectedClipIds.length }} 段已选</template>
+        </span>
+        <span class="tl-selectnames">{{ selectionSummary }}</span>
       </div>
       <input
         v-model="noteText"
         class="tl-selectnote"
         type="text"
         maxlength="200"
-        :placeholder="selectedClipIds.length > 1 ? '描述这几段要怎么改…' : '描述这段要怎么改…'"
-        aria-label="给选中片段的修改意见"
+        :placeholder="selectionElementNames.length
+          ? (selectionElementNames.length > 1 ? '描述这几个元素要怎么改…' : '描述这个元素要怎么改…')
+          : (selectedClipIds.length > 1 ? '描述这几段要怎么改…' : '描述这段要怎么改…')"
+        aria-label="给选中元素的修改意见"
         @keydown.stop
         @keydown.enter.prevent="askAi"
       />
@@ -144,7 +152,9 @@
             v-for="track in project.tracks"
             :key="track.id"
             class="tl-track-head"
-            :class="`kind-${track.kind}`"
+            :class="[`kind-${track.kind}`, { active: selectedTrackId === track.id }]"
+            :title="`点击选中整条轨道「${track.name}」，修改范围作用于轨道上的全部片段`"
+            @click="$emit('select-track', track.id)"
             >
             <span class="track-kind" aria-hidden="true">
               <svg v-if="track.kind === 'video'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
@@ -165,7 +175,7 @@
               class="track-mute"
               :class="{ muted: track.muted }"
               :title="track.muted ? '取消静音' : '静音'"
-              @click="$emit('toggle-mute', track.id)"
+              @click.stop="$emit('toggle-mute', track.id)"
             >
               <svg v-if="!track.muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4.5 9.5h3L12 6v12L7.5 14.5h-3z" />
@@ -326,6 +336,7 @@ import {
   type TimelineClip,
 } from '@/types/edit'
 import { projectDuration } from '@/stores/editProjectStore'
+import type { AgentMotionElementRef } from '@/types/agent'
 import { playhead } from '@/features/edit/playhead'
 import { collectSnapTargets, resolveSnap } from '@/features/edit/timelineSnap'
 
@@ -333,6 +344,12 @@ const props = defineProps<{
   project: EditProject
   selectedClipId: string
   selectedClipIds: string[]
+  /** 主画面里选中的动效元素；元素级修改只作用于这些元素。 */
+  selectedMotionElements: AgentMotionElementRef[]
+  /** 元素所属片段；与元素清单配合判断选择层级。 */
+  selectedMotionElementClipId: string
+  /** 当前选中的整条轨道；有值时修改范围是整条轨道。 */
+  selectedTrackId: string
   /** 当前选中片段的修改意见，和右侧待发送区共用。 */
   note: string
   pxPerSec: number
@@ -344,6 +361,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'seek', time: number): void
   (event: 'select', payload: { ids: string[]; primary: string }): void
+  (event: 'select-track', trackId: string): void
   (event: 'update:note', value: string): void
   (event: 'move-clip', payload: { clipId: string; start: number; trackId?: string }): void
   (event: 'move-clips', payload: { ids: string[]; delta: number }): void
@@ -503,7 +521,23 @@ const marqueeStyle = computed(() => {
   }
 })
 
-const selectedSummary = computed(() => {
+/** 元素级选择优先显示元素名；只有整段选择时才回退到片段名。 */
+const selectionElementNames = computed(() => {
+  const clipId = props.selectedMotionElementClipId
+  if (!clipId || !props.selectedMotionElements.length) return []
+  return props.selectedMotionElements.map((element) => element.label).filter(Boolean)
+})
+
+const selectionSummary = computed(() => {
+  if (selectionElementNames.value.length) {
+    const names = selectionElementNames.value
+    const shown = names.slice(0, 2).join('、')
+    return names.length > 2 ? `${shown} 等 ${names.length} 个元素` : shown
+  }
+  if (props.selectedTrackId) {
+    const track = props.project.tracks.find((item) => item.id === props.selectedTrackId)
+    if (track) return `整条轨道「${track.name}」· ${track.clips.length} 段`
+  }
   const names = orderedClipIds()
     .filter((id) => props.selectedClipIds.includes(id))
     .map((id) => findClip(id)?.clip.name || '')
@@ -1067,9 +1101,17 @@ function onWheel(event: WheelEvent) {
     zoomTo(props.pxPerSec * Math.exp(-event.deltaY * 0.0022), event.clientX)
     return
   }
-  if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+  if (event.shiftKey && Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
     event.preventDefault()
     element.scrollLeft += event.deltaY
+    return
+  }
+  // 多轨时间轴优先上下滚动；只有单轨没有纵向溢出时，滚轮才继续走时间轴横向平移。
+  if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+    const canScrollVertically = element.scrollHeight - element.clientHeight > 1
+    event.preventDefault()
+    if (canScrollVertically) element.scrollTop += event.deltaY
+    else element.scrollLeft += event.deltaY
   }
 }
 
@@ -1520,6 +1562,16 @@ onBeforeUnmount(() => {
   padding: 0 8px 0 10px;
   border-bottom: 1px solid var(--sf-surface-3);
   color: var(--sf-ink-3);
+  cursor: pointer;
+}
+
+.tl-track-head:hover {
+  background: var(--sf-surface-2);
+}
+
+.tl-track-head.active {
+  background: var(--sf-terra-wash);
+  box-shadow: inset 2px 0 0 var(--sf-terra);
 }
 
 .track-kind {

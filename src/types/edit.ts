@@ -22,10 +22,18 @@ export interface CaptionCue {
   duration: number
 }
 
+/** 项目画布/导出分辨率档位：768P（1366×768）、1080P（1920×1080）、2K（2560×1440）。 */
+export type ProjectResolution = '768P' | '1080P' | '2K'
+
+/** 短边像素：用于按比例换算导出尺寸。 */
+export function resolutionShortSide(resolution: ProjectResolution): number {
+  return resolution === '2K' ? 1440 : resolution === '1080P' ? 1080 : 768
+}
+
 export interface ProjectVersionSnapshot {
   name: string
   aspectRatio: string
-  resolution: '768P' | '2K'
+  resolution: ProjectResolution
   fps: number
   tracks: EditTrack[]
   captions: CaptionCue[]
@@ -99,7 +107,7 @@ export interface EditProject {
   /** 归属的工作区（本地目录）。缺省表示未分类。 */
   workspaceId?: string
   aspectRatio: string
-  resolution: '768P' | '2K'
+  resolution: ProjectResolution
   fps: number
   createdAt: number
   updatedAt: number

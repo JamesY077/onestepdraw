@@ -1,3 +1,4 @@
+import type { ProjectResolution } from '@/types/edit'
 import type {
   AgentClipRef,
   AgentGeneration,
@@ -48,7 +49,7 @@ export function selectedClipPrompt(content: string, clip: AgentClipRef): string 
 
 export interface MediaRevisionTarget {
   aspectRatio: string
-  resolution: '768P' | '2K'
+  resolution: ProjectResolution
   expectedRevision?: number
 }
 

@@ -69,9 +69,9 @@
           <span class="sc-selection-title">
             <i aria-hidden="true" />
             <template v-if="pendingBatches.length">
-              待发送 {{ queuedCount }} 段 · {{ pendingBatches.length }} 条修改
+              待发送 {{ queuedCount }} {{ queuedScopeUnit }} · {{ pendingBatches.length }} 条修改
             </template>
-            <template v-else>只改选中的 {{ selectedClips.length }} 个片段</template>
+            <template v-else>只改选中的 {{ selectedClips.length }} {{ selectedScopeUnit }}</template>
           </span>
           <button v-if="pendingBatches.length" type="button" @click="$emit('clear-pending')">清空</button>
           <button v-else type="button" @click="$emit('clear-clips')">取消选择</button>
@@ -87,9 +87,9 @@
               <span v-if="batch.clips.length > 3" class="sc-queue-more">+{{ batch.clips.length - 3 }}</span>
             </span>
             <span class="sc-queue-copy">
-              <strong>{{ batch.clips.map((clip) => clip.name).join('、') }}</strong>
+              <strong>{{ batch.clips.map(scopeName).join('、') }}</strong>
               <span class="sc-queue-note" :class="{ 'is-empty': !batch.note }" :title="batch.note || ''">
-                {{ batch.note || '让 AI 针对这段给出修改建议' }}
+                {{ batch.note || (batch.clips.some((clip) => clip.scope === 'element') ? '让 AI 只改这些元素' : batch.clips.some((clip) => clip.scope === 'track') ? '让 AI 按整条轨道统一修改' : '让 AI 针对这段给出修改建议') }}
               </span>
             </span>
             <button
@@ -111,12 +111,14 @@
             v-for="clip in selectedClips"
             :key="clip.id"
             class="sc-selection-chip"
-            :title="`${clip.name} · ${clip.start.toFixed(1)}s → ${(clip.start + clip.duration).toFixed(1)}s`"
+            :class="[clip.scope === 'element' ? 'is-element' : '', clip.scope === 'track' ? 'is-track' : '']"
+            :title="`${scopeHint(clip)} · ${clip.start.toFixed(1)}s → ${(clip.start + clip.duration).toFixed(1)}s`"
           >
             <img v-if="clipThumb(clip)" :src="clipThumb(clip)" alt="" />
             <span v-else class="sc-selection-kind">{{ kindLetter(clip.kind) }}</span>
-            <span class="sc-selection-name">{{ clip.name }}</span>
-            <span class="sc-selection-time">{{ clip.duration.toFixed(1) }}s</span>
+            <span class="sc-selection-name">{{ scopeName(clip) }}</span>
+            <span v-if="scopeBadge(clip)" class="sc-selection-badge">{{ scopeBadge(clip) }}</span>
+            <span v-else class="sc-selection-time">{{ clip.duration.toFixed(1) }}s</span>
           </span>
         </div>
 
@@ -130,13 +132,13 @@
           <svg viewBox="0 0 12 12" aria-hidden="true" :class="{ open: previewOpen }">
             <path d="M4.5 2.5 8 6l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
-          {{ previewOpen ? '收起这次发送的内容' : `预览这次发给 AI 的内容 · ${previewClips.length} 段` }}
+          {{ previewOpen ? '收起这次发送的内容' : `预览这次发给 AI 的内容 · ${previewClips.length} ${previewScopeUnit}` }}
         </button>
         <div v-if="previewOpen" class="sc-preview">
           <ul class="sc-preview-list">
             <li v-for="clip in previewClips" :key="clip.id">
               <div class="sc-preview-row">
-                <span class="sc-preview-name">{{ clip.name }}<template v-if="clip.motionElements?.length"> · {{ clip.motionElements.length }} 个元素</template></span>
+                <span class="sc-preview-name">{{ scopeName(clip) }}<template v-if="clip.motionElements?.length && clip.scope !== 'element'"> · {{ clip.motionElements.length }} 个元素</template></span>
                 <span class="sc-preview-time">{{ clip.start.toFixed(1) }}s → {{ (clip.start + clip.duration).toFixed(1) }}s</span>
                 <span class="sc-preview-note" :class="{ 'is-empty': !clip.note }">
                   {{ clip.note || '未写意见，AI 会自行判断' }}
@@ -246,6 +248,12 @@ const lastAssistantId = computed(() => {
 // 创作统一经受控 Harness；本机 CLI 只用于普通对话，避免绕过工具权限与分镜确认。
 const engineLabel = computed(() => modelStore.selectedId)
 
+/** 同一片段多批修改时保留最精确的选择粒度：元素 > 轨道 > 片段。 */
+function strongestScope(a?: AgentClipRef['scope'], b?: AgentClipRef['scope']): AgentClipRef['scope'] {
+  const rank = { element: 3, track: 2, clip: 1 } as const
+  return (rank[a || 'clip'] >= rank[b || 'clip'] ? a : b) || 'clip'
+}
+
 /** 同一片段可以有多条元素级修改：合并选中元素并保留每条意见，不能只留最后一条。 */
 const queuedClips = computed<AgentClipRef[]>(() => {
   const map = new Map<string, AgentClipRef>()
@@ -255,7 +263,8 @@ const queuedClips = computed<AgentClipRef[]>(() => {
   for (const batch of props.pendingBatches) {
     const note = batch.note.trim()
     for (const clip of batch.clips) {
-      map.set(clip.id, { ...map.get(clip.id), ...clip })
+      const previous = map.get(clip.id)
+      map.set(clip.id, { ...previous, ...clip, scope: strongestScope(previous?.scope, clip.scope) })
       const line = note || clip.note?.trim()
       if (line) {
         const list = notes.get(clip.id) || []
@@ -282,6 +291,7 @@ const queuedClips = computed<AgentClipRef[]>(() => {
     return {
       ...clip,
       note: mergedNotes.join('\n') || clip.note,
+      scope: mergedElements?.size ? 'element' : clip.scope,
       motionElements: mergedElements?.size ? [...mergedElements.values()] : clip.motionElements,
       motionElementEdits: edits.get(id)?.length ? edits.get(id) : clip.motionElementEdits,
     }
@@ -289,6 +299,21 @@ const queuedClips = computed<AgentClipRef[]>(() => {
 })
 
 const queuedCount = computed(() => queuedClips.value.length)
+
+/** 队列标题按实际粒度说“元素 / 轨道 / 片段”，避免用户以为要整段重做。 */
+const queuedScopeUnit = computed(() => {
+  const clips = queuedClips.value
+  if (clips.length && clips.every((clip) => clip.scope === 'track')) return '条轨道'
+  if (clips.length && clips.every((clip) => clip.scope === 'element')) return '个元素'
+  return '段'
+})
+
+const selectedScopeUnit = computed(() => {
+  const clips = props.selectedClips
+  if (clips.length && clips.every((clip) => clip.scope === 'track')) return '条轨道'
+  if (clips.length && clips.every((clip) => clip.scope === 'element')) return '个元素'
+  return '个片段'
+})
 
 /** 有待发送内容时只发队列；没有队列时沿用「直接发当前选中片段」。 */
 const outgoingClips = computed(() =>
@@ -341,6 +366,13 @@ function elementNotes(clip: AgentClipRef, element: AgentMotionElementRef): strin
 const previewOpen = ref(false)
 
 const previewClips = computed(() => resolveSendClips().clips)
+
+const previewScopeUnit = computed(() => {
+  const clips = previewClips.value
+  if (clips.length && clips.every((clip) => clip.scope === 'track')) return '条轨道'
+  if (clips.length && clips.every((clip) => clip.scope === 'element')) return '个元素'
+  return '段'
+})
 
 /** 发送前可以核对：模型这一轮会收到哪些片段、每段改什么。 */
 const previewText = computed(() => {
@@ -461,6 +493,29 @@ function clipThumb(clip: AgentClipRef): string {
 function kindLetter(kind: AgentClipRef['kind']): string {
   if (kind === 'motion') return '动'
   return kind === 'audio' ? '音' : kind === 'image' ? '图' : kind === 'animation' ? '码' : '视'
+}
+
+/** 元素级选择显示元素名，轨道级显示轨道名；只有整段选择才显示片段名。 */
+function scopeName(clip: AgentClipRef): string {
+  if (clip.scope === 'track') return `整条轨道「${clip.trackName}」`
+  if (clip.scope === 'element' && clip.motionElements?.length) {
+    const labels = clip.motionElements.map((element) => element.label).filter(Boolean)
+    return labels.length > 2 ? `${labels.slice(0, 2).join('、')} 等 ${labels.length} 个元素` : labels.join('、')
+  }
+  return clip.name
+}
+
+function scopeBadge(clip: AgentClipRef): string {
+  if (clip.scope === 'element' && clip.motionElements?.length) return `${clip.motionElements.length} 元素`
+  return ''
+}
+
+function scopeHint(clip: AgentClipRef): string {
+  if (clip.scope === 'track') return `整条轨道「${clip.trackName}」· ${clip.trackKind} 轨`
+  if (clip.scope === 'element' && clip.motionElements?.length) {
+    return `片段「${clip.name}」中选中的 ${clip.motionElements.map((element) => element.label).join('、')}`
+  }
+  return clip.name
 }
 
 function focusComposer() {
@@ -887,6 +942,28 @@ defineExpose({ focusComposer })
   color: var(--sf-ink-4);
   font-size: 8.5px;
   font-variant-numeric: tabular-nums;
+}
+
+.sc-selection-chip.is-element {
+  border-color: #e3d4c9;
+  background: var(--sf-terra-wash);
+}
+
+.sc-selection-chip.is-track {
+  border-color: #d9d2c7;
+  background: var(--sf-surface-2);
+}
+
+.sc-selection-badge {
+  flex: none;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: #fff;
+  color: var(--sf-terra-strong);
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 14px;
+  white-space: nowrap;
 }
 
 .sc-preview-toggle {

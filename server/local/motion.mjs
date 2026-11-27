@@ -817,43 +817,6 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
     }
   }
 
-  /** 官方 HyperFrames Studio：启动（或复用）该工程的预览服务，前端直接嵌入同一套 UI。 */
-  const studioSessions = new Map()
-
-  async function startStudio(body) {
-    const id = safeId(body?.id)
-    if (!id || !readMeta(id)) throw new Error('动效工程不存在')
-    const cached = studioSessions.get(id)
-    if (cached?.url) {
-      try {
-        const response = await fetch(cached.url, { signal: AbortSignal.timeout(1500) })
-        if (response.ok) return { ok: true, ...cached, reused: true }
-      } catch {
-        studioSessions.delete(id)
-      }
-    }
-    const { code, stdout, stderr } = await runHyperframesCli(
-      ['preview', projectDir(id), '--no-open', '--background', '--json'],
-      { timeoutMs: 90_000 },
-    )
-    const parsed = parseCliJson(stdout)
-    const result = parsed?.result || parsed
-    const url = result?.studioUrl || result?.serverUrl || ''
-    if (code !== 0 || !url) {
-      throw new Error(`HyperFrames Studio 启动失败（退出码 ${code}）：${stderr.trim().slice(-600) || stdout.trim().slice(-600) || '无输出'}`)
-    }
-    const session = {
-      url: String(url),
-      serverUrl: String(result.serverUrl || url),
-      port: Number(result.port) || 0,
-      pid: Number(result.pid) || 0,
-      projectDir: projectDir(id),
-      startedAt: Date.now(),
-    }
-    studioSessions.set(id, session)
-    return { ok: true, ...session, reused: false }
-  }
-
   const renderQueue = []
   let activeRender = null
 
@@ -1195,11 +1158,6 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
 
       if (pathname === '/local/motion/check' && req.method === 'POST') {
         sendJson(res, 200, await checkProject(await readBody()))
-        return
-      }
-
-      if (pathname === '/local/motion/studio' && req.method === 'POST') {
-        sendJson(res, 200, await startStudio(await readBody()))
         return
       }
 

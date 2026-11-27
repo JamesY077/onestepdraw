@@ -11,7 +11,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
     type: 'function',
     function: {
       name: 'update_plan',
-      description: '更新当前创作任务的简短计划。仅在任务确实需要两个以上阶段时使用；简单聊天或直接生成不要调用。',
+      description: '接到需求后先判断是否需要拆解：需要两个以上阶段、多个素材/镜头或整支片时，先调用本工具建立 2-12 步计划；每完成一步立即更新状态并继续下一步。简单聊天或一次生成能完成的任务不要调用。',
       parameters: {
         type: 'object',
         additionalProperties: false,
@@ -19,7 +19,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
         properties: {
           items: {
             type: 'array',
-            maxItems: 6,
+            maxItems: 12,
             items: {
               type: 'object',
               additionalProperties: false,
@@ -101,7 +101,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
         properties: {
           prompt: { type: 'string', description: '完整、具体的镜头与运动描述。' },
           aspect_ratio: { type: 'string', enum: ['16:9', '9:16', '1:1'] },
-          resolution: { type: 'string', enum: ['768P', '2K'] },
+          resolution: { type: 'string', enum: ['768P', '1080P', '2K'] },
           duration: { type: 'integer', minimum: 4, maximum: 15 },
         },
       },
@@ -122,7 +122,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
           continuity: { type: 'string', description: '跨镜统一的角色/产品外观、场景、光线、色彩、镜头语言与首尾状态锚点。' },
           storyboard_text: { type: 'string', description: '完整原始分镜文本，包含全部镜号，不能用“同上”省略。' },
           aspect_ratio: { type: 'string', enum: ['16:9', '9:16', '1:1'] },
-          resolution: { type: 'string', enum: ['768P', '2K'] },
+          resolution: { type: 'string', enum: ['768P', '1080P', '2K'] },
           delivery: { type: 'string', enum: ['full', 'preview', 'batch'], description: '用户确认后希望的执行范围。' },
           shots: {
             type: 'array',
@@ -159,7 +159,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
           continuity: { type: 'string', description: '跨镜统一的角色/产品外观、场景、光线、色彩、镜头语言与首尾状态锚点。' },
           storyboard_text: { type: 'string', description: '用户确认的完整原始分镜文本，包含全部镜号，不能用“同上”省略。' },
           aspect_ratio: { type: 'string', enum: ['16:9', '9:16', '1:1'] },
-          resolution: { type: 'string', enum: ['768P', '2K'] },
+          resolution: { type: 'string', enum: ['768P', '1080P', '2K'] },
           delivery: {
             type: 'string',
             enum: ['full', 'preview', 'batch'],
@@ -258,7 +258,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
     type: 'function',
     function: {
       name: 'read_motion_project',
-      description: '读取动效工程的源码与参数契约。修改动效前必须先读，不要凭记忆改写。',
+      description: '读取动效工程源码与参数契约。修改前必须先读；大工程不要一次要全量，用 offset/limit 分页，或用 query 按关键字定位要改的那几行。',
       parameters: {
         type: 'object',
         additionalProperties: false,
@@ -266,6 +266,9 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
         properties: {
           motionId: { type: 'string', description: '动效工程 ID，来自片段或 create_motion_project。' },
           path: { type: 'string', description: '工程内相对路径，默认 index.html。' },
+          offset: { type: 'number', description: '从第几个字符开始读，默认 0。' },
+          limit: { type: 'number', description: '本次最多读取多少字符，默认 8000，上限 12000。' },
+          query: { type: 'string', description: '按关键字查找，返回命中的行号与原文；适合只改某段文案、某个元素时定位。' },
         },
       },
     },
@@ -274,15 +277,31 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
     type: 'function',
     function: {
       name: 'write_motion_project',
-      description: '写回动效工程源码（完整文件，不是 diff）。用于改文案、配色、版式、镜头时长与 GSAP 动效。',
+      description: '写回动效工程源码。小改动优先用 mode=patch（按原文替换），不用整份重写；新建或大改用 mode=replace 写最小骨架，再用 mode=append 分块追加，最后一块传 final=true。禁止一次塞入超大源码。',
       parameters: {
         type: 'object',
         additionalProperties: false,
-        required: ['motionId', 'source'],
+        required: ['motionId'],
         properties: {
           motionId: { type: 'string' },
-          source: { type: 'string', description: '完整可运行源码。' },
+          source: { type: 'string', description: 'replace / append 时本次写入的源码或源码片段。' },
           path: { type: 'string', description: '默认 index.html。' },
+          mode: { type: 'string', enum: ['patch', 'replace', 'append'], description: 'patch 局部替换；replace 覆盖整个文件；append 追加到末尾。默认 replace。' },
+          edits: {
+            type: 'array',
+            description: 'patch 模式的修改列表，每项把工程里唯一的原文 find 替换成 replace。',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['find', 'replace'],
+              properties: {
+                find: { type: 'string', description: '要替换的原文，必须能在源码里唯一定位。' },
+                replace: { type: 'string', description: '替换后的文本；删除内容时传空字符串。' },
+                all: { type: 'boolean', description: '原文出现多次时是否全部替换，默认 false。' },
+              },
+            },
+          },
+          final: { type: 'boolean', description: 'append 的最后一块传 true，宿主会校验完整源码。' },
         },
       },
     },

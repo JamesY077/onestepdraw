@@ -14,8 +14,8 @@ DSH 的核心价值不是“工具数量多”，而是以下运行时约束：
 | provider-neutral 流聚合 | OpenAI 兼容 SSE 中文本、推理和 `tool_calls` 分片聚合 | 自研通用多 provider block 协议 |
 | 原始 JSON 参数拼接 | 按 tool-call index 聚合参数，完整流结束后才解析 | PTC / nested execution token |
 | tool result 回注 | `assistant.tool_calls` 与 `tool.tool_call_id` 完整配对后继续推理 | 完整 append-only Session surface |
-| 工具有序提交 | 默认顺序执行，最多 4 个/Step，错误结果也回注 | 并发 body 调度；创作写入和付费任务默认非并发安全 |
-| 取消与截断保护 | AbortSignal 贯穿模型和工具；`length/max_tokens` 不执行半成品工具 | 跨进程 tool outcome-unknown 修复 |
+| 工具有序提交 | 默认顺序执行，不限制单步工具数量，错误结果也回注 | 并发 body 调度；创作写入和付费任务默认非并发安全 |
+| 取消与截断保护 | AbortSignal 贯穿模型和工具；`length/max_tokens` 不执行半成品工具，带“拆小一点”提示自动重试 2 次；流断开/5 分钟无数据也自动重试并回滚半截文本 | 跨进程 tool outcome-unknown 修复 |
 | 持久化投影 | 消息上持久化 Run、Plan、ToolActivity；刷新闭合残留 running | 多后端 JSONL writer、单写者锁和 fork/lineage |
 | 纯 UI presenter | schema、宿主执行和展示投影分离，旧会话可直接重放 | Cordis 插件注册与动态 declaration merging |
 | 上下文控制 | 保留最近 40 条历史、工具结果 1.6 万字上限、项目摘要按需读取 | 自动 token 压缩和 surface replacement |
@@ -53,7 +53,7 @@ src/api/agent.ts
   AIPing 请求、SSE 边界、原生 tool_calls 聚合、JSON 响应兼容
 
 src/features/agent/harness.ts
-  与 Vue/Pinia 无关的 Turn/Step 循环、批量上限、取消、tool result 回注
+  与 Vue/Pinia 无关的 Turn/Step 循环、取消、tool result 回注
 
 src/features/agent/toolDefinitions.ts
   模型可见 JSON Schema、纯 presentCall 展示投影
@@ -132,8 +132,16 @@ src/components/agent/AgentRunTrace.vue
 
 - 单个工具业务失败：记录 failed Activity，把 `{ ok:false, error }` 回注模型，由下一 Step 修正或解释。
 - 非法工具 JSON：不让 SSE/调度器崩溃，作为参数错误回注。
-- 输出 `length/max_tokens`：不执行 tool calls，避免运行半个 JSON。
-- 单批超过 4 个工具：停止并给出可操作错误；整轮不设固定步数上限，持续执行到模型结束或用户停止。
+- 输出 `length/max_tokens`：工具参数可能只有一半，绝不执行；先带“拆小一点”提示自动重试 2 次，仍截断才报错。纯文本被截断时自动从断点续写最多 2 次，回答不会停在半句。
+- 流式连接中断：网关没有发送 `[DONE]` / `finish_reason` 就断开，或读取超过 5 分钟没有新字节，判定为连接中断，自动重来这一步（最多 2 次）。重试前通过 `onStepRetry` 回滚已经流到界面的半截文本，避免同一段回答出现两遍；自动重试记录在运行日志里。
+- 长任务上下文：每步请求前按 64k 字符预算压缩历史，较早的工具结果只保留前 2k 字符，并从最早的整轮对话开始丢弃；只在 user 边界切分，保证 assistant `tool_calls` 与 tool 结果不被拆散。网关报上下文超限时，预算自动减半再重试（最多 2 次），不会把整轮任务判死。
+- 跨轮上下文：新一轮只逐字保留最近 8 条消息，更早的轮次压成摘要（谁要做什么、产出是什么）；摘要明确标注“需要细节请重新读取项目/工程”，避免模型凭记忆改稿。用户不再需要每轮手动新建对话。
+- 工具结果不再被切成非法 JSON：超过 16k 字符时返回合法信封 `{ ok, truncated, chars, preview, note }`，并提示用分页或 patch 拿全量。
+- 动效源码读取：`read_motion_project` 支持 `offset/limit` 分页（默认 8000、上限 12000 字符）和 `query` 关键字定位；`hasMore/nextOffset` 明确告知还有多少没读。
+- 动效写入：`write_motion_project` 新增 `mode=patch`，用 `edits[{find,replace,all}]` 在原文件上精确替换；找不到原文或命中多次会直接报错，只有新建/大改才用 `replace` + `append` 分块。
+- 单步工具数量、单轮生成任务和总步数都不设上限；持续执行到模型结束或用户停止，只保留取消、参数截断和重复调用 ID 的保护。工具参数被输出上限截断时先自动重试 2 次，并提示模型拆小任务；仍截断才停止，且绝不执行半成品 JSON。
+- 任务拆解：接到需求先判断阶段数，多阶段时用 `update_plan` 建立 2-12 步计划，一个 Step 只推进一个阶段，并在完成时用一句进度说明（“2/5 已完成…”）继续下一步。单步一次执行 4 个以上工具时，宿主在最后一条 tool result 追加 `[进度提醒]`，要求模型先汇报阶段成果再继续，避免静默跑完。
+- 大源码写回：`write_motion_project` 单次 `replace` 超过 24000 字符会被拒绝，并提示改用 `mode=replace` 写骨架、`mode=append` 分块追加、最后一块 `final=true` 再校验完整工程。
 - 用户停止：abort 当前模型/工具循环；同步释放会话切换，新请求不会被旧 finally 清除。
 - 页面刷新：遗留 streaming → stopped；running Activity/Run → stopped；本地等待中的 Generation → failed，并明确“远端状态未知”，提供重试；已落盘的制作单与逐镜状态保留，已成功镜头仍可继续跳过。
 - 本机 CLI：非零退出即使有正文也显示错误；EOF 未收到 done/error 判定为连接中断。
@@ -159,7 +167,7 @@ npm test                   # 两组一起
 npm run build              # 类型检查 + 生产构建
 ```
 
-Harness 测试覆盖：任意字节和 UTF-8 分片、CRLF、多行 data、多个 tool calls、JSON 响应、坏参数、结果有序回注、业务错误恢复、旧协议回退、取消、步数/批量上限、截断保护、时间轴白名单、本机 EOF 和刷新恢复。Store 级回归还覆盖：文案不生成、普通模式偷跑工具只成交接卡、取消不切换、确认保留同一 conversationId 与历史、切换后开放创作工具，以及本机 CLI 普通模式生成门禁。
+Harness 测试覆盖：任意字节和 UTF-8 分片、CRLF、多行 data、多个 tool calls、JSON 响应、坏参数、结果有序回注、业务错误恢复、旧协议回退、取消、连续多步与大批次、截断自动重试、时间轴白名单、本机 EOF 和刷新恢复。Store 级回归还覆盖：文案不生成、普通模式偷跑工具只成交接卡、取消不切换、确认保留同一 conversationId 与历史、切换后开放创作工具，以及本机 CLI 普通模式生成门禁。
 
 完整制作单回归额外覆盖：逐镜参考图先行、用户参考图优先、参考未就绪禁止总确认、单镜 AI 重做不波及其他镜头、正式视频使用分镜首帧、S01–S06 全部执行、账号级并发峰值不超过 4、固定时间轴位置、失败重试、改稿原位替换、轮询幂等，以及续跑跳过已成功镜头且不重复生成参考图。OpenMotion 封面另有入轨与 motion→MP4 残留回归，确保模板封面只用于模板浏览，不遮挡 HTML 首帧。
 

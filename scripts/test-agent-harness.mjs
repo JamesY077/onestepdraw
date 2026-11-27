@@ -51,11 +51,14 @@ function event(payload) {
 
 try {
   const { streamAgentChat, AgentApiError } = await server.ssrLoadModule('/src/api/agent.ts')
-  const { runAgentHarness, AgentHarnessError } = await server.ssrLoadModule('/src/features/agent/harness.ts')
+  const { runAgentHarness, AgentHarnessError, compactAgentMessages } = await server.ssrLoadModule('/src/features/agent/harness.ts')
   const { AGENT_NATIVE_TOOLS, agentToolsForMode } = await server.ssrLoadModule('/src/features/agent/toolDefinitions.ts')
   const { normalizeAgentTimelineOps, normalizeAgentCreativeHandoff } = await server.ssrLoadModule('/src/features/agent/tools.ts')
+  const { executeMotionTool, applyMotionEdits } = await server.ssrLoadModule('/src/features/agent/motionTools.ts')
   const { streamLocalAgent } = await server.ssrLoadModule('/src/api/localAgents.ts')
   const { buildRunPrompt, runAgent } = await server.ssrLoadModule('/server/local/agents.mjs')
+  const { splitMentionSegments } = await server.ssrLoadModule('/src/composables/useMentionRefs.ts')
+  const { describeAttachments, describeTemplates } = await server.ssrLoadModule('/src/features/agent/attachments.ts')
 
   // 原生 tool_calls：任意字节分片、中文、CRLF、多行 data、两个调用按 index 聚合。
   let requestBody
@@ -119,6 +122,19 @@ try {
   assert.equal(normalizeAgentCreativeHandoff({
     target: 'create', reason: '模板复刻', prompt: '用 HyperFrames 做同款',
   }).engine, 'animation')
+
+  // 网关没有发送 finish_reason / [DONE] 就断开：标记 incomplete，交给 Harness 重试。
+  globalThis.fetch = async () => streamedResponse(event({ choices: [{ delta: { content: '只写了一半' } }] }))
+  const cutStream = await streamAgentChat({ messages: [], onDelta: () => {} })
+  assert.equal(cutStream.incomplete, true, '缺少结束标记的流必须标记为不完整')
+  assert.equal(cutStream.content, '只写了一半')
+
+  // 只发 [DONE] 不发 finish_reason 的网关仍算正常结束，避免误判。
+  globalThis.fetch = async () => streamedResponse(
+    `${event({ choices: [{ delta: { content: '正常结束' } }] })}data: [DONE]\n\n`,
+  )
+  const doneStream = await streamAgentChat({ messages: [], onDelta: () => {} })
+  assert.equal(doneStream.incomplete, false)
 
   // 非流式 JSON 也允许只有 tool call 而没有正文。
   globalThis.fetch = async () => new Response(JSON.stringify({
@@ -219,7 +235,7 @@ try {
   assert.equal(legacyNextMessages.at(-1).role, 'tool')
   assert.match(legacyNextMessages.at(-1).content, /gen_mock/)
 
-  // 取消、截断与批量上限都不会留下后续模型调用或危险执行。
+  // 取消与截断都不会留下后续模型调用或危险执行。
   const controller = new AbortController()
   let streamsAfterCancel = 0
   await assert.rejects(() => runAgentHarness({
@@ -251,30 +267,266 @@ try {
   assert.equal(unlimitedToolCalls, 12)
   assert.equal(unlimitedResult.steps, 13)
 
+  // 生成任务同样不设单轮上限：8 个付费任务按模型请求顺序全部提交。
+  let executedGenerations = 0
+  const generationResult = await runAgentHarness({
+    messages: [],
+    signal: new AbortController().signal,
+    stream: async (request) => request.step === 1
+      ? {
+          content: '',
+          toolCalls: Array.from({ length: 8 }, (_, index) => ({
+            id: `gen_${index}`, name: 'generate_image', args: { prompt: `画面 ${index}` },
+          })),
+        }
+      : { content: '八个生成任务全部提交。', toolCalls: [] },
+    executeTool: async () => { executedGenerations += 1; return { ok: true } },
+    onDelta: () => {},
+    onReasoning: () => {},
+  })
+  assert.equal(executedGenerations, 8, '单轮生成任务不再设上限')
+  assert.equal(generationResult.steps, 2)
+
   let executedIncomplete = false
+  let truncationAttempts = 0
   await assert.rejects(() => runAgentHarness({
     messages: [],
     signal: new AbortController().signal,
-    stream: async () => ({ content: '', finishReason: 'length', toolCalls: [{ id: 'partial', name: 'generate_video', args: {} }] }),
+    stream: async () => {
+      truncationAttempts += 1
+      return { content: '', finishReason: 'length', toolCalls: [{ id: 'partial', name: 'generate_video', args: {} }] }
+    },
     executeTool: async () => { executedIncomplete = true },
     onDelta: () => {},
     onReasoning: () => {},
   }), (error) => error.code === 'incomplete_tool_call')
   assert.equal(executedIncomplete, false)
+  assert.equal(truncationAttempts, 3, '截断时先自动重试 2 次，仍然截断才报错')
 
-  let executedLargeBatch = false
-  await assert.rejects(() => runAgentHarness({
+  // 前两次工具参数被截断，第三次自动恢复并正常执行；内部重试提示不进入正式历史。
+  let recoveredCalls = 0
+  let recoveredAttempts = 0
+  const retryHints = []
+  const recoveredRun = await runAgentHarness({
     messages: [],
     signal: new AbortController().signal,
-    stream: async () => ({
-      content: '',
-      toolCalls: Array.from({ length: 5 }, (_, index) => ({ id: `c${index}`, name: 'read_project', args: {} })),
-    }),
-    executeTool: async () => { executedLargeBatch = true },
+    stream: async (request) => {
+      recoveredAttempts += 1
+      const lastMessage = String(request.messages.at(-1)?.content || '')
+      if (lastMessage.includes('[内部提示]')) retryHints.push(lastMessage)
+      if (recoveredAttempts <= 2) {
+        return { content: '', finishReason: 'length', toolCalls: [{ id: `cut_${recoveredAttempts}`, name: 'read_project', args: {} }] }
+      }
+      if (request.step === 1) return { content: '', toolCalls: [{ id: 'ok', name: 'read_project', args: {} }] }
+      return { content: '已恢复。', toolCalls: [] }
+    },
+    executeTool: async () => { recoveredCalls += 1; return { ok: true } },
     onDelta: () => {},
     onReasoning: () => {},
-  }), (error) => error.code === 'too_many_tools')
-  assert.equal(executedLargeBatch, false)
+  })
+  assert.equal(retryHints.length, 2)
+  assert.ok(retryHints.every((hint) => /上一次回复在工具参数完成前达到输出上限被截断/.test(hint)))
+  assert.equal(recoveredCalls, 1, '只执行恢复后的完整工具调用')
+  assert.equal(recoveredRun.steps, 2)
+  assert.ok(!JSON.stringify(recoveredRun.messages).includes('内部提示'), '重试提示只给模型看，不写入正式历史')
+
+  // 网关在没有 [DONE] 的情况下断开：自动重来一步，不把半截内容当成结果。
+  let interruptedAttempts = 0
+  const interruptedReasons = []
+  const interruptedRun = await runAgentHarness({
+    messages: [],
+    signal: new AbortController().signal,
+    stream: async () => {
+      interruptedAttempts += 1
+      if (interruptedAttempts === 1) {
+        return { content: '这是被切断的半截回答', toolCalls: [], incomplete: true }
+      }
+      return { content: '完整回答。', toolCalls: [], finishReason: 'stop' }
+    },
+    executeTool: async () => ({}),
+    onDelta: () => {},
+    onReasoning: () => {},
+    onStepRetry: ({ reason }) => interruptedReasons.push(reason),
+  })
+  assert.equal(interruptedAttempts, 2, '流意外结束时自动重试')
+  assert.deepEqual(interruptedReasons, ['interrupted'])
+  assert.equal(interruptedRun.steps, 1)
+  assert.equal(interruptedRun.messages.at(-1).content, '完整回答。', '半截内容不进入正式历史')
+
+  // 网络抖动同样自动重试，而不是直接报“任务中断”。
+  let flakyAttempts = 0
+  const flakyRun = await runAgentHarness({
+    messages: [],
+    signal: new AbortController().signal,
+    stream: async () => {
+      flakyAttempts += 1
+      if (flakyAttempts === 1) {
+        const error = new Error('socket hang up')
+        error.kind = 'network'
+        throw error
+      }
+      return { content: '网络恢复后完成。', toolCalls: [], finishReason: 'stop' }
+    },
+    executeTool: async () => ({}),
+    onDelta: () => {},
+    onReasoning: () => {},
+  })
+  assert.equal(flakyAttempts, 2)
+  assert.equal(flakyRun.messages.at(-1).content, '网络恢复后完成。')
+
+  // 纯文本达到输出上限：从断点续写，最终回答不会停在半句。
+  let continuationAttempts = 0
+  let sawContinueHint = false
+  const continuedRun = await runAgentHarness({
+    messages: [],
+    signal: new AbortController().signal,
+    stream: async (request) => {
+      continuationAttempts += 1
+      if (continuationAttempts === 1) {
+        return { content: '第一段：结论是', toolCalls: [], finishReason: 'length' }
+      }
+      sawContinueHint = /从断点继续写/.test(String(request.messages.at(-1)?.content || ''))
+      return { content: '按这个方案执行。', toolCalls: [], finishReason: 'stop' }
+    },
+    executeTool: async () => ({}),
+    onDelta: () => {},
+    onReasoning: () => {},
+  })
+  assert.equal(continuationAttempts, 2)
+  assert.equal(sawContinueHint, true, '续写请求要带上断点提示')
+  assert.equal(continuedRun.messages.at(-1).content, '第一段：结论是按这个方案执行。')
+
+  // 长任务上下文压缩：保留系统提示与最后一轮，截断历史工具结果，不拆散 tool 配对。
+  const longTranscript = [{ role: 'system', content: '系统提示' }]
+  for (let turn = 1; turn <= 12; turn += 1) {
+    longTranscript.push({ role: 'user', content: `第 ${turn} 轮需求` })
+    longTranscript.push({
+      role: 'assistant',
+      content: null,
+      tool_calls: [{ id: `call_${turn}`, type: 'function', function: { name: 'read_project', arguments: '{}' } }],
+    })
+    longTranscript.push({ role: 'tool', tool_call_id: `call_${turn}`, name: 'read_project', content: `结果${turn}:${'x'.repeat(12_000)}` })
+  }
+  longTranscript.push({ role: 'user', content: '最后一轮需求' })
+  const compacted = compactAgentMessages(longTranscript)
+  assert.equal(compacted[0].role, 'system', '压缩后系统提示必须保留')
+  assert.equal(compacted.at(-1).content, '最后一轮需求', '压缩不能丢掉最新的用户消息')
+  assert.ok(
+    compacted.findIndex((message) => message.role !== 'system') >= 0 &&
+      compacted[compacted.findIndex((message) => message.role !== 'system')].role === 'user',
+    '压缩必须从整轮 user 边界开始，不能留下孤立 tool 结果',
+  )
+  assert.ok(JSON.stringify(compacted).length < JSON.stringify(longTranscript).length, '长任务必须真的压缩掉历史')
+  assert.ok(
+    compacted.some((message) => String(message.content).includes('历史工具结果已压缩')),
+    '较早的工具结果要标注已压缩',
+  )
+
+  // 工具结果超长时必须是合法 JSON 预览，不能给模型半截 JSON（那会表现为“源码被截断”）。
+  let oversizedToolMessages = null
+  await runAgentHarness({
+    messages: [],
+    signal: new AbortController().signal,
+    stream: async (request) => {
+      if (request.step === 1) {
+        return { content: '', toolCalls: [{ id: 'huge', name: 'read_motion_project', args: {} }] }
+      }
+      oversizedToolMessages = request.messages
+      return { content: '读完。', toolCalls: [], finishReason: 'stop' }
+    },
+    executeTool: async () => ({ ok: true, source: 'x'.repeat(40_000) }),
+    onDelta: () => {},
+    onReasoning: () => {},
+  })
+  const oversizedToolMessage = oversizedToolMessages.find((message) => message.role === 'tool')
+  const oversizedPayload = JSON.parse(oversizedToolMessage.content)
+  assert.equal(oversizedPayload.truncated, true)
+  assert.ok(oversizedPayload.chars > 40_000)
+  assert.match(oversizedPayload.note, /offset\/limit/, '超长结果要告诉模型怎么分页读取')
+  assert.ok(oversizedPayload.preview.length > 0)
+
+  // patch 模式：只替换命中的原文；重复命中与找不到都要明确报错。
+  const patched = applyMotionEdits(
+    '<h1 id="title">旧标题</h1><p class="sub">副标题</p>',
+    [{ find: '旧标题', replace: '新标题' }],
+  )
+  assert.equal(patched.source, '<h1 id="title">新标题</h1><p class="sub">副标题</p>')
+  assert.equal(patched.applied.length, 1)
+  assert.throws(
+    () => applyMotionEdits('<i></i><i></i>', [{ find: '<i></i>', replace: '<b></b>' }]),
+    /命中 2 次/,
+  )
+  assert.equal(
+    applyMotionEdits('<i></i><i></i>', [{ find: '<i></i>', replace: '<b></b>', all: true }]).source,
+    '<b></b><b></b>',
+  )
+  assert.throws(
+    () => applyMotionEdits('<i></i>', [{ find: '<u></u>', replace: 'x' }]),
+    /没有找到目标原文/,
+  )
+
+  // 网关报上下文超限时自动压得更狠再试，而不是让整轮任务中断。
+  const longMessages = [{ role: 'system', content: '系统提示' }]
+  for (let turn = 1; turn <= 16; turn += 1) {
+    longMessages.push({ role: 'user', content: `第 ${turn} 轮需求 ${'甲'.repeat(2_000)}` })
+    longMessages.push({ role: 'assistant', content: `第 ${turn} 轮结果 ${'乙'.repeat(2_000)}` })
+  }
+  const contextSizes = []
+  const contextRetries = []
+  const shrunkRun = await runAgentHarness({
+    messages: longMessages,
+    signal: new AbortController().signal,
+    stream: async (request) => {
+      contextSizes.push(JSON.stringify(request.messages).length)
+      if (contextSizes.length === 1) throw new Error("This model's maximum context length is 8192 tokens")
+      return { content: '压缩后继续完成。', toolCalls: [], finishReason: 'stop' }
+    },
+    executeTool: async () => ({}),
+    onDelta: () => {},
+    onReasoning: () => {},
+    onStepRetry: ({ reason }) => contextRetries.push(reason),
+  })
+  assert.deepEqual(contextRetries, ['context'])
+  assert.equal(contextSizes.length, 2)
+  assert.ok(contextSizes[1] < contextSizes[0], '上下文超限后必须压得更小再重试')
+  assert.equal(shrunkRun.messages.at(-1).content, '压缩后继续完成。')
+
+  let executedLargeBatch = 0
+  let largeBatchFollowUp = null
+  const largeBatchResult = await runAgentHarness({
+    messages: [],
+    signal: new AbortController().signal,
+    stream: async (request) => {
+      if (request.step === 1) {
+        return {
+          content: '',
+          toolCalls: Array.from({ length: 9 }, (_, index) => ({ id: `c${index}`, name: 'read_project', args: {} })),
+        }
+      }
+      largeBatchFollowUp = request.messages
+      return { content: '九个大批次工具已全部执行。', toolCalls: [] }
+    },
+    executeTool: async () => { executedLargeBatch += 1; return { ok: true } },
+    onDelta: () => {},
+    onReasoning: () => {},
+  })
+  assert.equal(executedLargeBatch, 9, '单步工具数量不再设上限')
+  assert.equal(largeBatchResult.steps, 2)
+  assert.ok(
+    largeBatchFollowUp?.some((message) => message.role === 'tool' && String(message.content).includes('[进度提醒]')),
+    '单步大批次执行后提醒模型汇报进度，而不是静默跑完',
+  )
+
+  // 拒绝一次塞入超大源码，要求改用 append 分块，避免再次撞上输出上限。
+  setActivePinia(createPinia())
+  const oversizedWrite = await executeMotionTool({
+    name: 'write_motion_project',
+    args: { motionId: 'motion_big', source: 'x'.repeat(24001) },
+  }, { messages: [], production: null }, { revision: 0 }).then(
+    () => null,
+    (error) => error,
+  )
+  assert.match(String(oversizedWrite?.message || ''), /mode=append/, '超大源码必须提示分块写入')
 
   // 本机 CLI 同样 fail-closed：普通模式没有生成说明，脚本在读取 API Key 前退出。
   const chatLocalPrompt = buildRunPrompt({ mode: 'chat' })
@@ -785,7 +1037,7 @@ try {
       id: selectedMotionClip.id, name: selectedMotionClip.name, kind: 'motion',
       trackId: selectedMotionTrack.id, trackName: selectedMotionTrack.name, trackKind: selectedMotionTrack.kind,
       start: selectedMotionClip.start, duration: selectedMotionClip.duration, url: selectedMotionClip.url,
-      motionId: selectedMotionId, motionElements: selectedElements,
+      motionId: selectedMotionId, motionElements: selectedElements, scope: 'element',
       motionElementEdits: [
         { note: '标题改成新文案', elements: [selectedElements[0]] },
         { note: 'Logo 只调整位置，不重绘、不改色。', elements: [selectedElements[1]] },
@@ -802,6 +1054,8 @@ try {
   const targetedUserContext = targetedRequest.messages.filter((message) => message.role === 'user').at(-1).content
   assert.match(targetedUserContext, /选中元素 1：主标题/)
   assert.match(targetedUserContext, /选中元素 2：品牌 Logo/)
+  assert.match(targetedUserContext, /选择粒度=元素级/)
+  assert.match(targetedUserContext, /本轮是元素级修改：只允许改动点选的元素本身及其直接动画/)
   assert.match(targetedUserContext, /所属部分：S01 · 身份亮相/)
   assert.match(targetedUserContext, /画面位置：画面中央/)
   assert.match(targetedUserContext, /本轮要求：标题改成新文案/)
@@ -1424,6 +1678,30 @@ try {
   assert.equal(autoConversation.production.shots[0].status, 'succeeded')
   assert.equal(autoConversation.production.shots[0].review?.ok, true, '完全模式每镜完成后应自动复查')
   assert.ok(autoConversation.messages.at(-1).content.includes('S01 已完成'))
+
+  // @ 引用：多个引用同句共存；@模板10 不能被 @模板1 前缀截断。
+  const mentionSegments = splitMentionSegments(
+    '用 @模板10 做开场，再用 @模板1 收尾。',
+    ['@模板1', '@模板10'],
+  )
+  assert.deepEqual(
+    mentionSegments.filter((segment) => segment.mention).map((segment) => segment.text),
+    ['@模板10', '@模板1'],
+    '多个 @引用 必须各自完整高亮',
+  )
+  assert.equal(mentionSegments.map((segment) => segment.text).join(''), '用 @模板10 做开场，再用 @模板1 收尾。')
+  const mentionAttachments = describeAttachments(
+    [{ id: 'a1', kind: 'image', name: '场景.png', url: '/generated/uploads/a.png' }, { id: 'a2', kind: 'video', name: '动作.mp4', url: '/generated/uploads/b.mp4' }],
+    { mentionable: true },
+  )
+  assert.ok(mentionAttachments.includes('@素材1、@素材2'), '@素材N 必须能对应到素材清单')
+  assert.ok(mentionAttachments.includes('参考图 1：场景.png') && mentionAttachments.includes('参考视频 2：动作.mp4'))
+  const mentionTemplates = describeTemplates([
+    { name: '纸感手写', category: '风格', guide: '手写纸感。', images: [] },
+    { name: '极简白底', category: '版式', guide: '极简白底。', images: [] },
+  ])
+  assert.ok(mentionTemplates.includes('@模板1、@模板2'), '@模板N 必须能对应到模板清单')
+  assert.ok(mentionTemplates.includes('已应用模板 1') && mentionTemplates.includes('已应用模板 2'))
 
   console.log('✓ Agent Harness：SSE、多步回注、普通/创作切换、双引擎确认与持久化、取消、CLI 门禁、刷新恢复、六镜全片、4路并发、失败重试、定位入轨、改稿原位替换、轮询幂等、续跑跳镜与完全模式自动确认全部通过（全部为本地 mock）')
 } finally {

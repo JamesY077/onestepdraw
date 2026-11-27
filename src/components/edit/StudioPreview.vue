@@ -145,15 +145,6 @@
         >
           安全区
         </button>
-        <button
-          v-if="selectionClip?.motionId"
-          type="button"
-          class="stage-safe"
-          title="用官方 HyperFrames Studio 编辑这个工程"
-          @click="openSelectedStudio"
-        >
-          HyperFrames
-        </button>
         <span class="stage-meta">{{ project.aspectRatio }} · {{ project.resolution }} · {{ project.fps }}fps</span>
       </div>
     </footer>
@@ -201,7 +192,6 @@ const safeArea = ref(false)
 const emit = defineEmits<{
   (event: 'toggle-play'): void
   (event: 'seek', time: number): void
-  (event: 'open-studio', motionId: string): void
   (event: 'pause'): void
   (event: 'select-motion-elements', payload: {
     clipId: string
@@ -665,11 +655,6 @@ watch(
     void nextTick(syncMedia)
   },
 )
-
-function openSelectedStudio() {
-  const motionId = selectionClip.value?.motionId
-  if (motionId) emit('open-studio', motionId)
-}
 
 function formatTime(seconds: number): string {
   const value = Math.max(0, seconds)
