@@ -158,7 +158,7 @@ export const useMotionStore = defineStore('motion', () => {
     return payload.project as MotionProject
   }
 
-  async function create(input: { name: string; template?: unknown; width?: number; height?: number }) {
+  async function create(input: { name: string; template?: unknown; width?: number; height?: number; shotId?: string }) {
     const project = await createMotionProject(input as Parameters<typeof createMotionProject>[0])
     projects.value = [project, ...projects.value.filter((item) => item.id !== project.id)]
     return project
@@ -170,7 +170,7 @@ export const useMotionStore = defineStore('motion', () => {
     delete states[id]
   }
 
-  async function render(id: string): Promise<string> {
+  async function render(id: string, end?: number): Promise<string> {
     const state = stateOf(id)
     if (state.renderStatus === 'running' || state.renderStatus === 'queued') {
       throw new Error('这个工程正在渲染')
@@ -182,7 +182,7 @@ export const useMotionStore = defineStore('motion', () => {
     state.renderProbeError = ''
     state.renderProgress = { pct: 0, code: 'queued', label: '排队中', done: 0, total: 0 }
     try {
-      state.renderJobId = await startMotionRender(id)
+      state.renderJobId = await startMotionRender(id, end)
       // 轮询要等到真实成片：queued 只是排队，不能当成成功或失败。
       for (let attempt = 0; attempt < 1800; attempt += 1) {
         await new Promise((resolve) => setTimeout(resolve, 1000))

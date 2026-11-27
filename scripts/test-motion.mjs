@@ -8,7 +8,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { createPinia, setActivePinia } from 'pinia'
 import { createServer } from 'vite'
-import { createMotionService, motionRenderEnvironment, bundledBrowserPath, bundledToolPath, motionRenderRuntime, resolveRenderWorkers, buildRenderArgs, parseRenderProgress, compositionDuration } from '../server/local/motion.mjs'
+import { createMotionService, motionRenderEnvironment, bundledBrowserPath, bundledToolPath, motionRenderRuntime, resolveRenderWorkers, buildRenderArgs, parseRenderProgress, compositionDuration, markMotionShot, motionRootComposition, motionSourceReady, validateMotionCompositionSource } from '../server/local/motion.mjs'
 
 const values = new Map()
 const storage = {
@@ -67,6 +67,7 @@ try {
   } = await vite.ssrLoadModule('/src/features/template/openmotionTypes.ts')
   const { parseMotionVariables } = await vite.ssrLoadModule('/src/stores/motionStore.ts')
   const { executeMotionTool, motionDimensions, motionSourceHasAsset } = await vite.ssrLoadModule('/src/features/agent/motionTools.ts')
+  const { useEditProjectStore } = await vite.ssrLoadModule('/src/stores/editProjectStore.ts')
   assert.deepEqual(motionDimensions({ aspectRatio: '9:16', resolution: '768P' }), { width: 720, height: 1280 })
   assert.deepEqual(motionDimensions({ aspectRatio: '9:16', resolution: '2K' }), { width: 1440, height: 2560 })
   assert.ok(motionSourceHasAsset('<!-- <img src="assets/uploads/fake.svg"> --><script>const fake="assets/uploads/fake.svg"</script><img src="assets/uploads/brand%20logo.svg">', 'assets/uploads/brand logo.svg'))
@@ -186,6 +187,12 @@ try {
   const longArgs = buildRenderArgs({ cli: '/cli.mjs', dir: '/proj', output: '/out.mp4', fps: 30, duration: 45 })
   assert.equal(longArgs.workers, 2)
   assert.ok(!longArgs.args.includes('--variables'), '没有参数时不要传空 --variables')
+  // 时间轴只用前 4 秒：传 --end 截断，避免 48s 模板整段出片。
+  const trimmedArgs = buildRenderArgs({ cli: '/cli.mjs', dir: '/proj', output: '/out.mp4', fps: 30, duration: 48, end: 4 })
+  assert.equal(trimmedArgs.args[trimmedArgs.args.indexOf('--end') + 1], '4')
+  assert.equal(trimmedArgs.workers, 1, 'worker 数按实际渲染区间而不是整段时长计算')
+  const wholeArgs = buildRenderArgs({ cli: '/cli.mjs', dir: '/proj', output: '/out.mp4', fps: 30, duration: 4.8, end: 4.8 })
+  assert.ok(!wholeArgs.args.includes('--end'), '需要的区间等于整段时不要截断')
 
   // 进度取最后一条完整的 @hf-progress；被 chunk 截断的半行 JSON 不能污染进度。
   assert.deepEqual(
@@ -203,6 +210,26 @@ try {
   assert.ok(fs.existsSync(path.join(dir, 'index.html')))
   assert.ok(fs.existsSync(path.join(dir, 'assets', 'gsap.min.js')), 'GSAP 必须随工程落盘，预览不依赖外网')
   assert.equal(compositionDuration(dir), 6, '根合成时长必须从 data-composition-id 那一行读取，用于成片校验')
+
+  // 4.0 最近渲染产物：短于时间轴需要的旧切片不能复用，否则后半段黑场。
+  const generatedDir = path.join(dataDir, 'generated')
+  const stamp = Date.now()
+  const fullRender = path.join(generatedDir, `${project.id}-${stamp - 20000}.mp4`)
+  const shortRender = path.join(generatedDir, `${project.id}-${stamp - 10000}-e4000.mp4`)
+  fs.writeFileSync(fullRender, '')
+  fs.writeFileSync(shortRender, '')
+  fs.utimesSync(path.join(dir, 'index.html'), new Date(stamp - 60000), new Date(stamp - 60000))
+  fs.utimesSync(fullRender, new Date(stamp - 20000), new Date(stamp - 20000))
+  fs.utimesSync(shortRender, new Date(stamp - 10000), new Date(stamp - 10000))
+  const needThree = await request(service, `/local/motion/render/latest?id=${project.id}&end=3`)
+  assert.equal(path.basename(needThree.payload.url), path.basename(shortRender), '够长的切片优先复用')
+  assert.equal(needThree.payload.stale, false)
+  const needFive = await request(service, `/local/motion/render/latest?id=${project.id}&end=5`)
+  assert.equal(path.basename(needFive.payload.url), path.basename(fullRender), '4s 切片不够 5s 时必须退回完整渲染')
+  const fullOnly = await request(service, `/local/motion/render/latest?id=${project.id}`)
+  assert.equal(path.basename(fullOnly.payload.url), path.basename(fullRender), '不传 end 只复用完整渲染')
+  fs.rmSync(fullRender, { force: true })
+  fs.rmSync(shortRender, { force: true })
   const starter = fs.readFileSync(path.join(dir, 'index.html'), 'utf8')
   assert.ok(starter.includes('data-composition-id="main"'))
   assert.ok(starter.includes('window.__timelines'))
@@ -239,6 +266,73 @@ try {
   const referenceIndex = await request(service, '/local/motion/read', { id: referenceDraft.payload.project.id, path: 'index.html' })
   assert.ok(referenceIndex.payload.content.includes('window.__timelines'), '参考型模板必须从完整空白工程开始')
   assert.ok(!referenceIndex.payload.content.includes('assets/motion.js'), '不得复制缺文件的上游草稿')
+
+  // 4.1 可编辑模板：保留模板原画幅（预览/导出统一 contain），注入镜号后即可直接使用。
+  const portraitTemplateHtml = [
+    '<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="assets/styles.css"></head><body>',
+    '<main id="root" data-composition-id="google-salsa-089" data-start="0" data-duration="4.8" data-width="406" data-height="720">',
+    '<section class="scene"><h1>Vertical</h1></section></main>',
+    '</body></html>',
+  ].join('')
+  const templateRoot = motionRootComposition(portraitTemplateHtml)
+  assert.equal(templateRoot?.id, 'google-salsa-089', '根合成不能只认 main')
+  assert.equal(motionRootComposition('<html><body><div data-composition-id="main" data-width="1280" data-height="720"></div></body></html>')?.width, 1280)
+  const markedTemplate = markMotionShot(portraitTemplateHtml, 'S01')
+  assert.ok(markedTemplate.startsWith('<!doctype html><html data-stepframe-shot="S01">'))
+  assert.ok(motionSourceReady(markedTemplate, { width: 406, height: 720, shotId: 'S01' }))
+  assert.ok(!motionSourceReady(markedTemplate, { width: 1280, height: 720 }), '工程真实画幅必须匹配')
+  assert.ok(!motionSourceReady(markedTemplate, { width: 406, height: 720, shotId: 'S02' }), '缺镜号不能算完成')
+  // 官方模板可以没有 class="clip"/data-track-index；只要有 clip 才强制轨道字段。
+  assert.equal(validateMotionCompositionSource(portraitTemplateHtml), true)
+  assert.throws(
+    () => validateMotionCompositionSource('<div data-composition-id="x" data-duration="4" data-start="0"><section class="clip" data-start="0"></section></div>'),
+    /轨道 data-track-index/,
+  )
+
+  const originalTemplateFetch = globalThis.fetch
+  const templateFiles = {
+    'https://r.open-design.ai/files/portrait-index': portraitTemplateHtml,
+    'https://r.open-design.ai/files/portrait-style': 'html,body{margin:0;background:#111}',
+  }
+  globalThis.fetch = async (url) => {
+    const body = templateFiles[String(url)]
+    if (body === undefined) throw new Error(`未 mock 的模板资源：${url}`)
+    return new Response(body, { status: 200, headers: { 'Content-Type': 'application/octet-stream' } })
+  }
+  try {
+    const templateProject = await request(service, '/local/motion/create', {
+      name: '模板适配回归',
+      width: 1280,
+      height: 720,
+      shotId: 'S01',
+      template: {
+        id: 'motion-fake', editable: true, width: 406, height: 720,
+        files: [
+          { path: 'index.html', url: 'https://r.open-design.ai/files/portrait-index' },
+          { path: 'assets/styles.css', url: 'https://r.open-design.ai/files/portrait-style' },
+        ],
+      },
+    })
+    assert.equal(templateProject.status, 200)
+    assert.equal(templateProject.payload.project.sourceReady, true, '完整模板副本应直接可用')
+    assert.equal(templateProject.payload.project.width, 406, '工程画幅必须记录模板真实画幅')
+    assert.equal(templateProject.payload.project.height, 720)
+    const templateDir = path.join(dataDir, 'motion-projects', templateProject.payload.project.id)
+    const templateIndex = fs.readFileSync(path.join(templateDir, 'index.html'), 'utf8')
+    const keptRoot = motionRootComposition(templateIndex)
+    assert.equal(keptRoot.width, 406, '不得改写模板根画幅')
+    assert.equal(keptRoot.height, 720)
+    assert.ok(!/style="[^"]*transform:/.test(keptRoot.tag), '不得给模板根元素塞缩放 transform')
+    assert.ok(templateIndex.includes('data-stepframe-shot="S01"'), '模板副本必须带镜号，宿主才能确认归属')
+    assert.equal(compositionDuration(templateDir), 4.8, '注入镜号不能改动时长')
+    const templateWrite = await request(service, '/local/motion/write', {
+      id: templateProject.payload.project.id,
+      content: templateIndex,
+    })
+    assert.equal(templateWrite.status, 200, '官方模板源码写回不能被轨道校验误拦')
+  } finally {
+    globalThis.fetch = originalTemplateFetch
+  }
 
   const written = await request(service, '/local/motion/write', { id: project.id, path: 'notes.md', content: '# hi' })
   assert.equal(written.status, 200)
@@ -306,6 +400,63 @@ try {
     () => executeMotionTool({ name: 'create_motion_project', args: { name: 'x' } }, {}, {}),
     /没有关联剪辑项目/,
   )
+
+  // 5.1 逐镜创建：shotId 必须下传；模板副本返回 sourceReady 时，只 create 不 write 也算可用。
+  const editProjects = useEditProjectStore()
+  const toolProject = editProjects.createProject('动效工具回归')
+  const salsa = OPENMOTION_TEMPLATES.find((item) => item.id === 'motion-5eb6929e-d9f3-4a49-a69e-0363e45884dc')
+  const toolShot = {
+    id: 'S01', prompt: '竖屏模板', duration: 4, timelineStart: 0, status: 'running',
+    requiredAssetSources: [], requiredAssetPaths: [],
+  }
+  const toolConversation = {
+    id: 'conv_motion_tool',
+    projectId: toolProject.id,
+    production: {
+      id: 'prod_motion_tool', engine: 'animation', status: 'running',
+      aspectRatio: '16:9', resolution: '768P', shots: [toolShot],
+    },
+  }
+  const createBodies = []
+  globalThis.fetch = async (url, init = {}) => {
+    const href = String(url)
+    if (href.includes('/local/motion/create')) {
+      const body = JSON.parse(init.body)
+      createBodies.push(body)
+      return new Response(JSON.stringify({
+        project: {
+          id: 'motion_ready', name: body.name, entry: 'index.html',
+          entryUrl: '/local/motion/view/motion_ready/index.html', templateId: salsa.id,
+          sourceUrl: '', width: 406, height: 720, fps: 30,
+          createdAt: Date.now(), updatedAt: Date.now(), params: {}, missingFiles: [],
+          sourceReady: true,
+        },
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+    throw new Error(`未拦截的请求：${href}`)
+  }
+  try {
+    const createdByTool = await executeMotionTool(
+      { name: 'create_motion_project', args: { name: salsa.name, templateId: salsa.id, at: 0, duration: 4 } },
+      toolConversation,
+      {},
+    )
+    assert.equal(createdByTool.ok, true)
+    assert.equal(createBodies.length, 1)
+    assert.equal(createBodies[0].shotId, 'S01', '逐镜创建必须把镜号传给服务端')
+    assert.equal(createBodies[0].width, 1280)
+    assert.equal(createBodies[0].height, 720)
+    assert.equal(toolShot.motionWidth, 406, '必须记住模板真实画幅，写回时才能校验')
+    assert.equal(toolShot.motionHeight, 720)
+    assert.equal(toolShot.motionSourceReady, true, '完整模板副本无需再 write 也能记为可用')
+    assert.ok(toolShot.clipId)
+    const toolClip = editProjects.getProject(toolProject.id)?.tracks.flatMap((track) => track.clips)
+      .find((clip) => clip.id === toolShot.clipId)
+    assert.ok(toolClip)
+    assert.equal(toolClip.url, '/local/motion/view/motion_ready/index.html')
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 
   console.log('✓ OpenMotion 目录、复刻提示词、参数契约、动效工程服务与 Agent 动效工具全部通过（无付费调用）')
 } finally {

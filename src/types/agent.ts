@@ -273,6 +273,9 @@ export interface AgentStoryboardShot {
   generationId?: string
   /** 动画逐镜制作单：每镜独立 HyperFrames 工程与上传素材路径。 */
   motionId?: string
+  /** 本镜工程真实画幅；模板可能不是制作单画幅，写回时两者都允许。 */
+  motionWidth?: number
+  motionHeight?: number
   requiredAssetSources?: string[]
   requiredAssetPaths?: string[]
   /** 提示词、画幅、参考 SVG 与正式素材共同决定工程能否复用。 */

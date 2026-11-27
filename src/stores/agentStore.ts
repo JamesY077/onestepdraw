@@ -1585,6 +1585,8 @@ export const useAgentStore = defineStore('agent', () => {
         // 只保留“已有工程且已入轨”的失败现场；半创建的工程允许重新建，避免续跑死锁。
         if (!shot.clipId) {
           shot.motionId = undefined
+          shot.motionWidth = undefined
+          shot.motionHeight = undefined
           shot.motionSourceReady = false
           shot.requiredAssetPaths = undefined
         }
@@ -1594,7 +1596,7 @@ export const useAgentStore = defineStore('agent', () => {
         const prompt = [
           `执行已确认动画制作单中的 ${shot.id}，只制作这一镜。`,
           `固定参数：timeline at=${shot.timelineStart ?? 0}，duration=${shot.duration}；create_motion_project 必须原样传入。`,
-          `画幅必须为 ${production.aspectRatio} · ${production.resolution}，主 composition 固定 data-width="${dimensions.width}" data-height="${dimensions.height}"；宿主会校验，不得沿用其他画幅。`,
+          `目标画幅为 ${production.aspectRatio} · ${production.resolution}：自建工程主 composition 用 data-width="${dimensions.width}" data-height="${dimensions.height}"；若复用可编辑模板，应保留模板原画幅（预览与导出会按 contain 等比留边），只允许这两种画幅，禁止拉伸变形。`,
           resumeExisting
             ? `本镜已有独立工程 motionId=${shot.motionId}、clipId=${shot.clipId}。直接 read_motion_project / write_motion_project 修复并写回完整源码，禁止重复 create_motion_project。`
             : `必须创建独立 HyperFrames 工程并写回完整源码，HTML 中含 ${shot.id} 标记；不得把其他镜号并入本工程。`,

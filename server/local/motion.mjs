@@ -207,16 +207,54 @@ export function resolveRenderWorkers({ durationSeconds, fps } = {}) {
   return 4
 }
 
+/**
+ * 找出源码里的根合成。OpenMotion 模板的 data-composition-id 不一定是
+ * `main`（例如 `google-salsa-089`），只认 main 会把完整模板误判成缺画幅。
+ * 优先 main，其次第一个带宽高的合成，最后退回第一个合成。
+ */
+export function motionRootComposition(source) {
+  const html = String(source || '')
+  const re = /<([a-z][\w:-]*)\b[^>]*\bdata-composition-id\s*=\s*["']([^"']+)["'][^>]*>/gi
+  const attr = (tag, name) => {
+    const match = tag.match(new RegExp(`\\b${name}\\s*=\\s*["']([^"']*)["']`, 'i'))
+    return match ? match[1] : ''
+  }
+  const candidates = []
+  for (const match of html.matchAll(re)) {
+    const tag = match[0]
+    candidates.push({
+      tag,
+      index: match.index || 0,
+      id: match[2],
+      width: Number(attr(tag, 'data-width')) || 0,
+      height: Number(attr(tag, 'data-height')) || 0,
+      duration: Number(attr(tag, 'data-duration')) || 0,
+      start: Number(attr(tag, 'data-start')) || 0,
+    })
+  }
+  if (!candidates.length) return null
+  return candidates.find((item) => item.id.toLowerCase() === 'main') ||
+    candidates.find((item) => item.width && item.height) ||
+    candidates[0]
+}
+
 /** 读根合成的 data-duration，渲染后用真实成片时长和它对比。 */
 export function compositionDuration(dir) {
   try {
     const html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8')
-    const root = html.match(/<[a-z][^>]*\bdata-composition-id\s*=\s*['"][^'"]+['"][^>]*>/i)
-    const match = (root ? root[0] : html).match(/\bdata-duration\s*=\s*['"](\d+(?:\.\d+)?)['"]/i)
-    return match ? Number(match[1]) : 0
+    return motionRootComposition(html)?.duration || 0
   } catch {
     return 0
   }
+}
+
+/** 在合成根上写入镜号，模板副本也能被宿主识别成属于该镜的独立工程。 */
+export function markMotionShot(source, shotId) {
+  const id = String(shotId || '').trim()
+  if (!id || !/^[A-Za-z0-9_-]{1,40}$/.test(id)) return String(source || '')
+  const html = String(source || '')
+  if (html.includes(`data-stepframe-shot="${id}"`)) return html
+  return html.replace(/<html\b/i, `<html data-stepframe-shot="${id}"`)
 }
 
 /** CLI 每次进度都会写 `@hf-progress {...}`；取最后一条当作真实进度。 */
@@ -242,9 +280,13 @@ export function parseRenderProgress(text) {
 }
 
 /** 渲染参数集中在这里，测试和真实导出用同一份规则。 */
-export function buildRenderArgs({ cli, dir, output, fps, duration, params } = {}) {
+export function buildRenderArgs({ cli, dir, output, fps, duration, end, params } = {}) {
   const rate = Number(fps) || 30
-  const workers = resolveRenderWorkers({ durationSeconds: duration, fps: rate })
+  const fullDuration = Number(duration) || 0
+  const trimEnd = Number(end) || 0
+  // 实际要渲染的区间决定 worker 数：截断后只跑 4 秒，不能按 48 秒开 4 个 worker。
+  const renderSpan = trimEnd > 0 && fullDuration > 0 ? Math.min(trimEnd, fullDuration) : fullDuration
+  const workers = resolveRenderWorkers({ durationSeconds: renderSpan, fps: rate })
   const args = [
     cli,
     'render',
@@ -259,6 +301,10 @@ export function buildRenderArgs({ cli, dir, output, fps, duration, params } = {}
     '--workers',
     String(workers),
   ]
+  if (trimEnd > 0 && (!fullDuration || trimEnd < fullDuration - 0.001)) {
+    // 时间轴只使用前 N 秒时，不要让 48s 的模板工程整段渲染。
+    args.push('--end', String(Math.round(trimEnd * 1000) / 1000))
+  }
   if (params && Object.keys(params).length) {
     args.push('--variables', JSON.stringify(params))
   }
@@ -322,17 +368,45 @@ function probeVideo(file, bin, timeoutMs = 20000) {
   })
 }
 
-/** 写入前拒绝会退回「把这一屏幕换成你的故事」占位页的伪工程。 */
+/**
+ * 写入前拒绝会退回「把这一屏幕换成你的故事」占位页的伪工程。
+ *
+ * 官方模板并不都用 `class="clip"` + `data-track-index`：有的直接用 GSAP
+ * 时间线驱动整份合成（例如 406×720 的 Doodle），也有用
+ * `data-composition-src` 引用子合成的。只要根合成完整就允许写回；
+ * 真正声明成 clip 的元素才要求 start / track-index。
+ */
 export function validateMotionCompositionSource(source) {
-  const html = String(source || '')
+  const html = String(source || '').replace(/<!--[\s\S]*?-->/g, '')
+  const root = motionRootComposition(html)
   const missing = []
-  if (!/<[a-z][^>]*\bdata-composition-id\s*=\s*['"][^'"]+['"]/i.test(html)) missing.push('data-composition-id')
-  if (!/<[a-z][^>]*\bdata-duration\s*=\s*['"]\d+(?:\.\d+)?['"]/i.test(html)) missing.push('根合成 data-duration')
+  if (!root) missing.push('data-composition-id')
+  else if (!root.duration) missing.push('根合成 data-duration')
   if (!/<[a-z][^>]*\bdata-start\s*=\s*['"]\d+(?:\.\d+)?['"]/i.test(html)) missing.push('片段 data-start')
-  if (!/<[a-z][^>]*\bdata-track-index\s*=\s*['"]\d+['"]/i.test(html)) missing.push('轨道 data-track-index')
+  const clipTags = html.match(/<[a-z][^>]*\bclass\s*=\s*['"][^'"]*\bclip\b[^'"]*['"][^>]*>/gi) || []
+  if (clipTags.length) {
+    if (!clipTags.every((tag) => /\bdata-start\s*=/.test(tag))) missing.push('片段 data-start')
+    if (!clipTags.every((tag) => /\bdata-track-index\s*=/.test(tag))) missing.push('轨道 data-track-index')
+  }
   if (missing.length) {
     throw new Error(`HyperFrames 合成结构不完整：缺少 ${missing.join('、')}。请补齐单一合成根与轨道片段后再写回；当前内容未保存。`)
   }
+  return true
+}
+
+/** 已落盘源码是否已经是可直接预览/渲染的完整工程（模板副本用）。 */
+export function motionSourceReady(source, { width, height, shotId } = {}) {
+  try {
+    validateMotionCompositionSource(source)
+  } catch {
+    return false
+  }
+  const root = motionRootComposition(source)
+  if (!root || !root.width || !root.height) return false
+  if (width && root.width !== Math.round(Number(width))) return false
+  if (height && root.height !== Math.round(Number(height))) return false
+  const id = String(shotId || '').trim()
+  if (id && !String(source).includes(id)) return false
   return true
 }
 
@@ -488,13 +562,36 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
       fs.copyFileSync(gsapSource, path.join(dir, 'assets', 'gsap.min.js'))
     }
 
-    const width = Number(body?.width) || 1280
-    const height = Number(body?.height) || 720
-    if (!fs.existsSync(path.join(dir, 'index.html'))) {
+    const requestedWidth = Number(body?.width) || template?.width || 1280
+    const requestedHeight = Number(body?.height) || template?.height || 720
+    let width = requestedWidth
+    let height = requestedHeight
+    const shotId = String(body?.shotId || '').slice(0, 40)
+    const indexFile = path.join(dir, 'index.html')
+    const fromTemplate = Boolean(template?.editable && fs.existsSync(indexFile))
+    if (!fs.existsSync(indexFile)) {
       const starter = STARTER_HTML
         .replace('data-width="1280"', `data-width="${width}"`)
         .replace('data-height="720"', `data-height="${height}"`)
-      fs.writeFileSync(path.join(dir, 'index.html'), starter)
+      fs.writeFileSync(indexFile, starter)
+    } else if (fromTemplate) {
+      // 模板副本保留原画幅。时间轴预览的 hyperframes-player 与整片导出的
+      // CanvasSink 都按 contain 等比缩放，强行改根画幅只会让场景背景铺满
+      // 目标画幅、正文错位（HyperFrames 会用 data-width/data-height 覆盖
+      // 根元素的 width/height）。这里只记录模板真实画幅，交给播放器留边。
+      try {
+        const root = motionRootComposition(fs.readFileSync(indexFile, 'utf8'))
+        if (root?.width && root?.height) {
+          width = root.width
+          height = root.height
+        }
+      } catch (error) {
+        failures.push({ path: 'index.html', error: `模板画幅读取失败：${String(error?.message || error)}` })
+      }
+    }
+    if (fs.existsSync(indexFile) && shotId) {
+      const marked = markMotionShot(fs.readFileSync(indexFile, 'utf8'), shotId)
+      fs.writeFileSync(indexFile, marked)
     }
     // 参考包解到 reference/，Agent 可以读 motion.md、看参考图与 demo，不必重复下载。
     const docUrl = template?.motionDoc || template?.motionGuide
@@ -518,6 +615,9 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
       name,
       entry: 'index.html',
       templateId: typeof template?.id === 'string' ? template.id : '',
+      templateWidth: Number(template?.width) || 0,
+      templateHeight: Number(template?.height) || 0,
+      shotId,
       sourceUrl: typeof template?.sourceUrl === 'string' ? template.sourceUrl : '',
       width,
       height,
@@ -528,7 +628,15 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
       missingFiles: failures,
     }
     writeMeta(id, meta)
-    return { ...meta, entryUrl: `/local/motion/view/${encodeURIComponent(id)}/index.html` }
+    // 可编辑模板复制 + 画幅适配 + 镜号注入后本身就是完整工程：直接标记可用，
+    // 避免 Agent 只做了 create 却因为没再写一次源码而误报“未完成独立工程”。
+    const ready = fromTemplate &&
+      motionSourceReady(fs.readFileSync(indexFile, 'utf8'), { width, height, shotId })
+    return {
+      ...meta,
+      sourceReady: ready,
+      entryUrl: `/local/motion/view/${encodeURIComponent(id)}/index.html`,
+    }
   }
 
   function importAsset(body) {
@@ -831,14 +939,23 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
 
     const dir = projectDir(id)
     const fps = Number(meta.fps) || 30
-    const duration = compositionDuration(dir)
-    const output = path.join(exportRoot, `${id}-${Date.now()}.mp4`)
+    const fullDuration = compositionDuration(dir)
+    // 时间轴片段只用前 N 秒：只渲染这一段，48s 模板不必整段出片。
+    // 片段从合成 0 秒开始读，所以 end = trimStart + clip.duration 即可。
+    const requestedEnd = Math.max(0, Number(body?.end) || 0)
+    const duration = requestedEnd > 0 && fullDuration > 0
+      ? Math.min(requestedEnd, fullDuration)
+      : fullDuration
+    const trimmed = duration > 0 && fullDuration > 0 && duration < fullDuration - 0.001
+    // 文件名带上渲染区间，恢复旧项目时才能确认这份产物够不够长。
+    const output = path.join(exportRoot, `${id}-${Date.now()}${trimmed ? `-e${Math.round(duration * 1000)}` : ''}.mp4`)
     const { args, workers } = buildRenderArgs({
       cli,
       dir,
       output,
       fps,
-      duration,
+      duration: fullDuration,
+      end: trimmed ? duration : 0,
       params: meta.params,
     })
 
@@ -850,6 +967,8 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
       args,
       fps,
       duration,
+      fullDuration,
+      trimmed,
       workers,
       status: 'queued',
       log: '',
@@ -862,17 +981,29 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
     return { jobId: job.id, workers, duration, queued: job.status === 'queued' }
   }
 
-  /** 让旧项目能在打开时把丢失的渲染片段重新接回最近一次真实产物。 */
-  function latestRender(id) {
+  /**
+   * 让旧项目能在打开时把丢失的渲染片段重新接回最近一次真实产物。
+   * `end` 是时间轴实际需要的秒数：短于它的旧产物不能复用，否则后半段黑场。
+   */
+  function latestRender(id, end = 0) {
     if (!readMeta(id)) throw new Error('动效工程不存在')
     const prefix = `${id}-`
+    const requestedEnd = Math.max(0, Number(end) || 0)
     const renders = fs.readdirSync(exportRoot)
       .filter((name) => name.startsWith(prefix) && name.endsWith('.mp4'))
       .map((name) => {
         const file = path.join(exportRoot, name)
         const stat = fs.statSync(file)
-        return { name, file, mtime: stat.mtimeMs }
+        const match = name.match(/-e(\d+)\.mp4$/)
+        return {
+          name,
+          file,
+          mtime: stat.mtimeMs,
+          // 没有后缀的是完整渲染（旧版本也没有 --end），任何区间都能复用。
+          end: match ? Number(match[1]) / 1000 : 0,
+        }
       })
+      .filter((item) => (requestedEnd ? item.end === 0 || item.end >= requestedEnd - 0.001 : item.end === 0))
       .sort((left, right) => right.mtime - left.mtime)
     const newest = renders[0]
     if (!newest) return { ok: true, url: '', updatedAt: 0, stale: false }
@@ -1058,7 +1189,7 @@ export function createMotionService({ dataDir, rootDir, sendJson, sendFile }) {
       }
 
       if (pathname === '/local/motion/render/latest' && req.method === 'GET') {
-        sendJson(res, 200, latestRender(url.searchParams.get('id') || ''))
+        sendJson(res, 200, latestRender(url.searchParams.get('id') || '', url.searchParams.get('end') || 0))
         return
       }
 

@@ -47,6 +47,29 @@ export function motionSourceHasAsset(source: string, path: string): boolean {
   return motionSourceAssetReferences(source).has(normalizeAssetReference(path))
 }
 
+/**
+ * 找源码里的根合成。官方模板的 data-composition-id 不一定是 `main`
+ * （如 `google-salsa-089`），只看 main 会把完整模板误判成缺画幅。
+ * 优先 main，其次第一个带画幅的合成，最后退回第一个合成。
+ */
+export function motionRootComposition(source: string) {
+  const html = String(source || '')
+  const candidates: Array<{ tag: string; width: number; height: number; id: string }> = []
+  for (const match of html.matchAll(/<([a-z][\w:-]*)\b[^>]*\bdata-composition-id\s*=\s*["']([^"']+)["'][^>]*>/gi)) {
+    const tag = match[0]
+    const attr = (name: string) => tag.match(new RegExp(`\\b${name}\\s*=\\s*["']([^"']*)["']`, 'i'))?.[1] || ''
+    candidates.push({
+      tag,
+      id: match[2],
+      width: Number(attr('data-width')) || 0,
+      height: Number(attr('data-height')) || 0,
+    })
+  }
+  return candidates.find((item) => item.id.toLowerCase() === 'main') ||
+    candidates.find((item) => item.width && item.height) ||
+    candidates[0]
+}
+
 function activeAnimationShot(conversation: AgentConversation) {
   const production = conversation.production
   if (production?.engine !== 'animation' || production.status !== 'running') return undefined
@@ -64,11 +87,17 @@ function validateShotSource(
   const production = conversation.production
   if (production) {
     const expected = motionDimensions(production)
-    const composition = htmlWithoutComments.match(/<[^>]+data-composition-id\s*=\s*["']main["'][^>]*>/i)?.[0] || ''
-    const width = Number(composition.match(/data-width\s*=\s*["'](\d+)["']/i)?.[1])
-    const height = Number(composition.match(/data-height\s*=\s*["'](\d+)["']/i)?.[1])
-    if (width !== expected.width || height !== expected.height) {
-      throw new Error(`${shot.id} 主 composition 必须为 data-width="${expected.width}" data-height="${expected.height}"（${production.aspectRatio} · ${production.resolution}）。`)
+    const composition = motionRootComposition(htmlWithoutComments)
+    const width = composition?.width || 0
+    const height = composition?.height || 0
+    // 可编辑模板可能本来就是竖屏/其他画幅；预览与导出都用 contain 等比缩放，
+    // 保留模板原画幅比强行拉伸更安全。只允许「制作单画幅」或「本镜模板画幅」。
+    const nativeWidth = Number(shot.motionWidth) || 0
+    const nativeHeight = Number(shot.motionHeight) || 0
+    const matchesProduction = width === expected.width && height === expected.height
+    const matchesTemplate = nativeWidth > 0 && nativeHeight > 0 && width === nativeWidth && height === nativeHeight
+    if (!matchesProduction && !matchesTemplate) {
+      throw new Error(`${shot.id} 主 composition 必须为 data-width="${expected.width}" data-height="${expected.height}"（${production.aspectRatio} · ${production.resolution}），或沿用本镜模板画幅 ${nativeWidth || '?'}×${nativeHeight || '?'}。`)
     }
   }
   const missing = (shot.requiredAssetPaths || []).filter((path) => !motionSourceHasAsset(source, path))
@@ -202,17 +231,23 @@ export async function executeMotionTool(
       template,
       width: dimensions?.width || template?.width,
       height: dimensions?.height || template?.height,
+      shotId: shot?.id,
     })
     const requiredAssetPaths: string[] = []
     let clipId = ''
     try {
       if (shot) {
         shot.motionId = project.id
+        shot.motionWidth = Number(project.width) || undefined
+        shot.motionHeight = Number(project.height) || undefined
         for (const source of shot.requiredAssetSources || []) {
           const imported = await importMotionAsset(project.id, source)
           requiredAssetPaths.push(String(imported.path))
         }
         shot.requiredAssetPaths = requiredAssetPaths
+        // 可编辑模板副本已经是完整工程（画幅、镜号都注入过）；先记为可用，
+        // 后续 write 会再校验一次，避免「只 create 没 write」被误判失败。
+        if (project.sourceReady) shot.motionSourceReady = true
       }
       const source = typeof call.args.source === 'string' ? call.args.source.trim() : ''
       if (source) {
@@ -257,6 +292,8 @@ export async function executeMotionTool(
       if (shot) {
         shot.motionId = undefined
         shot.clipId = undefined
+        shot.motionWidth = undefined
+        shot.motionHeight = undefined
         shot.requiredAssetPaths = undefined
         shot.motionSourceReady = false
       }
@@ -346,7 +383,11 @@ export async function executeMotionTool(
   if (call.name === 'render_motion_project') {
     const motionId = String(call.args.motionId || '').trim()
     if (!motionId) throw new Error('缺少 motionId。')
-    const url = await motion.render(motionId)
+    // 模板工程可能长达几十秒；本镜只占时间轴的 duration 秒，
+    // 只渲染这一段，避免为 5 秒镜头整段渲染 48 秒模板。
+    const shot = activeAnimationShot(conversation)
+    const end = shot && shot.motionId === motionId ? Number(shot.duration) || 0 : 0
+    const url = await motion.render(motionId, end || undefined)
     // 时间轴固定使用 HyperFrames 实时工程预览：渲染只是导出产物，
     // 不再把片段换成 MP4 快照，避免某次空白/过期渲染长期占住轨道。
     return {

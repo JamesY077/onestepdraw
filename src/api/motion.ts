@@ -14,6 +14,8 @@ export interface MotionProject {
   updatedAt: number
   params: Record<string, unknown>
   missingFiles?: { path: string; error: string }[]
+  /** 服务端确认落盘源码已是完整、画幅匹配且带镜号的工程（模板副本）。 */
+  sourceReady?: boolean
 }
 
 export interface MotionRenderProgress {
@@ -90,6 +92,8 @@ export async function createMotionProject(input: {
   width?: number
   height?: number
   fps?: number
+  /** 动画逐镜生产时注入，模板副本会写入镜号标记。 */
+  shotId?: string
 }): Promise<MotionProject> {
   const payload = await request<{ project: MotionProject }>('/local/motion/create', input)
   return payload.project
@@ -109,8 +113,8 @@ export async function writeMotionFile(projectId: string, content: string, file =
   return request<{ project: MotionProject }>('/local/motion/write', { id: projectId, path: file, content })
 }
 
-export async function startMotionRender(projectId: string): Promise<string> {
-  const payload = await request<{ jobId: string }>('/local/motion/render', { id: projectId })
+export async function startMotionRender(projectId: string, end?: number): Promise<string> {
+  const payload = await request<{ jobId: string }>('/local/motion/render', { id: projectId, end })
   return payload.jobId
 }
 
@@ -121,10 +125,11 @@ export interface LatestMotionRender {
   stale: boolean
 }
 
-/** 旧项目恢复：找到某工程的最近一次真实渲染产物。 */
-export async function getLatestMotionRender(projectId: string): Promise<LatestMotionRender> {
+/** 旧项目恢复：找到某工程的最近一次真实渲染产物。end 为时间轴需要的秒数。 */
+export async function getLatestMotionRender(projectId: string, end?: number): Promise<LatestMotionRender> {
+  const suffix = end && end > 0 ? `&end=${encodeURIComponent(end)}` : ''
   return request<LatestMotionRender>(
-    `/local/motion/render/latest?id=${encodeURIComponent(projectId)}`,
+    `/local/motion/render/latest?id=${encodeURIComponent(projectId)}${suffix}`,
   )
 }
 

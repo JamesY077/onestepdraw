@@ -72,10 +72,11 @@ function abortableDelay(milliseconds: number, signal?: AbortSignal): Promise<voi
 
 async function renderMotionForExport(
   motionId: string,
+  end: number,
   options: ExportOptions,
   onPhase?: (note: string) => void,
 ): Promise<string> {
-  const jobId = await startMotionRender(motionId)
+  const jobId = await startMotionRender(motionId, end || undefined)
   let last = ''
   for (;;) {
     throwIfAborted(options.signal)
@@ -100,9 +101,9 @@ async function renderMotionForExport(
  * 工程源码没变就不必重渲染：上一份 MP4 仍然对应当前 HTML。
  * 只复用服务端确认没有过期（stale=false）的产物，编辑过源码会自动重渲染。
  */
-async function reusableRender(motionId: string): Promise<string> {
+async function reusableRender(motionId: string, end: number): Promise<string> {
   try {
-    const latest = await getLatestMotionRender(motionId)
+    const latest = await getLatestMotionRender(motionId, end || undefined)
     return latest.url && !latest.stale ? latest.url : ''
   } catch {
     return ''
@@ -114,22 +115,24 @@ async function reusableRender(motionId: string): Promise<string> {
  * HyperFrames CLI 把动效渲染为 MP4，再只替换本次导出的快照；用户时间轴保持可编辑。
  */
 async function materializeMotionClips(project: EditProject, options: ExportOptions): Promise<EditProject> {
-  const motionIds = new Set<string>()
+  const motionIds = new Map<string, number>()
   for (const track of project.tracks) {
     for (const clip of track.clips) {
       if (clip.kind !== 'motion') continue
       if (!clip.motionId) throw new Error(`动效片段「${clip.name}」缺少工程 id，请重新添加后再导出`)
-      motionIds.add(clip.motionId)
+      // 渲染从合成 0 秒开始，时间轴按 trimStart 偏移读取；只需要覆盖到片段末尾。
+      const neededEnd = Math.max(0, (clip.trimStart || 0) + clip.duration)
+      motionIds.set(clip.motionId, Math.max(motionIds.get(clip.motionId) || 0, neededEnd))
     }
   }
   if (!motionIds.size) return project
 
   const rendered = new Map<string, string>()
   let completed = 0
-  for (const motionId of motionIds) {
+  for (const [motionId, end] of motionIds) {
     throwIfAborted(options.signal)
     const label = `渲染动效工程 ${completed + 1}/${motionIds.size}`
-    const reused = await reusableRender(motionId)
+    const reused = await reusableRender(motionId, end)
     if (reused) {
       rendered.set(motionId, reused)
       options.onProgress?.(0.02, `复用已渲染的${label.slice(2)}`)
@@ -137,7 +140,7 @@ async function materializeMotionClips(project: EditProject, options: ExportOptio
       continue
     }
     options.onProgress?.(0.02, label)
-    rendered.set(motionId, await renderMotionForExport(motionId, options, (phase) => {
+    rendered.set(motionId, await renderMotionForExport(motionId, end, options, (phase) => {
       options.onProgress?.(0.02, `${label} · ${phase}`)
     }))
     completed += 1
