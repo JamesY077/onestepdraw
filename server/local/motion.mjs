@@ -254,7 +254,13 @@ export function markMotionShot(source, shotId) {
   if (!id || !/^[A-Za-z0-9_-]{1,40}$/.test(id)) return String(source || '')
   const html = String(source || '')
   if (html.includes(`data-stepframe-shot="${id}"`)) return html
-  return html.replace(/<html\b/i, `<html data-stepframe-shot="${id}"`)
+  if (/<html\b/i.test(html)) return html.replace(/<html\b/i, `<html data-stepframe-shot="${id}"`)
+  // 少数模板只有合成根、没有 <html> 外壳：把镜号写在根合成上，避免复制后
+  // 因为找不到标记而被判成“未完成独立工程”。
+  const root = motionRootComposition(html)
+  if (!root) return html
+  const marked = root.tag.replace(/^<([a-z][\w:-]*)/i, `<$1 data-stepframe-shot="${id}"`)
+  return html.slice(0, root.index) + marked + html.slice(root.index + root.tag.length)
 }
 
 /** CLI 每次进度都会写 `@hf-progress {...}`；取最后一条当作真实进度。 */

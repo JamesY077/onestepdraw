@@ -279,6 +279,11 @@ try {
   assert.equal(motionRootComposition('<html><body><div data-composition-id="main" data-width="1280" data-height="720"></div></body></html>')?.width, 1280)
   const markedTemplate = markMotionShot(portraitTemplateHtml, 'S01')
   assert.ok(markedTemplate.startsWith('<!doctype html><html data-stepframe-shot="S01">'))
+  // 没有 <html> 外壳的片段工程：镜号写到合成根上，同样算完成。
+  const fragmentTemplate = '<main data-composition-id="fragment" data-start="0" data-duration="3" data-width="640" data-height="360"></main>'
+  const fragmentMarked = markMotionShot(fragmentTemplate, 'S09')
+  assert.ok(fragmentMarked.startsWith('<main data-stepframe-shot="S09"'))
+  assert.ok(motionSourceReady(fragmentMarked, { width: 640, height: 360, shotId: 'S09' }))
   assert.ok(motionSourceReady(markedTemplate, { width: 406, height: 720, shotId: 'S01' }))
   assert.ok(!motionSourceReady(markedTemplate, { width: 1280, height: 720 }), '工程真实画幅必须匹配')
   assert.ok(!motionSourceReady(markedTemplate, { width: 406, height: 720, shotId: 'S02' }), '缺镜号不能算完成')
