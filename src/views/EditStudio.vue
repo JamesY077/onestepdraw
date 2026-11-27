@@ -33,6 +33,7 @@
             <span>分辨率</span>
             <select :value="project.resolution" @change="setResolution">
               <option value="768P">768P</option>
+              <option value="1080P">1080P</option>
               <option value="2K">2K</option>
             </select>
           </label>
@@ -220,7 +221,6 @@
               @pause="playing = false"
               @seek="seek"
               @select-motion-elements="handleMotionElementSelect"
-              @open-studio="openMotionStudioPanel"
             />
           </div>
           <StoryboardPanel
@@ -246,7 +246,6 @@
             @duplicate="duplicateSelected"
             @split="splitAtPlayhead"
             @remove="removeSelectedClip"
-            @open-studio="openMotionStudioPanel"
           />
       </main>
 
@@ -386,32 +385,6 @@
       </section>
     </div>
 
-    <div v-if="motionStudioOpen" class="hf-studio-backdrop" role="dialog" aria-modal="true" aria-label="HyperFrames Studio">
-      <section class="hf-studio-panel">
-        <header class="hf-studio-head">
-          <div class="hf-studio-title">
-            <strong>HyperFrames Studio</strong>
-            <span>{{ motionStudioName }}</span>
-          </div>
-          <div class="hf-studio-actions">
-            <button type="button" :disabled="motionStudioBusy" @click="reloadMotionStudio">重新加载</button>
-            <button type="button" @click="closeMotionStudio">关闭</button>
-          </div>
-        </header>
-        <p v-if="motionStudioError" class="hf-studio-error">{{ motionStudioError }}</p>
-        <div v-else-if="motionStudioBusy && !motionStudioUrl" class="hf-studio-loading">
-          正在启动官方 HyperFrames Studio…
-        </div>
-        <iframe
-          v-if="motionStudioUrl"
-          :key="motionStudioKey"
-          class="hf-studio-frame"
-          :src="motionStudioUrl"
-          title="HyperFrames Studio"
-        />
-      </section>
-    </div>
-
     <div v-if="toast" class="es-toast" role="status">{{ toast }}</div>
 
   </div>
@@ -432,7 +405,7 @@ import { useAgentStore } from '@/stores/agentStore'
 import { useEditProjectStore, projectDuration } from '@/stores/editProjectStore'
 import { useMotionStore } from '@/stores/motionStore'
 import { rememberTemplatesReturn } from '@/features/template/navigation'
-import { motionFileUrl, openMotionStudio, type MotionProject } from '@/api/motion'
+import { motionFileUrl, type MotionProject } from '@/api/motion'
 import { playhead, setPlayhead } from '@/features/edit/playhead'
 import { motionElementKey } from '@/features/edit/motionElements'
 import { exportProjectVideo, inspectExportedVideo } from '@/features/edit/exportVideo'
@@ -446,6 +419,7 @@ import {
   PROJECT_ASPECT_RATIOS,
   type EditTrackKind,
   type ProjectAsset,
+  type ProjectResolution,
   type TimelineClip,
 } from '@/types/edit'
 
@@ -689,7 +663,8 @@ function setAspect(event: Event) {
 
 function setResolution(event: Event) {
   if (!project.value) return
-  const value = (event.target as HTMLSelectElement).value === '2K' ? '2K' : '768P'
+  const raw = (event.target as HTMLSelectElement).value
+  const value: ProjectResolution = raw === '2K' ? '2K' : raw === '1080P' ? '1080P' : '768P'
   projectStore.updateProject(project.value.id, { resolution: value })
 }
 
@@ -897,60 +872,6 @@ const selectedEntries = computed<SelectedClipEntry[]>(() => {
 
 const motionElementScopeClipId = ref('')
 const selectedMotionElements = ref<AgentMotionElementRef[]>([])
-
-/** 官方 HyperFrames Studio：同一套 UI、时间轴、元素编辑与 Lint，直接嵌入剪辑台。 */
-const motionStudioOpen = ref(false)
-const motionStudioBusy = ref(false)
-const motionStudioError = ref('')
-const motionStudioUrl = ref('')
-const motionStudioKey = ref(0)
-const motionStudioId = ref('')
-const motionStudioName = ref('')
-const motionStudioCache = new Map<string, string>()
-
-async function loadMotionStudio(motionId: string) {
-  motionStudioBusy.value = true
-  motionStudioError.value = ''
-  try {
-    const session = await openMotionStudio(motionId)
-    motionStudioCache.set(motionId, session.url)
-    motionStudioUrl.value = session.url
-    motionStudioKey.value += 1
-  } catch (error) {
-    motionStudioUrl.value = ''
-    motionStudioError.value = `HyperFrames Studio 启动失败：${(error as Error)?.message || error}`
-  } finally {
-    motionStudioBusy.value = false
-  }
-}
-
-function openMotionStudioPanel(motionId: string) {
-  if (!motionId) return
-  motionStudioOpen.value = true
-  motionStudioId.value = motionId
-  motionStudioName.value = motion.projects.find((item) => item.id === motionId)?.name || motionId
-  const cached = motionStudioCache.get(motionId)
-  if (cached) {
-    motionStudioUrl.value = cached
-    motionStudioKey.value += 1
-    return
-  }
-  void loadMotionStudio(motionId)
-}
-
-function reloadMotionStudio() {
-  const motionId = motionStudioId.value
-  if (!motionId) return
-  motionStudioCache.delete(motionId)
-  void loadMotionStudio(motionId)
-}
-
-function closeMotionStudio() {
-  const id = motionStudioId.value
-  motionStudioOpen.value = false
-  // Studio 的改动直接落在工程文件上；关闭时同步回主画面，避免看到旧版。
-  if (id) void motion.load(id, true)
-}
 
 const selectedAgentClips = computed<AgentClipRef[]>(() =>
   selectedEntries.value.map(({ clip, trackId, trackName, trackKind }) => {
@@ -2368,101 +2289,6 @@ onBeforeUnmount(() => {
   font-size: 10px;
 }
 
-.hf-studio-backdrop {
-  position: fixed;
-  z-index: 300;
-  inset: 0;
-  display: flex;
-  padding: 18px;
-  background: rgba(28, 23, 20, 0.55);
-  backdrop-filter: blur(3px);
-}
-
-.hf-studio-panel {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  flex-direction: column;
-  overflow: hidden;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 24px 70px -30px rgba(28, 20, 15, 0.6);
-}
-
-.hf-studio-head {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 9px 12px;
-  border-bottom: 1px solid #eee5de;
-  background: #fffaf6;
-}
-
-.hf-studio-title {
-  display: flex;
-  min-width: 0;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.hf-studio-title strong {
-  font-size: 12.5px;
-  color: #2c2521;
-}
-
-.hf-studio-title span {
-  overflow: hidden;
-  font-size: 10.5px;
-  color: #a3948a;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hf-studio-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.hf-studio-actions button {
-  padding: 5px 10px;
-  border: 1px solid #e3d6cc;
-  border-radius: 7px;
-  background: #fff;
-  color: #6a584d;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.hf-studio-actions button:hover {
-  border-color: #c9a58f;
-}
-
-.hf-studio-actions button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.hf-studio-error,
-.hf-studio-loading {
-  margin: 24px;
-  font-size: 12px;
-  color: #8a7c73;
-}
-
-.hf-studio-error {
-  color: #b4472c;
-}
-
-.hf-studio-frame {
-  flex: 1;
-  width: 100%;
-  min-height: 0;
-  border: 0;
-  background: #fff;
-}
 
 .es-toast {
   position: fixed;

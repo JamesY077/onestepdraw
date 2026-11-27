@@ -101,7 +101,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
         properties: {
           prompt: { type: 'string', description: '完整、具体的镜头与运动描述。' },
           aspect_ratio: { type: 'string', enum: ['16:9', '9:16', '1:1'] },
-          resolution: { type: 'string', enum: ['768P', '2K'] },
+          resolution: { type: 'string', enum: ['768P', '1080P', '2K'] },
           duration: { type: 'integer', minimum: 4, maximum: 15 },
         },
       },
@@ -122,7 +122,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
           continuity: { type: 'string', description: '跨镜统一的角色/产品外观、场景、光线、色彩、镜头语言与首尾状态锚点。' },
           storyboard_text: { type: 'string', description: '完整原始分镜文本，包含全部镜号，不能用“同上”省略。' },
           aspect_ratio: { type: 'string', enum: ['16:9', '9:16', '1:1'] },
-          resolution: { type: 'string', enum: ['768P', '2K'] },
+          resolution: { type: 'string', enum: ['768P', '1080P', '2K'] },
           delivery: { type: 'string', enum: ['full', 'preview', 'batch'], description: '用户确认后希望的执行范围。' },
           shots: {
             type: 'array',
@@ -159,7 +159,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
           continuity: { type: 'string', description: '跨镜统一的角色/产品外观、场景、光线、色彩、镜头语言与首尾状态锚点。' },
           storyboard_text: { type: 'string', description: '用户确认的完整原始分镜文本，包含全部镜号，不能用“同上”省略。' },
           aspect_ratio: { type: 'string', enum: ['16:9', '9:16', '1:1'] },
-          resolution: { type: 'string', enum: ['768P', '2K'] },
+          resolution: { type: 'string', enum: ['768P', '1080P', '2K'] },
           delivery: {
             type: 'string',
             enum: ['full', 'preview', 'batch'],

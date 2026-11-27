@@ -1,3 +1,4 @@
+import type { ProjectResolution } from '@/types/edit'
 import type {
   AgentAttachment,
   AgentClipRef,
@@ -50,7 +51,7 @@ export function routeConversationRequest(input: ConversationRouteInput): Convers
 
 export interface ConversationMediaTarget {
   aspectRatio: string
-  resolution: '768P' | '2K'
+  resolution: ProjectResolution
 }
 
 /** 上传附件没有固定时间轴目标：生成结果作为衍生素材返回，不覆盖任何现有片段。 */

@@ -166,20 +166,6 @@ export async function checkMotionProject(projectId: string, samples = 5): Promis
   return request<MotionCheckReport>('/local/motion/check', { id: projectId, samples })
 }
 
-export interface MotionStudioSession {
-  url: string
-  serverUrl: string
-  port: number
-  pid: number
-  projectDir: string
-  reused: boolean
-}
-
-/** 启动官方 HyperFrames Studio，返回可直接嵌入的工作台地址。 */
-export async function openMotionStudio(projectId: string): Promise<MotionStudioSession> {
-  return request<MotionStudioSession>('/local/motion/studio', { id: projectId })
-}
-
 export async function getMotionRenderJob(jobId: string): Promise<MotionRenderJob> {
   const payload = await request<{ job: MotionRenderJob }>(
     `/local/motion/render/status?jobId=${encodeURIComponent(jobId)}`,

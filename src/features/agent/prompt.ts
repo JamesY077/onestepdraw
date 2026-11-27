@@ -186,7 +186,7 @@ function nativeToolsBlock(mode: ConversationMode, creativeEngine: CreativeEngine
   return `## 原生工具与多步执行
 当前请求提供 Function Calling 工具时，直接调用工具，不要再用 Markdown 模拟调用：
 - generate_image：图片，prompt 必填；aspect_ratio 支持 16:9 | 4:3 | 3:4 | 1:1 | 9:16，默认 16:9。
-- generate_video：仅用于已确认分镜范围内的单镜补充或旧任务续跑；新视频需求不要直接调用，先 prepare_storyboard。aspect_ratio 支持 16:9 | 9:16 | 1:1，resolution 为 768P | 2K，duration 为 4-15 秒整数。
+- generate_video：仅用于已确认分镜范围内的单镜补充或旧任务续跑；新视频需求不要直接调用，先 prepare_storyboard。aspect_ratio 支持 16:9 | 9:16 | 1:1，resolution 为 768P | 1080P | 2K，duration 为 4-15 秒整数。
 - prepare_storyboard：所有新视频任务（包括单镜）先制作完整分镜脚本，一次提交全部镜号、完整 brief、continuity 和逐镜 prompt。宿主会优先复用用户图片/视频，否则用图片模型逐镜生成参考图；用户可逐卡编辑和单镜 AI 重做，只有总确认后才启动正式视频（完全模式由宿主自动确认）。
 - generate_storyboard：旧协议兼容入口，同样只制作分镜草案，不会直接启动生成。
 - read_project：读取最新项目与时间轴，项目状态可能已变化时先读再改。

@@ -1,5 +1,6 @@
 import type { AudioBufferSource, CanvasSink } from 'mediabunny'
 import type { EditProject, TimelineClip } from '@/types/edit'
+import { resolutionShortSide } from '@/types/edit'
 import { projectDuration } from '@/stores/editProjectStore'
 import { getLatestMotionRender, getMotionRenderJob, startMotionRender } from '@/api/motion'
 import { clipOpacityAt, clipVolumeAt } from '@/features/edit/keyframes'
@@ -33,8 +34,7 @@ const SAMPLE_RATE = 48000
 
 export function exportOutputSize(project: EditProject): { width: number; height: number } {
   const [rawW, rawH] = (project.aspectRatio || '16:9').split(':').map((value) => Number(value) || 1)
-  const shortSide = project.resolution === '2K' ? 1440 : 768
-  const scale = shortSide / Math.min(rawW, rawH)
+  const scale = resolutionShortSide(project.resolution) / Math.min(rawW, rawH)
   return {
     width: even(Math.round(rawW * scale)),
     height: even(Math.round(rawH * scale)),

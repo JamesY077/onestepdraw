@@ -120,7 +120,7 @@ function normalizeProject(value: EditProject): EditProject {
     ...value,
     fps: Number(value.fps) || 30,
     aspectRatio: value.aspectRatio || '16:9',
-    resolution: value.resolution === '2K' ? '2K' : '768P',
+    resolution: value.resolution === '2K' ? '2K' : value.resolution === '1080P' ? '1080P' : '768P',
     tracks: list,
     assets: value.assets
       .filter((asset) => asset && typeof asset.url === 'string')

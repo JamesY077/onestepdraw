@@ -423,7 +423,12 @@ export function buildAgentGeneration(call: AgentToolCall): AgentGeneration | nul
   }
 
   const duration = normalizeDuration(call.args.duration)
-  const resolution = String(call.args.resolution || '').toUpperCase() === '2K' ? '2K' : AGENT_VIDEO_DEFAULT_RESOLUTION
+  const requestedResolution = String(call.args.resolution || '').toUpperCase()
+  const resolution = requestedResolution === '2K'
+    ? '2K'
+    : requestedResolution === '1080P'
+      ? '1080P'
+      : AGENT_VIDEO_DEFAULT_RESOLUTION
 
   return {
     id,

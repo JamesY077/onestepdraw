@@ -19,8 +19,32 @@
         :height="state.meta?.height || 720"
         controls
         style="width: 100%; aspect-ratio: 16 / 10; background: #111"
+        @ready="readLayers"
       />
       <span v-else class="mi-loading">{{ state.loading ? '读取工程中…' : '工程不可用' }}</span>
+    </div>
+
+    <!-- 对应 Studio 的 Layers：直接列出工程里可点选的图层，不用回画布盲找。 -->
+    <div v-if="layers.length" class="mi-block">
+      <div class="mi-review-head">
+        <strong>图层</strong>
+        <span class="mi-layer-count">{{ layers.length }}</span>
+      </div>
+      <ul class="mi-layers">
+        <li v-for="layer in layers" :key="layer.key">
+          <button
+            type="button"
+            class="mi-layer"
+            :class="{ active: layer.key === activeLayerKey }"
+            :title="layer.label"
+            @click="pickLayer(layer)"
+          >
+            <span class="mi-layer-tag">{{ layer.tag }}</span>
+            <span class="mi-layer-label">{{ layer.label }}</span>
+          </button>
+        </li>
+      </ul>
+      <p class="mi-hint">点图层会在预览里描边定位；文字改动仍走源码或发给 AI。</p>
     </div>
 
     <div v-if="state.variables.length" class="mi-block">
@@ -90,7 +114,6 @@
         <button type="button" class="mi-primary" :disabled="reviewRunning" @click="runReview">
           {{ reviewRunning ? '正在复查…' : '运行复查校验' }}
         </button>
-        <button type="button" class="mi-ghost" @click="openStudio">HyperFrames 工作台</button>
       </div>
       <p v-if="reviewError" class="mi-error">{{ reviewError }}</p>
       <ul v-if="reviewIssues.length" class="mi-findings">
@@ -148,10 +171,6 @@ import type { TimelineClip } from '@/types/edit'
 
 const props = defineProps<{ projectId: string; clip: TimelineClip }>()
 
-const emit = defineEmits<{
-  (event: 'open-studio', motionId: string): void
-}>()
-
 const motion = useMotionStore()
 
 const motionId = computed(() => props.clip.motionId || '')
@@ -171,6 +190,88 @@ const previewKey = ref(0)
 const draft = reactive<Record<string, unknown>>({})
 const paramNotice = ref('')
 const playerRef = ref<HTMLElement | null>(null)
+const layers = ref<PreviewLayer[]>([])
+const activeLayerKey = ref('')
+let highlightedLayerEl: Element | null = null
+
+interface PreviewLayer {
+  key: string
+  id: string
+  tag: string
+  label: string
+}
+
+const SKIP_TAGS = new Set([
+  'defs',
+  'pattern',
+  'clippath',
+  'line',
+  'rect',
+  'circle',
+  'path',
+  'g',
+  'use',
+  'style',
+  'script',
+])
+
+function previewDocument(): Document | null {
+  const player = playerRef.value as (HTMLElement & { iframeElement?: HTMLIFrameElement }) | null
+  try {
+    return player?.iframeElement?.contentDocument || null
+  } catch {
+    return null
+  }
+}
+
+/** 从预览 iframe 读取图层的稳定 id；Studio 的 Layers 也是同一份 DOM。 */
+function readLayers() {
+  activeLayerKey.value = ''
+  highlightedLayerEl = null
+  const doc = previewDocument()
+  if (!doc?.body) {
+    layers.value = []
+    return
+  }
+  const root = doc.getElementById('root') || doc.body
+  const items: PreviewLayer[] = []
+  const seen = new Set<string>()
+  for (const element of root.querySelectorAll('[data-hf-id]')) {
+    const id = element.id || ''
+    const tag = element.tagName.toLowerCase()
+    if (SKIP_TAGS.has(tag)) continue
+    const text = element.childElementCount === 0
+      ? (element.textContent || '').trim().replace(/\s+/g, ' ')
+      : ''
+    const key = id || element.getAttribute('data-hf-id') || ''
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    items.push({ key, id, tag, label: id ? `#${id}` : text.slice(0, 28) || tag })
+    if (items.length >= 40) break
+  }
+  layers.value = items
+}
+
+function pickLayer(layer: PreviewLayer) {
+  const doc = previewDocument()
+  if (!doc) return
+  // iframe 里的元素不属于当前 window，不能用 instanceof 判断。
+  const highlightable = (element: Element | null): element is Element & { style: CSSStyleDeclaration } =>
+    !!element && 'style' in element
+  if (highlightable(highlightedLayerEl)) {
+    highlightedLayerEl.style.outline = ''
+    highlightedLayerEl.style.outlineOffset = ''
+  }
+  const element = layer.id
+    ? doc.getElementById(layer.id)
+    : doc.querySelector(`[data-hf-id="${layer.key}"]`)
+  if (!highlightable(element)) return
+  highlightedLayerEl = element
+  element.style.outline = '3px solid #e2794f'
+  element.style.outlineOffset = '-3px'
+  activeLayerKey.value = layer.key
+}
+
 const reviewRunning = ref(false)
 const reviewed = ref(false)
 const reviewError = ref('')
@@ -211,6 +312,12 @@ watch(
   { immediate: true },
 )
 
+watch(previewKey, () => {
+  layers.value = []
+  activeLayerKey.value = ''
+  highlightedLayerEl = null
+})
+
 function reloadSource() {
   sourceDraft.value = state.value.source || ''
 }
@@ -237,10 +344,6 @@ async function renderNow() {
   } catch {
     // 错误已写进 state.renderError。
   }
-}
-
-function openStudio() {
-  if (motionId.value) emit('open-studio', motionId.value)
 }
 
 function seekReview(issue: ReviewIssue) {
@@ -357,6 +460,69 @@ async function runReview() {
   gap: 8px;
   font-size: 11.5px;
   color: var(--sf-ink-2, #4c413a);
+}
+
+.mi-layer-count {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f0eae4;
+  color: #8a7a6f;
+  font-size: 10px;
+}
+
+.mi-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 176px;
+  margin: 0;
+  padding: 3px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid #eee4dd;
+  border-radius: 8px;
+  background: #fffdfb;
+}
+
+.mi-layer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--sf-ink-2, #4c413a);
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mi-layer:hover {
+  background: #f7f1eb;
+}
+
+.mi-layer.active {
+  background: #fdeee6;
+  color: #b4562c;
+}
+
+.mi-layer-tag {
+  flex: none;
+  min-width: 30px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #f1eae4;
+  color: #a3948a;
+  font-size: 9px;
+  text-align: center;
+}
+
+.mi-layer-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .mi-review-summary {

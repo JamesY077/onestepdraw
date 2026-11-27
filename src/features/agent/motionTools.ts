@@ -12,8 +12,8 @@ const MAX_SOURCE_CHARS = 80_000
 
 export function motionDimensions(production: Pick<AgentProduction, 'aspectRatio' | 'resolution'>) {
   const base = aspectSize(production.aspectRatio)
-  const scale = production.resolution === '2K' ? 2 : 1
-  return { width: base.width * scale, height: base.height * scale }
+  const scale = production.resolution === '2K' ? 2 : production.resolution === '1080P' ? 1.5 : 1
+  return { width: Math.round(base.width * scale), height: Math.round(base.height * scale) }
 }
 
 function normalizeAssetReference(value: string) {
