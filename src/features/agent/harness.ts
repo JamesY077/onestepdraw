@@ -3,6 +3,14 @@ import type { AgentChatMessage, AgentToolDefinition } from '@/types/agent'
 import { extractAgentToolCalls, type AgentToolCall } from './tools'
 
 const MAX_TOOL_RESULT_CHARS = 16_000
+/** 工具参数被输出上限截断时自动重试的次数。 */
+const MAX_TRUNCATION_RETRIES = 2
+
+const TRUNCATION_HINT = [
+  '[内部提示] 上一次回复在工具参数完成前达到输出上限被截断，那个不完整的调用没有执行。',
+  '请缩短单次输出：把任务拆成更小的工具调用，或先写最小可用版本再逐步补全；',
+  '不要重复已经成功完成的步骤，也不要输出半截 JSON。',
+].join('')
 
 export class AgentHarnessError extends Error {
   code: 'incomplete_tool_call'
@@ -90,7 +98,7 @@ export async function runAgentHarness(options: AgentHarnessOptions): Promise<Age
   for (let step = 1; ; step += 1) {
     throwIfAborted(options.signal)
     options.onStepStart?.(step)
-    const result = await options.stream({
+    let result = await options.stream({
       messages: [...messages],
       tools,
       step,
@@ -100,9 +108,32 @@ export async function runAgentHarness(options: AgentHarnessOptions): Promise<Age
     })
     throwIfAborted(options.signal)
 
+    // 输出达到上限时，工具参数可能只有一半。绝不执行半成品；
+    // 先带着“拆小一点”的内部提示自动重试，避免用户手动重来。
+    let truncationRetries = 0
+    while (
+      result.toolCalls.length &&
+      ['length', 'max_tokens'].includes(result.finishReason || '') &&
+      truncationRetries < MAX_TRUNCATION_RETRIES
+    ) {
+      truncationRetries += 1
+      result = await options.stream({
+        messages: [...messages, { role: 'user', content: TRUNCATION_HINT }],
+        tools,
+        step,
+        signal: options.signal,
+        onDelta: options.onDelta,
+        onReasoning: options.onReasoning,
+      })
+      throwIfAborted(options.signal)
+    }
+
     // 与 DSH assembler 一致：max-tokens 下参数可能只有一半，绝不执行。
     if (result.toolCalls.length && ['length', 'max_tokens'].includes(result.finishReason || '')) {
-      throw new AgentHarnessError('模型输出在工具参数完成前被截断，请重试。', 'incomplete_tool_call')
+      throw new AgentHarnessError(
+        '模型连续 3 次在工具参数完成前达到输出上限，这次调用没有执行。请把任务拆小，或换一个支持更长输出的模型后重试。',
+        'incomplete_tool_call',
+      )
     }
 
     const native = result.toolCalls.length > 0

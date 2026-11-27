@@ -274,15 +274,47 @@ try {
   assert.equal(generationResult.steps, 2)
 
   let executedIncomplete = false
+  let truncationAttempts = 0
   await assert.rejects(() => runAgentHarness({
     messages: [],
     signal: new AbortController().signal,
-    stream: async () => ({ content: '', finishReason: 'length', toolCalls: [{ id: 'partial', name: 'generate_video', args: {} }] }),
+    stream: async () => {
+      truncationAttempts += 1
+      return { content: '', finishReason: 'length', toolCalls: [{ id: 'partial', name: 'generate_video', args: {} }] }
+    },
     executeTool: async () => { executedIncomplete = true },
     onDelta: () => {},
     onReasoning: () => {},
   }), (error) => error.code === 'incomplete_tool_call')
   assert.equal(executedIncomplete, false)
+  assert.equal(truncationAttempts, 3, '截断时先自动重试 2 次，仍然截断才报错')
+
+  // 前两次工具参数被截断，第三次自动恢复并正常执行；内部重试提示不进入正式历史。
+  let recoveredCalls = 0
+  let recoveredAttempts = 0
+  const retryHints = []
+  const recoveredRun = await runAgentHarness({
+    messages: [],
+    signal: new AbortController().signal,
+    stream: async (request) => {
+      recoveredAttempts += 1
+      const lastMessage = String(request.messages.at(-1)?.content || '')
+      if (lastMessage.includes('[内部提示]')) retryHints.push(lastMessage)
+      if (recoveredAttempts <= 2) {
+        return { content: '', finishReason: 'length', toolCalls: [{ id: `cut_${recoveredAttempts}`, name: 'read_project', args: {} }] }
+      }
+      if (request.step === 1) return { content: '', toolCalls: [{ id: 'ok', name: 'read_project', args: {} }] }
+      return { content: '已恢复。', toolCalls: [] }
+    },
+    executeTool: async () => { recoveredCalls += 1; return { ok: true } },
+    onDelta: () => {},
+    onReasoning: () => {},
+  })
+  assert.equal(retryHints.length, 2)
+  assert.ok(retryHints.every((hint) => /上一次回复在工具参数完成前达到输出上限被截断/.test(hint)))
+  assert.equal(recoveredCalls, 1, '只执行恢复后的完整工具调用')
+  assert.equal(recoveredRun.steps, 2)
+  assert.ok(!JSON.stringify(recoveredRun.messages).includes('内部提示'), '重试提示只给模型看，不写入正式历史')
 
   let executedLargeBatch = 0
   const largeBatchResult = await runAgentHarness({

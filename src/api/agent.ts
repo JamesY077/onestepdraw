@@ -174,27 +174,47 @@ export async function streamAgentChat(options: AgentStreamOptions): Promise<Agen
   const url = `${baseUrl}/chat/completions`
   const model = options.model || AGENT_MODEL_ID
 
+  /** 智能体要用工具写源码，默认给足输出额度；网关不接受时再退回服务端默认值。 */
+  const DEFAULT_AGENT_MAX_TOKENS = 8192
+  const requestedMaxTokens = options.maxTokens ?? DEFAULT_AGENT_MAX_TOKENS
+  const post = (maxTokens?: number) => fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: options.messages,
+      stream: true,
+      temperature: options.temperature ?? 0.7,
+      ...(maxTokens ? { max_tokens: maxTokens } : {}),
+      ...(options.tools?.length ? { tools: options.tools, tool_choice: 'auto' } : {}),
+    }),
+    signal: options.signal,
+  })
+
   let response: Response
   try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: options.messages,
-        stream: true,
-        temperature: options.temperature ?? 0.7,
-        ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}),
-        ...(options.tools?.length ? { tools: options.tools, tool_choice: 'auto' } : {}),
-      }),
-      signal: options.signal,
-    })
+    response = await post(requestedMaxTokens)
   } catch (error: any) {
     if (error?.name === 'AbortError') throw error
     throw new AgentApiError('网络连接失败，请检查本机网络或服务地址后重试。', 'network')
+  }
+
+  if (!response.ok && options.maxTokens === undefined && response.status === 400) {
+    const error = await readErrorResponse(response)
+    // 有些模型不支持 8K 输出，明确报 max_tokens 超限时退回服务端默认值，避免整轮不可用。
+    if (/max[_ ]?tokens|output.{0,20}tokens?|token.{0,20}(?:too large|exceed|limit)/i.test(error.message)) {
+      try {
+        response = await post(undefined)
+      } catch (networkError: any) {
+        if (networkError?.name === 'AbortError') throw networkError
+        throw new AgentApiError('网络连接失败，请检查本机网络或服务地址后重试。', 'network')
+      }
+    } else {
+      throw error
+    }
   }
 
   if (!response.ok) {

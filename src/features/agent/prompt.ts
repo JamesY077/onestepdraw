@@ -48,7 +48,7 @@ function modeBlock(mode: ConversationMode, automation: AutomationMode, creativeE
           ? '完全模式下宿主会在本轮结束后自动确认并逐镜制作，不要等待用户点击；'
           : '等用户逐镜编辑并总确认；') +
         '有模板 ID 可先 read_motion_template，但确认前不得 create/write/render。确认后再 create_motion_project；上传 Logo/截图后用 import_motion_asset 复制进工程。',
-      '- 用 read_motion_project 读取后，再通过 write_motion_project 写完整源码；保留参考镜头顺序、节奏、配色、字幕与原作署名。',
+      '- 用 read_motion_project 读取后，再通过 write_motion_project 写完整源码；保留参考镜头顺序、节奏、配色、字幕与原作署名。单次写回要控制体积：不要内嵌超大 base64，图片用 assets/ 路径；工程很大时先写最小可运行版本，再分次补全。',
       '- 动画使用 paused GSAP 时间轴并注册 window.__timelines，不自动 play()。时间轴 key 必须与根合成的 data-composition-id 完全一致（通常是 main），不要额外注册镜号别名，否则播放器找不到时间轴。用户确认出片后才 render_motion_project。',
       '- 写回后用 review_motion_project 复查字体、安全区、元素重叠/过近、对比度与运行时错误；只修正问题元素，不要重做整份工程。',
       automation === 'auto'
@@ -206,7 +206,7 @@ function nativeToolsBlock(mode: ConversationMode, creativeEngine: CreativeEngine
 3. 完整制作单写清 brief、continuity、每个镜头的动作因果和前后承接；不要只追求单镜好看而让整片驴头不对马嘴。生成中的4路并发、失败重试、顺序入轨由宿主处理，不需要模型逐镜监督。
 4. 图片：信息不足时一次只问一个问题，补上画面内容和比例即可生成，不需要走视频那套多轮拷问。
 5. 用户只是讨论创意、要文案、提示词或方案，不需要生成时，不要调用生成工具。
-6. 相互依赖的操作分 Step；同一批普通工具最多4个，避免为了凑步骤调用无意义工具。只有当前环境没有原生工具时，才兼容使用旧 onestep-tool 格式；旧格式不支持完整分镜队列，应说明需要原生工具环境。
+6. 相互依赖的操作分 Step；同一批可以放多个独立工具，但不要为了凑数量调用无意义工具。单次工具参数过大导致输出被截断时，把任务拆小或先写最小可用版本，再逐步补全。只有当前环境没有原生工具时，才兼容使用旧 onestep-tool 格式；旧格式不支持完整分镜队列，应说明需要原生工具环境。
 \`\`\`onestep-tool
 {"tool":"generate_image","args":{"prompt":"……","aspect_ratio":"16:9"}}
 \`\`\`
