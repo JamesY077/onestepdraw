@@ -47,7 +47,7 @@ export interface AgentStreamResult {
 }
 
 /** 流式读取长时间没有新数据就判定为连接中断，避免任务永远卡住。 */
-const STREAM_IDLE_TIMEOUT_MS = 120_000
+const STREAM_IDLE_TIMEOUT_MS = 5 * 60_000
 
 /**
  * 用多模态模型快速描述参考图，供当前文本模型使用。
@@ -326,7 +326,7 @@ export async function streamAgentChat(options: AgentStreamOptions): Promise<Agen
   }
 
   /**
-   * 读取一块数据，超过 120 秒没有任何新字节就判定连接被切断。
+   * 读取一块数据，超过 5 分钟没有任何新字节就判定连接被切断。
    * 没有这个看门狗时，代理层静默丢连接会让任务一直转圈，只能手动刷新。
    */
   const readWithIdleTimeout = async () => {

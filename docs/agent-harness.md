@@ -15,7 +15,7 @@ DSH 的核心价值不是“工具数量多”，而是以下运行时约束：
 | 原始 JSON 参数拼接 | 按 tool-call index 聚合参数，完整流结束后才解析 | PTC / nested execution token |
 | tool result 回注 | `assistant.tool_calls` 与 `tool.tool_call_id` 完整配对后继续推理 | 完整 append-only Session surface |
 | 工具有序提交 | 默认顺序执行，不限制单步工具数量，错误结果也回注 | 并发 body 调度；创作写入和付费任务默认非并发安全 |
-| 取消与截断保护 | AbortSignal 贯穿模型和工具；`length/max_tokens` 不执行半成品工具，带“拆小一点”提示自动重试 2 次；流断开/120 秒无数据也自动重试并回滚半截文本 | 跨进程 tool outcome-unknown 修复 |
+| 取消与截断保护 | AbortSignal 贯穿模型和工具；`length/max_tokens` 不执行半成品工具，带“拆小一点”提示自动重试 2 次；流断开/5 分钟无数据也自动重试并回滚半截文本 | 跨进程 tool outcome-unknown 修复 |
 | 持久化投影 | 消息上持久化 Run、Plan、ToolActivity；刷新闭合残留 running | 多后端 JSONL writer、单写者锁和 fork/lineage |
 | 纯 UI presenter | schema、宿主执行和展示投影分离，旧会话可直接重放 | Cordis 插件注册与动态 declaration merging |
 | 上下文控制 | 保留最近 40 条历史、工具结果 1.6 万字上限、项目摘要按需读取 | 自动 token 压缩和 surface replacement |
@@ -133,7 +133,7 @@ src/components/agent/AgentRunTrace.vue
 - 单个工具业务失败：记录 failed Activity，把 `{ ok:false, error }` 回注模型，由下一 Step 修正或解释。
 - 非法工具 JSON：不让 SSE/调度器崩溃，作为参数错误回注。
 - 输出 `length/max_tokens`：工具参数可能只有一半，绝不执行；先带“拆小一点”提示自动重试 2 次，仍截断才报错。纯文本被截断时自动从断点续写最多 2 次，回答不会停在半句。
-- 流式连接中断：网关没有发送 `[DONE]` / `finish_reason` 就断开，或读取超过 120 秒没有新字节，判定为连接中断，自动重来这一步（最多 2 次）。重试前通过 `onStepRetry` 回滚已经流到界面的半截文本，避免同一段回答出现两遍；自动重试记录在运行日志里。
+- 流式连接中断：网关没有发送 `[DONE]` / `finish_reason` 就断开，或读取超过 5 分钟没有新字节，判定为连接中断，自动重来这一步（最多 2 次）。重试前通过 `onStepRetry` 回滚已经流到界面的半截文本，避免同一段回答出现两遍；自动重试记录在运行日志里。
 - 长任务上下文：每步请求前按 64k 字符预算压缩历史，较早的工具结果只保留前 2k 字符，并从最早的整轮对话开始丢弃；只在 user 边界切分，保证 assistant `tool_calls` 与 tool 结果不被拆散。这样反复读写大源码也不会把请求体撑爆、被网关 400 或超时踢断。
 - 单步工具数量、单轮生成任务和总步数都不设上限；持续执行到模型结束或用户停止，只保留取消、参数截断和重复调用 ID 的保护。工具参数被输出上限截断时先自动重试 2 次，并提示模型拆小任务；仍截断才停止，且绝不执行半成品 JSON。
 - 任务拆解：接到需求先判断阶段数，多阶段时用 `update_plan` 建立 2-12 步计划，一个 Step 只推进一个阶段，并在完成时用一句进度说明（“2/5 已完成…”）继续下一步。单步一次执行 4 个以上工具时，宿主在最后一条 tool result 追加 `[进度提醒]`，要求模型先汇报阶段成果再继续，避免静默跑完。
