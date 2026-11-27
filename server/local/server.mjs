@@ -315,6 +315,7 @@ async function handleAgentRun(req, res) {
   const model = typeof body?.model === 'string' ? body.model.trim().slice(0, 120) : ''
   const mode = body?.mode === 'create' ? 'create' : 'chat'
   const automation = body?.automation === 'auto' ? 'auto' : 'default'
+  const creativeEngine = body?.creativeEngine === 'animation' ? 'animation' : 'aigc'
   const projectSummary =
     typeof body?.projectSummary === 'string' ? body.projectSummary.slice(0, 6000) : ''
   const skills = typeof body?.skills === 'string' ? body.skills.slice(0, 20000) : ''
@@ -353,6 +354,7 @@ async function handleAgentRun(req, res) {
     agentName: preset.name,
     mode,
     automation,
+    creativeEngine,
     projectSummary,
     skills,
   })
@@ -385,7 +387,7 @@ async function handleAgentRun(req, res) {
     model,
     apiKey: apiKey.length >= 8 && !/\s/.test(apiKey) ? apiKey : '',
     apiBaseUrl,
-    allowGeneration: mode === 'create',
+    allowGeneration: mode === 'create' && creativeEngine === 'aigc',
     onDelta: (text) => send({ type: 'delta', text }),
     onLog: (text) => send({ type: 'log', text }),
   })

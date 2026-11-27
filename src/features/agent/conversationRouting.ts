@@ -5,6 +5,7 @@ import type {
   AgentGenerationKind,
   AgentTemplateRef,
 } from '@/types/agent'
+import type { CreativeEngineMode } from '@/stores/chatModeStore'
 import type { UploadedFile } from '@/types/chat'
 import {
   AGENT_IMAGE_MODEL,
@@ -15,7 +16,7 @@ import {
 import { mediaReferenceForClip, routeSelectedClips, type SelectedClipRoute } from '@/features/agent/clipRevision'
 
 /** 所有对话入口共用的首轮判断；选中片段优先于上传附件。 */
-export type ConversationRequestRoute = SelectedClipRoute | 'attachment-media'
+export type ConversationRequestRoute = SelectedClipRoute | 'attachment-media' | 'agent'
 
 const EDIT_INTENT = /修改|改成|改为|改一下|改下|改图|改视频|改背景|编辑|重绘|重新生成|重生成|换成|更换|替换|去除|去掉|移除|消除|修复|扩图|抠图|提高清晰度|增强清晰|\bedit\b|\bmodify\b|\bretouch\b|\bremove\b|\breplace\b|\bchange\b/i
 const DISCUSSION_ONLY = /怎么.{0,10}改|如何.{0,10}改|修改建议|给我.{0,8}建议|不要修改|别修改|无需修改/i
@@ -34,11 +35,14 @@ export interface ConversationRouteInput {
   clips?: AgentClipRef[]
   attachments?: AgentAttachment[]
   templates?: AgentTemplateRef[]
+  creativeEngine?: CreativeEngineMode
 }
 
 export function routeConversationRequest(input: ConversationRouteInput): ConversationRequestRoute {
   const selectedRoute = routeSelectedClips(input.clips)
   if (selectedRoute !== 'none') return selectedRoute
+  // OpenMotion + Logo/截图也是动效工程任务，附件绝不能把它改道到付费素材编辑。
+  if (input.creativeEngine === 'animation') return 'agent'
   if (!input.attachments?.length || input.templates?.length) return 'none'
   if (!input.attachments.every((item) => (item.kind === 'image' || item.kind === 'video') && !!item.url)) return 'none'
   return isDirectMediaEditRequest(input.content) ? 'attachment-media' : 'none'

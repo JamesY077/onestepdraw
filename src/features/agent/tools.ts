@@ -25,6 +25,7 @@ export type AgentToolName =
   | 'generate_image'
   | 'generate_video'
   | 'generate_storyboard'
+  | 'prepare_storyboard'
   | 'open_voice'
   | 'open_3d'
   | 'update_plan'
@@ -34,8 +35,10 @@ export type AgentToolName =
   | 'list_motion_templates'
   | 'read_motion_template'
   | 'create_motion_project'
+  | 'import_motion_asset'
   | 'read_motion_project'
   | 'write_motion_project'
+  | 'review_motion_project'
   | 'render_motion_project'
 
 export interface AgentToolCall {
@@ -61,6 +64,7 @@ export const AGENT_TOOL_NAMES: AgentToolName[] = [
   'generate_image',
   'generate_video',
   'generate_storyboard',
+  'prepare_storyboard',
   'open_voice',
   'open_3d',
   'update_plan',
@@ -70,8 +74,10 @@ export const AGENT_TOOL_NAMES: AgentToolName[] = [
   'list_motion_templates',
   'read_motion_template',
   'create_motion_project',
+  'import_motion_asset',
   'read_motion_project',
   'write_motion_project',
+  'review_motion_project',
   'render_motion_project',
 ]
 
@@ -142,6 +148,11 @@ export function stripAgentTimelineBlocks(content: string): string {
 
 const CREATIVE_HANDOFF_FENCE = /```onestep-mode-handoff[ \t]*\r?\n([\s\S]*?)```/
 
+export function inferCreativeEngine(value: unknown): 'animation' | 'aigc' {
+  const text = String(value || '')
+  return /openmotion|hyperframes|动效|代码动画|模板复刻|参考复刻|做同款/i.test(text) ? 'animation' : 'aigc'
+}
+
 export function normalizeAgentCreativeHandoff(value: unknown): AgentCreativeHandoff | null {
   if (!value || typeof value !== 'object') return null
   const raw = value as Record<string, unknown>
@@ -149,7 +160,10 @@ export function normalizeAgentCreativeHandoff(value: unknown): AgentCreativeHand
   const reason = String(raw.reason || '').trim().slice(0, 120)
   const prompt = String(raw.prompt || '').trim().slice(0, 12000)
   if (!reason || !prompt) return null
-  return { target: 'create', reason, prompt, status: 'pending' }
+  const engine = raw.engine === 'animation' || raw.engine === 'aigc'
+    ? raw.engine
+    : inferCreativeEngine(`${reason}\n${prompt}`)
+  return { target: 'create', engine, reason, prompt, status: 'pending' }
 }
 
 /** 普通模式的结构化交接建议；解析不代表已获用户授权。 */

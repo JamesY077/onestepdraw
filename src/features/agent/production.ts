@@ -1,5 +1,6 @@
 import type {
   AgentProduction,
+  AgentStoryboardPlan,
   AgentStoryboardDelivery,
   AgentStoryboardShot,
 } from '@/types/agent'
@@ -18,7 +19,7 @@ export interface StoryboardToolInput {
   aspectRatio: string
   resolution: string
   delivery: AgentStoryboardDelivery
-  shots: Array<Pick<AgentStoryboardShot, 'id' | 'prompt' | 'duration'>>
+  shots: Array<Pick<AgentStoryboardShot, 'id' | 'prompt' | 'duration'> & { referenceSvg?: string }>
 }
 
 function requiredText(value: unknown, label: string, maxLength: number): string {
@@ -38,7 +39,7 @@ export function normalizeStoryboardToolInput(value: unknown): StoryboardToolInpu
   if (!value || typeof value !== 'object') throw new Error('完整分镜参数无效。')
   const raw = value as Record<string, any>
   const source = Array.isArray(raw.shots) ? raw.shots : []
-  if (source.length < 2) throw new Error('完整分镜至少需要两个镜头；单镜请使用 generate_video。')
+  if (source.length < 1) throw new Error('分镜至少需要一个镜头。')
   if (source.length > MAX_STORYBOARD_SHOTS) throw new Error(`一支片最多记录 ${MAX_STORYBOARD_SHOTS} 个镜头。`)
   const ids = new Set<string>()
   const shots = source.map((item: any) => {
@@ -52,6 +53,7 @@ export function normalizeStoryboardToolInput(value: unknown): StoryboardToolInpu
     return {
       id,
       prompt: requiredText(item?.prompt, `${id} 提示词`, 6000),
+      referenceSvg: String(item?.reference_svg || '').trim().slice(0, 24000) || undefined,
       duration,
     }
   })
@@ -114,6 +116,12 @@ export function productionPendingShots(production: AgentProduction): AgentStoryb
   if (production.delivery === 'preview') return pending.slice(0, 1)
   if (production.delivery === 'batch') return pending.slice(0, production.batchSize || 4)
   return pending
+}
+
+export function describeStoryboardPlan(plan?: AgentStoryboardPlan): string {
+  if (!plan) return ''
+  const shots = plan.shots.map((shot) => `${shot.id} ${shot.duration}s · 参考${shot.referenceStatus === 'ready' ? '已就绪' : shot.referenceStatus === 'running' ? '生成中' : shot.referenceStatus === 'failed' ? '失败' : '待重做'}${shot.referenceName ? ` · ${shot.referenceName}` : ''}\n${shot.prompt}`).join('\n')
+  return `片名：${plan.title}\n状态：${plan.status === 'draft' ? '等待用户确认，禁止生成正式视频或创建动效工程' : '用户已确认'}\n完整需求：${plan.brief}\n连续性锚点：${plan.continuity}\n原始分镜：${plan.storyboardText || '见下方逐镜内容'}\n逐镜草案：\n${shots}`
 }
 
 /** 每轮系统提示词都带完整制作单，即使历史消息被窗口截断也不会只剩 S1。 */

@@ -27,6 +27,15 @@
         </button>
       </div>
     </header>
+    <div class="sc-engine-mode">
+      <CreativeEngineSwitch
+        :model-value="activeCreativeEngine"
+        :disabled="agentStore.isStreaming"
+        compact
+        @update:model-value="changeCreativeEngine"
+      />
+      <span>{{ activeCreativeEngine === 'animation' ? 'HyperFrames 动效工程' : '图片 / 视频生成' }}</span>
+    </div>
 
     <div ref="scrollRef" class="sc-scroll">
       <section v-if="!messages.length" class="sc-empty">
@@ -126,11 +135,23 @@
         <div v-if="previewOpen" class="sc-preview">
           <ul class="sc-preview-list">
             <li v-for="clip in previewClips" :key="clip.id">
-              <span class="sc-preview-name">{{ clip.name }}</span>
-              <span class="sc-preview-time">{{ clip.start.toFixed(1) }}s → {{ (clip.start + clip.duration).toFixed(1) }}s</span>
-              <span class="sc-preview-note" :class="{ 'is-empty': !clip.note }">
-                {{ clip.note || '未写意见，AI 会自行判断' }}
-              </span>
+              <div class="sc-preview-row">
+                <span class="sc-preview-name">{{ clip.name }}<template v-if="clip.motionElements?.length"> · {{ clip.motionElements.length }} 个元素</template></span>
+                <span class="sc-preview-time">{{ clip.start.toFixed(1) }}s → {{ (clip.start + clip.duration).toFixed(1) }}s</span>
+                <span class="sc-preview-note" :class="{ 'is-empty': !clip.note }">
+                  {{ clip.note || '未写意见，AI 会自行判断' }}
+                </span>
+              </div>
+              <ul v-if="clip.motionElements?.length" class="sc-preview-elements">
+                <li v-for="(element, elementIndex) in clip.motionElements" :key="motionElementKey(element)">
+                  <span class="sc-preview-element-no">{{ elementIndex + 1 }}</span>
+                  <span class="sc-preview-element-copy">
+                    <strong>{{ element.label }}</strong>
+                    <small :title="element.selector">{{ elementPart(element) || element.selector }}</small>
+                    <em v-if="elementNotes(clip, element)">{{ elementNotes(clip, element) }}</em>
+                  </span>
+                </li>
+              </ul>
             </li>
           </ul>
           <p v-if="draft.trim()" class="sc-preview-draft">
@@ -145,29 +166,33 @@
       <AgentComposer
         ref="composerRef"
         v-model="draft"
+        :draft-key="`edit:${projectId}`"
         tone="create"
         :disabled="agentStore.isStreaming"
         :can-send-extra="selectedClips.length > 0 || pendingBatches.length > 0"
         :placeholder="composerPlaceholder"
         @send="send"
         @stop="agentStore.stopStreaming"
+        @engine-change="changeCreativeEngine"
       />
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import AgentComposer from '@/components/agent/AgentComposer.vue'
+import CreativeEngineSwitch from '@/components/agent/CreativeEngineSwitch.vue'
 import AgentMessage from '@/components/agent/AgentMessage.vue'
 import { useAgentStore } from '@/stores/agentStore'
 import { useEditProjectStore, projectDuration } from '@/stores/editProjectStore'
 import { parseTimeRanges, resolveRevisionTargets } from '@/features/edit/revisionIntent'
-import { useChatModeStore } from '@/stores/chatModeStore'
-import { useLocalAgentStore } from '@/stores/localAgentStore'
+import { useChatModeStore, type CreativeEngineMode } from '@/stores/chatModeStore'
 import { useModelStore } from '@/stores/modelStore'
 import { describeClipContext } from '@/features/agent/clipContext'
-import type { AgentClipRef, ComposerSubmit } from '@/types/agent'
+import { motionElementKey } from '@/features/edit/motionElements'
+import type { AgentClipRef, AgentMotionElementEdit, AgentMotionElementRef, ComposerSendAck, ComposerSubmit } from '@/types/agent'
+import { consumeComposerPromptContext, mergeComposerPrompt } from '@/features/template/navigation'
 
 interface PendingClipBatch {
   id: string
@@ -200,7 +225,6 @@ const emit = defineEmits<{
 const agentStore = useAgentStore()
 const projectStore = useEditProjectStore()
 const chatMode = useChatModeStore()
-const localAgentStore = useLocalAgentStore()
 const modelStore = useModelStore()
 const scrollRef = ref<HTMLElement | null>(null)
 const composerRef = ref<InstanceType<typeof AgentComposer> | null>(null)
@@ -212,27 +236,56 @@ const conversation = computed(
   () => agentStore.conversations.find((item) => item.id === props.conversationId) || null,
 )
 const messages = computed(() => conversation.value?.messages || [])
+const activeCreativeEngine = computed<CreativeEngineMode>(() => conversation.value?.creativeEngine || 'aigc')
 const lastAssistantId = computed(() => {
   for (let index = messages.value.length - 1; index >= 0; index -= 1) {
     if (messages.value[index].role === 'assistant') return messages.value[index].id
   }
   return ''
 })
-const engineLabel = computed(() =>
-  localAgentStore.isLocalEngine ? localAgentStore.selectedLabel : modelStore.selectedId,
-)
+// 创作统一经受控 Harness；本机 CLI 只用于普通对话，避免绕过工具权限与分镜确认。
+const engineLabel = computed(() => modelStore.selectedId)
 
-/** 待发送区里按片段去重，同一段以最后一次写的意见为准。 */
+/** 同一片段可以有多条元素级修改：合并选中元素并保留每条意见，不能只留最后一条。 */
 const queuedClips = computed<AgentClipRef[]>(() => {
   const map = new Map<string, AgentClipRef>()
+  const notes = new Map<string, string[]>()
+  const elements = new Map<string, Map<string, AgentMotionElementRef>>()
+  const edits = new Map<string, AgentMotionElementEdit[]>()
   for (const batch of props.pendingBatches) {
     const note = batch.note.trim()
     for (const clip of batch.clips) {
-      const previous = map.get(clip.id)
-      map.set(clip.id, { ...clip, note: note || previous?.note || clip.note })
+      map.set(clip.id, { ...map.get(clip.id), ...clip })
+      const line = note || clip.note?.trim()
+      if (line) {
+        const list = notes.get(clip.id) || []
+        if (!list.includes(line)) list.push(line)
+        notes.set(clip.id, list)
+      }
+      if (clip.motionElements?.length) {
+        const merged = elements.get(clip.id) || new Map<string, AgentMotionElementRef>()
+        for (const element of clip.motionElements) merged.set(motionElementKey(element), element)
+        elements.set(clip.id, merged)
+        // 每一批意见都和它当时选中的元素绑定；合并时只做去重，不重排、不覆盖。
+        const bound = edits.get(clip.id) || []
+        const signature = `${line || ''}::${clip.motionElements.map(motionElementKey).join('|')}`
+        const exists = bound.some((edit) =>
+          `${edit.note}::${edit.elements.map(motionElementKey).join('|')}` === signature)
+        if (!exists) bound.push({ note: line || '', elements: clip.motionElements })
+        edits.set(clip.id, bound)
+      }
     }
   }
-  return [...map.values()]
+  return [...map.entries()].map(([id, clip]) => {
+    const mergedNotes = notes.get(id) || []
+    const mergedElements = elements.get(id)
+    return {
+      ...clip,
+      note: mergedNotes.join('\n') || clip.note,
+      motionElements: mergedElements?.size ? [...mergedElements.values()] : clip.motionElements,
+      motionElementEdits: edits.get(id)?.length ? edits.get(id) : clip.motionElementEdits,
+    }
+  })
 })
 
 const queuedCount = computed(() => queuedClips.value.length)
@@ -252,11 +305,37 @@ const composerPlaceholder = computed(() => {
 function resolveSendClips(): { clips: AgentClipRef[]; queued: boolean; directNote: string } {
   const queued = queuedClips.value.length > 0
   const directNote = queued ? '' : props.clipNote.trim()
-  const clips = outgoingClips.value.map((clip) => ({
-    ...clip,
-    note: clip.note || directNote || undefined,
-  }))
+  const clips = outgoingClips.value.map((clip) => {
+    const note = clip.note || directNote || undefined
+    // 直接发送没有经过待发送区：在这里补一份「意见 → 当前选中元素」的绑定。
+    const elementEdits = clip.motionElementEdits?.length
+      ? clip.motionElementEdits
+      : clip.motionElements?.length
+        ? [{ note: note || '', elements: clip.motionElements }]
+        : undefined
+    return { ...clip, note, motionElementEdits: elementEdits }
+  })
   return { clips, queued, directNote }
+}
+
+/** 预览里告诉用户：这个元素属于哪一部分、在画面哪里。 */
+function elementPart(element: AgentMotionElementRef): string {
+  return [element.sectionLabel, element.region].filter(Boolean).join(' · ')
+}
+
+/** 展开预览时直接显示这条元素意见，避免用户只看到合并后的整段文字。 */
+function elementNotes(clip: AgentClipRef, element: AgentMotionElementRef): string {
+  const edits = clip.motionElementEdits?.length
+    ? clip.motionElementEdits
+    : clip.note?.trim()
+      ? [{ note: clip.note.trim(), elements: clip.motionElements || [] }]
+      : []
+  const key = motionElementKey(element)
+  const notes = edits
+    .filter((edit) => edit.elements.some((target) => motionElementKey(target) === key))
+    .map((edit) => edit.note.trim())
+    .filter(Boolean)
+  return [...new Set(notes)].join('；')
 }
 
 const previewOpen = ref(false)
@@ -312,7 +391,18 @@ function detectTargetsFromText(text: string) {
   }))
 }
 
-function send(payload: ComposerSubmit) {
+function changeCreativeEngine(engine: CreativeEngineMode) {
+  chatMode.setCreativeEngine(engine)
+  agentStore.setCreativeEngine(props.conversationId, engine)
+}
+
+watch(
+  () => [props.conversationId, conversation.value?.creativeEngine] as const,
+  () => chatMode.setCreativeEngine(activeCreativeEngine.value),
+  { immediate: true },
+)
+
+function send(payload: ComposerSubmit, acknowledge: ComposerSendAck) {
   const text = payload.content.trim()
   const { clips: pickedClips, queued, directNote } = resolveSendClips()
   // 没手动选片段时，按文字里的时间范围自动定位
@@ -321,7 +411,10 @@ function send(payload: ComposerSubmit) {
   if (
     (!text && !payload.attachments.length && !payload.templates?.length && !clips.length) ||
     agentStore.isStreaming
-  ) return
+  ) {
+    acknowledge(false)
+    return
+  }
   // 没写整体要求、片段也没带意见时，给模型一个明确的最小指令。
   const fallback = clips.length && !clips.some((clip) => clip.note)
     ? '请先看看选中的片段，并给出具体修改建议。'
@@ -330,18 +423,23 @@ function send(payload: ComposerSubmit) {
     conversationId: props.conversationId,
     mode: 'create',
     automation: chatMode.automation,
+    creativeEngine: activeCreativeEngine.value,
     projectId: props.projectId,
     attachments: payload.attachments,
     templates: payload.templates,
     clips: clips.length ? clips : undefined,
+  }).then((accepted) => {
+    acknowledge(accepted)
+    if (!accepted) return
+    previewOpen.value = false
+    // 只有 store 已受理才能消费待发送批次，失败或并发拒绝都保留现场。
+    if (queued) emit('consume-pending')
+    else if (directNote) emit('clear-note')
   })
-  previewOpen.value = false
-  if (queued) emit('consume-pending')
-  else if (directNote) emit('clear-note')
 }
 
 function sendChip(content: string) {
-  send({ content, attachments: [], templates: [] })
+  send({ content, attachments: [], templates: [] }, () => {})
   composerRef.value?.focus()
 }
 
@@ -369,6 +467,14 @@ function focusComposer() {
   composerRef.value?.focus()
 }
 
+onMounted(() => {
+  const pending = consumeComposerPromptContext()
+  if (!pending.prompt) return
+  draft.value = mergeComposerPrompt(pending.prompt, draft.value)
+  if (pending.creativeEngine) changeCreativeEngine(pending.creativeEngine)
+  nextTick(focusComposer)
+})
+
 defineExpose({ focusComposer })
 
 </script>
@@ -393,6 +499,18 @@ defineExpose({ focusComposer })
   flex: none;
   padding: 9px 12px 9px 14px;
   border-bottom: 1px solid var(--sf-surface-3);
+}
+
+.sc-engine-mode {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: none;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--sf-surface-3);
+  color: var(--sf-ink-3);
+  font-size: 10px;
 }
 
 .sc-title {
@@ -817,13 +935,74 @@ defineExpose({ focusComposer })
   list-style: none;
 }
 
-.sc-preview-list li {
+.sc-preview-list > li {
+  display: block;
+  min-width: 0;
+  font-size: 9.5px;
+  line-height: 1.5;
+}
+
+.sc-preview-row {
   display: flex;
   align-items: baseline;
   gap: 5px;
   min-width: 0;
-  font-size: 9.5px;
-  line-height: 1.5;
+}
+
+.sc-preview-elements {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 3px 0 0 9px;
+  padding: 0 0 0 7px;
+  border-left: 1px solid #ead9cc;
+  list-style: none;
+}
+
+.sc-preview-elements li {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+}
+
+.sc-preview-element-no {
+  flex: none;
+  width: 12px;
+  color: var(--sf-ink-4);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.sc-preview-element-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sc-preview-element-copy strong {
+  overflow: hidden;
+  color: #3d2b23;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-preview-element-copy small {
+  overflow: hidden;
+  color: var(--sf-ink-4);
+  font-size: 8.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-preview-element-copy em {
+  overflow: hidden;
+  color: var(--sf-terra-strong);
+  font-size: 8.5px;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sc-preview-name {

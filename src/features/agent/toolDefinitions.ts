@@ -1,8 +1,6 @@
 import type { AgentToolDefinition } from '@/types/agent'
+import type { ConversationMode, CreativeEngineMode } from '@/stores/chatModeStore'
 import type { AgentToolCall } from './tools'
-
-/** 单轮最多 8 次模型 Step；工具失败也占步数，防止无效循环。 */
-export const AGENT_MAX_RUN_STEPS = 8
 
 /**
  * 模型可见的能力白名单。这里只声明 JSON Schema，执行函数与项目对象留在宿主侧。
@@ -112,8 +110,45 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
   {
     type: 'function',
     function: {
+      name: 'prepare_storyboard',
+      description: '制作完整分镜脚本并准备逐镜参考图。动画由宿主本地代码绘图，AIGC 由宿主复用用户媒体或调用图片模型；不生成正式视频，也不创建动效工程。',
+      parameters: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['title', 'brief', 'continuity', 'aspect_ratio', 'resolution', 'delivery', 'shots'],
+        properties: {
+          title: { type: 'string', description: '短片名称。' },
+          brief: { type: 'string', description: '完整创作需求：用途、受众、叙事、风格、总时长、声音与交付目标，不得只写当前一镜。' },
+          continuity: { type: 'string', description: '跨镜统一的角色/产品外观、场景、光线、色彩、镜头语言与首尾状态锚点。' },
+          storyboard_text: { type: 'string', description: '完整原始分镜文本，包含全部镜号，不能用“同上”省略。' },
+          aspect_ratio: { type: 'string', enum: ['16:9', '9:16', '1:1'] },
+          resolution: { type: 'string', enum: ['768P', '2K'] },
+          delivery: { type: 'string', enum: ['full', 'preview', 'batch'], description: '用户确认后希望的执行范围。' },
+          shots: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 32,
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['id', 'prompt', 'duration'],
+              properties: {
+                id: { type: 'string', description: '唯一镜号，如 S01、S02；必须保留完整分镜里的所有镜号。' },
+                prompt: { type: 'string', description: '该镜完整画面、动效或生成提示词，并写明与前后镜的承接。' },
+                reference_svg: { type: 'string', description: '动画模式必传：该镜代表帧的完整自包含 SVG 源码，直接表现主体、构图与字幕；禁止脚本、外链和位图。AIGC 不传。' },
+                duration: { type: 'integer', minimum: 4, maximum: 15 },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'generate_storyboard',
-      description: '生成一支完整多镜头视频。只有完整分镜与生成范围已确认后调用；一次记录全部镜头，宿主按镜号续跑，最多4路并发，失败自动重试并按顺序入轨。',
+      description: '兼容旧调用的分镜草案入口：记录完整脚本并准备逐镜参考图，等待用户编辑与总确认，不启动正式视频或动效工程。',
       parameters: {
         type: 'object',
         additionalProperties: false,
@@ -132,7 +167,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
           },
           shots: {
             type: 'array',
-            minItems: 2,
+            minItems: 1,
             maxItems: 32,
             items: {
               type: 'object',
@@ -141,6 +176,7 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
               properties: {
                 id: { type: 'string', description: '唯一镜号，如 S01、S02；必须保留完整分镜里的所有镜号。' },
                 prompt: { type: 'string', description: '该镜完整提示词，重复必要的外观/场景/风格锚点，并写明与前后镜的承接。' },
+                reference_svg: { type: 'string', description: '动画模式必传：该镜代表帧的完整自包含 SVG 源码；禁止脚本、外链和位图。AIGC 不传。' },
                 duration: { type: 'integer', minimum: 4, maximum: 15 },
               },
             },
@@ -195,7 +231,25 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
           name: { type: 'string', description: '工程名称。' },
           templateId: { type: 'string', description: '可选，基于这条 OpenMotion 模板创建副本。' },
           source: { type: 'string', description: '可选，空白工程时直接给出完整 index.html（HyperFrames 原生格式）。' },
-          at: { type: 'number', minimum: 0, description: '入轨起点秒数，缺省接在视频轨末尾。' },
+          at: { type: 'number', minimum: 0, description: '入轨起点秒数；逐镜执行时必须使用宿主给出的固定位置。' },
+          duration: { type: 'number', exclusiveMinimum: 0, description: '时间轴片段时长（秒），必须与当前镜号一致。' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'import_motion_asset',
+      description: '把用户本轮上传的 Logo、截图或音视频复制进动效工程。source 使用附件清单里的 /generated/uploads/... 地址；返回的 path 可直接写进 HTML。',
+      parameters: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['motionId', 'source'],
+        properties: {
+          motionId: { type: 'string', description: 'create_motion_project 返回的工程 ID。' },
+          source: { type: 'string', description: '上传附件的 /generated/uploads/... 地址。' },
+          fileName: { type: 'string', description: '可选的工程内文件名，保留原扩展名。' },
         },
       },
     },
@@ -236,15 +290,31 @@ export const AGENT_NATIVE_TOOLS: AgentToolDefinition[] = [
   {
     type: 'function',
     function: {
-      name: 'render_motion_project',
-      description: '用本机 HyperFrames CLI 把动效工程渲染成 MP4，并在时间轴原位替换为视频片段。耗时较长，只有用户要出片或整片合成时才调用。',
+      name: 'review_motion_project',
+      description: '用官方 HyperFrames check 复查动效工程：字体缺失、元素重叠/过近、安全区、对比度与运行时错误。返回可修复的问题清单；发现问题后继续修改源码再复查，不要重做整份工程。',
       parameters: {
         type: 'object',
         additionalProperties: false,
         required: ['motionId'],
         properties: {
           motionId: { type: 'string' },
-          clipId: { type: 'string', description: '可选，指定要原位替换的时间轴片段。' },
+          samples: { type: 'number', description: '抽样时间点数量，默认 5，范围 1-12。' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'render_motion_project',
+      description: '用本机 HyperFrames CLI 把动效工程渲染成 MP4 导出产物；不改变时间轴上的实时工程片段。耗时较长，只有用户要出片或整片合成时才调用。',
+      parameters: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['motionId'],
+        properties: {
+          motionId: { type: 'string' },
+          clipId: { type: 'string', description: '可选，指定要导出的时间轴片段。' },
         },
       },
     },
@@ -288,9 +358,10 @@ export const AGENT_CHAT_NATIVE_TOOLS: AgentToolDefinition[] = [
       parameters: {
         type: 'object',
         additionalProperties: false,
-        required: ['target', 'reason', 'prompt'],
+        required: ['target', 'engine', 'reason', 'prompt'],
         properties: {
           target: { type: 'string', enum: ['create'] },
+          engine: { type: 'string', enum: ['animation', 'aigc'], description: 'OpenMotion/HyperFrames、动效或模板复刻用 animation；图片/视频生成与素材编辑用 aigc。' },
           reason: { type: 'string', description: '一句中文说明为什么下一步需要创作对话，不超过 60 字。' },
           prompt: { type: 'string', description: '用户确认后在同一对话继续的具体创作任务，必须承接已有文案、完整脚本和素材；多镜头保留全部镜号、时长、逐镜提示词与连续性锚点，禁止只带S01或用同上省略。' },
         },
@@ -298,6 +369,31 @@ export const AGENT_CHAT_NATIVE_TOOLS: AgentToolDefinition[] = [
     },
   },
 ]
+
+const MOTION_TOOL_NAMES = new Set([
+  'list_motion_templates',
+  'read_motion_template',
+  'create_motion_project',
+  'import_motion_asset',
+  'read_motion_project',
+  'write_motion_project',
+  'review_motion_project',
+  'render_motion_project',
+])
+const AIGC_TOOL_NAMES = new Set(['generate_image', 'generate_video', 'generate_storyboard'])
+
+/** 模式同时约束模型可见工具；宿主执行层还会再做一次同样的校验。 */
+export function agentToolsForMode(
+  mode: ConversationMode,
+  creativeEngine: CreativeEngineMode = 'aigc',
+): AgentToolDefinition[] {
+  if (mode === 'chat') return AGENT_CHAT_NATIVE_TOOLS
+  return AGENT_NATIVE_TOOLS.filter((tool) => {
+    const name = tool.function.name
+    if (creativeEngine === 'animation') return !AIGC_TOOL_NAMES.has(name) && name !== 'open_3d'
+    return !MOTION_TOOL_NAMES.has(name)
+  })
+}
 
 function short(value: unknown, max = 72): string {
   const text = typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : ''
@@ -321,9 +417,10 @@ export function presentAgentToolCall(call: AgentToolCall): { title: string; deta
       return { title: '提交图片生成', detail: short(call.args.prompt) }
     case 'generate_video':
       return { title: '提交视频生成', detail: short(call.args.prompt) }
+    case 'prepare_storyboard':
     case 'generate_storyboard': {
       const count = Array.isArray(call.args.shots) ? call.args.shots.length : 0
-      return { title: '生成完整分镜视频', detail: `${count} 个镜头 · 最多 4 路并发` }
+      return { title: '制作分镜草案', detail: `${count} 个镜头 · 等待用户确认` }
     }
     case 'list_motion_templates':
       return { title: '检索动效模板', detail: short(call.args.query || call.args.tag || 'OpenMotion 目录') }
@@ -331,10 +428,14 @@ export function presentAgentToolCall(call: AgentToolCall): { title: string; deta
       return { title: '读取模板与 motion.md', detail: short(call.args.templateId) }
     case 'create_motion_project':
       return { title: '创建动效工程', detail: short(call.args.name) }
+    case 'import_motion_asset':
+      return { title: '导入动效素材', detail: short(call.args.fileName || call.args.source) }
     case 'read_motion_project':
       return { title: '读取动效工程源码', detail: short(call.args.motionId) }
     case 'write_motion_project':
       return { title: '写回动效工程源码', detail: short(call.args.motionId) }
+    case 'review_motion_project':
+      return { title: '复查动效工程', detail: short(call.args.motionId) }
     case 'render_motion_project':
       return { title: '渲染动效 MP4', detail: short(call.args.motionId) }
     case 'open_voice':

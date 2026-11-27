@@ -48,6 +48,43 @@ function isProject(value: any): value is EditProject {
   )
 }
 
+/** 旧版本渲染后会把片段变成普通视频并丢掉 motionId；从稳定文件名恢复来源工程。 */
+export function motionIdFromRenderUrl(url: string): string {
+  // 工程 id 本身带 `motion_` 前缀，恢复时必须整段取回，否则预览地址会指向不存在的目录。
+  const match = String(url || '').match(/(?:^|\/)(motion_[A-Za-z0-9._-]+?)-\d{10,}\.mp4(?:[?#]|$)/)
+  return match?.[1] || ''
+}
+
+/** 动效工程在剪辑台必须始终走 live HyperFrames 预览，而不是某次导出的 MP4 快照。 */
+export function motionEntryUrl(projectId: string): string {
+  // 目录式地址让 index.html 里的 assets/... 相对路径在预览时也能正确解析。
+  return `/local/motion/view/${encodeURIComponent(projectId)}/index.html`
+}
+
+/** 动效片段的地址一律重建成目录式 live 预览：媒体相对路径可解析，也不会指向旧 MP4。 */
+function normalizeLiveMotionUrl(motionId: string): string {
+  return motionEntryUrl(motionId)
+}
+
+/**
+ * 旧版渲染把动效片段替换成了视频文件：一旦那次渲染是空白或过期产物，剪辑台就只剩背景板，
+ * 而且后续重新渲染也找不到可替换的片段。加载时把这类片段恢复成 live 动效工程。
+ */
+export function restoreLiveMotionClip(clip: TimelineClip): TimelineClip {
+  if (clip.kind !== 'video') return clip
+  // 只有“已渲染的动效 MP4”才恢复成 live 工程；用户主动替换成的普通视频必须保留。
+  const motionId = motionIdFromRenderUrl(clip.url)
+  if (!motionId) return clip
+  return {
+    ...clip,
+    kind: 'motion',
+    motionId,
+    url: motionEntryUrl(motionId),
+    thumbnail: undefined,
+    trimStart: 0,
+  }
+}
+
 function normalizeProject(value: EditProject): EditProject {
   const tracks = value.tracks
     .filter((track) => track && Array.isArray(track.clips))
@@ -56,11 +93,22 @@ function normalizeProject(value: EditProject): EditProject {
       kind: (['video', 'overlay', 'audio'].includes(track.kind) ? track.kind : 'video') as EditTrackKind,
       clips: track.clips
         .filter((clip) => clip && typeof clip.url === 'string')
-        .map((clip) => ({
-          ...clip,
-          start: Math.max(0, Number(clip.start) || 0),
-          duration: Math.max(MIN_CLIP_SECONDS, Number(clip.duration) || DEFAULT_DURATION),
-        })),
+        .map((clip) => {
+          const recoveredMotionId = clip.kind === 'video'
+            ? motionIdFromRenderUrl(clip.url)
+            : ''
+          const restored = restoreLiveMotionClip({
+            ...clip,
+            motionId: clip.motionId || recoveredMotionId || undefined,
+            start: Math.max(0, Number(clip.start) || 0),
+            duration: Math.max(MIN_CLIP_SECONDS, Number(clip.duration) || DEFAULT_DURATION),
+            thumbnail: clip.kind === 'motion' ? undefined : clip.thumbnail,
+          })
+          if (restored.kind === 'motion' && restored.motionId) {
+            restored.url = normalizeLiveMotionUrl(restored.motionId)
+          }
+          return restored
+        }),
     }))
   // 轨道按需存在：空轨道（尤其是旧的「叠加 O1」）在加载时直接收起来。
   const kept = tracks.filter((track) => track.clips.length > 0)
@@ -74,7 +122,15 @@ function normalizeProject(value: EditProject): EditProject {
     aspectRatio: value.aspectRatio || '16:9',
     resolution: value.resolution === '2K' ? '2K' : '768P',
     tracks: list,
-    assets: value.assets.filter((asset) => asset && typeof asset.url === 'string'),
+    assets: value.assets
+      .filter((asset) => asset && typeof asset.url === 'string')
+      .map((asset) => {
+        const next = { ...asset, thumbnail: asset.kind === 'motion' ? undefined : asset.thumbnail }
+        if (next.kind === 'motion' && next.motionId) {
+          next.url = normalizeLiveMotionUrl(next.motionId)
+        }
+        return next
+      }),
     captions: Array.isArray(value.captions)
       ? value.captions.filter((cue) => cue && typeof cue.text === 'string').map((cue) => ({
         ...cue,
@@ -397,6 +453,23 @@ export const useEditProjectStore = defineStore('editProject', () => {
     )
   }
 
+  /** 为逐镜动画建立独立画面轨道，交叉淡化时相邻镜头可以安全重叠。 */
+  function createTrack(projectId: string, kind: EditTrackKind = 'video'): EditTrack | null {
+    const project = getProject(projectId)
+    if (!project) return null
+    recordHistory(project)
+    const track: EditTrack = {
+      id: makeId('trk'),
+      kind,
+      name: nextTrackName(project),
+      clips: [],
+      ...(kind === 'audio' ? { muted: false } : {}),
+    }
+    insertTrack(project, track)
+    touch(project)
+    return track
+  }
+
   /** 把素材加入项目素材库，并追加到对应轨道末尾。 */
   function appendAsset(
     projectId: string,
@@ -412,6 +485,8 @@ export const useEditProjectStore = defineStore('editProject', () => {
     )
     const asset: ProjectAsset = existing || {
       ...input,
+      // OpenMotion 封面只用于模板浏览，不能盖在 HTML 首帧或渲染后的 MP4 上。
+      thumbnail: input.kind === 'motion' ? undefined : input.thumbnail,
       id: input.id || makeId('ast'),
       createdAt: input.createdAt || Date.now(),
     }
@@ -468,7 +543,12 @@ export const useEditProjectStore = defineStore('editProject', () => {
       (asset) => asset.url === input.url && asset.kind === input.kind,
     )
     if (existing) return existing
-    const asset: ProjectAsset = { ...input, id: makeId('ast'), createdAt: Date.now() }
+    const asset: ProjectAsset = {
+      ...input,
+      thumbnail: input.kind === 'motion' ? undefined : input.thumbnail,
+      id: makeId('ast'),
+      createdAt: Date.now(),
+    }
     project.assets.unshift(asset)
     touch(project)
     return asset
@@ -713,12 +793,29 @@ export const useEditProjectStore = defineStore('editProject', () => {
     found.clip.kind = 'video'
     found.clip.assetId = asset.id
     found.clip.url = input.url
-    found.clip.name = asset.name
-    found.clip.motionId = undefined
+    // 保留来源 motionId：再次渲染时仍能找回同一片段并原位替换，不能把来源断掉。
+    found.clip.motionId = found.clip.motionId || motionIdFromRenderUrl(input.url) || undefined
+    found.clip.thumbnail = undefined
     found.clip.trimStart = 0
     if (input.duration && input.duration > 0) {
       found.clip.duration = Math.max(MIN_CLIP_SECONDS, Math.min(MAX_PROJECT_SECONDS, input.duration))
     }
+    touch(project)
+    return true
+  }
+
+  /**
+   * 旧项目可能在渲染后丢失了 motionId。加载时只修复“来源工程 + 最新渲染文件”的绑定，
+   * 不清空历史、不触发撤销记录，避免用户只是打开项目就多出一条撤销。
+   */
+  function refreshRenderedMotionClip(projectId: string, clipId: string, url: string): boolean {
+    const project = getProject(projectId)
+    const found = project ? findClip(project, clipId) : null
+    if (!project || !found || found.clip.kind !== 'video' || !found.clip.motionId) return false
+    if (!url || found.clip.url === url) return false
+    found.clip.url = url
+    found.clip.thumbnail = undefined
+    found.clip.trimStart = 0
     touch(project)
     return true
   }
@@ -1110,6 +1207,7 @@ export const useEditProjectStore = defineStore('editProject', () => {
     deleteProject,
     renameProject,
     updateProject,
+    createTrack,
     appendAsset,
     hasAssetUrl,
     addAssetOnly,
@@ -1125,6 +1223,7 @@ export const useEditProjectStore = defineStore('editProject', () => {
     replaceClipAsset,
     replaceClipAssets,
     replaceMotionClipWithVideo,
+    refreshRenderedMotionClip,
     replaceAnimationSource,
     replaceAnimationSources,
     removeClip,

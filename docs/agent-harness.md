@@ -10,7 +10,7 @@ DSH 的核心价值不是“工具数量多”，而是以下运行时约束：
 
 | DSH 机制 | 步帧首期借鉴 | 没有照搬的部分 |
 | --- | --- | --- |
-| Turn / Step 状态机 | 一个用户 Turn 最多 8 个模型 Step；无工具调用时结束 | Cordis Context、Scope、Fiber 生命周期树 |
+| Turn / Step 状态机 | 持续执行模型 Step，直到无工具调用或用户主动停止，不设固定步数上限 | Cordis Context、Scope、Fiber 生命周期树 |
 | provider-neutral 流聚合 | OpenAI 兼容 SSE 中文本、推理和 `tool_calls` 分片聚合 | 自研通用多 provider block 协议 |
 | 原始 JSON 参数拼接 | 按 tool-call index 聚合参数，完整流结束后才解析 | PTC / nested execution token |
 | tool result 回注 | `assistant.tool_calls` 与 `tool.tool_call_id` 完整配对后继续推理 | 完整 append-only Session surface |
@@ -44,7 +44,7 @@ DSH 的核心价值不是“工具数量多”，而是以下运行时约束：
   → 无工具调用：解析提问卡片/旧时间轴格式，完成 Turn
 ```
 
-本机 Codex、DSH、Claude Code 等 CLI 仍走 `/local/agent/run`，其内部工具与权限由 CLI 自己管理；本期没有把 stdout 文本猜测成 Stepframe 已审批的结构化事件。普通模式的 CLI 提示词只提供文字任务与 `onestep-mode-handoff` 协议，不注入生成脚本使用的 `AIPING_API_KEY`，并以 `ONESTEP_ALLOW_GENERATION=0` 让 `scripts/onestep-generate.mjs` fail-closed；DSH 聊天凭据改用单独的 `ONESTEP_CHAT_API_KEY`。
+本机 Codex、DSH、Claude Code 等 CLI 只在普通对话走 `/local/agent/run`，其内部工具与权限由 CLI 自己管理；本期没有把 stdout 文本猜测成 Stepframe 已审批的结构化事件。普通模式的 CLI 提示词只提供文字任务与 `onestep-mode-handoff` 协议，不注入生成脚本使用的 `AIPING_API_KEY`，并以 `ONESTEP_ALLOW_GENERATION=0` 让 `scripts/onestep-generate.mjs` fail-closed；DSH 聊天凭据改用单独的 `ONESTEP_CHAT_API_KEY`。创作对话统一使用下面的受控 Harness，确保引擎白名单与分镜确认不能被本机命令绕过。
 
 ## 3. 模块职责
 
@@ -53,10 +53,10 @@ src/api/agent.ts
   AIPing 请求、SSE 边界、原生 tool_calls 聚合、JSON 响应兼容
 
 src/features/agent/harness.ts
-  与 Vue/Pinia 无关的 Turn/Step 循环、步数/批量上限、取消、tool result 回注
+  与 Vue/Pinia 无关的 Turn/Step 循环、批量上限、取消、tool result 回注
 
 src/features/agent/toolDefinitions.ts
-  模型可见 JSON Schema、8 步上限、纯 presentCall 展示投影
+  模型可见 JSON Schema、纯 presentCall 展示投影
 
 src/features/agent/tools.ts
   旧文本协议兼容、时间轴参数白名单、生成参数归一化
@@ -83,7 +83,8 @@ src/components/agent/AgentRunTrace.vue
 | 模式 | 可以完成 | 模型工具 | 明确禁止 |
 | --- | --- | --- | --- |
 | 普通对话 | 聊天、灵感、建议、文案、脚本、分镜、提示词写作与润色 | `update_plan`、`suggest_create_mode` | 生成或编辑素材、修改时间轴、跳转工作台、附件直改 |
-| 创作对话 | 图片/视频创作、完整分镜整片生成、素材承接、项目读取、时间轴编辑及工作台跳转 | 全部 8 个工具 | 无用户意图的额外生成、越界修改未选片段 |
+| 创作对话 · AIGC | 图片/视频创作、完整分镜整片生成、素材承接、项目读取、时间轴编辑及工作台跳转 | AIGC 与通用工具 | 动效工程工具、未确认分镜的新视频生成、越界修改未选片段 |
+| 创作对话 · 动画 | OpenMotion / HyperFrames 工程、素材导入、项目读取与时间轴编辑 | 动效与通用工具、共享分镜草案 | 图片/视频付费生成、确认前创建/写回/渲染工程 |
 
 文案、脚本、分镜和提示词是完整的文字交付，不自动升级成生成任务。只有用户下一步明确要求实际生成或编辑素材时，模型才提议交接。宿主同时 fail-closed：即使模型在普通模式偷跑 `generate_image` / `generate_video`，也只记录 `confirmation_required` 与确认卡，不执行生成。
 
@@ -96,25 +97,27 @@ src/components/agent/AgentRunTrace.vue
 
 ## 5. 工具契约与副作用
 
-创作对话提供 8 个工具；普通对话只开放上表中的 2 个：
+普通对话只开放上表中的 2 个工具；创作对话按引擎过滤工具，并在宿主执行层再次校验：
 
 - `update_plan`：复杂任务最多 6 个阶段；简单任务不制造计划。
 - `read_project`：读取最新项目摘要和片段 ID。
 - `edit_timeline`：移动、裁剪、删除、音量、透明度；仍调用 `editProjectStore.applyTimelineOps()`。
-- `generate_image` / `generate_video`：提交后台任务，复用现有参数构建、模型路由、轮询、生成卡片与自动入轨。
-- `generate_storyboard`：一次提交完整 brief、连续性约束与全部镜头；宿主逐镜持久化并按镜号执行，不依赖模型逐步记住整片。
+- `generate_image`：提交图片后台任务，复用现有参数构建、模型路由、生成卡片与自动入轨。
+- `prepare_storyboard`：动画与所有 AIGC 新视频任务（含单镜）先提交完整 brief、连续性约束与全部镜头。动画由本地代码绘制逐镜 SVG 参考图；AIGC 优先复用用户图片/视频，缺失时调用图片模型生成逐镜参考图。此阶段不生成正式视频，也不创建或写入动效工程。
+- `generate_storyboard`：旧模型调用的兼容别名，行为与 `prepare_storyboard` 相同，不再直接启动付费队列。
+- `generate_video`：只允许已确认分镜范围内的单镜补充或旧任务续跑；新视频请求必须先经过草案确认。
 - `open_voice` / `open_3d`：只跳转并预填工作台，不自动付费生成。
 
 ### 完整制作单
 
-`generate_storyboard` 要求至少两个镜头，每个镜头包含唯一镜号、4–15 秒时长和完整提示词；片名、完整需求、连续性要求、画幅和分辨率与镜头一起写入 `AgentProduction`。之后切换模式、追加消息或刷新页面都能从制作单恢复完整分镜，而不是只剩当前一镜。
+`prepare_storyboard` 支持 1–32 个镜头，每个镜头包含唯一镜号、4–15 秒时长、完整提示词和参考媒体状态；片名、完整需求、连续性要求、画幅和分辨率与镜头一起写入会话。剪辑台预览框上方用「主画面 / 分镜」卡片切换，新草案自动打开分镜视图。用户可在每张卡上直接修改脚本和时长、上传替换图片/视频，或填写修改意见让 AI 只重做这一镜；未变化的镜头复用原参考图，不重复扣费。只有每镜参考媒体均就绪后，用户才能点击「确认全部分镜并执行」。AIGC 随后创建 `AgentProduction`，并把每镜参考图作为正式视频首帧；动画才把完整草案交给受控 Harness 创建 HyperFrames 工程。之后切换模式、追加消息或刷新页面都能恢复草案与制作单，而不是只剩当前一镜。
 
 - `delivery=full`：自动跑完剩余全部镜头，直到整片完成或明确失败。
-- `delivery=batch`：每批最多 4 镜；`preview`：只生成下一个镜头，等待用户确认。
+- `delivery=batch`：每批最多 4 镜；`preview`：只生成下一个镜头，后续续跑仍需提交完整分镜并重新确认。
 - 账号级并发槽位最多 4 路，多个 Agent/制作单共享；队列始终按镜号顺序建立卡片。
 - 每个镜号预先分配固定时间轴起点。S03 先完成可以先入轨到 `[S03 起点, S03 终点]`，但不会占用 S02 的位置；S02 之后完成再回填它自己的空档。
 - 每镜首次失败后自动重试 2 次（最多 3 次尝试），单镜异常只标记该镜失败，不会让整片永远停在 running。
-- 续跑提交完整镜头列表；宿主只复用提示词、时长、画幅和分辨率全部未变的成功镜头，其余重生成。改稿成功的镜头原位替换旧片段，不会在同一位置叠出两段视频。
+- 续跑提交完整镜头列表；宿主只复用提示词、时长、画幅和分辨率全部未变的成功镜头，其余重生成。参考图只在同一故事、画幅与脚本未变化时复用。改稿成功的镜头原位替换旧片段，不会在同一位置叠出两段视频。
 - 每轮系统提示词都注入完整制作单和逐镜状态，因此长对话截断历史后仍知道尚未完成哪些镜号。
 
 图片和视频是长任务。工具返回 `started` 只代表本地后台任务已经启动，不代表上游已受理，更不代表素材已完成；对话可以继续，生成卡片独立显示进度和结果。这样不会把输入框锁住最长一小时，也不会让模型编造媒体 URL。
@@ -130,7 +133,7 @@ src/components/agent/AgentRunTrace.vue
 - 单个工具业务失败：记录 failed Activity，把 `{ ok:false, error }` 回注模型，由下一 Step 修正或解释。
 - 非法工具 JSON：不让 SSE/调度器崩溃，作为参数错误回注。
 - 输出 `length/max_tokens`：不执行 tool calls，避免运行半个 JSON。
-- 单批超过 4 个工具或整轮超过 8 步：停止并给出可操作错误。
+- 单批超过 4 个工具：停止并给出可操作错误；整轮不设固定步数上限，持续执行到模型结束或用户停止。
 - 用户停止：abort 当前模型/工具循环；同步释放会话切换，新请求不会被旧 finally 清除。
 - 页面刷新：遗留 streaming → stopped；running Activity/Run → stopped；本地等待中的 Generation → failed，并明确“远端状态未知”，提供重试；已落盘的制作单与逐镜状态保留，已成功镜头仍可继续跳过。
 - 本机 CLI：非零退出即使有正文也显示错误；EOF 未收到 done/error 判定为连接中断。
@@ -158,6 +161,6 @@ npm run build              # 类型检查 + 生产构建
 
 Harness 测试覆盖：任意字节和 UTF-8 分片、CRLF、多行 data、多个 tool calls、JSON 响应、坏参数、结果有序回注、业务错误恢复、旧协议回退、取消、步数/批量上限、截断保护、时间轴白名单、本机 EOF 和刷新恢复。Store 级回归还覆盖：文案不生成、普通模式偷跑工具只成交接卡、取消不切换、确认保留同一 conversationId 与历史、切换后开放创作工具，以及本机 CLI 普通模式生成门禁。
 
-完整制作单回归额外覆盖：S01–S06 全部执行、账号级并发峰值不超过 4、S03 先完成仍保留 S02 的固定位置、单镜失败自动重试后成功、画幅/分辨率变化不复用旧结果、改稿只重生成对应镜号并原位替换、轮询抖动只重查原 `taskId`、上游明确失败最多尝试 3 次，以及续跑跳过已成功镜头不重复扣费。
+完整制作单回归额外覆盖：逐镜参考图先行、用户参考图优先、参考未就绪禁止总确认、单镜 AI 重做不波及其他镜头、正式视频使用分镜首帧、S01–S06 全部执行、账号级并发峰值不超过 4、固定时间轴位置、失败重试、改稿原位替换、轮询幂等，以及续跑跳过已成功镜头且不重复生成参考图。OpenMotion 封面另有入轨与 motion→MP4 残留回归，确保模板封面只用于模板浏览，不遮挡 HTML 首帧。
 
-测试中的模型响应和 SSE 全部在内存构造，不请求 AIPing；创作工具验证使用 Axios mock adapter，唯一一次图片生成也只会得到 `mock.local` 假图，不调用真实图片、视频、配音或 3D 付费接口。
+测试中的模型响应和 SSE 全部在内存构造，不请求 AIPing；创作工具验证使用 Axios mock adapter，所有分镜参考图与视频生成都只会得到 `mock.local` 假数据，不调用真实图片、视频、配音或 3D 付费接口。

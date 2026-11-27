@@ -3,7 +3,10 @@
     <summary>
       <span class="run-symbol" :class="{ 'is-running': streaming }" aria-hidden="true" />
       <span>{{ summary }}</span>
-      <span class="run-step">第 {{ run.currentStep }} / {{ run.maxSteps }} 步</span>
+      <span class="run-elapsed" :class="{ 'is-running': run.status === 'running' }">
+        {{ elapsedLabel(run.startedAt, run.status === 'running' ? undefined : run.updatedAt) }}
+      </span>
+      <span class="run-step">第 {{ run.currentStep }} 步</span>
     </summary>
 
     <div class="run-body">
@@ -20,6 +23,7 @@
           <div class="activity-copy">
             <div class="activity-title">
               <strong>{{ activity.title }}</strong>
+              <span class="activity-elapsed">{{ elapsedLabel(activity.startedAt, activity.finishedAt) }}</span>
               <span>{{ statusLabel(activity.status) }}</span>
             </div>
             <p v-if="activity.detail">{{ activity.detail }}</p>
@@ -32,10 +36,34 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { AgentRunState, AgentToolActivityStatus } from '@/types/agent'
 
 const props = defineProps<{ run: AgentRunState; streaming: boolean }>()
+const now = ref(Date.now())
+let clock: ReturnType<typeof setInterval> | undefined
+
+watch(
+  () => props.run.status === 'running' || props.run.activities.some((activity) => activity.status === 'running'),
+  (running) => {
+    if (clock) clearInterval(clock)
+    clock = undefined
+    now.value = Date.now()
+    if (running) clock = setInterval(() => { now.value = Date.now() }, 100)
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  if (clock) clearInterval(clock)
+})
+
+function elapsedLabel(startedAt: number, finishedAt?: number): string {
+  const elapsed = Math.max(0, (finishedAt || now.value) - startedAt)
+  const minutes = Math.floor(elapsed / 60000)
+  const seconds = (elapsed % 60000) / 1000
+  return `${String(minutes).padStart(2, '0')}:${seconds.toFixed(1).padStart(4, '0')}`
+}
 
 const summary = computed(() => {
   if (props.run.status === 'running') {
@@ -100,6 +128,27 @@ function statusLabel(status: AgentToolActivityStatus): string {
   font-size: 10px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+}
+
+.run-elapsed,
+.activity-elapsed {
+  color: var(--sf-ink-3);
+  font-family: var(--sf-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.run-elapsed {
+  margin-left: 1px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.run-elapsed.is-running {
+  color: var(--sf-terra-strong);
+}
+
+.run-elapsed + .run-step {
+  margin-left: 3px;
 }
 
 .run-body {
@@ -215,6 +264,10 @@ function statusLabel(status: AgentToolActivityStatus): string {
   margin-left: auto;
   color: var(--sf-ink-3);
   font-size: 9px;
+}
+
+.activity-title .activity-elapsed + span {
+  margin-left: 0;
 }
 
 .activity-copy p,

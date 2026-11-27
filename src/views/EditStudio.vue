@@ -188,26 +188,66 @@
 
       <main ref="mainRef" class="es-main">
         <section class="es-preview">
-          <div class="preview-stage">
+          <div class="preview-view-switch" role="tablist" aria-label="预览视图">
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="previewTab === 'main'"
+              :class="{ active: previewTab === 'main' }"
+              @click="previewTab = 'main'"
+            >
+              <strong>主画面</strong>
+              <span>Player</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="previewTab === 'storyboard'"
+              :class="{ active: previewTab === 'storyboard' }"
+              @click="previewTab = 'storyboard'"
+            >
+              <strong>分镜</strong>
+              <span>{{ activeConversation?.storyboard ? `${activeConversation.storyboard.shots.length} 镜 · ${activeConversation.storyboard.status === 'draft' ? '待确认' : '已确认'}` : 'Storyboard' }}</span>
+            </button>
+          </div>
+          <div v-show="previewTab === 'main'" class="preview-stage">
             <StudioPreview
               :project="project"
               :playing="playing"
+              :selected-motion-elements="selectedMotionElements"
+              :motion-selection-clip-id="motionElementScopeClipId"
               @toggle-play="togglePlay"
+              @pause="playing = false"
               @seek="seek"
+              @select-motion-elements="handleMotionElementSelect"
+              @open-studio="openMotionStudioPanel"
             />
           </div>
+          <StoryboardPanel
+            v-if="previewTab === 'storyboard'"
+            :storyboard="activeConversation?.storyboard"
+            :production="activeConversation?.production"
+            :engine="activeConversation?.creativeEngine || 'aigc'"
+            :busy="agentStore.isStreaming || storyboardMediaBusy"
+            @confirm="confirmCurrentStoryboard"
+            @resume="resumeCurrentProduction"
+            @update-shot="updateCurrentStoryboardShot"
+            @replace-media="replaceCurrentStoryboardMedia"
+            @regenerate-shot="regenerateCurrentStoryboardShot"
+          />
         </section>
-        <ClipInspector
-          v-if="inspectorOpen && selectedEntries.length"
-          :entries="selectedEntries"
-          :project-id="project?.id || ''"
-          @close="inspectorOpen = false"
-          @ask-ai="askAiForSelection"
-          @update-clip="updateSelectedClip"
-          @duplicate="duplicateSelected"
-          @split="splitAtPlayhead"
-          @remove="removeSelectedClip"
-        />
+          <ClipInspector
+            v-if="inspectorOpen && selectedEntries.length"
+            :entries="selectedEntries"
+            :project-id="project?.id || ''"
+            @close="inspectorOpen = false"
+            @ask-ai="askAiForSelection"
+            @update-clip="updateSelectedClip"
+            @duplicate="duplicateSelected"
+            @split="splitAtPlayhead"
+            @remove="removeSelectedClip"
+            @open-studio="openMotionStudioPanel"
+          />
       </main>
 
       <div ref="timelineRef" class="es-timeline">
@@ -346,6 +386,32 @@
       </section>
     </div>
 
+    <div v-if="motionStudioOpen" class="hf-studio-backdrop" role="dialog" aria-modal="true" aria-label="HyperFrames Studio">
+      <section class="hf-studio-panel">
+        <header class="hf-studio-head">
+          <div class="hf-studio-title">
+            <strong>HyperFrames Studio</strong>
+            <span>{{ motionStudioName }}</span>
+          </div>
+          <div class="hf-studio-actions">
+            <button type="button" :disabled="motionStudioBusy" @click="reloadMotionStudio">重新加载</button>
+            <button type="button" @click="closeMotionStudio">关闭</button>
+          </div>
+        </header>
+        <p v-if="motionStudioError" class="hf-studio-error">{{ motionStudioError }}</p>
+        <div v-else-if="motionStudioBusy && !motionStudioUrl" class="hf-studio-loading">
+          正在启动官方 HyperFrames Studio…
+        </div>
+        <iframe
+          v-if="motionStudioUrl"
+          :key="motionStudioKey"
+          class="hf-studio-frame"
+          :src="motionStudioUrl"
+          title="HyperFrames Studio"
+        />
+      </section>
+    </div>
+
     <div v-if="toast" class="es-toast" role="status">{{ toast }}</div>
 
   </div>
@@ -356,6 +422,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, toRaw, watch } fro
 import { useRoute, useRouter } from 'vue-router'
 import BrandMark from '@/components/agent/BrandMark.vue'
 import StudioPreview from '@/components/edit/StudioPreview.vue'
+import StoryboardPanel from '@/components/edit/StoryboardPanel.vue'
 import TimelineTracks from '@/components/edit/TimelineTracks.vue'
 import StudioChat from '@/components/edit/StudioChat.vue'
 import ClipInspector from '@/components/edit/ClipInspector.vue'
@@ -365,13 +432,14 @@ import { useAgentStore } from '@/stores/agentStore'
 import { useEditProjectStore, projectDuration } from '@/stores/editProjectStore'
 import { useMotionStore } from '@/stores/motionStore'
 import { rememberTemplatesReturn } from '@/features/template/navigation'
-import { motionFileUrl, type MotionProject } from '@/api/motion'
+import { motionFileUrl, openMotionStudio, type MotionProject } from '@/api/motion'
 import { playhead, setPlayhead } from '@/features/edit/playhead'
+import { motionElementKey } from '@/features/edit/motionElements'
 import { exportProjectVideo, inspectExportedVideo } from '@/features/edit/exportVideo'
 import { summarizeIssues, verifyExport, type ExportActual, type ExportIssue } from '@/features/edit/exportVerification'
 import { confirmDialog } from '@/features/ui/dialog'
 import { consumeTemplatesFlash, describeTemplatesFlash } from '@/features/template/navigation'
-import type { AgentClipRef } from '@/types/agent'
+import type { AgentClipRef, AgentMotionElementRef } from '@/types/agent'
 import { uploadAttachment } from '@/features/agent/attachments'
 import {
   MAX_PROJECT_SECONDS,
@@ -395,6 +463,7 @@ const projectStore = useEditProjectStore()
 const agentStore = useAgentStore()
 
 const railTab = ref<'projects' | 'assets' | 'motion' | 'captions'>('projects')
+const previewTab = ref<'main' | 'storyboard'>('main')
 const mainRef = ref<HTMLElement | null>(null)
 const timelineRef = ref<HTMLElement | null>(null)
 const CHAT_WIDTH_KEY = 'onestep_studio_chat_width_v1'
@@ -466,6 +535,7 @@ const project = computed(() => projectStore.getProject(projectId.value))
  */
 const autoOpeningProject = ref(false)
 const conversationId = computed(() => project.value?.conversationId || '')
+const activeConversation = computed(() => agentStore.conversations.find((item) => item.id === conversationId.value) || null)
 const timelineDuration = computed(() => projectDuration(project.value))
 const canUndo = computed(() => {
   void projectStore.historyTick
@@ -487,6 +557,69 @@ function showToast(message: string) {
     toast.value = ''
     toastTimer = null
   }, 2200)
+}
+
+const storyboardMediaBusy = ref(false)
+
+function updateCurrentStoryboardShot(payload: { shotId: string; prompt?: string; duration?: number }) {
+  try {
+    agentStore.updateStoryboardShot(conversationId.value, payload.shotId, payload)
+    showToast('分镜已保存；脚本有变化的镜头请重做参考图')
+  } catch (error: any) {
+    showToast(error?.message || '分镜保存失败')
+  }
+}
+
+async function replaceCurrentStoryboardMedia(payload: { shotId: string; file: File }) {
+  if (storyboardMediaBusy.value) return
+  storyboardMediaBusy.value = true
+  try {
+    await agentStore.replaceStoryboardMedia(conversationId.value, payload.shotId, payload.file)
+    showToast(`${payload.shotId} 的参考媒体已替换`)
+  } catch (error: any) {
+    showToast(error?.message || '参考媒体替换失败')
+  } finally {
+    storyboardMediaBusy.value = false
+  }
+}
+
+async function regenerateCurrentStoryboardShot(payload: { shotId: string; instruction: string }) {
+  if (storyboardMediaBusy.value) return
+  storyboardMediaBusy.value = true
+  try {
+    await agentStore.regenerateStoryboardShot(conversationId.value, payload.shotId, payload.instruction)
+    showToast(`${payload.shotId} 已按修改意见重做`)
+  } catch (error: any) {
+    showToast(error?.message || '单镜重做失败')
+  } finally {
+    storyboardMediaBusy.value = false
+  }
+}
+
+function confirmCurrentStoryboard() {
+  const result = agentStore.confirmStoryboard(conversationId.value)
+  if (!result) {
+    showToast(agentStore.isStreaming ? '请等当前执行结束后再确认分镜' : '当前分镜与创作引擎不一致，暂时无法确认')
+    return
+  }
+  if (result.status === 'error') {
+    showToast(result.error || '执行启动失败，请重新确认分镜')
+    return
+  }
+  // 确认后不再停在分镜页：制作单已经在后台启动，直接回主画面看逐镜落轨。
+  previewTab.value = 'main'
+  const firstStart = activeConversation.value?.production?.shots?.[0]?.timelineStart
+  if (Number.isFinite(firstStart)) seek(firstStart!)
+  showToast(result.engine === 'animation' ? '分镜已确认，正在逐镜生成 HyperFrames 动画' : '分镜已确认，正在按镜号生成视频')
+}
+
+function resumeCurrentProduction() {
+  const result = agentStore.resumeProduction(conversationId.value)
+  if (!result) {
+    showToast(agentStore.isStreaming ? '请等当前执行结束后再续跑' : '当前制作单不可续跑')
+    return
+  }
+  showToast(`继续执行剩余 ${result.remaining} 镜，已完成镜头不会重建`)
 }
 
 function ensureConversation(projectValue: NonNullable<ReturnType<typeof projectStore.getProject>>) {
@@ -567,7 +700,10 @@ function setFps(event: Event) {
 }
 
 function seek(time: number) {
-  setPlayhead(Math.max(0, Math.min(MAX_PROJECT_SECONDS, time)))
+  // 用户拖动/点击时间轴时立即停在目标帧；否则播放时钟继续前进会盖掉这次定位。
+  playing.value = false
+  const limit = timelineDuration.value > 0 ? timelineDuration.value : MAX_PROJECT_SECONDS
+  setPlayhead(Math.max(0, Math.min(limit, time)))
   syncClock()
 }
 
@@ -607,6 +743,10 @@ function tick(timestamp: number) {
   }
   raf = requestAnimationFrame(tick)
 }
+
+watch(previewTab, (tab) => {
+  if (tab === 'storyboard') playing.value = false
+})
 
 watch(playing, (value) => {
   cancelAnimationFrame(raf)
@@ -755,6 +895,63 @@ const selectedEntries = computed<SelectedClipEntry[]>(() => {
   return entries
 })
 
+const motionElementScopeClipId = ref('')
+const selectedMotionElements = ref<AgentMotionElementRef[]>([])
+
+/** 官方 HyperFrames Studio：同一套 UI、时间轴、元素编辑与 Lint，直接嵌入剪辑台。 */
+const motionStudioOpen = ref(false)
+const motionStudioBusy = ref(false)
+const motionStudioError = ref('')
+const motionStudioUrl = ref('')
+const motionStudioKey = ref(0)
+const motionStudioId = ref('')
+const motionStudioName = ref('')
+const motionStudioCache = new Map<string, string>()
+
+async function loadMotionStudio(motionId: string) {
+  motionStudioBusy.value = true
+  motionStudioError.value = ''
+  try {
+    const session = await openMotionStudio(motionId)
+    motionStudioCache.set(motionId, session.url)
+    motionStudioUrl.value = session.url
+    motionStudioKey.value += 1
+  } catch (error) {
+    motionStudioUrl.value = ''
+    motionStudioError.value = `HyperFrames Studio 启动失败：${(error as Error)?.message || error}`
+  } finally {
+    motionStudioBusy.value = false
+  }
+}
+
+function openMotionStudioPanel(motionId: string) {
+  if (!motionId) return
+  motionStudioOpen.value = true
+  motionStudioId.value = motionId
+  motionStudioName.value = motion.projects.find((item) => item.id === motionId)?.name || motionId
+  const cached = motionStudioCache.get(motionId)
+  if (cached) {
+    motionStudioUrl.value = cached
+    motionStudioKey.value += 1
+    return
+  }
+  void loadMotionStudio(motionId)
+}
+
+function reloadMotionStudio() {
+  const motionId = motionStudioId.value
+  if (!motionId) return
+  motionStudioCache.delete(motionId)
+  void loadMotionStudio(motionId)
+}
+
+function closeMotionStudio() {
+  const id = motionStudioId.value
+  motionStudioOpen.value = false
+  // Studio 的改动直接落在工程文件上；关闭时同步回主画面，避免看到旧版。
+  if (id) void motion.load(id, true)
+}
+
 const selectedAgentClips = computed<AgentClipRef[]>(() =>
   selectedEntries.value.map(({ clip, trackId, trackName, trackKind }) => {
     const asset = clip.assetId
@@ -778,6 +975,9 @@ const selectedAgentClips = computed<AgentClipRef[]>(() =>
       code: clip.code || asset?.code,
       codeLanguage: clip.codeLanguage || asset?.codeLanguage,
       motionId: clip.motionId || asset?.motionId,
+      motionElements: clip.id === motionElementScopeClipId.value && selectedMotionElements.value.length
+        ? selectedMotionElements.value.map((element) => ({ ...element }))
+        : undefined,
     }
   }),
 )
@@ -797,9 +997,40 @@ const pendingClipCount = computed(() =>
   pendingClipBatches.value.reduce((total, batch) => total + batch.clips.length, 0),
 )
 
+function handleMotionElementSelect(payload: {
+  clipId: string
+  elements: AgentMotionElementRef[]
+  mode: 'replace' | 'add' | 'toggle'
+}) {
+  if (motionElementScopeClipId.value !== payload.clipId) selectedMotionElements.value = []
+  motionElementScopeClipId.value = payload.clipId
+  selectedClipIds.value = [payload.clipId]
+  selectedClipId.value = payload.clipId
+  previewTab.value = 'main'
+  const current = new Map(selectedMotionElements.value.map((element) => [motionElementKey(element), element]))
+  if (payload.mode === 'replace') current.clear()
+  for (const element of payload.elements) {
+    const key = motionElementKey(element)
+    if (payload.mode === 'toggle' && current.has(key)) current.delete(key)
+    else current.set(key, element)
+  }
+  selectedMotionElements.value = [...current.values()]
+  // 追加/取消元素时只更新自动生成的默认说明，不覆盖用户已经写好的修改意见。
+  const autoNote = /^只修改主画面选中的 \d+ 个元素（按所属部分与画面位置区分），其他元素保持不变。$/
+  if (selectedMotionElements.value.length) {
+    if (!clipNote.value.trim() || autoNote.test(clipNote.value.trim())) {
+      clipNote.value = `只修改主画面选中的 ${selectedMotionElements.value.length} 个元素（按所属部分与画面位置区分），其他元素保持不变。`
+    }
+  } else if (autoNote.test(clipNote.value.trim())) {
+    clipNote.value = ''
+  }
+}
+
 function handleTimelineSelect(payload: { ids: string[]; primary: string }) {
   const nextIds = [...payload.ids]
   if (nextIds.join('|') !== selectedClipIds.value.join('|')) clipNote.value = ''
+  motionElementScopeClipId.value = ''
+  selectedMotionElements.value = []
   selectedClipIds.value = nextIds
   selectedClipId.value = payload.primary || nextIds[nextIds.length - 1] || ''
   if (!nextIds.length) inspectorOpen.value = false
@@ -808,6 +1039,8 @@ function handleTimelineSelect(payload: { ids: string[]; primary: string }) {
 function clearTimelineSelection() {
   selectedClipIds.value = []
   selectedClipId.value = ''
+  motionElementScopeClipId.value = ''
+  selectedMotionElements.value = []
   inspectorOpen.value = false
 }
 
@@ -820,17 +1053,16 @@ function askAiForSelection() {
   if (!project.value) return
   const note = clipNote.value.trim()
   const clips = selectedAgentClips.value
-  const incoming = new Set(clips.map((clip) => clip.id))
-  // 同一段重复加入时以最新的意见为准，避免待发送区里出现重复片段。
-  const kept = pendingClipBatches.value
-    .map((batch) => ({ ...batch, clips: batch.clips.filter((clip) => !incoming.has(clip.id)) }))
-    .filter((batch) => batch.clips.length > 0)
-  kept.push({
-    id: `batch_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    note,
-    clips: clips.map((clip) => ({ ...clip, note: note || undefined })),
-  })
-  pendingClipBatches.value = kept
+  // 同一段动画允许连续提出多条元素级修改：每次都保留为独立批次，
+  // 不能在待发送区里用最新一条覆盖上一条，否则多元素修改会互相丢失。
+  pendingClipBatches.value = [
+    ...pendingClipBatches.value,
+    {
+      id: `batch_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      note,
+      clips: clips.map((clip) => ({ ...clip, note: note || undefined })),
+    },
+  ]
   clipNote.value = ''
   clearTimelineSelection()
   void nextTick(() => studioChatRef.value?.focusComposer())
@@ -1476,6 +1708,13 @@ watch(
 )
 
 watch(
+  () => activeConversation.value?.storyboard?.id,
+  (id) => {
+    if (id) previewTab.value = 'storyboard'
+  },
+)
+
+watch(
   () => projectStore.storageError,
   (failed) => {
     if (failed) showToast('本地存储已满，最近的改动可能没有写入，建议导出工程或清理旧项目')
@@ -2011,6 +2250,42 @@ onBeforeUnmount(() => {
   background: #f7f7f3;
 }
 
+.preview-view-switch {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  margin-bottom: 9px;
+}
+
+.preview-view-switch button {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid var(--sf-line-soft);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  color: var(--sf-ink-3);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.preview-view-switch button strong {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.preview-view-switch button span {
+  font-size: 9px;
+}
+
+.preview-view-switch button.active {
+  border-color: var(--sf-terra);
+  background: var(--sf-surface);
+  color: var(--sf-terra-strong);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sf-terra) 12%, transparent);
+}
+
 .preview-stage {
   flex: 1;
   min-height: 0;
@@ -2091,6 +2366,102 @@ onBeforeUnmount(() => {
 .es-empty-list small {
   color: var(--sf-ink-3);
   font-size: 10px;
+}
+
+.hf-studio-backdrop {
+  position: fixed;
+  z-index: 300;
+  inset: 0;
+  display: flex;
+  padding: 18px;
+  background: rgba(28, 23, 20, 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.hf-studio-panel {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 24px 70px -30px rgba(28, 20, 15, 0.6);
+}
+
+.hf-studio-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border-bottom: 1px solid #eee5de;
+  background: #fffaf6;
+}
+
+.hf-studio-title {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.hf-studio-title strong {
+  font-size: 12.5px;
+  color: #2c2521;
+}
+
+.hf-studio-title span {
+  overflow: hidden;
+  font-size: 10.5px;
+  color: #a3948a;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hf-studio-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.hf-studio-actions button {
+  padding: 5px 10px;
+  border: 1px solid #e3d6cc;
+  border-radius: 7px;
+  background: #fff;
+  color: #6a584d;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.hf-studio-actions button:hover {
+  border-color: #c9a58f;
+}
+
+.hf-studio-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.hf-studio-error,
+.hf-studio-loading {
+  margin: 24px;
+  font-size: 12px;
+  color: #8a7c73;
+}
+
+.hf-studio-error {
+  color: #b4472c;
+}
+
+.hf-studio-frame {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: #fff;
 }
 
 .es-toast {

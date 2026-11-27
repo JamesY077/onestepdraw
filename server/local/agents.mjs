@@ -338,12 +338,15 @@ export function buildRunPrompt({
   agentName,
   mode = 'chat',
   automation = 'default',
+  creativeEngine = 'aigc',
   projectSummary = '',
   skills = '',
 }) {
   const activeSkills = typeof skills === 'string' ? skills.trim().slice(0, 20000) : ''
   const videoScriptProtocol =
-    mode === 'create' ? readSkillBody(rootDir, 'skills/video-script/SKILL.md') : ''
+    mode === 'create' && creativeEngine === 'aigc'
+      ? readSkillBody(rootDir, 'skills/video-script/SKILL.md')
+      : ''
   const history = (Array.isArray(messages) ? messages : [])
     .filter(
       (message) =>
@@ -361,10 +364,19 @@ export function buildRunPrompt({
     .join('\n\n')
 
   const modeBlock =
-    mode === 'create'
+    mode === 'create' && creativeEngine === 'animation'
       ? [
           '',
-          '## 当前模式：创作对话',
+          '## 当前模式：创作对话 · 动画模式',
+          '- 只使用 OpenMotion / HyperFrames 可编辑工程，禁止运行图片/视频生成脚本或调用付费生成接口。',
+          '- OpenMotion 模板和 Logo/截图附件属于工程复刻；把素材复制到工程 assets/ 后在 HTML 中用相对路径引用。',
+          '- 保留模板参数、源码、字幕、关键帧与版本；使用 paused GSAP 时间轴并注册 window.__timelines，不自动 play()。时间轴 key 必须等于根合成的 data-composition-id（通常是 main），不要再注册镜号别名。',
+          '- 只有用户确认出片时才运行本机 hyperframes CLI 渲染，原工程保持可编辑。',
+        ]
+      : mode === 'create'
+      ? [
+          '',
+          '## 当前模式：创作对话 · AIGC 模式',
           '- 目标是完成一支视频，结果会自动进入剪辑项目，不要向用户描述磁盘路径。',
           '- 生成脚本输出的 /generated/... 链接会在回复后自动加入时间轴，直接用 Markdown 展示。',
           ...(automation === 'auto'
@@ -401,7 +413,13 @@ export function buildRunPrompt({
             : ['- 当前是默认模式：脚本和创意前提不清时也可以使用 grill-me 一次只问一个问题；普通对话只交付文字。']),
         ]
 
-  const generationBlock = mode === 'create'
+  const generationBlock = mode === 'create' && creativeEngine === 'animation'
+    ? [
+        '动画能力：使用本机 HyperFrames 工程与 CLI，不注入 AIPING_API_KEY。',
+        'ONESTEP_ALLOW_GENERATION=0 是硬限制；不要尝试绕过，也不要把 Logo 复刻改写成 Seedream/MiniMax 生成。',
+        '可通过本地 /local/motion/* 服务创建、读取、写入与渲染动效工程；上传资产必须复制进工程后再引用。',
+      ]
+    : mode === 'create'
     ? [
         '生成能力（已注入 AIPING_API_KEY 与 AIPING_BASE_URL 环境变量，直接运行即可）：',
         '- 生成图片：node scripts/onestep-generate.mjs image --prompt "画面描述" --ratio 16:9',
@@ -417,7 +435,13 @@ export function buildRunPrompt({
         '不要尝试绕过 ONESTEP_ALLOW_GENERATION=0 或改用其他付费生成接口。',
       ]
 
-  const workPrinciples = mode === 'create'
+  const workPrinciples = mode === 'create' && creativeEngine === 'animation'
+    ? [
+        '- 有 OpenMotion 模板 ID 时先读取模板资料，创建独立工程，再导入用户素材并写回完整 HyperFrames HTML。',
+        '- 需要关键品牌信息时一次只问一个；信息足够就直接执行，不走 AIGC 分镜生成流程。',
+        '- 不使用 generate_image / generate_video / generate_storyboard，不声称工程已经渲染，只有真实 CLI 成功后才报告 MP4 完成。',
+      ]
+    : mode === 'create'
     ? [
         '- 视频任务必须先按下面的 grill-me 协议澄清需求：一次只问一个问题，正文一句过渡 + 一个 ```onestep-ask 块（3 个具体选项，其中一个标 recommended），用户点选后客户端会把「2. 选项文字」发回来，再问下一个；说“按推荐 / 直接生成 / 你决定”时立刻用推荐值执行。',
         '- 澄清完成后先输出完整拍摄单，并用一张 ask 卡确认整支自动生成（推荐）/首镜确认后续跑/每批4镜后确认；用户确认或直接说“生成”后必须真正运行脚本，不要在回复里假装已经生成。',
@@ -429,9 +453,9 @@ export function buildRunPrompt({
       ]
     : [
         '- 普通对话优先直接完成文字答案，不把文案请求升级成生成任务。',
-        '- 只有用户明确要求实际生成或编辑素材时，才在回复最后输出以下交接块，块后不要写其他内容：',
+        '- 只有用户明确要求实际生成或编辑素材时，才在回复最后输出以下交接块。先分类 engine=animation（OpenMotion/HyperFrames、动效与复刻）或 aigc（图片/视频生成），块后不要写其他内容：',
         '```onestep-mode-handoff',
-        '{"target":"create","reason":"下一步需要生成具体视频素材。","prompt":"请基于上面已经确认的文案生成视频，保持原有卖点、节奏和风格。"}',
+        '{"target":"create","engine":"aigc","reason":"下一步需要生成具体视频素材。","prompt":"请基于上面已经确认的文案生成视频，保持原有卖点、节奏和风格。"}',
         '```',
         '- onestep-mode-handoff 只是建议，不代表用户已同意；不要运行生成脚本，不要声称已经切换。',
       ]
@@ -461,9 +485,15 @@ export function buildRunPrompt({
       : []),
     ...modeBlock,
     '',
-    '## grill-me 创作澄清协议（普通与创作模式都可使用）',
-    mode === 'chat' ? '普通对话仅用于澄清并交付文字，不执行协议末的生成工具。' : '创作模式确认完整拍摄单和生成范围后再执行。',
-    readVideoInterviewProtocol(rootDir) || '（协议文件缺失，按上面的工作原则执行。）',
+    mode === 'create' && creativeEngine === 'animation' ? '## 动画工程工作流' : '## grill-me 创作澄清协议（普通与创作模式都可使用）',
+    mode === 'create' && creativeEngine === 'animation'
+      ? '按上面的 OpenMotion / HyperFrames 工作流执行，不运行 AIGC 生成脚本。'
+      : mode === 'chat'
+        ? '普通对话仅用于澄清并交付文字，不执行协议末的生成工具。'
+        : '创作模式确认完整拍摄单和生成范围后再执行。',
+    mode === 'create' && creativeEngine === 'animation'
+      ? '保留可编辑工程；用户确认出片后才渲染。'
+      : readVideoInterviewProtocol(rootDir) || '（协议文件缺失，按上面的工作原则执行。）',
     '',
     ...(videoScriptProtocol
       ? ['## 一句话到可执行脚本（创作对话标准流程）', videoScriptProtocol, '']

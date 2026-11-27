@@ -288,9 +288,12 @@ export function describeAttachments(
     if (item.size) meta.push(formatBytes(item.size))
     if (item.kind === 'video' && item.frames?.length) meta.push(`已抽取 ${item.frames.length} 张关键帧`)
     const head = `- ${label}：${item.name}（${meta.join('，') || '文件'}）`
+    const sourceLine = item.url.startsWith('/generated/uploads/')
+      ? `\n  动效素材地址：${item.url}（动画模式用 import_motion_asset 导入，不要重新生成）`
+      : ''
     const pathLine = options.includePaths && item.path ? `\n  本机路径：${item.path}` : ''
     const textLine = item.text ? `\n  文件内容：\n${item.text}` : ''
-    return `${head}${pathLine}${textLine}`
+    return `${head}${sourceLine}${pathLine}${textLine}`
   })
   return `\n\n[用户上传的参考素材]\n${lines.join('\n')}`
 }

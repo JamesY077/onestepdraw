@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { createServer } from 'vite'
 import { createPinia, setActivePinia } from 'pinia'
 
@@ -108,6 +108,12 @@ try {
   assert.equal(routing.routeConversationRequest({
     content: '直接修改源码', clips: [animation], attachments: [attachmentImage],
   }), 'animation')
+  assert.equal(routing.routeConversationRequest({
+    content: '复刻 OpenMotion，替换为我的 Logo 与品牌', attachments: [attachmentImage], creativeEngine: 'animation',
+  }), 'agent', '动画模式的 Logo 必须进入 Agent/HyperFrames，不得进入附件付费编辑')
+  assert.equal(routing.routeConversationRequest({
+    content: '把这张 Logo 的白色背景去掉', attachments: [attachmentImage], creativeEngine: 'aigc',
+  }), 'attachment-media', 'AIGC 普通附件编辑保持原路线')
 
   const originalRequest = '保留人物，只把背景改成雨夜。'
   assert.equal(revision.selectedClipPrompt(originalRequest, image), originalRequest)
@@ -315,7 +321,28 @@ try {
   assert.ok(revision.animationEditsForSelection('模型误返回 generate_video', [animation]).error)
 
   setActivePinia(createPinia())
-  const { useEditProjectStore, projectDuration } = await server.ssrLoadModule('/src/stores/editProjectStore.ts')
+  const {
+    useEditProjectStore,
+    projectDuration,
+    motionIdFromRenderUrl,
+    motionEntryUrl,
+    restoreLiveMotionClip,
+  } = await server.ssrLoadModule('/src/stores/editProjectStore.ts')
+  // 旧版渲染把动效片段替换成 MP4：加载时必须恢复 live 工程，避免空白旧产物占住轨道。
+  const renderedUrl = '/generated/motion_6752d6053e33458f-1795759896026.mp4'
+  assert.equal(motionIdFromRenderUrl(renderedUrl), 'motion_6752d6053e33458f')
+  const restoredClip = restoreLiveMotionClip({
+    id: 'restored', kind: 'video', name: 'S02', start: 5, duration: 5, url: renderedUrl,
+  })
+  assert.equal(restoredClip.kind, 'motion')
+  assert.equal(restoredClip.motionId, 'motion_6752d6053e33458f')
+  assert.equal(restoredClip.url, motionEntryUrl('motion_6752d6053e33458f'))
+  const userVideo = restoreLiveMotionClip({
+    id: 'user-video', kind: 'video', name: '用户替换视频', start: 0, duration: 4,
+    url: 'https://video.local/original.mp4', motionId: 'motion_keep',
+  })
+  assert.equal(userVideo.kind, 'video', '用户主动替换的普通视频不得被改回动效工程')
+  assert.equal(userVideo.url, 'https://video.local/original.mp4')
   const store = useEditProjectStore()
   const project = store.createProject('片段回写测试')
   const imageClip = store.appendAsset(project.id, {
@@ -395,6 +422,140 @@ try {
   assert.equal(project.tracks.flatMap((track) => track.clips).find((clip) => clip.id === untouched.id)?.name, '用户已改动')
   assert.equal(store.undo(project.id), true)
   assert.equal(project.tracks.flatMap((track) => track.clips).find((clip) => clip.id === animationClip.id)?.code, animation.code)
+
+  // OpenMotion 封面只用于模板浏览：任何入口入轨都不能变成 motion poster，渲染替换后也不能残留。
+  const motionProject = store.createProject('OpenMotion 封面隔离测试')
+  const motionClip = store.appendAsset(motionProject.id, {
+    name: '模板动效', kind: 'motion', url: '/local/motion/view/mock/index.html', motionId: 'mock',
+    thumbnail: '/local/motion/asset?url=template-cover.jpg', source: 'library',
+  }, { at: 0, duration: 5 })
+  assert.ok(motionClip)
+  assert.equal(motionClip.thumbnail, undefined)
+  assert.equal(motionProject.assets.find((asset) => asset.id === motionClip.assetId)?.thumbnail, undefined)
+  const ordinaryVideo = store.appendAsset(motionProject.id, {
+    name: '合法视频封面', kind: 'video', url: 'https://video.local/poster.mp4',
+    thumbnail: 'https://video.local/poster.jpg', source: 'library',
+  }, { at: 6, duration: 4 })
+  assert.equal(ordinaryVideo.thumbnail, 'https://video.local/poster.jpg')
+  motionClip.thumbnail = '/local/motion/asset?url=legacy-cover.jpg'
+  assert.equal(store.replaceMotionClipWithVideo(motionProject.id, motionClip.id, { url: '/generated/mock.mp4', duration: 5 }), true)
+  assert.equal(motionClip.kind, 'video')
+  assert.equal(motionClip.thumbnail, undefined)
+  const studioPreviewSource = readFileSync(new URL('../src/components/edit/StudioPreview.vue', import.meta.url), 'utf8')
+  const composerSource = readFileSync(new URL('../src/components/agent/AgentComposer.vue', import.meta.url), 'utf8')
+  const studioChatSource = readFileSync(new URL('../src/components/edit/StudioChat.vue', import.meta.url), 'utf8')
+  assert.match(composerSource, /if \(!accepted\) return/, '未受理时不得清空 Composer 草稿')
+  assert.doesNotMatch(composerSource, /emit\('send', payload\)\s*text\.value = ''/, '发送事件后不得无条件清空')
+  assert.match(studioChatSource, /\.then\(\(accepted\) => \{[\s\S]*?acknowledge\(accepted\)[\s\S]*?if \(!accepted\) return[\s\S]*?emit\('consume-pending'\)/, '待发送批次只能在 store 受理后消费')
+  const motionPlayer = studioPreviewSource.match(/<hyperframes-player[\s\S]*?\/>/)?.[0] || ''
+  assert.ok(motionPlayer, '主画面必须保留 HyperFrames Player')
+  assert.ok(!motionPlayer.includes(':poster='), '所有 motion 模板的主画面都不得绑定封面 poster')
+  assert.equal((studioPreviewSource.match(/@seeked="syncMedia"/g) || []).length, 2, '视频与音频在异步 seek 完成后都必须按最新播放头再定位')
+  assert.match(studioPreviewSource, /@timeupdate="syncMotion\(item\.clip\)"/, 'HyperFrames 异步 state 回写后也必须按最新播放头校正')
+  assert.match(studioPreviewSource, /Math\.abs\(el\.currentTime - target\) > 0\.24 && !el\.seeking/)
+  assert.match(studioPreviewSource, /\$\{track\.id\}-\$\{clip\.id\}-v\$\{sourceVersion\}/, 'motion 写回必须重建主 Player，而非只刷新检查器')
+  assert.match(studioPreviewSource, /播放头正好停在片段末尾时继续显示最后一帧/, '片尾（工程总长）必须保留最后一帧，不能变黑屏')
+  assert.match(studioPreviewSource, /clip\.duration - frame/, 'Player 在精确 duration 会渲染空白，定位需回退一帧')
+
+  // 主画面元素定位、框选去祖先、多元素上下文与 iframe 坐标换算。
+  const {
+    motionElementKey,
+    motionElementSelector,
+    collapseMotionAncestors,
+    snapshotMotionElement,
+  } = await server.ssrLoadModule('/src/features/edit/motionElements.ts')
+  const fakeElement = (tagName, options = {}) => ({
+    tagName,
+    id: options.id || '',
+    parentElement: options.parent || null,
+    children: options.children || [],
+    textContent: options.text || '',
+    getAttribute: (name) => name === 'data-hf-id' ? options.hfId || null : name === 'src' ? options.src || null : null,
+    getBoundingClientRect: () => options.rect || { left: 0, top: 0, width: 100, height: 40, right: 100, bottom: 40 },
+    contains(other) {
+      return this.children.includes(other) || this.children.some((child) => child.contains(other))
+    },
+  })
+  const body = fakeElement('BODY')
+  const section = fakeElement('SECTION', { parent: body })
+  const title = fakeElement('H1', { parent: section, hfId: 'hero title', text: '  主标题  ', rect: { left: 20, top: 30, width: 200, height: 50, right: 220, bottom: 80 } })
+  const sibling = fakeElement('H1', { parent: section })
+  section.children = [title, sibling]
+  body.children = [section]
+  assert.equal(motionElementSelector(title), '[data-hf-id="hero\\ title"]')
+  assert.equal(motionElementSelector(sibling), 'section:nth-of-type(1) > h1:nth-of-type(2)')
+  assert.deepEqual(collapseMotionAncestors([section, title, sibling]), [title, sibling])
+  assert.equal(motionElementKey({ selector: '#x', hfId: 'hero' }), 'hf:hero')
+  const snapshot = snapshotMotionElement(
+    title,
+    { left: 100, top: 50, width: 640, height: 360 },
+    { left: 20, top: 10, width: 640, height: 360 },
+    1.25,
+    { width: 1280, height: 720 },
+  )
+  assert.deepEqual(snapshot.boundingBox, { x: 90, y: 55, width: 100, height: 25 })
+  assert.equal(snapshot.textContent, '主标题')
+  assert.equal(snapshot.role, '文字')
+  assert.equal(snapshot.region, '左上方')
+  assert.equal(snapshot.sectionLabel, '当前画面')
+  const { describeClipContext } = await server.ssrLoadModule('/src/features/agent/clipContext.ts')
+  const titleElement = {
+    ...snapshot,
+    sourceFile: 'index.html',
+    sectionId: 's02',
+    sectionLabel: 'S02 · 产品演示',
+    sectionSelector: 'section#s02.clip',
+    parentPath: 'div.copy',
+    region: '画面中央',
+    role: '文字',
+  }
+  const logoElement = {
+    selector: '#logo', id: 'logo', label: 'Logo', tagName: 'img', src: 'assets/logo.svg',
+    sourceFile: 'index.html', selectedAtMotionTime: 1.25,
+    boundingBox: { x: 1, y: 2, width: 3, height: 4 },
+    sectionId: 's02', sectionLabel: 'S02 · 产品演示', sectionSelector: 'section#s02.clip',
+    parentPath: 'header.brand', region: '左上方', role: 'Logo',
+  }
+  const motionContext = describeClipContext([{
+    id: 'motion-clip', name: '品牌动画', kind: 'motion', trackId: 'track', trackName: '轨道 1', trackKind: 'video',
+    start: 0, duration: 4, url: '/local/motion/view/m1/index.html', motionId: 'm1',
+    motionElements: [titleElement, logoElement],
+    motionElementEdits: [
+      { note: '主标题改成「全天候持续评测」', elements: [titleElement] },
+      { note: 'Logo 放大 10%，保持原色', elements: [logoElement] },
+    ],
+  }])
+  assert.match(motionContext, /主画面选中 2 个元素/)
+  assert.match(motionContext, /选中元素 1：/)
+  assert.match(motionContext, /选中元素 2：Logo/)
+  assert.match(motionContext, /assets\/logo\.svg/)
+  assert.match(motionContext, /所属部分：S02 · 产品演示/)
+  assert.match(motionContext, /画面位置：画面中央/)
+  assert.match(motionContext, /本轮要求：主标题改成「全天候持续评测」/)
+  assert.match(motionContext, /本轮要求：Logo 放大 10%，保持原色/)
+  assert.match(motionContext, /禁止全局替换/)
+  assert.ok(
+    motionContext.indexOf('本轮要求：主标题改成') < motionContext.indexOf('本轮要求：Logo 放大 10%'),
+    '元素意见必须按各自元素顺序绑定，不能串到另一个元素上',
+  )
+
+  // 模板页往返只合并提示词；文字、附件和上传中的计数按会话/项目隔离。
+  const { useComposerDraftStore } = await server.ssrLoadModule('/src/stores/composerDraftStore.ts')
+  const { mergeComposerPrompt } = await server.ssrLoadModule('/src/features/template/navigation.ts')
+  const drafts = useComposerDraftStore()
+  drafts.stateOf('chat:a').text = '保留我的原始需求'
+  drafts.stateOf('chat:a').attachments = [attachmentImage]
+  drafts.stateOf('chat:a').pendingCount = 1
+  drafts.stateOf('edit:b').text = '另一个项目'
+  assert.equal(drafts.stateOf('edit:b').attachments.length, 0)
+  assert.equal(mergeComposerPrompt('模板说明\n我的要求：', drafts.stateOf('chat:a').text), '模板说明\n我的要求：\n保留我的原始需求')
+  assert.match(mergeComposerPrompt('模板说明', '原始需求'), /模板说明\n\n我的原需求：\n原始需求/)
+  assert.deepEqual(drafts.stateOf('chat:a').attachments[0], attachmentImage)
+  assert.equal(drafts.stateOf('chat:a').pendingCount, 1)
+  drafts.clear('chat:a')
+  assert.equal(drafts.stateOf('chat:a').text, '')
+  assert.equal(drafts.stateOf('chat:a').attachments.length, 0)
+  assert.equal(drafts.stateOf('edit:b').text, '另一个项目')
 
   const { clipOpacityAt, clipVolumeAt } = await server.ssrLoadModule('/src/features/edit/keyframes.ts')
   const studio = store.createProject('字幕关键帧与版本测试')

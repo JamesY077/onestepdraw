@@ -133,6 +133,7 @@
         v-if="entries.length === 1 && primary.clip.kind === 'motion' && primary.clip.motionId"
         :project-id="projectId"
         :clip="primary.clip"
+        @open-studio="(motionId) => emit('open-studio', motionId)"
       />
 
       <p class="ci-hint">
@@ -163,6 +164,7 @@ const emit = defineEmits<{
   (event: 'duplicate'): void
   (event: 'split'): void
   (event: 'remove'): void
+  (event: 'open-studio', motionId: string): void
   (
     event: 'update-clip',
     payload: {

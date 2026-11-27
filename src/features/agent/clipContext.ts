@@ -2,7 +2,7 @@
  * 选中片段的上下文：把用户选中的时间轴片段变成一段可读、可定位的说明。
  * 有选中片段时，模型只需要理解这几段，不再把整条时间轴当作修改对象。
  */
-import type { AgentClipRef } from '@/types/agent'
+import type { AgentClipRef, AgentMotionElementRef } from '@/types/agent'
 
 const KIND_LABEL: Record<AgentClipRef['kind'], string> = {
   video: '视频',
@@ -38,6 +38,7 @@ function clipLine(clip: AgentClipRef, index: number): string {
   if (clip.assetName) details.push(`素材 ${clip.assetName}`)
   if (clip.kind === 'animation') details.push(`源码 ${clip.codeLanguage || 'html'}`)
   if (clip.kind === 'motion' && clip.motionId) details.push(`动效工程 motionId=${clip.motionId}`)
+  if (clip.motionElements?.length) details.push(`主画面选中 ${clip.motionElements.length} 个元素（逐个标注所属部分）`)
   const volume = percent(clip.volume)
   if (volume) details.push(`音量 ${volume}`)
   const opacity = percent(clip.opacity)
@@ -46,8 +47,63 @@ function clipLine(clip: AgentClipRef, index: number): string {
 }
 
 function clipNoteLine(clip: AgentClipRef): string {
-  const note = typeof clip.note === 'string' ? clip.note.replace(/\s+/g, ' ').trim() : ''
+  const note = typeof clip.note === 'string'
+    ? clip.note.replace(/\r?\n+/g, '；').replace(/[ \t]+/g, ' ').trim()
+    : ''
   return note ? `   修改意见：${note}` : ''
+}
+
+function motionElementIdentity(element: AgentMotionElementRef): string {
+  return element.hfId ? `hf:${element.hfId}` : element.id ? `id:${element.id}` : `selector:${element.selector}`
+}
+
+function motionElementBounds(element: AgentMotionElementRef): string {
+  const box = element.boundingBox
+  if (!box) return ''
+  return `x=${Math.round(box.x)}, y=${Math.round(box.y)}, ${Math.round(box.width)}×${Math.round(box.height)}`
+}
+
+/** 元素清单必须能回答三件事：属于哪个部分、在画面哪里、只改哪一个 selector。 */
+function motionElementLines(clip: AgentClipRef): string {
+  const elements = clip.motionElements || []
+  if (!elements.length) return ''
+  const edits = clip.motionElementEdits?.length
+    ? clip.motionElementEdits
+    : clip.note?.trim()
+      ? [{ note: clip.note.trim(), elements }]
+      : []
+  const lineFor = (element: AgentMotionElementRef, index: number): string => {
+    const key = motionElementIdentity(element)
+    const requested = edits
+      .filter((edit) => edit.elements.some((target) => motionElementIdentity(target) === key))
+      .map((edit) => edit.note.trim())
+      .filter(Boolean)
+    const bounds = motionElementBounds(element)
+    return [
+      `   选中元素 ${index + 1}：${element.label}（tag=${element.tagName}｜sourceFile=${element.sourceFile}）`,
+      `      所属部分：${element.sectionLabel || '当前画面'}${element.sectionId ? `｜id=${element.sectionId}` : ''}${element.sectionSelector ? `｜${element.sectionSelector}` : ''}`,
+      element.region ? `      画面位置：${element.region}${bounds ? `｜${bounds}` : ''}` : '',
+      element.parentPath ? `      父级结构：${element.parentPath}` : '',
+      element.hfId ? `      data-hf-id=${element.hfId}` : '',
+      element.id ? `      id=${element.id}` : '',
+      `      selector=${element.selector}`,
+      `      选择时 motionTime=${element.selectedAtMotionTime.toFixed(2)}s`,
+      element.textContent ? `      当前文本=${element.textContent}` : '',
+      element.src ? `      当前素材=${element.src}` : '',
+      requested.length ? `      本轮要求：${[...new Set(requested)].join('；')}` : '',
+      '      只允许修改这个元素及其直接动画，不得改动其他元素；同名文案必须按上面的所属部分与 selector 区分，禁止全局替换。',
+    ].filter(Boolean).join('\n')
+  }
+  const bound = elements.map(lineFor).join('\n')
+  const unmatched = edits
+    .filter((edit) => edit.note.trim())
+    .filter((edit) => !edit.elements.some((target) =>
+      elements.some((element) => motionElementIdentity(element) === motionElementIdentity(target))))
+    .map((edit) => edit.note.trim())
+  const unbound = unmatched.length
+    ? `   未匹配到当前元素的意见（先按所属部分核对目标，禁止按文本全局替换）：\n${[...new Set(unmatched)].map((note) => `      - ${note}`).join('\n')}`
+    : ''
+  return [bound, unbound].filter(Boolean).join('\n')
 }
 
 /** 追加到用户消息后面的选中片段清单；没有选中片段时返回空字符串。 */
@@ -62,14 +118,20 @@ export function describeClipContext(clips?: AgentClipRef[]): string {
     animationOnly
       ? '代码动画必须返回 onestep-animation 完整源码补丁，clipId 必须使用下面的 id；禁止生成图片或视频。'
       : motionOnly
-        ? '动效工程必须用 read_motion_project 读取源码后再 write_motion_project 改写；禁止改用文生视频重做。'
+        ? '动效工程必须用 read_motion_project 读取最新源码后，用 write_motion_project 写回；禁止改用文生视频重做。'
+          + '同一工程可以同时包含多条元素级修改：逐条在最新源码上叠加，保留此前已经改过的所有元素，'
+          + '禁止只保留最后一条意见，也禁止把工程恢复到初始版本。'
+          + '带「选中元素」时，必须按「所属部分 + selector + data-hf-id」逐个定位；'
+          + '不同部分里的同名元素只改意见对应的那一个，禁止按文案全局替换，也不得给未选元素加动画。'
         : '需要移动 / 裁剪 / 删除 / 调音量时，使用 onestep-timeline 操作块，clipId 必须使用下面的 id：',
     ...clips.flatMap((clip, index) => {
-      const note = clipNoteLine(clip)
+      const hasElementEdits = !!clip.motionElements?.length
+      const note = hasElementEdits ? '' : clipNoteLine(clip)
       const source = clip.kind === 'animation' && clip.code
         ? `   原始${clip.codeLanguage || 'html'}源码（在此基础上修改，不要重写为视频提示词）：\n${clip.code}`
         : ''
-      return [clipLine(clip, index), note, source].filter(Boolean)
+      const elements = motionElementLines(clip)
+      return [clipLine(clip, index), note, elements, source].filter(Boolean)
     }),
   ]
   return lines.join('\n')

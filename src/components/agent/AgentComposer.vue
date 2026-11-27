@@ -29,6 +29,12 @@
           </button>
         </div>
 
+        <CreativeEngineSwitch
+          v-if="chatMode.isCreate"
+          :model-value="chatMode.creativeEngine"
+          :disabled="disabled"
+          @update:model-value="changeCreativeEngine"
+        />
         <span class="mode-tip">{{ modeTip }}</span>
         <span class="mode-workspace">
           <WorkspacePicker />
@@ -443,13 +449,14 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AgentMark from '@/components/agent/AgentMark.vue'
+import CreativeEngineSwitch from '@/components/agent/CreativeEngineSwitch.vue'
 import MentionMenu, { type MentionGroup, type MentionItem } from '@/components/agent/MentionMenu.vue'
 import MentionInput from '@/components/agent/MentionInput.vue'
 import WorkspacePicker from '@/components/workspace/WorkspacePicker.vue'
 import { useMentionRefs } from '@/composables/useMentionRefs'
 import { BUILTIN_AGENT_NAME, BUILTIN_ENGINE_ID, useLocalAgentStore } from '@/stores/localAgentStore'
 import { useModelStore } from '@/stores/modelStore'
-import { useChatModeStore } from '@/stores/chatModeStore'
+import { useChatModeStore, type CreativeEngineMode } from '@/stores/chatModeStore'
 import { useTemplateStore } from '@/stores/templateStore'
 import { useSkillStore } from '@/stores/skillStore'
 import {
@@ -461,7 +468,8 @@ import {
   formatDuration,
   readAttachment,
 } from '@/features/agent/attachments'
-import type { AgentAttachment, ComposerSubmit } from '@/types/agent'
+import type { AgentAttachment, ComposerSendAck, ComposerSubmit } from '@/types/agent'
+import { useComposerDraftStore } from '@/stores/composerDraftStore'
 
 const props = withDefaults(
   defineProps<{
@@ -470,17 +478,21 @@ const props = withDefaults(
     tone?: 'auto' | 'create' | 'chat'
     /** 输入框之外还有可用上下文（例如选中的时间轴片段）时，允许空文本发送。 */
     canSendExtra?: boolean
+    /** 会话/项目级草稿作用域；路由往返和会话切换不串文字与附件。 */
+    draftKey?: string
   }>(),
   {
     disabled: false,
     placeholder: '',
     tone: 'auto',
     canSendExtra: false,
+    draftKey: 'chat:new',
   },
 )
 const emit = defineEmits<{
-  (event: 'send', payload: ComposerSubmit): void
+  (event: 'send', payload: ComposerSubmit, acknowledge: ComposerSendAck): void
   (event: 'stop'): void
+  (event: 'engine-change', value: CreativeEngineMode): void
 }>()
 
 const router = useRouter()
@@ -493,6 +505,7 @@ const modelStore = useModelStore()
 const chatMode = useChatModeStore()
 const templateStore = useTemplateStore()
 const skillStore = useSkillStore()
+const composerDrafts = useComposerDraftStore()
 /** tone=auto 跟随模式开关；剪辑台里固定为创作色。 */
 const isCreateTone = computed(() =>
   props.tone === 'auto' ? chatMode.isCreate : props.tone === 'create',
@@ -597,8 +610,14 @@ function handleInput() {
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const focused = ref(false)
 const dragging = ref(false)
-const attachments = ref<AgentAttachment[]>([])
-const pendingCount = ref(0)
+const attachments = computed<AgentAttachment[]>({
+  get: () => composerDrafts.stateOf(props.draftKey).attachments,
+  set: (value) => { composerDrafts.stateOf(props.draftKey).attachments = value },
+})
+const pendingCount = computed({
+  get: () => composerDrafts.stateOf(props.draftKey).pendingCount,
+  set: (value) => { composerDrafts.stateOf(props.draftKey).pendingCount = Math.max(0, value) },
+})
 const attachNotice = ref('')
 let noticeTimer: number | null = null
 
@@ -612,9 +631,15 @@ const canSend = computed(
       props.canSendExtra),
 )
 
+function changeCreativeEngine(engine: CreativeEngineMode) {
+  chatMode.setCreativeEngine(engine)
+  emit('engine-change', engine)
+}
+
 const placeholderText = computed(() => {
   if (props.placeholder) return props.placeholder
   if (chatMode.isCreate) {
+    if (chatMode.isAnimation) return '选择 OpenMotion 模板，或描述要做的动效并附上 Logo、截图…'
     return chatMode.isAuto
       ? '直接说需求，模型会自己定下镜头与节奏…'
       : '先说说你想拍什么，步帧会问清镜头与节奏…'
@@ -623,13 +648,14 @@ const placeholderText = computed(() => {
 })
 
 const modeTip = computed(() => {
-  if (chatMode.isCreate && chatMode.isAuto) return '模型自行决策，直接产出并进入时间轴'
+  if (chatMode.isCreate && chatMode.isAnimation) return 'HyperFrames 可编辑工程，不调用图片/视频生成'
+  if (chatMode.isCreate && chatMode.isAuto) return 'AIGC 生成结果进入时间轴'
   if (chatMode.isCreate) return '先问清需求，再进入剪辑台'
   if (chatMode.isAuto) return '模型自行补全细节，不追问'
   return '正常聊天与创作建议'
 })
 const engineTitle = computed(() =>
-  localAgentStore.isLocalEngine
+  !chatMode.isCreate && localAgentStore.isLocalEngine
     ? `${localAgentStore.selectedLabel} · ${localAgentStore.selectedHint}`
     : `${BUILTIN_AGENT_NAME} · 通过 AIPing 连接`,
 )
@@ -728,7 +754,19 @@ function resize() {
 
 function syncMentionScroll() {}
 
-watch(text, () => nextTick(resize))
+watch(
+  () => props.draftKey,
+  (key) => {
+    text.value = composerDrafts.stateOf(key).text
+    attachNotice.value = ''
+    nextTick(resize)
+  },
+  { immediate: true },
+)
+watch(text, (value) => {
+  composerDrafts.stateOf(props.draftKey).text = value
+  nextTick(resize)
+})
 
 function notify(message: string) {
   attachNotice.value = message
@@ -770,16 +808,18 @@ async function addFiles(files: File[]) {
   })
   const skippedBySize = picked.length - accepted.length
 
-  pendingCount.value += accepted.length
+  const draftKey = props.draftKey
+  const draftState = composerDrafts.stateOf(draftKey)
+  draftState.pendingCount += accepted.length
   let failed = 0
   for (const file of accepted) {
     try {
       const item = await readAttachment(file)
-      attachments.value.push(item)
+      draftState.attachments.push(item)
     } catch {
       failed += 1
     } finally {
-      pendingCount.value = Math.max(0, pendingCount.value - 1)
+      draftState.pendingCount = Math.max(0, draftState.pendingCount - 1)
     }
   }
 
@@ -835,17 +875,25 @@ function submit() {
     attachments: [...attachments.value],
     templates: [...templateStore.applied],
   }
-  emit('send', payload)
-  text.value = ''
-  attachments.value = []
-  // 模板和上传素材一样是「这一条消息」的引用，发完就清空。
-  templateStore.clearApplied()
-  attachNotice.value = ''
-  mention.close()
-  nextTick(() => {
-    resize()
-    mentionInputRef.value?.focus()
-  })
+  let acknowledged = false
+  const acknowledge: ComposerSendAck = (accepted) => {
+    if (acknowledged) return
+    acknowledged = true
+    // 未受理（例如另一轮仍在流式执行）必须原样保留文字、附件和模板。
+    if (!accepted) return
+    // 受理回调可能晚于用户开始写下一条，只清理这次已经发送的内容。
+    if (text.value.trim() === payload.content) text.value = ''
+    const sentAttachmentIds = new Set(payload.attachments.map((item) => item.id))
+    attachments.value = attachments.value.filter((item) => !sentAttachmentIds.has(item.id))
+    for (const template of payload.templates || []) templateStore.removeApplied(template.id)
+    attachNotice.value = ''
+    mention.close()
+    nextTick(() => {
+      resize()
+      mentionInputRef.value?.focus()
+    })
+  }
+  emit('send', payload, acknowledge)
 }
 
 function handleKeydown(event: KeyboardEvent) {
