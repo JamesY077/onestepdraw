@@ -51,7 +51,7 @@ function event(payload) {
 
 try {
   const { streamAgentChat, AgentApiError } = await server.ssrLoadModule('/src/api/agent.ts')
-  const { runAgentHarness, AgentHarnessError } = await server.ssrLoadModule('/src/features/agent/harness.ts')
+  const { runAgentHarness, AgentHarnessError, compactAgentMessages } = await server.ssrLoadModule('/src/features/agent/harness.ts')
   const { AGENT_NATIVE_TOOLS, agentToolsForMode } = await server.ssrLoadModule('/src/features/agent/toolDefinitions.ts')
   const { normalizeAgentTimelineOps, normalizeAgentCreativeHandoff } = await server.ssrLoadModule('/src/features/agent/tools.ts')
   const { executeMotionTool } = await server.ssrLoadModule('/src/features/agent/motionTools.ts')
@@ -122,6 +122,19 @@ try {
   assert.equal(normalizeAgentCreativeHandoff({
     target: 'create', reason: '模板复刻', prompt: '用 HyperFrames 做同款',
   }).engine, 'animation')
+
+  // 网关没有发送 finish_reason / [DONE] 就断开：标记 incomplete，交给 Harness 重试。
+  globalThis.fetch = async () => streamedResponse(event({ choices: [{ delta: { content: '只写了一半' } }] }))
+  const cutStream = await streamAgentChat({ messages: [], onDelta: () => {} })
+  assert.equal(cutStream.incomplete, true, '缺少结束标记的流必须标记为不完整')
+  assert.equal(cutStream.content, '只写了一半')
+
+  // 只发 [DONE] 不发 finish_reason 的网关仍算正常结束，避免误判。
+  globalThis.fetch = async () => streamedResponse(
+    `${event({ choices: [{ delta: { content: '正常结束' } }] })}data: [DONE]\n\n`,
+  )
+  const doneStream = await streamAgentChat({ messages: [], onDelta: () => {} })
+  assert.equal(doneStream.incomplete, false)
 
   // 非流式 JSON 也允许只有 tool call 而没有正文。
   globalThis.fetch = async () => new Response(JSON.stringify({
@@ -316,6 +329,98 @@ try {
   assert.equal(recoveredCalls, 1, '只执行恢复后的完整工具调用')
   assert.equal(recoveredRun.steps, 2)
   assert.ok(!JSON.stringify(recoveredRun.messages).includes('内部提示'), '重试提示只给模型看，不写入正式历史')
+
+  // 网关在没有 [DONE] 的情况下断开：自动重来一步，不把半截内容当成结果。
+  let interruptedAttempts = 0
+  const interruptedReasons = []
+  const interruptedRun = await runAgentHarness({
+    messages: [],
+    signal: new AbortController().signal,
+    stream: async () => {
+      interruptedAttempts += 1
+      if (interruptedAttempts === 1) {
+        return { content: '这是被切断的半截回答', toolCalls: [], incomplete: true }
+      }
+      return { content: '完整回答。', toolCalls: [], finishReason: 'stop' }
+    },
+    executeTool: async () => ({}),
+    onDelta: () => {},
+    onReasoning: () => {},
+    onStepRetry: ({ reason }) => interruptedReasons.push(reason),
+  })
+  assert.equal(interruptedAttempts, 2, '流意外结束时自动重试')
+  assert.deepEqual(interruptedReasons, ['interrupted'])
+  assert.equal(interruptedRun.steps, 1)
+  assert.equal(interruptedRun.messages.at(-1).content, '完整回答。', '半截内容不进入正式历史')
+
+  // 网络抖动同样自动重试，而不是直接报“任务中断”。
+  let flakyAttempts = 0
+  const flakyRun = await runAgentHarness({
+    messages: [],
+    signal: new AbortController().signal,
+    stream: async () => {
+      flakyAttempts += 1
+      if (flakyAttempts === 1) {
+        const error = new Error('socket hang up')
+        error.kind = 'network'
+        throw error
+      }
+      return { content: '网络恢复后完成。', toolCalls: [], finishReason: 'stop' }
+    },
+    executeTool: async () => ({}),
+    onDelta: () => {},
+    onReasoning: () => {},
+  })
+  assert.equal(flakyAttempts, 2)
+  assert.equal(flakyRun.messages.at(-1).content, '网络恢复后完成。')
+
+  // 纯文本达到输出上限：从断点续写，最终回答不会停在半句。
+  let continuationAttempts = 0
+  let sawContinueHint = false
+  const continuedRun = await runAgentHarness({
+    messages: [],
+    signal: new AbortController().signal,
+    stream: async (request) => {
+      continuationAttempts += 1
+      if (continuationAttempts === 1) {
+        return { content: '第一段：结论是', toolCalls: [], finishReason: 'length' }
+      }
+      sawContinueHint = /从断点继续写/.test(String(request.messages.at(-1)?.content || ''))
+      return { content: '按这个方案执行。', toolCalls: [], finishReason: 'stop' }
+    },
+    executeTool: async () => ({}),
+    onDelta: () => {},
+    onReasoning: () => {},
+  })
+  assert.equal(continuationAttempts, 2)
+  assert.equal(sawContinueHint, true, '续写请求要带上断点提示')
+  assert.equal(continuedRun.messages.at(-1).content, '第一段：结论是按这个方案执行。')
+
+  // 长任务上下文压缩：保留系统提示与最后一轮，截断历史工具结果，不拆散 tool 配对。
+  const longTranscript = [{ role: 'system', content: '系统提示' }]
+  for (let turn = 1; turn <= 12; turn += 1) {
+    longTranscript.push({ role: 'user', content: `第 ${turn} 轮需求` })
+    longTranscript.push({
+      role: 'assistant',
+      content: null,
+      tool_calls: [{ id: `call_${turn}`, type: 'function', function: { name: 'read_project', arguments: '{}' } }],
+    })
+    longTranscript.push({ role: 'tool', tool_call_id: `call_${turn}`, name: 'read_project', content: `结果${turn}:${'x'.repeat(12_000)}` })
+  }
+  longTranscript.push({ role: 'user', content: '最后一轮需求' })
+  const compacted = compactAgentMessages(longTranscript)
+  assert.equal(compacted[0].role, 'system', '压缩后系统提示必须保留')
+  assert.equal(compacted.at(-1).content, '最后一轮需求', '压缩不能丢掉最新的用户消息')
+  assert.ok(
+    compacted.findIndex((message) => message.role !== 'system') >= 0 &&
+      compacted[compacted.findIndex((message) => message.role !== 'system')].role === 'user',
+    '压缩必须从整轮 user 边界开始，不能留下孤立 tool 结果',
+  )
+  assert.ok(JSON.stringify(compacted).length < JSON.stringify(longTranscript).length, '长任务必须真的压缩掉历史')
+  assert.ok(
+    compacted.some((message) => String(message.content).includes('历史工具结果已压缩')),
+    '较早的工具结果要标注已压缩',
+  )
 
   let executedLargeBatch = 0
   let largeBatchFollowUp = null

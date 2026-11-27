@@ -2547,6 +2547,8 @@ export const useAgentStore = defineStore('agent', () => {
         // schema、原生调用和旧文本工具共用同一权限集合，不能靠模型自觉。
         timeline.allowedToolNames = new Set(nativeTools.map((tool) => tool.function.name))
         let nativeToolsSupported = true
+        let stepContentStart = assistant.content.length
+        let stepReasoningStart = (assistant.reasoning || '').length
         await runAgentHarness({
           messages: await buildContext(conversation, controller.signal),
           tools: nativeTools,
@@ -2594,7 +2596,24 @@ export const useAgentStore = defineStore('agent', () => {
             if (step > 1 && assistant.content.trim() && !assistant.content.endsWith('\n\n')) {
               assistant.content += '\n\n'
             }
+            // 记录本步起点：流中断需要重来时只回滚这一步的半截内容。
+            stepContentStart = assistant.content.length
+            stepReasoningStart = (assistant.reasoning || '').length
             touchRun(assistant)
+            schedulePersist()
+          },
+          onStepRetry: ({ reason, attempt }) => {
+            // 半截文本已经流到界面，重来前先擦掉，避免同一段回答出现两遍。
+            assistant.content = assistant.content.slice(0, stepContentStart)
+            assistant.reasoning = (assistant.reasoning || '').slice(0, stepReasoningStart)
+            const label = reason === 'network'
+              ? '连接中断'
+              : reason === 'truncated'
+                ? '达到输出上限'
+                : '传输不完整'
+            const note = `模型响应${label}，已自动重试（${attempt}）。`
+            assistant.logs = [assistant.logs, note].filter(Boolean).join('\n')
+            conversation.updatedAt = Date.now()
             schedulePersist()
           },
           onToolStart: (call, step) => recordToolStart(assistant, call, step),

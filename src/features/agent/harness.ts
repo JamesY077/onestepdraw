@@ -3,13 +3,28 @@ import type { AgentChatMessage, AgentToolDefinition } from '@/types/agent'
 import { extractAgentToolCalls, type AgentToolCall } from './tools'
 
 const MAX_TOOL_RESULT_CHARS = 16_000
+/** 单次请求的消息体积上限（字符数）。超过后从最早的整轮对话开始压缩。 */
+const CONTEXT_CHAR_BUDGET = 64_000
+/** 历史工具结果保留的字符数；长源码留在磁盘上，需要时可重新读取。 */
+const OLD_TOOL_RESULT_CHARS = 2_000
 /** 工具参数被输出上限截断时自动重试的次数。 */
 const MAX_TRUNCATION_RETRIES = 2
+/** 流被网关切断、网络抖动时的自动重试次数。 */
+const MAX_STREAM_RETRIES = 2
+/** 纯文本达到输出上限时自动续写的次数。 */
+const MAX_TEXT_CONTINUATIONS = 2
 
 const TRUNCATION_HINT = [
   '[内部提示] 上一次回复在工具参数完成前达到输出上限被截断，那个不完整的调用没有执行。',
   '请缩短单次输出：把任务拆成更小的工具调用，或先写最小可用版本再逐步补全；',
   '不要重复已经成功完成的步骤，也不要输出半截 JSON。',
+].join('')
+
+/** 纯文本达到输出上限时，带这条提示从断点接着写，避免回答停在半句。 */
+const CONTINUE_HINT = [
+  '[内部提示] 上一条回复达到输出上限被截断。',
+  '请从断点继续写，不要重复已经输出的内容，也不要在开头重新介绍；',
+  '如果剩余部分仍然很长，优先保留结论和关键步骤。',
 ].join('')
 
 /**
@@ -62,6 +77,8 @@ export interface AgentHarnessOptions {
   onDelta: (text: string) => void
   onReasoning: (text: string) => void
   onStepStart?: (step: number) => void
+  /** 流中断/截断需要重来一步时，让宿主回滚已经流到界面的半截内容。 */
+  onStepRetry?: (info: { reason: 'interrupted' | 'truncated' | 'network'; attempt: number }) => void
   onToolStart?: (call: AgentToolCall, step: number) => void
   onToolEnd?: (event: AgentHarnessToolEvent) => void
 }
@@ -87,6 +104,43 @@ function serializedToolResult(value: unknown): string {
   return text.length > MAX_TOOL_RESULT_CHARS ? `${text.slice(0, MAX_TOOL_RESULT_CHARS)}…` : text
 }
 
+function transcriptChars(messages: AgentChatMessage[]): number {
+  return messages.reduce((total, message) => {
+    const size = typeof message.content === 'string'
+      ? message.content.length
+      : Array.isArray(message.content)
+        ? message.content.length * 200
+        : 0
+    return total + size + 240
+  }, 0)
+}
+
+/**
+ * 长任务反复读取源码会把请求体撑爆，网关直接 400 / 超时，看起来就像“任务中断”。
+ * 每步发送前压缩一次：先截断较早的工具结果，再从最早的整轮对话开始丢弃；
+ * 只在高层的 user 边界切，保证 assistant tool_calls 与 tool 结果不被拆散。
+ */
+export function compactAgentMessages(input: AgentChatMessage[]): AgentChatMessage[] {
+  const system = input[0]?.role === 'system' ? [input[0]] : []
+  let rest = input.slice(system.length)
+  const recentFrom = Math.max(0, rest.length - 6)
+  rest = rest.map((message, index) => {
+    if (index >= recentFrom) return message
+    if (message.role !== 'tool' || typeof message.content !== 'string') return message
+    if (message.content.length <= OLD_TOOL_RESULT_CHARS) return message
+    return {
+      ...message,
+      content: `${message.content.slice(0, OLD_TOOL_RESULT_CHARS)}\n…[历史工具结果已压缩，需要原文请重新读取]`,
+    }
+  })
+  while (transcriptChars([...system, ...rest]) > CONTEXT_CHAR_BUDGET) {
+    const nextUser = rest.findIndex((message, index) => index > 0 && message.role === 'user')
+    if (nextUser <= 0 || nextUser >= rest.length - 1) break
+    rest = rest.slice(nextUser)
+  }
+  return [...system, ...rest]
+}
+
 function asModelToolCalls(calls: AgentToolCall[]) {
   return calls.map((call, index) => ({
     id: call.id || `legacy_call_${index + 1}`,
@@ -96,6 +150,51 @@ function asModelToolCalls(calls: AgentToolCall[]) {
       arguments: call.rawArguments ?? JSON.stringify(call.args),
     },
   }))
+}
+
+function isRetryableStreamError(error: unknown): boolean {
+  const kind = (error as { kind?: string } | null)?.kind
+  return kind === 'network' || kind === 'server'
+}
+
+/**
+ * 取一次模型输出。连接被切断、网关没有给出结束标记时自动重来一步；
+ * 重试前通过 onStepRetry 让宿主回滚已经流出去的半截内容，避免界面重复。
+ */
+async function streamStep(
+  options: AgentHarnessOptions,
+  messages: AgentChatMessage[],
+  tools: AgentToolDefinition[],
+  step: number,
+): Promise<AgentStreamResult> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const result = await options.stream({
+        messages: compactAgentMessages(messages),
+        tools,
+        step,
+        signal: options.signal,
+        onDelta: options.onDelta,
+        onReasoning: options.onReasoning,
+      })
+      throwIfAborted(options.signal)
+
+      // 有些网关正常结束时不发 [DONE] 也没有 finish_reason；第二次仍如此就接受现状，
+      // 避免把兼容性问题误判成永远失败。
+      if (result.incomplete && attempt < MAX_STREAM_RETRIES) {
+        options.onStepRetry?.({ reason: 'interrupted', attempt: attempt + 1 })
+        continue
+      }
+      return result
+    } catch (error: any) {
+      if (error?.name === 'AbortError' || options.signal.aborted) throw error
+      if (isRetryableStreamError(error) && attempt < MAX_STREAM_RETRIES) {
+        options.onStepRetry?.({ reason: 'network', attempt: attempt + 1 })
+        continue
+      }
+      throw error
+    }
+  }
 }
 
 /**
@@ -111,18 +210,29 @@ export async function runAgentHarness(options: AgentHarnessOptions): Promise<Age
   for (let step = 1; ; step += 1) {
     throwIfAborted(options.signal)
     options.onStepStart?.(step)
-    let result = await options.stream({
-      messages: [...messages],
-      tools,
-      step,
-      signal: options.signal,
-      onDelta: options.onDelta,
-      onReasoning: options.onReasoning,
-    })
+
+    let result = await streamStep(options, messages, tools, step)
     throwIfAborted(options.signal)
 
-    // 输出达到上限时，工具参数可能只有一半。绝不执行半成品；
-    // 先带着“拆小一点”的内部提示自动重试，避免用户手动重来。
+    // 纯文本被输出上限截断：从断点续写，不把半句话当成最终答复。
+    let content = result.content
+    let continuations = 0
+    while (
+      !result.toolCalls.length &&
+      ['length', 'max_tokens'].includes(result.finishReason || '') &&
+      continuations < MAX_TEXT_CONTINUATIONS
+    ) {
+      continuations += 1
+      result = await streamStep(options, [
+        ...messages,
+        { role: 'assistant', content },
+        { role: 'user', content: CONTINUE_HINT },
+      ], tools, step)
+      throwIfAborted(options.signal)
+      content += result.content
+    }
+
+    // 工具参数可能只有一半：绝不执行半成品，带提示重来一步。
     let truncationRetries = 0
     while (
       result.toolCalls.length &&
@@ -130,15 +240,15 @@ export async function runAgentHarness(options: AgentHarnessOptions): Promise<Age
       truncationRetries < MAX_TRUNCATION_RETRIES
     ) {
       truncationRetries += 1
-      result = await options.stream({
-        messages: [...messages, { role: 'user', content: TRUNCATION_HINT }],
+      options.onStepRetry?.({ reason: 'truncated', attempt: truncationRetries })
+      result = await streamStep(
+        options,
+        [...messages, { role: 'user', content: TRUNCATION_HINT }],
         tools,
         step,
-        signal: options.signal,
-        onDelta: options.onDelta,
-        onReasoning: options.onReasoning,
-      })
+      )
       throwIfAborted(options.signal)
+      content = result.content
     }
 
     // 与 DSH assembler 一致：max-tokens 下参数可能只有一半，绝不执行。
@@ -153,7 +263,7 @@ export async function runAgentHarness(options: AgentHarnessOptions): Promise<Age
     const rawCalls = native
       ? result.toolCalls
       : options.legacyToolCalls !== false
-        ? extractAgentToolCalls(result.content)
+        ? extractAgentToolCalls(content)
         : []
     const calls = rawCalls.map((call, index) => ({
       ...call,
@@ -162,7 +272,7 @@ export async function runAgentHarness(options: AgentHarnessOptions): Promise<Age
 
     messages.push({
       role: 'assistant',
-      content: result.content || null,
+      content: content || null,
       ...(calls.length ? { tool_calls: asModelToolCalls(calls) } : {}),
     })
 
