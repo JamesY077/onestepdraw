@@ -14,7 +14,7 @@ DSH 的核心价值不是“工具数量多”，而是以下运行时约束：
 | provider-neutral 流聚合 | OpenAI 兼容 SSE 中文本、推理和 `tool_calls` 分片聚合 | 自研通用多 provider block 协议 |
 | 原始 JSON 参数拼接 | 按 tool-call index 聚合参数，完整流结束后才解析 | PTC / nested execution token |
 | tool result 回注 | `assistant.tool_calls` 与 `tool.tool_call_id` 完整配对后继续推理 | 完整 append-only Session surface |
-| 工具有序提交 | 默认顺序执行，最多 4 个/Step，错误结果也回注 | 并发 body 调度；创作写入和付费任务默认非并发安全 |
+| 工具有序提交 | 默认顺序执行，不限制单步工具数量，错误结果也回注 | 并发 body 调度；创作写入和付费任务默认非并发安全 |
 | 取消与截断保护 | AbortSignal 贯穿模型和工具；`length/max_tokens` 不执行半成品工具 | 跨进程 tool outcome-unknown 修复 |
 | 持久化投影 | 消息上持久化 Run、Plan、ToolActivity；刷新闭合残留 running | 多后端 JSONL writer、单写者锁和 fork/lineage |
 | 纯 UI presenter | schema、宿主执行和展示投影分离，旧会话可直接重放 | Cordis 插件注册与动态 declaration merging |
@@ -53,7 +53,7 @@ src/api/agent.ts
   AIPing 请求、SSE 边界、原生 tool_calls 聚合、JSON 响应兼容
 
 src/features/agent/harness.ts
-  与 Vue/Pinia 无关的 Turn/Step 循环、批量上限、取消、tool result 回注
+  与 Vue/Pinia 无关的 Turn/Step 循环、取消、tool result 回注
 
 src/features/agent/toolDefinitions.ts
   模型可见 JSON Schema、纯 presentCall 展示投影
@@ -133,7 +133,7 @@ src/components/agent/AgentRunTrace.vue
 - 单个工具业务失败：记录 failed Activity，把 `{ ok:false, error }` 回注模型，由下一 Step 修正或解释。
 - 非法工具 JSON：不让 SSE/调度器崩溃，作为参数错误回注。
 - 输出 `length/max_tokens`：不执行 tool calls，避免运行半个 JSON。
-- 单批超过 4 个工具：停止并给出可操作错误；整轮不设固定步数上限，持续执行到模型结束或用户停止。
+- 单步工具数量、单轮生成任务和总步数都不设上限；持续执行到模型结束或用户停止，只保留取消、参数截断和重复调用 ID 的保护。
 - 用户停止：abort 当前模型/工具循环；同步释放会话切换，新请求不会被旧 finally 清除。
 - 页面刷新：遗留 streaming → stopped；running Activity/Run → stopped；本地等待中的 Generation → failed，并明确“远端状态未知”，提供重试；已落盘的制作单与逐镜状态保留，已成功镜头仍可继续跳过。
 - 本机 CLI：非零退出即使有正文也显示错误；EOF 未收到 done/error 判定为连接中断。
@@ -159,7 +159,7 @@ npm test                   # 两组一起
 npm run build              # 类型检查 + 生产构建
 ```
 
-Harness 测试覆盖：任意字节和 UTF-8 分片、CRLF、多行 data、多个 tool calls、JSON 响应、坏参数、结果有序回注、业务错误恢复、旧协议回退、取消、步数/批量上限、截断保护、时间轴白名单、本机 EOF 和刷新恢复。Store 级回归还覆盖：文案不生成、普通模式偷跑工具只成交接卡、取消不切换、确认保留同一 conversationId 与历史、切换后开放创作工具，以及本机 CLI 普通模式生成门禁。
+Harness 测试覆盖：任意字节和 UTF-8 分片、CRLF、多行 data、多个 tool calls、JSON 响应、坏参数、结果有序回注、业务错误恢复、旧协议回退、取消、连续多步与大批次、截断保护、时间轴白名单、本机 EOF 和刷新恢复。Store 级回归还覆盖：文案不生成、普通模式偷跑工具只成交接卡、取消不切换、确认保留同一 conversationId 与历史、切换后开放创作工具，以及本机 CLI 普通模式生成门禁。
 
 完整制作单回归额外覆盖：逐镜参考图先行、用户参考图优先、参考未就绪禁止总确认、单镜 AI 重做不波及其他镜头、正式视频使用分镜首帧、S01–S06 全部执行、账号级并发峰值不超过 4、固定时间轴位置、失败重试、改稿原位替换、轮询幂等，以及续跑跳过已成功镜头且不重复生成参考图。OpenMotion 封面另有入轨与 motion→MP4 残留回归，确保模板封面只用于模板浏览，不遮挡 HTML 首帧。
 

@@ -221,7 +221,7 @@ try {
   assert.equal(legacyNextMessages.at(-1).role, 'tool')
   assert.match(legacyNextMessages.at(-1).content, /gen_mock/)
 
-  // 取消、截断与批量上限都不会留下后续模型调用或危险执行。
+  // 取消与截断都不会留下后续模型调用或危险执行。
   const controller = new AbortController()
   let streamsAfterCancel = 0
   await assert.rejects(() => runAgentHarness({
@@ -253,6 +253,26 @@ try {
   assert.equal(unlimitedToolCalls, 12)
   assert.equal(unlimitedResult.steps, 13)
 
+  // 生成任务同样不设单轮上限：8 个付费任务按模型请求顺序全部提交。
+  let executedGenerations = 0
+  const generationResult = await runAgentHarness({
+    messages: [],
+    signal: new AbortController().signal,
+    stream: async (request) => request.step === 1
+      ? {
+          content: '',
+          toolCalls: Array.from({ length: 8 }, (_, index) => ({
+            id: `gen_${index}`, name: 'generate_image', args: { prompt: `画面 ${index}` },
+          })),
+        }
+      : { content: '八个生成任务全部提交。', toolCalls: [] },
+    executeTool: async () => { executedGenerations += 1; return { ok: true } },
+    onDelta: () => {},
+    onReasoning: () => {},
+  })
+  assert.equal(executedGenerations, 8, '单轮生成任务不再设上限')
+  assert.equal(generationResult.steps, 2)
+
   let executedIncomplete = false
   await assert.rejects(() => runAgentHarness({
     messages: [],
@@ -264,19 +284,22 @@ try {
   }), (error) => error.code === 'incomplete_tool_call')
   assert.equal(executedIncomplete, false)
 
-  let executedLargeBatch = false
-  await assert.rejects(() => runAgentHarness({
+  let executedLargeBatch = 0
+  const largeBatchResult = await runAgentHarness({
     messages: [],
     signal: new AbortController().signal,
-    stream: async () => ({
-      content: '',
-      toolCalls: Array.from({ length: 5 }, (_, index) => ({ id: `c${index}`, name: 'read_project', args: {} })),
-    }),
-    executeTool: async () => { executedLargeBatch = true },
+    stream: async (request) => request.step === 1
+      ? {
+          content: '',
+          toolCalls: Array.from({ length: 9 }, (_, index) => ({ id: `c${index}`, name: 'read_project', args: {} })),
+        }
+      : { content: '九个大批次工具已全部执行。', toolCalls: [] },
+    executeTool: async () => { executedLargeBatch += 1; return { ok: true } },
     onDelta: () => {},
     onReasoning: () => {},
-  }), (error) => error.code === 'too_many_tools')
-  assert.equal(executedLargeBatch, false)
+  })
+  assert.equal(executedLargeBatch, 9, '单步工具数量不再设上限')
+  assert.equal(largeBatchResult.steps, 2)
 
   // 本机 CLI 同样 fail-closed：普通模式没有生成说明，脚本在读取 API Key 前退出。
   const chatLocalPrompt = buildRunPrompt({ mode: 'chat' })
@@ -787,7 +810,7 @@ try {
       id: selectedMotionClip.id, name: selectedMotionClip.name, kind: 'motion',
       trackId: selectedMotionTrack.id, trackName: selectedMotionTrack.name, trackKind: selectedMotionTrack.kind,
       start: selectedMotionClip.start, duration: selectedMotionClip.duration, url: selectedMotionClip.url,
-      motionId: selectedMotionId, motionElements: selectedElements,
+      motionId: selectedMotionId, motionElements: selectedElements, scope: 'element',
       motionElementEdits: [
         { note: '标题改成新文案', elements: [selectedElements[0]] },
         { note: 'Logo 只调整位置，不重绘、不改色。', elements: [selectedElements[1]] },
@@ -804,6 +827,8 @@ try {
   const targetedUserContext = targetedRequest.messages.filter((message) => message.role === 'user').at(-1).content
   assert.match(targetedUserContext, /选中元素 1：主标题/)
   assert.match(targetedUserContext, /选中元素 2：品牌 Logo/)
+  assert.match(targetedUserContext, /选择粒度=元素级/)
+  assert.match(targetedUserContext, /本轮是元素级修改：只允许改动点选的元素本身及其直接动画/)
   assert.match(targetedUserContext, /所属部分：S01 · 身份亮相/)
   assert.match(targetedUserContext, /画面位置：画面中央/)
   assert.match(targetedUserContext, /本轮要求：标题改成新文案/)

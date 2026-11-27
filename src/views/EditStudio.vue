@@ -240,8 +240,10 @@
             v-if="inspectorOpen && selectedEntries.length"
             :entries="selectedEntries"
             :project-id="project?.id || ''"
+            :selected-motion-elements="selectedMotionElements"
             @close="inspectorOpen = false"
             @ask-ai="askAiForSelection"
+            @select-elements="handleMotionElementSelect"
             @update-clip="updateSelectedClip"
             @duplicate="duplicateSelected"
             @split="splitAtPlayhead"
@@ -267,11 +269,15 @@
           :project="project"
           :selected-clip-id="selectedClipId"
           :selected-clip-ids="selectedClipIds"
+          :selected-motion-elements="selectedMotionElements"
+          :selected-motion-element-clip-id="motionElementScopeClipId"
           :playing="playing"
+          :selected-track-id="selectedTrackId"
           :can-undo="canUndo"
           :can-redo="canRedo"
           @seek="seek"
           @select="handleTimelineSelect"
+          @select-track="handleTrackSelect"
           @move-clip="moveClip"
           @move-clips="moveClips"
           @trim-clip="trimClip"
@@ -452,6 +458,9 @@ const clock = ref('00:00.0')
 const playing = ref(false)
 const selectedClipId = ref('')
 const selectedClipIds = ref<string[]>([])
+/** 时间轴当前选择粒度：片段 / 整条轨道；元素级由主画面点选单独标记。 */
+const selectionScope = ref<'clip' | 'track'>('clip')
+const selectedTrackId = ref('')
 const inspectorOpen = ref(false)
 const studioChatRef = ref<InstanceType<typeof StudioChat> | null>(null)
 const mobileChatOpen = ref(false)
@@ -896,6 +905,11 @@ const selectedAgentClips = computed<AgentClipRef[]>(() =>
       code: clip.code || asset?.code,
       codeLanguage: clip.codeLanguage || asset?.codeLanguage,
       motionId: clip.motionId || asset?.motionId,
+      scope: clip.id === motionElementScopeClipId.value && selectedMotionElements.value.length
+        ? 'element'
+        : selectionScope.value === 'track' && trackId === selectedTrackId.value
+          ? 'track'
+          : 'clip',
       motionElements: clip.id === motionElementScopeClipId.value && selectedMotionElements.value.length
         ? selectedMotionElements.value.map((element) => ({ ...element }))
         : undefined,
@@ -925,6 +939,8 @@ function handleMotionElementSelect(payload: {
 }) {
   if (motionElementScopeClipId.value !== payload.clipId) selectedMotionElements.value = []
   motionElementScopeClipId.value = payload.clipId
+  selectionScope.value = 'clip'
+  selectedTrackId.value = ''
   selectedClipIds.value = [payload.clipId]
   selectedClipId.value = payload.clipId
   previewTab.value = 'main'
@@ -937,11 +953,16 @@ function handleMotionElementSelect(payload: {
   }
   selectedMotionElements.value = [...current.values()]
   // 追加/取消元素时只更新自动生成的默认说明，不覆盖用户已经写好的修改意见。
-  const autoNote = /^只修改主画面选中的 \d+ 个元素（按所属部分与画面位置区分），其他元素保持不变。$/
+  const autoNote = /^只修改(?:主画面)?选中的 \d+ 个元素(?:：.*?)?；其他元素保持不变。$/
   if (selectedMotionElements.value.length) {
+    const labels = selectedMotionElements.value.map((element) => element.label).filter(Boolean)
     if (!clipNote.value.trim() || autoNote.test(clipNote.value.trim())) {
-      clipNote.value = `只修改主画面选中的 ${selectedMotionElements.value.length} 个元素（按所属部分与画面位置区分），其他元素保持不变。`
+      clipNote.value = `只修改选中的 ${selectedMotionElements.value.length} 个元素：${labels.join('、')}；其他元素保持不变。`
     }
+    // 元素级选择直接把元素名回显给用户，避免误以为选中的是整段。
+    showToast(labels.length === 1
+      ? `已选中元素「${labels[0]}」，本轮只改这个元素`
+      : `已选中 ${labels.length} 个元素：${labels.slice(0, 2).join('、')}${labels.length > 2 ? ' 等' : ''}`)
   } else if (autoNote.test(clipNote.value.trim())) {
     clipNote.value = ''
   }
@@ -952,9 +973,26 @@ function handleTimelineSelect(payload: { ids: string[]; primary: string }) {
   if (nextIds.join('|') !== selectedClipIds.value.join('|')) clipNote.value = ''
   motionElementScopeClipId.value = ''
   selectedMotionElements.value = []
+  selectionScope.value = 'clip'
+  selectedTrackId.value = ''
   selectedClipIds.value = nextIds
   selectedClipId.value = payload.primary || nextIds[nextIds.length - 1] || ''
   if (!nextIds.length) inspectorOpen.value = false
+}
+
+/** 点轨道头 = 选中整条轨道，修改范围比单个片段更大。 */
+function handleTrackSelect(trackId: string) {
+  const track = project.value?.tracks.find((item) => item.id === trackId)
+  if (!track) return
+  clipNote.value = ''
+  motionElementScopeClipId.value = ''
+  selectedMotionElements.value = []
+  selectionScope.value = 'track'
+  selectedTrackId.value = trackId
+  selectedClipIds.value = track.clips.map((clip) => clip.id)
+  selectedClipId.value = track.clips[0]?.id || ''
+  previewTab.value = 'main'
+  showToast(`已选中整条轨道「${track.name}」，本轮修改会作用于这条轨道上的所有片段`)
 }
 
 function clearTimelineSelection() {
@@ -962,6 +1000,8 @@ function clearTimelineSelection() {
   selectedClipId.value = ''
   motionElementScopeClipId.value = ''
   selectedMotionElements.value = []
+  selectionScope.value = 'clip'
+  selectedTrackId.value = ''
   inspectorOpen.value = false
 }
 

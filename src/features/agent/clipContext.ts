@@ -38,6 +38,9 @@ function clipLine(clip: AgentClipRef, index: number): string {
   if (clip.assetName) details.push(`素材 ${clip.assetName}`)
   if (clip.kind === 'animation') details.push(`源码 ${clip.codeLanguage || 'html'}`)
   if (clip.kind === 'motion' && clip.motionId) details.push(`动效工程 motionId=${clip.motionId}`)
+  if (clip.scope === 'track') details.push('选择粒度=整条轨道')
+  else if (clip.scope === 'element') details.push('选择粒度=元素级')
+  else details.push('选择粒度=整段')
   if (clip.motionElements?.length) details.push(`主画面选中 ${clip.motionElements.length} 个元素（逐个标注所属部分）`)
   const volume = percent(clip.volume)
   if (volume) details.push(`音量 ${volume}`)
@@ -111,10 +114,19 @@ export function describeClipContext(clips?: AgentClipRef[]): string {
   if (!clips?.length) return ''
   const animationOnly = clips.every((clip) => clip.kind === 'animation')
   const motionOnly = clips.every((clip) => clip.kind === 'motion')
+  const trackScoped = clips.every((clip) => clip.scope === 'track')
+  const elementScoped = clips.some((clip) => clip.scope === 'element')
+  const scopeRule = trackScoped
+    ? '本轮是轨道级修改：用户点选的是整条轨道，可以统一调整这条轨道上的全部片段；不要改动其他轨道。'
+    : elementScoped
+      ? '本轮是元素级修改：只允许改动点选的元素本身及其直接动画，禁止改动同片段里未选中的元素，也禁止整段重做；'
+        + '如果用户没有写具体意见，先针对这些元素给出小范围建议。'
+      : '本轮是片段级修改：可以调整所选片段的整体内容与参数，但不要改动未选中的片段。'
   const lines = [
     `[选中片段 · 只改这些] 用户在本轮选中了 ${clips.length} 个片段，请只针对下面的片段回答和修改；`,
     '不要改动未选中的片段，也不需要重做整支片。带「修改意见」的片段优先按那条意见处理，',
     '每条修改意见只作用于它所属的片段。',
+    scopeRule,
     animationOnly
       ? '代码动画必须返回 onestep-animation 完整源码补丁，clipId 必须使用下面的 id；禁止生成图片或视频。'
       : motionOnly

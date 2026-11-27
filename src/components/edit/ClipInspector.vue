@@ -4,6 +4,7 @@
       <div class="ci-title">
         <strong>检查器</strong>
         <span v-if="entries.length > 1">已选 {{ entries.length }} 段</span>
+        <span v-else-if="selectedMotionElements?.length">{{ selectedMotionElements.length }} 个元素 · {{ primary.trackName }}</span>
         <span v-else>{{ kindLabel(primary.clip.kind) }} · {{ primary.trackName }}</span>
       </div>
       <button type="button" class="ci-close" aria-label="关闭检查器" @click="$emit('close')">×</button>
@@ -133,7 +134,19 @@
         v-if="entries.length === 1 && primary.clip.kind === 'motion' && primary.clip.motionId"
         :project-id="projectId"
         :clip="primary.clip"
+        @select-elements="$emit('select-elements', { clipId: primary.clip.id, elements: $event.elements, mode: 'replace' })"
       />
+
+      <div v-if="selectedMotionElements?.length" class="ci-elements">
+        <strong>本轮只改选中的 {{ selectedMotionElements.length }} 个元素</strong>
+        <ul>
+          <li v-for="element in selectedMotionElements" :key="element.selector">
+            <span>{{ element.label }}</span>
+            <small>{{ element.sectionLabel || '当前画面' }}{{ element.region ? ` · ${element.region}` : '' }}</small>
+          </li>
+        </ul>
+        <p>片段里其他元素保持不变；要改整段请直接在时间轴上点片段。</p>
+      </div>
 
       <p class="ci-hint">
         发给 AI 会把这 {{ entries.length }} 段加入右侧待发送区，只带时间、素材和参数；可以继续选其他片段，最后统一发送。
@@ -147,6 +160,7 @@ import { computed } from 'vue'
 import MotionInspector from '@/components/edit/MotionInspector.vue'
 import KeyframeEditor from '@/components/edit/KeyframeEditor.vue'
 import type { EditTrackKind, TimelineClip } from '@/types/edit'
+import type { AgentMotionElementRef } from '@/types/agent'
 
 interface InspectorEntry {
   clip: TimelineClip
@@ -155,11 +169,17 @@ interface InspectorEntry {
   trackKind: EditTrackKind
 }
 
-const props = defineProps<{ entries: InspectorEntry[]; projectId: string }>()
+const props = defineProps<{
+  entries: InspectorEntry[]
+  projectId: string
+  /** 主画面选中的元素：检查器明确显示“只改这些”。 */
+  selectedMotionElements?: AgentMotionElementRef[]
+}>()
 
 const emit = defineEmits<{
   (event: 'close'): void
   (event: 'ask-ai'): void
+  (event: 'select-elements', payload: { clipId: string; elements: AgentMotionElementRef[]; mode: 'replace' | 'add' | 'toggle' }): void
   (event: 'duplicate'): void
   (event: 'split'): void
   (event: 'remove'): void
@@ -594,6 +614,60 @@ function blurTarget(event: KeyboardEvent) {
   color: var(--sf-ink-4);
   font-size: 9px;
   line-height: 1.55;
+}
+
+.ci-elements {
+  margin: 8px 0;
+  padding: 7px 8px;
+  border: 1px solid #f0e3dc;
+  border-radius: 7px;
+  background: var(--sf-terra-wash);
+}
+
+.ci-elements strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--sf-terra-strong);
+  font-size: 9.5px;
+  font-weight: 600;
+}
+
+.ci-elements ul {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ci-elements li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ci-elements li span {
+  overflow: hidden;
+  color: var(--sf-ink-2);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ci-elements li small {
+  flex: none;
+  color: var(--sf-ink-4);
+  font-size: 8.5px;
+}
+
+.ci-elements p {
+  margin: 5px 0 0;
+  color: var(--sf-ink-3);
+  font-size: 8.5px;
+  line-height: 1.45;
 }
 
 @media (max-width: 1360px) {

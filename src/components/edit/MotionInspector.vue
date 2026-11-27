@@ -167,9 +167,15 @@ import { useMotionStore } from '@/stores/motionStore'
 import { checkMotionProject, motionFileUrl } from '@/api/motion'
 import type { MotionCheckFinding } from '@/api/motion'
 import { auditMotionDocument, type MotionAuditIssue } from '@/features/edit/motionAudit'
+import { snapshotMotionElement } from '@/features/edit/motionElements'
+import type { AgentMotionElementRef } from '@/types/agent'
 import type { TimelineClip } from '@/types/edit'
 
 const props = defineProps<{ projectId: string; clip: TimelineClip }>()
+
+const emit = defineEmits<{
+  (event: 'select-elements', payload: { elements: AgentMotionElementRef[] }): void
+}>()
 
 const motion = useMotionStore()
 
@@ -270,6 +276,19 @@ function pickLayer(layer: PreviewLayer) {
   element.style.outline = '3px solid #e2794f'
   element.style.outlineOffset = '-3px'
   activeLayerKey.value = layer.key
+  // 点图层等同于在主画面点选这个元素：把元素名和 selector 交给剪辑台，
+  // 后续修改只作用于它，不会扩大成整段重做。
+  const player = playerRef.value as (HTMLElement & { iframeElement?: HTMLIFrameElement }) | null
+  const iframe = player?.iframeElement
+  if (!iframe) return
+  const rect = iframe.getBoundingClientRect()
+  const viewport = {
+    width: iframe.clientWidth || rect.width,
+    height: iframe.clientHeight || rect.height,
+  }
+  emit('select-elements', {
+    elements: [snapshotMotionElement(element, rect, rect, 0, viewport)],
+  })
 }
 
 const reviewRunning = ref(false)

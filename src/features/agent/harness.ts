@@ -2,12 +2,10 @@ import type { AgentStreamResult } from '@/api/agent'
 import type { AgentChatMessage, AgentToolDefinition } from '@/types/agent'
 import { extractAgentToolCalls, type AgentToolCall } from './tools'
 
-const MAX_TOOL_CALLS_PER_STEP = 4
-const MAX_GENERATION_CALLS_PER_RUN = 4
 const MAX_TOOL_RESULT_CHARS = 16_000
 
 export class AgentHarnessError extends Error {
-  code: 'incomplete_tool_call' | 'too_many_tools'
+  code: 'incomplete_tool_call'
 
   constructor(message: string, code: AgentHarnessError['code']) {
     super(message)
@@ -87,7 +85,6 @@ export async function runAgentHarness(options: AgentHarnessOptions): Promise<Age
   const messages = [...options.messages]
   const tools = options.tools || []
   const completedToolIds = new Set<string>()
-  let generationCalls = 0
 
   // 持续执行到模型给出最终答复或用户主动停止，不按固定步数截断已确认任务。
   for (let step = 1; ; step += 1) {
@@ -126,9 +123,8 @@ export async function runAgentHarness(options: AgentHarnessOptions): Promise<Age
     })
 
     if (!calls.length) return { messages, steps: step }
-    if (calls.length > MAX_TOOL_CALLS_PER_STEP) {
-      throw new AgentHarnessError('模型一次请求了过多工具，本轮已停止，请缩小任务后重试。', 'too_many_tools')
-    }
+    // 不限制单步工具数量与生成次数：模型可以按任务需要连续调用，
+    // 只保留用户主动停止、参数截断和重复调用 ID 的保护。
     // 默认顺序执行：创作工具包含付费任务与项目写入，不能声明为并发安全。
     for (let index = 0; index < calls.length; index += 1) {
       throwIfAborted(options.signal)
@@ -139,12 +135,6 @@ export async function runAgentHarness(options: AgentHarnessOptions): Promise<Age
       try {
         if (call.argumentError) throw new Error(call.argumentError)
         if (completedToolIds.has(id)) throw new Error('检测到重复的工具调用 ID，已阻止重复执行。')
-        if (call.name === 'generate_image' || call.name === 'generate_video') {
-          generationCalls += 1
-          if (generationCalls > MAX_GENERATION_CALLS_PER_RUN) {
-            throw new Error(`本轮最多提交 ${MAX_GENERATION_CALLS_PER_RUN} 个生成任务，请拆成多轮并确认数量后继续。`)
-          }
-        }
         const value = await options.executeTool(call, step, options.signal)
         completedToolIds.add(id)
         content = serializedToolResult(value)
