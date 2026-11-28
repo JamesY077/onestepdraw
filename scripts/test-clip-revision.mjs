@@ -623,6 +623,31 @@ try {
   assert.match(chainMoved, /<div class="note-line" style="translate: 9px 6px;">第二行<\/div>/)
   assert.doesNotMatch(chainMoved, /id="root"[^>]*translate/, '位移不能落到外层容器上')
 
+  // 发送前补源码行号与片段：模型不必先整份读取工程就能 patch。
+  const { withMotionSourceHints } = await server.ssrLoadModule('/src/features/agent/clipSourceHints.ts')
+  const realFetch = globalThis.fetch
+  globalThis.fetch = async (url, init) => {
+    if (String(url).includes('/local/motion/read')) {
+      return new Response(JSON.stringify({ ok: true, content: chainSource }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+    return realFetch(url, init)
+  }
+  try {
+    const hinted = await withMotionSourceHints([{
+      id: 'motion-clip', name: '动效', kind: 'motion', trackId: 'track', trackName: '轨道 1',
+      trackKind: 'video', start: 0, duration: 4, url: '/local/motion/view/m1/index.html', motionId: 'm1',
+      motionElements: [{ selector: chainSelector, tagName: 'div', label: '第二行' }],
+    }])
+    assert.equal(hinted[0].motionElements[0].sourceLine, 8, '必须补上元素所在行号')
+    assert.match(hinted[0].motionElements[0].sourceExcerpt, /第二行/)
+    assert.doesNotMatch(hinted[0].motionElements[0].sourceExcerpt, /class="first"/, '片段只截取目标元素附近内容')
+  } finally {
+    globalThis.fetch = realFetch
+  }
+
   // 模板页往返只合并提示词；文字、附件和上传中的计数按会话/项目隔离。
   const { useComposerDraftStore } = await server.ssrLoadModule('/src/stores/composerDraftStore.ts')
   const { mergeComposerPrompt } = await server.ssrLoadModule('/src/features/template/navigation.ts')
