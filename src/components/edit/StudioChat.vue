@@ -345,8 +345,9 @@ function resolveSendClips(): { clips: AgentClipRef[]; queued: boolean; directNot
 }
 
 /** 预览里告诉用户：这个元素属于哪一部分、在画面哪里。 */
+/** 预览行先给「哪个模块」，再给画面位置；和画面上的选中框保持一致。 */
 function elementPart(element: AgentMotionElementRef): string {
-  return [element.sectionLabel, element.region].filter(Boolean).join(' · ')
+  return [element.moduleLabel, element.region || element.sectionLabel].filter(Boolean).join(' · ')
 }
 
 /** 展开预览时直接显示这条元素意见，避免用户只看到合并后的整段文字。 */

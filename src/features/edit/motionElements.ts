@@ -152,11 +152,19 @@ function motionElementSection(element: Element): {
   const heading = typeof section.querySelector === 'function'
     ? compact(section.querySelector('h1, h2, h3, [data-title], [data-role="title"]')?.textContent, 36)
     : ''
+  // 单镜工程的根容器通常只有 data-composition-id="main"，而镜号在 <html data-stepframe-shot> 上；
+  // 不给镜号时 AI 无法把元素和分镜对上。
+  const shot = compact(
+    section.getAttribute('data-stepframe-shot') ||
+      section.getAttribute('data-shot') ||
+      section.ownerDocument?.documentElement?.getAttribute('data-stepframe-shot'),
+    40,
+  )
   const rawLabel = compact(
     section.getAttribute('data-label') ||
       section.getAttribute('aria-label') ||
+      shot ||
       heading ||
-      section.getAttribute('data-shot') ||
       sectionId,
     60,
   )
