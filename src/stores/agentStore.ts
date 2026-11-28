@@ -223,6 +223,8 @@ export interface AgentSendOptions {
   templates?: AgentTemplateRef[]
   /** 本轮选中的时间轴片段；只把这几段交给模型。 */
   clips?: AgentClipRef[]
+  /** 消息已入队、开始请求模型时立刻回调；界面可以马上清空输入框。 */
+  onAccepted?: () => void
 }
 
 export const useAgentStore = defineStore('agent', () => {
@@ -395,7 +397,7 @@ export const useAgentStore = defineStore('agent', () => {
    * 长对话逐条重发会把请求体越堆越大，最后被网关超时或 400 踢断。
    */
   function historyDigest(messages: AgentMessage[]): string {
-    return messages.map((message, index) => {
+    const lines = messages.map((message, index) => {
       const text = historyText(message).replace(/\s+/g, ' ').trim()
       const limit = message.role === 'user' ? 120 : 160
       const summary = text.length > limit ? `${text.slice(0, limit)}…` : text
@@ -404,7 +406,10 @@ export const useAgentStore = defineStore('agent', () => {
         .join('、')
       const prefix = message.role === 'user' ? '用户' : '助手'
       return `${index + 1}. ${prefix}：${summary || '（无文字）'}${artifacts ? `（产物：${artifacts}）` : ''}`
-    }).join('\n')
+    })
+    // 太早的摘要本身也会变成新的大上下文，只留最近一段。
+    const recent = lines.slice(-24).join('\n')
+    return recent.length > 3_000 ? recent.slice(recent.length - 3_000) : recent
   }
 
   /**
@@ -493,12 +498,19 @@ export const useAgentStore = defineStore('agent', () => {
       }
     }
 
-    // 最近 8 条消息逐字保留，更早的轮次压成摘要；最新的用户消息必须落在逐字区。
-    const recentLimit = 8
-    const latestIndex = latestUser ? source.indexOf(latestUser) : source.length
-    const cut = Math.max(0, Math.min(source.length - recentLimit, latestIndex))
-    const older = source.slice(0, cut)
-    const recent = source.slice(cut)
+    // 只有最近两轮逐字保留（用户的要求 + 上一轮结论），更早的轮次压成摘要。
+    // 长对话逐条重发会把请求体越堆越大，最后被网关超时或 400 踢断。
+    const recentStart = (() => {
+      let seen = 0
+      for (let index = source.length - 1; index >= 0; index -= 1) {
+        if (source[index].role !== 'user') continue
+        seen += 1
+        if (seen === 2) return index
+      }
+      return 0
+    })()
+    const older = source.slice(0, recentStart)
+    const recent = source.slice(recentStart)
 
     const history = recent.map<AgentChatMessage>((message) => {
       const text = historyText(message)
@@ -2848,6 +2860,8 @@ export const useAgentStore = defineStore('agent', () => {
     }
     persistNow()
 
+    // 受理即回调：长任务的模型请求可能要几十分钟，输入框不能等到跑完才清空。
+    options.onAccepted?.()
     await requestAssistant(conversation, assistantMessage)
     return true
   }

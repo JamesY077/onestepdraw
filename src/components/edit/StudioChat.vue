@@ -71,7 +71,7 @@
             <template v-if="pendingBatches.length">
               待发送 {{ queuedCount }} {{ queuedScopeUnit }} · {{ pendingBatches.length }} 条修改
             </template>
-            <template v-else>只改选中的 {{ selectedClips.length }} {{ selectedScopeUnit }}</template>
+            <template v-else>已选中 {{ selectedClips.length }} {{ selectedScopeUnit }}</template>
           </span>
           <button v-if="pendingBatches.length" type="button" @click="$emit('clear-pending')">清空</button>
           <button v-else type="button" @click="$emit('clear-clips')">取消选择</button>
@@ -89,7 +89,7 @@
             <span class="sc-queue-copy">
               <strong>{{ batch.clips.map(scopeName).join('、') }}</strong>
               <span class="sc-queue-note" :class="{ 'is-empty': !batch.note }" :title="batch.note || ''">
-                {{ batch.note || (batch.clips.some((clip) => clip.scope === 'element') ? '让 AI 只改这些元素' : batch.clips.some((clip) => clip.scope === 'track') ? '让 AI 按整条轨道统一修改' : '让 AI 针对这段给出修改建议') }}
+                {{ batch.note || (batch.clips.some((clip) => clip.scope === 'element') ? '针对这些元素修改' : batch.clips.some((clip) => clip.scope === 'track') ? '让 AI 按整条轨道统一修改' : '让 AI 针对这段给出修改建议') }}
               </span>
             </span>
             <button
@@ -182,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AgentComposer from '@/components/agent/AgentComposer.vue'
 import CreativeEngineSwitch from '@/components/agent/CreativeEngineSwitch.vue'
 import AgentMessage from '@/components/agent/AgentMessage.vue'
@@ -192,6 +192,7 @@ import { parseTimeRanges, resolveRevisionTargets } from '@/features/edit/revisio
 import { useChatModeStore, type CreativeEngineMode } from '@/stores/chatModeStore'
 import { useModelStore } from '@/stores/modelStore'
 import { describeClipContext } from '@/features/agent/clipContext'
+import { withMotionSourceHints } from '@/features/agent/clipSourceHints'
 import { motionElementKey } from '@/features/edit/motionElements'
 import type { AgentClipRef, AgentMotionElementEdit, AgentMotionElementRef, ComposerSendAck, ComposerSubmit } from '@/types/agent'
 import { consumeComposerPromptContext, mergeComposerPrompt } from '@/features/template/navigation'
@@ -389,6 +390,40 @@ function scrollToBottom() {
   element.scrollTop = element.scrollHeight
 }
 
+/** 重新进入项目 / 切换会话时，直接停在这轮最新对话，而不是从最早的记录开始。 */
+let latestScrollTimer = 0
+let latestResizeObserver: ResizeObserver | null = null
+let latestScrollUntil = 0
+
+function scrollToLatest() {
+  latestScrollUntil = Date.now() + 1800
+  nextTick(() => {
+    scrollToBottom()
+    requestAnimationFrame(() => {
+      scrollToBottom()
+      // 图片、动效卡片和字体晚一点撑开高度，再补一次。
+      window.clearTimeout(latestScrollTimer)
+      latestScrollTimer = window.setTimeout(scrollToBottom, 240)
+    })
+    // 生成卡片里的图片/视频加载完成后高度会再涨，进入项目后的短时间内继续跟随底部。
+    const target = scrollRef.value?.firstElementChild
+    latestResizeObserver?.disconnect()
+    if (target && typeof ResizeObserver !== 'undefined') {
+      latestResizeObserver = new ResizeObserver(() => {
+        if (Date.now() < latestScrollUntil) scrollToBottom()
+      })
+      latestResizeObserver.observe(target)
+    }
+  })
+}
+
+onMounted(scrollToLatest)
+onBeforeUnmount(() => {
+  latestResizeObserver?.disconnect()
+  window.clearTimeout(latestScrollTimer)
+})
+watch(() => props.conversationId, scrollToLatest)
+
 watch(
   () => [messages.value.length, messages.value.at(-1)?.content.length || 0],
   () => nextTick(scrollToBottom),
@@ -451,16 +486,22 @@ function send(payload: ComposerSubmit, acknowledge: ComposerSendAck) {
   const fallback = clips.length && !clips.some((clip) => clip.note)
     ? '请先看看选中的片段，并给出具体修改建议。'
     : ''
-  void agentStore.sendMessage(text || fallback, {
-    conversationId: props.conversationId,
-    mode: 'create',
-    automation: chatMode.automation,
-    creativeEngine: activeCreativeEngine.value,
-    projectId: props.projectId,
-    attachments: payload.attachments,
-    templates: payload.templates,
-    clips: clips.length ? clips : undefined,
-  }).then((accepted) => {
+  void (async () => {
+    // 点选元素时顺带把源码行号与原文片段补进上下文，模型不用整份重读工程。
+    const enriched = await withMotionSourceHints(clips)
+    return agentStore.sendMessage(text || fallback, {
+      conversationId: props.conversationId,
+      mode: 'create',
+      automation: chatMode.automation,
+      creativeEngine: activeCreativeEngine.value,
+      projectId: props.projectId,
+      attachments: payload.attachments,
+      templates: payload.templates,
+      clips: enriched?.length ? enriched : undefined,
+      // 受理即清空输入框，不让已发送的文字在长任务期间一直占着输入框。
+      onAccepted: () => acknowledge(true),
+    })
+  })().then((accepted) => {
     acknowledge(accepted)
     if (!accepted) return
     previewOpen.value = false

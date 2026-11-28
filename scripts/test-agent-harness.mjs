@@ -417,8 +417,9 @@ try {
     '压缩必须从整轮 user 边界开始，不能留下孤立 tool 结果',
   )
   assert.ok(JSON.stringify(compacted).length < JSON.stringify(longTranscript).length, '长任务必须真的压缩掉历史')
+  assert.ok(JSON.stringify(compacted).length < 70_000, '压缩后必须落在单次请求预算内')
   assert.ok(
-    compacted.some((message) => String(message.content).includes('历史工具结果已压缩')),
+    compacted.some((message) => String(message.content).includes('已压缩')),
     '较早的工具结果要标注已压缩',
   )
 
@@ -1056,7 +1057,7 @@ try {
   assert.match(targetedUserContext, /选中元素 2：品牌 Logo/)
   assert.match(targetedUserContext, /选择粒度=元素级/)
   assert.match(targetedUserContext, /本轮是元素级修改：只允许改动点选的元素本身及其直接动画/)
-  assert.match(targetedUserContext, /所属部分：S01 · 身份亮相/)
+  assert.match(targetedUserContext, /所属镜头：S01 · 身份亮相/)
   assert.match(targetedUserContext, /画面位置：画面中央/)
   assert.match(targetedUserContext, /本轮要求：标题改成新文案/)
   assert.match(targetedUserContext, /本轮要求：Logo 只调整位置，不重绘、不改色。/)

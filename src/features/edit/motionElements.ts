@@ -47,9 +47,51 @@ export function motionElementSelector(element: Element): string {
 
 /** 元素所在的镜头 / 场景壳；用来区分不同部分里的同名元素。 */
 const SECTION_SELECTOR = 'section, .clip, [data-scene], [data-shot], [data-composition-id]'
+/** 画面内部的模块容器：面板、图层、字幕条等，AI 靠它理解“哪个部分里的元素”。 */
+const MODULE_TAGS = new Set(['SECTION', 'MAIN', 'ASIDE', 'FIGURE', 'HEADER', 'FOOTER', 'NAV'])
 
 function compact(value: string | null | undefined, limit = 80): string {
   return (value || '').replace(/\s+/g, ' ').trim().slice(0, limit)
+}
+
+/** 常见模块名给用户看一眼就懂；没有命中时保留工程里的原始 id/class。 */
+const MODULE_LABELS: Record<string, string> = {
+  panel: '面板',
+  hero: '主视觉',
+  copy: '文案区',
+  brand: '品牌区',
+  chart: '图表',
+  list: '列表',
+  card: '卡片',
+  caption: '字幕',
+  subtitle: '副标题',
+  title: '标题区',
+  logo: 'Logo',
+  bar: '信息条',
+  footer: '页脚',
+  header: '页头',
+  stage: '舞台',
+  world: '场景',
+  camera: '镜头',
+  badge: '标签',
+  metric: '数据块',
+  quote: '引文',
+  grid: '网格',
+  column: '栏',
+}
+
+function moduleLabelOf(element: Element): string {
+  const explicit = compact(element.getAttribute('data-label') || element.getAttribute('aria-label'), 40)
+  if (explicit) return explicit
+  const tokens = [element.id, ...elementClass(element).split(/\s+/)]
+    .filter(Boolean)
+    .map((token) => token.toLowerCase())
+  for (const token of tokens) {
+    if (MODULE_LABELS[token]) return MODULE_LABELS[token]
+    const match = Object.keys(MODULE_LABELS).find((key) => token.includes(key))
+    if (match) return MODULE_LABELS[match]
+  }
+  return compact(element.id || elementClass(element).split(/\s+/).filter(Boolean)[0] || element.tagName.toLowerCase(), 40)
 }
 
 function elementClass(element: Element): string {
@@ -111,7 +153,11 @@ function motionElementSection(element: Element): {
     ? compact(section.querySelector('h1, h2, h3, [data-title], [data-role="title"]')?.textContent, 36)
     : ''
   const rawLabel = compact(
-    section.getAttribute('aria-label') || section.getAttribute('data-label') || heading || sectionId,
+    section.getAttribute('data-label') ||
+      section.getAttribute('aria-label') ||
+      heading ||
+      section.getAttribute('data-shot') ||
+      sectionId,
     60,
   )
   // 镜头壳通常只有 id="s02"；显示成 S02，用户才容易和分镜编号对上。
@@ -122,6 +168,68 @@ function motionElementSection(element: Element): {
     sectionId: sectionId || undefined,
     sectionLabel: label,
     sectionSelector: selector,
+  }
+}
+
+function nodeText(element: Element): string {
+  return `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ''}${
+    elementClass(element)
+      .split(/\s+/)
+      .filter((name) => name && !name.startsWith('hf-'))
+      .slice(0, 2)
+      .map((name) => `.${name}`)
+      .join('')
+  }`
+}
+
+/**
+ * 元素属于哪个模块：从最近的面板 / 图层容器开始，到镜头为止。
+ * 只给 selector 时 AI 仍要猜“这是榜单卡还是字幕条”，补上层级就不用猜。
+ */
+function motionElementModule(element: Element): {
+  moduleLabel?: string
+  moduleSelector?: string
+  modulePath?: string
+} {
+  const chain: string[] = []
+  let module: Element | null = null
+  let current = element.parentElement
+  while (current && current.tagName !== 'BODY' && current.tagName !== 'HTML' && chain.length < 5) {
+    const classes = elementClass(current)
+      .split(/\s+/)
+      .filter((name) => name && !name.startsWith('hf-'))
+    // 镜头壳本身不算模块：AI 已经从「所属镜头」知道是哪一个画面。
+    const isSceneShell = current.tagName === 'SECTION' ||
+      classes.includes('clip') ||
+      (typeof current.hasAttribute === 'function' && (
+        current.hasAttribute('data-composition-id') ||
+        current.hasAttribute('data-scene') ||
+        current.hasAttribute('data-shot')
+      ))
+    if (isSceneShell) break
+    const named = !!current.id || classes.length > 0 || MODULE_TAGS.has(current.tagName)
+    if (named) {
+      chain.unshift(nodeText(current))
+      // 最近的有名字容器就是模块；没有 id/class 的纯布局壳继续往上找。
+      if (!module) module = current
+    }
+    current = current.parentElement
+  }
+  if (!module) return {}
+  const label = moduleLabelOf(module)
+  return {
+    moduleLabel: label || undefined,
+    moduleSelector: module.id || elementClass(module)
+      ? `${module.tagName.toLowerCase()}${module.id ? `#${module.id}` : ''}${
+          elementClass(module)
+            .split(/\s+/)
+            .filter((name) => name && !name.startsWith('hf-'))
+            .slice(0, 2)
+            .map((name) => `.${name}`)
+            .join('')
+        }`
+      : module.tagName.toLowerCase(),
+    modulePath: chain.length ? chain.join(' > ') : undefined,
   }
 }
 
@@ -235,6 +343,7 @@ export function snapshotMotionElement(
     selectedAtMotionTime,
     boundingBox: { x, y, width: rect.width * scaleX, height: rect.height * scaleY },
     ...motionElementSection(element),
+    ...motionElementModule(element),
     parentPath: motionElementParentPath(element),
     region: motionElementRegion(rect, iframeViewport),
     role,

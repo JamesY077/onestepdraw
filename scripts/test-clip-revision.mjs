@@ -447,6 +447,9 @@ try {
   assert.match(composerSource, /if \(!accepted\) return/, '未受理时不得清空 Composer 草稿')
   assert.doesNotMatch(composerSource, /emit\('send', payload\)\s*text\.value = ''/, '发送事件后不得无条件清空')
   assert.match(studioChatSource, /\.then\(\(accepted\) => \{[\s\S]*?acknowledge\(accepted\)[\s\S]*?if \(!accepted\) return[\s\S]*?emit\('consume-pending'\)/, '待发送批次只能在 store 受理后消费')
+  assert.match(studioChatSource, /onAccepted: \(\) => acknowledge\(true\)/, 'store 受理后必须立刻清空输入框，不等整轮任务结束')
+  assert.match(studioChatSource, /onMounted\(scrollToLatest\)/, '重新进入项目必须直接停在最新消息')
+  assert.match(studioChatSource, /watch\(\(\) => props\.conversationId, scrollToLatest\)/, '切换会话也要定位到最新消息')
   const motionPlayer = studioPreviewSource.match(/<hyperframes-player[\s\S]*?\/>/)?.[0] || ''
   assert.ok(motionPlayer, '主画面必须保留 HyperFrames Player')
   assert.ok(!motionPlayer.includes(':poster='), '所有 motion 模板的主画面都不得绑定封面 poster')
@@ -505,6 +508,9 @@ try {
     sectionId: 's02',
     sectionLabel: 'S02 · 产品演示',
     sectionSelector: 'section#s02.clip',
+    moduleLabel: '文案区',
+    moduleSelector: 'div.copy',
+    modulePath: 'div.copy',
     parentPath: 'div.copy',
     region: '画面中央',
     role: '文字',
@@ -514,6 +520,7 @@ try {
     sourceFile: 'index.html', selectedAtMotionTime: 1.25,
     boundingBox: { x: 1, y: 2, width: 3, height: 4 },
     sectionId: 's02', sectionLabel: 'S02 · 产品演示', sectionSelector: 'section#s02.clip',
+    moduleLabel: 'header.brand', moduleSelector: 'header.brand', modulePath: 'header.brand',
     parentPath: 'header.brand', region: '左上方', role: 'Logo',
   }
   const motionContext = describeClipContext([{
@@ -529,7 +536,9 @@ try {
   assert.match(motionContext, /选中元素 1：/)
   assert.match(motionContext, /选中元素 2：Logo/)
   assert.match(motionContext, /assets\/logo\.svg/)
-  assert.match(motionContext, /所属部分：S02 · 产品演示/)
+  assert.match(motionContext, /所属镜头：S02 · 产品演示/)
+  assert.match(motionContext, /所属模块：文案区/)
+  assert.match(motionContext, /所属模块：header\.brand/)
   assert.match(motionContext, /画面位置：画面中央/)
   assert.match(motionContext, /本轮要求：主标题改成「全天候持续评测」/)
   assert.match(motionContext, /本轮要求：Logo 放大 10%，保持原色/)
@@ -538,6 +547,81 @@ try {
     motionContext.indexOf('本轮要求：主标题改成') < motionContext.indexOf('本轮要求：Logo 放大 10%'),
     '元素意见必须按各自元素顺序绑定，不能串到另一个元素上',
   )
+
+  // 预览框直接操作：选中后可以删除 / 改字 / 拖动，写回只替换目标元素那一段源码。
+  assert.match(studioPreviewSource, /emit\('edit-motion-element'/, '预览框必须把元素操作交给宿主写回')
+  assert.match(studioPreviewSource, /确认删除/, '删除必须是两步确认，避免误点')
+  assert.match(studioPreviewSource, /beginTextEdit/, '选中的文字元素要能直接改字')
+  assert.match(studioPreviewSource, /action: 'move'/, '拖动画框要按位移写回源码')
+  const editStudioSource = readFileSync(new URL('../src/views/EditStudio.vue', import.meta.url), 'utf8')
+  assert.match(editStudioSource, /@edit-motion-element="handleMotionElementEdit"/)
+  assert.match(editStudioSource, /removeMotionElement\(/, '删除必须按元素源码位置做最小替换')
+  assert.doesNotMatch(editStudioSource, /本轮只改这个元素/, '选择元素时不再提示“本轮只改这个元素”')
+
+  const {
+    locateMotionElement,
+    removeMotionElement,
+    renameMotionElementText,
+    nudgeMotionElement,
+  } = await server.ssrLoadModule('/src/features/edit/motionSourceEdit.ts')
+  const editableSource = [
+    '<!doctype html>',
+    '<html><body>',
+    '  <section id="s02" class="clip">',
+    '    <div class="copy">',
+    '      <h1 data-hf-id="hero title">全天候持续评测</h1>',
+    '      <p class="sub">同名文案</p><p class="sub">同名文案</p>',
+    '    </div>',
+    '    <img id="logo" src="assets/logo.svg">',
+    '  </section>',
+    '</body></html>',
+  ].join('\n')
+  const located = locateMotionElement(editableSource, { hfId: 'hero title', tagName: 'h1' })
+  assert.ok(located, '按 data-hf-id 必须能定位元素')
+  assert.equal(located.line, 5)
+  assert.match(located.snippet, /全天候持续评测/)
+  const removed = removeMotionElement(editableSource, located)
+  assert.doesNotMatch(removed, /全天候持续评测/, '删除只移除目标元素')
+  assert.match(removed, /id="logo"/, '删除不能误伤其他元素')
+  assert.match(removed, /section id="s02"/, '删除不能破坏镜头结构')
+  const renamed = renameMotionElementText(editableSource, located, '全天候持续评测', '全天候实时评测')
+  assert.match(renamed, /全天候实时评测/)
+  assert.doesNotMatch(renamed, /全天候持续评测/)
+  assert.throws(
+    () => renameMotionElementText(editableSource, located, '同名文案', '新文案'),
+    /不唯一/,
+    '元素内文字不唯一时必须拒绝替换',
+  )
+  const moved = nudgeMotionElement(editableSource, located, 12, -8)
+  assert.match(moved, /style="translate: 12px -8px;"/)
+  const movedAgain = nudgeMotionElement(moved, locateMotionElement(moved, { hfId: 'hero title' }), 3, 4)
+  assert.match(movedAgain, /translate: 15px -4px/, '连续拖动要累加而不是覆盖')
+  assert.match(movedAgain, /data-hf-id="hero title"/, '微调位置不能丢属性')
+
+  // 没有 id / data-hf-id 的元素只能靠 selector 链定位；必须逐级下钻，
+  // 不能把同名元素的改动写到第一个同标签元素（例如 #root）上。
+  const chainSource = [
+    '<!doctype html>',
+    '<html><body>',
+    '<div id="root">',
+    '  <div id="scene">',
+    '    <div class="first"></div>',
+    '    <div class="notes">',
+    '      <div class="note-line">第一行</div>',
+    '      <div class="note-line">第二行</div>',
+    '    </div>',
+    '  </div>',
+    '</div>',
+    '</body></html>',
+  ].join('\n')
+  const chainSelector = 'div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2)'
+  const chainLocated = locateMotionElement(chainSource, { selector: chainSelector, tagName: 'div' })
+  assert.ok(chainLocated, 'selector 链必须能定位无 id 元素')
+  assert.match(chainLocated.snippet, /第二行/)
+  assert.doesNotMatch(chainLocated.snippet, /第一行/, '不能命中同级的第一个同名元素')
+  const chainMoved = nudgeMotionElement(chainSource, chainLocated, 9, 6)
+  assert.match(chainMoved, /<div class="note-line" style="translate: 9px 6px;">第二行<\/div>/)
+  assert.doesNotMatch(chainMoved, /id="root"[^>]*translate/, '位移不能落到外层容器上')
 
   // 模板页往返只合并提示词；文字、附件和上传中的计数按会话/项目隔离。
   const { useComposerDraftStore } = await server.ssrLoadModule('/src/stores/composerDraftStore.ts')

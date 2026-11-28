@@ -48,6 +48,7 @@ function modeBlock(mode: ConversationMode, automation: AutomationMode, creativeE
           ? '完全模式下宿主会在本轮结束后自动确认并逐镜制作，不要等待用户点击；'
           : '等用户逐镜编辑并总确认；') +
         '有模板 ID 可先 read_motion_template，但确认前不得 create/write/render。确认后再 create_motion_project；上传 Logo/截图后用 import_motion_asset 复制进工程。',
+      '- 用户在主画面点选的元素会带上「所属模块 + 画面位置 + selector + 源码行号 + 原文片段」。有这些信息时直接用 write_motion_project 的 mode=patch 改那一小段，不要再 read_motion_project 整份重读；确实缺上下文时，用 query 或 offset/limit 只补读目标附近 1-2 段。',
       '- 用 read_motion_project 读取工程：大工程不要一次要全量，传 offset/limit 分页，或用 query 按关键字定位要改的行；写回小改动用 write_motion_project 的 mode=patch（find/replace），只有新建或大改才用 replace 写最小骨架、append 分块补全（最后一块 final=true）。不要因为源码长就声称“无法读取/被截断”，按分页继续读即可。',
       '- 修改动效时保留参考镜头顺序、节奏、配色、字幕与原作署名；不要内嵌超大 base64，图片用 assets/ 路径。',
       '- 动画使用 paused GSAP 时间轴并注册 window.__timelines，不自动 play()。时间轴 key 必须与根合成的 data-composition-id 完全一致（通常是 main），不要额外注册镜号别名，否则播放器找不到时间轴。用户确认出片后才 render_motion_project。',
@@ -140,7 +141,7 @@ ${summary}
 片段 ID 必须来自上面的项目摘要。只做用户要求的操作，不要顺手改别的片段。时间轴操作块之后不要再写任何内容。
 
 当用户这一轮消息带有「选中片段」清单时，只针对清单里的片段回答和修改：不要改动未选中的片段，也不要因为只拿到几段就假设需要重做整支片。清单里的 id 优先于项目摘要里的全量列表。
-清单里有「选中元素」时，每条意见只作用于它绑定的元素：按「所属部分 + selector + data-hf-id」定位，同名元素用所属部分区分，禁止按文案全局替换，也不要给未选中的元素加动画或改素材。`
+清单里有「选中元素」时，每条意见只作用于它绑定的元素：按「所属镜头 + 所属模块 + selector + data-hf-id」定位，同名元素用镜头/模块区分，禁止按文案全局替换，也不要给未选中的元素加动画或改素材。`
 }
 
 function skillsBlock(skills?: AgentPromptSkill[]): string {
@@ -175,7 +176,7 @@ function nativeToolsBlock(mode: ConversationMode, creativeEngine: CreativeEngine
 - prepare_storyboard：动画先制作完整分镜脚本，并在每个 shot 的 reference_svg 中编写该镜代表帧的静态自包含 SVG（主体、构图、字幕要具体对应 prompt，禁止脚本、外链、位图）；用户可在卡片编辑脚本、替换图片/视频或单镜 AI 重做。确认前不得创建或写回工程（完全模式由宿主自动确认）。
 - create_motion_project：分镜确认后，复制模板或创建独立 HyperFrames 工程并放入时间轴。
 - import_motion_asset：把本轮上传的 Logo、截图、音视频从素材地址复制到工程，返回 assets/ 相对路径；写 HTML 前完成导入。
-- read_motion_project / write_motion_project：读取并写回工程源码。read 支持 offset/limit 分页和 query 关键字定位，工具结果过长只会返回带 truncated 标记的预览，不会给你半截 JSON；小改动一律用 write 的 mode=patch 替换原文，不要为了改一句文案重写整份文件。图片使用 <img src="assets/..."> 或 data-var-src 绑定，不把 Logo 交给 generate_image。
+- read_motion_project / write_motion_project：读取并写回工程源码。read 支持 offset/limit 分页和 query 关键字定位，工具结果过长只会返回带 truncated 标记的预览，不会给你半截 JSON；小改动一律用 write 的 mode=patch 替换原文，不要为了改一句文案重写整份文件。用户点选元素时上下文已带所属模块、画面位置、源码行号和原文片段：优先直接 patch，禁止再把整份工程读一遍。图片使用 <img src="assets/..."> 或 data-var-src 绑定，不把 Logo 交给 generate_image。
 - review_motion_project：用官方 HyperFrames check 复查字体、安全区、元素重叠/过近、对比度与运行时错误；按问题修改对应元素，不重写整份工程。
 - render_motion_project：用户确认出片后，才用本机 HyperFrames CLI 渲染 MP4 导出产物（不改时间轴片段）。
 - read_project / edit_timeline / update_plan / open_voice：通用项目、剪辑、规划与配音能力。上下文已有「当前任务计划」时，从第一个未完成步骤继续，不要重建计划。
@@ -253,6 +254,7 @@ export function buildAgentSystemPrompt(options: AgentPromptOptions = {}): string
 3. 阶段推进时同步更新 update_plan：刚做完的标 completed，正在做的标 in_progress。上一步失败就如实标注，并说明这一步没成、后面是否继续。
 4. 单次输出放不下时不要硬塞：先写最小可用版本，再分次补全（动效源码用 write_motion_project 的 mode=append 分块，最后一块传 final=true），不要输出半截 JSON。
 5. 全部阶段结束后给一次汇总：按计划逐条说明每项结果（改了什么、产物在哪、有没有遗留），不要只回一句「已完成」。
+6. 同一份文件、同一段源码只读一次：已经拿到模块/行号/原文片段就直接改；读取失败或结果被压缩时，用 query 定点补读，不要整份反复重读——那会把一轮小改动拖成几十分钟。
 
 ${modeBlock(mode, automation, creativeEngine)}${skillsBlock(options.skills)}
 

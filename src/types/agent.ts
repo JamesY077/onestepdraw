@@ -60,8 +60,17 @@ export interface AgentMotionElementRef {
   sectionId?: string
   sectionLabel?: string
   sectionSelector?: string
+  /** 最近的模块容器（面板 / 图层 / 字幕条），方便 AI 定位“哪个部分的哪个元素”。 */
+  moduleLabel?: string
+  moduleSelector?: string
+  /** 从元素到镜头的容器层级，例如 `#panel > .world > #camera > #stage`。 */
+  modulePath?: string
   /** 父级结构，例如 `.copy > .subtitle`。 */
   parentPath?: string
+  /** 元素在源码里的起始行号（1 起始）。 */
+  sourceLine?: number
+  /** 源码里这一段元素的原文，可直接作为 write_motion_project patch 的 find。 */
+  sourceExcerpt?: string
   /** 元素所在的画面区域，例如「左上方」「画面中央」。 */
   region?: string
   /** 人类可读的元素类型：文字 / 图片 / Logo / 图形 / 控件。 */

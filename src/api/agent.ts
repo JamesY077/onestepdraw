@@ -46,8 +46,8 @@ export interface AgentStreamResult {
   incomplete?: boolean
 }
 
-/** 流式读取长时间没有新数据就判定为连接中断，避免任务永远卡住。 */
-const STREAM_IDLE_TIMEOUT_MS = 5 * 60_000
+/** 流式读取长时间没有新数据就判定为连接中断，避免任务永远卡住。长推理模型一次停顿可能很久，给到 10 分钟。 */
+const STREAM_IDLE_TIMEOUT_MS = 10 * 60_000
 
 /**
  * 用多模态模型快速描述参考图，供当前文本模型使用。

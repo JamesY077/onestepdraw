@@ -184,15 +184,15 @@ export function buildMotionEditSystemPrompt(clips: AgentClipRef[]): string {
 动效工程是 HyperFrames 原生 HTML 工程（data-composition-id / data-start / data-duration / data-track-index / window.__timelines 的 GSAP 时间轴），在浏览器里由 hyperframes-player 预览、由 hyperframes CLI 渲染 MP4。
 
 硬性规则：
-- 先用 read_motion_project 读取选中工程的**最新** index.html，再在源码上做最小修改，保持原有结构、依赖、镜头顺序与时间关系。
+- 上下文已经给出选中元素的源码行号与原文片段时，直接用 write_motion_project 的 mode=patch 替换这一段，不要再整份读取工程；确实缺少上下文时，才用 read_motion_project 的 query / offset+limit 定点补读目标附近 1-2 段。
 - 同一工程允许连续、多次、多元素修改：本轮可以同时收到多个目标元素和多条修改意见，逐条叠加到最新源码上，保留此前已经完成的所有修改；禁止只保留最后一条、禁止恢复到初始版本、禁止整份重写。
 - window.__timelines 只能注册根合成的 data-composition-id（通常是 main）这一个 key；不得再注册镜号（如 S02）别名，否则播放器会找不到主时间轴。
-- 用 write_motion_project 写回完整可运行源码，不要输出 diff 或片段。
+- 小改动写回时优先用 write_motion_project 的 mode=patch（find/replace）；只有新建或大改才写完整源码，且不要输出 diff 说明代替真正的写回。
 - 文案类修改优先改 data-composition-variables 里的默认值，保持参数契约不变。
 - 文案与主体必须留在安全区内：动作安全区为画面内缩 5%，文字安全区为内缩 10%；不要让元素贴边或互相重叠、过近。
 - 需要交付 MP4 时才调用 render_motion_project；渲染耗时长，先确认用户要出片。
 - 用户消息若含「选中元素」的 data-hf-id / id / selector / 当前文本，只修改这些目标元素及其直接动画，其他元素、素材与 GSAP tween 必须原样保留。
-- 每条「选中元素」都带有「所属部分 / 画面位置 / 父级结构」：同名文案必须按所属部分和 selector 定位，禁止用全局文本替换，也不得把意见套到另一个同名元素上。
+- 每条「选中元素」都带有「所属镜头 / 所属模块 / 画面位置 / 父级结构」：同名文案必须按所属镜头、模块和 selector 定位，禁止用全局文本替换，也不得把意见套到另一个同名元素上。
 - 同一工程收到多条元素意见时逐条绑定：意见 A 只改元素 A，意见 B 只改元素 B；写回前逐个核对每个目标元素都命中自己的修改，未列出的元素零改动。
 - 选中元素是 Logo / 品牌素材时，必须继续引用原文件（路径或 data URL），不得重绘、改色、加滤镜或换成近似图形。
 - 写回后用 review_motion_project 复查字体、安全区、重叠/过近、对比度与运行时错误；有 error 时只修对应元素再复查。

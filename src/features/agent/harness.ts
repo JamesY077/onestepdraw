@@ -5,12 +5,16 @@ import { extractAgentToolCalls, type AgentToolCall } from './tools'
 const MAX_TOOL_RESULT_CHARS = 16_000
 /** 单次请求的消息体积上限（字符数）。超过后从最早的整轮对话开始压缩。 */
 const CONTEXT_CHAR_BUDGET = 64_000
+/** 最近两轮里工具结果仍保留多少字符；再早的只留索引级摘要。 */
+const RECENT_TOOL_RESULT_CHARS = 6_000
 /** 历史工具结果保留的字符数；长源码留在磁盘上，需要时可重新读取。 */
-const OLD_TOOL_RESULT_CHARS = 2_000
+const OLD_TOOL_RESULT_CHARS = 600
+/** 压缩到底仍然超限时，逐级把工具结果压到这么小。 */
+const MIN_TOOL_RESULT_CHARS = 400
 /** 工具参数被输出上限截断时自动重试的次数。 */
 const MAX_TRUNCATION_RETRIES = 2
 /** 流被网关切断、网络抖动时的自动重试次数。 */
-const MAX_STREAM_RETRIES = 2
+const MAX_STREAM_RETRIES = 3
 /** 纯文本达到输出上限时自动续写的次数。 */
 const MAX_TEXT_CONTINUATIONS = 2
 
@@ -125,10 +129,67 @@ function transcriptChars(messages: AgentChatMessage[]): number {
   }, 0)
 }
 
+/** 保留头部与尾部，中间省略：模型还能看到结果的结构，又不会占满预算。 */
+function clipToolResult(content: string, limit: number): string {
+  if (content.length <= limit) return content
+  // 工具结果本身是 JSON（read_project / read_motion_project 等）时，直接切片会把引号切开，
+  // 模型收到的就是非法 JSON，表现成“源码读坏了”。这里改造成仍可解析的压缩信封。
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(content)
+  } catch {
+    parsed = undefined
+  }
+  if (parsed && typeof parsed === 'object') {
+    const note = '较早的工具结果已压缩；需要原文请用 offset/limit/query 重新读取目标附近。'
+    const originalChars = Number((parsed as { chars?: number }).chars) || content.length
+    let previewChars = Math.max(160, limit - 420)
+    while (previewChars >= 160) {
+      const envelope = JSON.stringify({
+        ok: (parsed as { ok?: boolean }).ok ?? true,
+        truncated: true,
+        chars: originalChars,
+        preview: content.slice(0, previewChars),
+        note,
+      })
+      if (envelope.length <= limit) return envelope
+      previewChars = Math.floor(previewChars * 0.8)
+    }
+    return JSON.stringify({ ok: true, truncated: true, chars: originalChars, preview: '', note })
+  }
+  const head = Math.max(200, Math.floor(limit * 0.68))
+  const tail = Math.max(120, limit - head - 90)
+  return `${content.slice(0, head)}\n…[中间 ${content.length - head - tail} 字符已压缩，需要原文请重新读取]\n${
+    tail > 0 ? content.slice(-tail) : ''
+  }`
+}
+
+function truncateToolResults(
+  messages: AgentChatMessage[],
+  recentLimit: number,
+  oldLimit: number,
+  recentRounds = 2,
+): AgentChatMessage[] {
+  const userStarts = messages
+    .map((message, index) => (message.role === 'user' ? index : -1))
+    .filter((index) => index >= 0)
+  const cutoff = userStarts.length > recentRounds
+    ? userStarts[userStarts.length - recentRounds]
+    : 0
+  return messages.map((message, index) => {
+    if (message.role !== 'tool' || typeof message.content !== 'string') return message
+    const limit = index >= cutoff ? recentLimit : oldLimit
+    if (message.content.length <= limit) return message
+    return { ...message, content: clipToolResult(message.content, limit) }
+  })
+}
+
 /**
  * 长任务反复读取源码会把请求体撑爆，网关直接 400 / 超时，看起来就像“任务中断”。
- * 每步发送前压缩一次：先截断较早的工具结果，再从最早的整轮对话开始丢弃；
- * 只在高层的 user 边界切，保证 assistant tool_calls 与 tool 结果不被拆散。
+ * 每步发送前压缩一次，并且保证压缩后一定落在预算内：
+ * 1. 只逐字保留最近两轮，更早的工具结果压成摘要；
+ * 2. 还在超限就继续压缩最近两轮的工具结果（保留头尾）；
+ * 3. 仍然超限就在整轮边界丢弃最早的部分。
  */
 export function compactAgentMessages(
   input: AgentChatMessage[],
@@ -136,21 +197,44 @@ export function compactAgentMessages(
 ): AgentChatMessage[] {
   const system = input[0]?.role === 'system' ? [input[0]] : []
   let rest = input.slice(system.length)
-  const recentFrom = Math.max(0, rest.length - 6)
-  rest = rest.map((message, index) => {
-    if (index >= recentFrom) return message
-    if (message.role !== 'tool' || typeof message.content !== 'string') return message
-    if (message.content.length <= OLD_TOOL_RESULT_CHARS) return message
-    return {
-      ...message,
-      content: `${message.content.slice(0, OLD_TOOL_RESULT_CHARS)}\n…[历史工具结果已压缩，需要原文请重新读取]`,
-    }
-  })
+  if (!rest.length) return system
+  rest = truncateToolResults(rest, RECENT_TOOL_RESULT_CHARS, OLD_TOOL_RESULT_CHARS)
+
+  // 老轮次整轮丢弃：只在 user 边界切，assistant tool_calls 与 tool 结果不会被拆散。
   while (transcriptChars([...system, ...rest]) > budget) {
     const nextUser = rest.findIndex((message, index) => index > 0 && message.role === 'user')
-    if (nextUser <= 0 || nextUser >= rest.length - 1) break
+    if (nextUser <= 0) break
+    // 至少给最新一轮留出位置。
+    if (rest.length - nextUser < 2) break
     rest = rest.slice(nextUser)
   }
+
+  // 单个 user 回合本身太大（读了很多源码）：逐级压缩工具结果，直到进预算。
+  let limit = Math.floor(RECENT_TOOL_RESULT_CHARS / 2)
+  while (transcriptChars([...system, ...rest]) > budget && limit >= MIN_TOOL_RESULT_CHARS) {
+    rest = truncateToolResults(rest, limit, Math.min(limit, OLD_TOOL_RESULT_CHARS), 99)
+    limit = Math.floor(limit / 2)
+  }
+
+  // 还超限就从头丢弃消息，但保留第一条 user（本轮任务）与它的工具配对。
+  while (transcriptChars([...system, ...rest]) > budget && rest.length > 1) {
+    if (rest[0]?.role === 'assistant') {
+      let end = 1
+      while (end < rest.length && rest[end].role === 'tool') end += 1
+      rest = rest.slice(end)
+      continue
+    }
+    const assistantIndex = rest.findIndex((message, index) => index > 0 && message.role === 'assistant')
+    if (assistantIndex <= 0) {
+      rest = rest.slice(1)
+      continue
+    }
+    // 连同紧随其后的 tool 结果一起丢弃，避免留下孤立的 tool 消息。
+    let end = assistantIndex + 1
+    while (end < rest.length && rest[end].role === 'tool') end += 1
+    rest = [...rest.slice(0, assistantIndex), ...rest.slice(end)]
+  }
+
   return [...system, ...rest]
 }
 
@@ -205,6 +289,10 @@ async function streamStep(
       if (result.incomplete && attempt < MAX_STREAM_RETRIES) {
         options.onStepRetry?.({ reason: 'interrupted', attempt: attempt + 1 })
         continue
+      }
+      // 重试用尽仍没有结束标记：工具参数可能是半截 JSON，绝不执行，只保留已生成的文字。
+      if (result.incomplete && result.toolCalls.length) {
+        return { ...result, toolCalls: [], content: result.content }
       }
       return result
     } catch (error: any) {

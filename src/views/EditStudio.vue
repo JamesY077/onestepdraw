@@ -221,6 +221,7 @@
               @pause="playing = false"
               @seek="seek"
               @select-motion-elements="handleMotionElementSelect"
+              @edit-motion-element="handleMotionElementEdit"
             />
           </div>
           <StoryboardPanel
@@ -414,6 +415,12 @@ import { rememberTemplatesReturn } from '@/features/template/navigation'
 import { motionFileUrl, type MotionProject } from '@/api/motion'
 import { playhead, setPlayhead } from '@/features/edit/playhead'
 import { motionElementKey } from '@/features/edit/motionElements'
+import {
+  locateMotionElement,
+  nudgeMotionElement,
+  removeMotionElement,
+  renameMotionElementText,
+} from '@/features/edit/motionSourceEdit'
 import { exportProjectVideo, inspectExportedVideo } from '@/features/edit/exportVideo'
 import { summarizeIssues, verifyExport, type ExportActual, type ExportIssue } from '@/features/edit/exportVerification'
 import { confirmDialog } from '@/features/ui/dialog'
@@ -952,19 +959,89 @@ function handleMotionElementSelect(payload: {
     else current.set(key, element)
   }
   selectedMotionElements.value = [...current.values()]
-  // 追加/取消元素时只更新自动生成的默认说明，不覆盖用户已经写好的修改意见。
-  const autoNote = /^只修改(?:主画面)?选中的 \d+ 个元素(?:：.*?)?；其他元素保持不变。$/
-  if (selectedMotionElements.value.length) {
-    const labels = selectedMotionElements.value.map((element) => element.label).filter(Boolean)
-    if (!clipNote.value.trim() || autoNote.test(clipNote.value.trim())) {
-      clipNote.value = `只修改选中的 ${selectedMotionElements.value.length} 个元素：${labels.join('、')}；其他元素保持不变。`
-    }
-    // 元素级选择直接把元素名回显给用户，避免误以为选中的是整段。
+  // 选择只负责选中，不自动生成“修改这个元素”的意见：
+  // 用户可能只是想删除 / 改字 / 移动，意见由用户自己写或直接点工具栏。
+  const labels = selectedMotionElements.value.map((element) => element.label).filter(Boolean)
+  if (labels.length) {
     showToast(labels.length === 1
-      ? `已选中元素「${labels[0]}」，本轮只改这个元素`
+      ? `已选中元素「${labels[0]}」`
       : `已选中 ${labels.length} 个元素：${labels.slice(0, 2).join('、')}${labels.length > 2 ? ' 等' : ''}`)
-  } else if (autoNote.test(clipNote.value.trim())) {
-    clipNote.value = ''
+  }
+}
+
+/**
+ * 预览框里的直接操作：删除 / 改文字 / 拖动位置。
+ * 一律按「元素在源码里的真实位置」做最小替换，不整份重排工程。
+ */
+async function handleMotionElementEdit(payload: {
+  clipId: string
+  element: AgentMotionElementRef
+  action: 'delete' | 'text' | 'move'
+  text?: string
+  dx?: number
+  dy?: number
+}) {
+  const clip = project.value?.tracks.flatMap((track) => track.clips).find((item) => item.id === payload.clipId)
+  const motionId = clip?.motionId
+  if (!motionId) {
+    showToast('这个片段没有动效工程，无法直接编辑元素')
+    return
+  }
+  const state = await motion.load(motionId, true)
+  const source = state.source || ''
+  if (!source) {
+    showToast(state.error || '读取动效工程失败')
+    return
+  }
+  const location = locateMotionElement(source, payload.element)
+  if (!location) {
+    showToast('源码里找不到这个元素，可能刚被改过；刷新预览后再试')
+    return
+  }
+  try {
+    let next = source
+    if (payload.action === 'delete') {
+      next = removeMotionElement(source, location)
+    } else if (payload.action === 'text') {
+      next = renameMotionElementText(
+        source,
+        location,
+        (payload.element.textContent || '').trim(),
+        payload.text || '',
+      )
+    } else {
+      next = nudgeMotionElement(source, location, payload.dx || 0, payload.dy || 0)
+    }
+    if (next === source) {
+      showToast('没有产生改动')
+      return
+    }
+    await motion.saveSource(motionId, next)
+    const key = motionElementKey(payload.element)
+    if (payload.action === 'delete') {
+      selectedMotionElements.value = selectedMotionElements.value.filter(
+        (element) => motionElementKey(element) !== key,
+      )
+      if (!selectedMotionElements.value.length) motionElementScopeClipId.value = ''
+      showToast('已删除这个元素')
+    } else {
+      // 同步本轮选择快照，避免下一次发给 AI 的还是改之前的文字/坐标。
+      selectedMotionElements.value = selectedMotionElements.value.map((element) => {
+        if (motionElementKey(element) !== key) return element
+        if (payload.action === 'text') return { ...element, textContent: payload.text || '' }
+        return {
+          ...element,
+          boundingBox: {
+            ...element.boundingBox,
+            x: Math.round((element.boundingBox.x + (payload.dx || 0)) * 10) / 10,
+            y: Math.round((element.boundingBox.y + (payload.dy || 0)) * 10) / 10,
+          },
+        }
+      })
+      showToast(payload.action === 'text' ? '文字已更新' : '位置已更新')
+    }
+  } catch (error: any) {
+    showToast(error?.message || '写入动效工程失败')
   }
 }
 

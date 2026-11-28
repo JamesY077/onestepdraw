@@ -89,12 +89,44 @@
               v-for="box in selectionBoxes"
               :key="box.key"
               class="motion-selection-box"
+              :class="{ 'is-moving': moveDrag?.key === box.key }"
               :style="selectionBoxStyle(box)"
             >
               <span>{{ box.label }}</span>
               <em v-if="box.sectionLabel || box.region">
-                {{ [box.sectionLabel, box.region].filter(Boolean).join(' · ') }}
+                {{ [box.moduleLabel, box.region || box.sectionLabel].filter(Boolean).join(' · ') }}
               </em>
+              <div
+                v-if="selectionBoxes.length === 1"
+                class="motion-selection-tools"
+                @pointerdown.stop
+              >
+                <button
+                  v-if="box.textEditable"
+                  type="button"
+                  title="修改这段文字"
+                  @click.stop="beginTextEdit(box)"
+                >改字</button>
+                <button
+                  type="button"
+                  class="is-danger"
+                  :class="{ 'is-armed': deleteArmedKey === box.key }"
+                  :title="deleteArmedKey === box.key ? '再点一次确认删除' : '删除这个元素'"
+                  @click.stop="requestDelete(box)"
+                >{{ deleteArmedKey === box.key ? '确认删除' : '删除' }}</button>
+              </div>
+            </div>
+            <div v-if="textEdit" class="motion-text-edit" :style="textEditStyle" @pointerdown.stop>
+              <input
+                ref="textEditInputRef"
+                v-model="textEdit.value"
+                type="text"
+                maxlength="200"
+                @keydown.enter.prevent="applyTextEdit"
+                @keydown.esc.prevent="cancelTextEdit"
+              />
+              <button type="button" @click="applyTextEdit">确定</button>
+              <button type="button" class="is-ghost" @click="cancelTextEdit">取消</button>
             </div>
             <div v-if="marquee" class="motion-marquee" :style="marqueeStyle" />
             <div v-if="!selectedMotionElements.length && !marquee" class="motion-selection-hint">
@@ -197,6 +229,15 @@ const emit = defineEmits<{
     clipId: string
     elements: AgentMotionElementRef[]
     mode: 'replace' | 'add' | 'toggle'
+  }): void
+  /** 预览框里的直接操作：删除 / 改文字 / 拖动，由宿主写回工程源码。 */
+  (event: 'edit-motion-element', payload: {
+    clipId: string
+    element: AgentMotionElementRef
+    action: 'delete' | 'text' | 'move'
+    text?: string
+    dx?: number
+    dy?: number
   }): void
 }>()
 
@@ -477,9 +518,76 @@ function syncMedia() {
 
 interface MarqueeBox { x: number; y: number; width: number; height: number }
 const marquee = shallowRef<MarqueeBox | null>(null)
-const selectionBoxes = shallowRef<Array<AgentMotionElementRef & { key: string }>>([])
+type MotionSelectionBox = AgentMotionElementRef & { key: string; textEditable: boolean }
+const selectionBoxes = shallowRef<MotionSelectionBox[]>([])
 let selectionStart: { x: number; y: number; pointerId: number; additive: boolean; toggle: boolean } | null = null
 let selectionFrame = 0
+
+/** 拖动已选元素：只在预览框内做视觉位移，松手后写回源码的 CSS translate。 */
+const moveDrag = ref<{
+  key: string
+  pointerId: number
+  startX: number
+  startY: number
+  dx: number
+  dy: number
+  element: MotionSelectionBox
+} | null>(null)
+const deleteArmedKey = ref('')
+let deleteTimer = 0
+const textEdit = ref<{
+  key: string
+  element: MotionSelectionBox
+  value: string
+} | null>(null)
+const textEditInputRef = ref<HTMLInputElement | null>(null)
+
+const textEditStyle = computed(() => {
+  const draft = textEdit.value
+  const box = draft ? selectionBoxes.value.find((item) => item.key === draft.key) : null
+  if (!box) return {}
+  const width = 260
+  const left = Math.min(Math.max(6, box.boundingBox.x), Math.max(6, frameSize.width - width - 6))
+  const below = box.boundingBox.y + box.boundingBox.height + 8
+  const top = below + 42 < frameSize.height ? below : Math.max(6, box.boundingBox.y - 46)
+  return { left: `${left}px`, top: `${top}px`, width: `${width}px` }
+})
+
+function requestDelete(box: MotionSelectionBox) {
+  if (deleteArmedKey.value !== box.key) {
+    deleteArmedKey.value = box.key
+    window.clearTimeout(deleteTimer)
+    deleteTimer = window.setTimeout(() => { deleteArmedKey.value = '' }, 2600)
+    return
+  }
+  window.clearTimeout(deleteTimer)
+  deleteArmedKey.value = ''
+  const clip = selectionClip.value
+  if (clip) emit('edit-motion-element', { clipId: clip.id, element: box, action: 'delete' })
+}
+
+function beginTextEdit(box: MotionSelectionBox) {
+  textEdit.value = { key: box.key, element: box, value: (box.textContent || '').trim() }
+  void nextTick(() => {
+    textEditInputRef.value?.focus()
+    textEditInputRef.value?.select()
+  })
+}
+
+function cancelTextEdit() {
+  textEdit.value = null
+}
+
+function applyTextEdit() {
+  const draft = textEdit.value
+  const clip = selectionClip.value
+  const value = draft?.value.trim()
+  if (!draft || !clip || !value) return cancelTextEdit()
+  const previous = (draft.element.textContent || '').trim()
+  textEdit.value = null
+  if (value === previous) return
+  emit('edit-motion-element', { clipId: clip.id, element: draft.element, action: 'text', text: value })
+}
 
 function motionDomContext(clip: TimelineClip) {
   const player = motionRefs.get(clip.id)
@@ -502,10 +610,69 @@ function pointInStage(event: PointerEvent): { x: number; y: number } {
   return { x: event.clientX - rect.left, y: event.clientY - rect.top }
 }
 
+/** 元素自身有没有直接文字节点；有的话通常就是用户想选的那一层。 */
+function hasDirectText(element: Element): boolean {
+  return [...element.childNodes].some(
+    (node) => node.nodeType === 3 && !!node.textContent?.trim(),
+  )
+}
+
+/**
+ * 单击取元素：按几何命中而不是 elementsFromPoint。
+ * 动效工程里大量文字层是 pointer-events:none，用浏览器命中会永远选到上层容器；
+ * 这里在命中点内优先取「有直接文字且面积最小」的元素，再退回最小面积元素。
+ */
+function pickMotionElementAtPoint(
+  doc: Document,
+  x: number,
+  y: number,
+  viewport: { width: number; height: number },
+): Element | null {
+  const candidates = [...doc.body.querySelectorAll('*')].filter((element) => {
+    if (!isSelectableMotionElement(element, viewport)) return false
+    const rect = element.getBoundingClientRect()
+    return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+  })
+  if (!candidates.length) return null
+  const area = (element: Element) => {
+    const rect = element.getBoundingClientRect()
+    return rect.width * rect.height
+  }
+  const textCandidates = candidates.filter(hasDirectText)
+  const pool = textCandidates.length
+    ? textCandidates
+    : candidates.filter((element) => {
+        const rect = element.getBoundingClientRect()
+        const fullBleed = rect.width >= viewport.width * 0.94 && rect.height >= viewport.height * 0.94
+        return !fullBleed
+      })
+  return (pool.length ? pool : candidates).sort((a, b) => area(a) - area(b))[0]
+}
+
 function startMotionSelection(event: PointerEvent) {
   if (event.button !== 0 || !selectionClip.value) return
   event.preventDefault()
   emit('pause')
+  // 点在已选元素框上 = 拖动移动，不重新框选。
+  const boxEl = (event.target as Element | null)?.closest?.('.motion-selection-box')
+  if (boxEl) {
+    const boxes = [...((event.currentTarget as HTMLElement).querySelectorAll('.motion-selection-box'))]
+    const box = selectionBoxes.value[boxes.indexOf(boxEl)]
+    if (box) {
+      const point = pointInStage(event)
+      moveDrag.value = {
+        key: box.key,
+        pointerId: event.pointerId,
+        startX: point.x,
+        startY: point.y,
+        dx: 0,
+        dy: 0,
+        element: box,
+      }
+      ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+      return
+    }
+  }
   const point = pointInStage(event)
   selectionStart = {
     ...point,
@@ -517,6 +684,12 @@ function startMotionSelection(event: PointerEvent) {
 }
 
 function moveMotionSelection(event: PointerEvent) {
+  const drag = moveDrag.value
+  if (drag && drag.pointerId === event.pointerId) {
+    const point = pointInStage(event)
+    moveDrag.value = { ...drag, dx: point.x - drag.startX, dy: point.y - drag.startY }
+    return
+  }
   if (!selectionStart || selectionStart.pointerId !== event.pointerId) return
   const point = pointInStage(event)
   const x = Math.min(selectionStart.x, point.x)
@@ -529,10 +702,39 @@ function moveMotionSelection(event: PointerEvent) {
 function cancelMotionSelection() {
   selectionStart = null
   marquee.value = null
+  moveDrag.value = null
 }
 
 function finishMotionSelection(event: PointerEvent) {
-  const start = selectionStart
+  const drag = moveDrag.value
+  if (drag && drag.pointerId === event.pointerId) {
+    moveDrag.value = null
+    const moved = Math.abs(drag.dx) > 3 || Math.abs(drag.dy) > 3
+    if (moved) {
+      const clip = selectionClip.value
+      const context = clip ? motionDomContext(clip) : null
+      if (clip && context) {
+        const scaleX = context.iframeRect.width / Math.max(1, context.viewport.width)
+        const scaleY = context.iframeRect.height / Math.max(1, context.viewport.height)
+        emit('edit-motion-element', {
+          clipId: clip.id,
+          element: drag.element,
+          action: 'move',
+          dx: drag.dx / scaleX,
+          dy: drag.dy / scaleY,
+        })
+      }
+      return
+    }
+    // 没拖动 = 单击已选元素：继续按点选处理，用户才能从大容器里改选子元素。
+  }
+  const start = selectionStart || {
+    pointerId: event.pointerId,
+    additive: event.shiftKey,
+    toggle: event.metaKey || event.ctrlKey,
+    x: 0,
+    y: 0,
+  }
   const clip = selectionClip.value
   if (!start || start.pointerId !== event.pointerId || !clip) return cancelMotionSelection()
   const context = motionDomContext(clip)
@@ -558,7 +760,7 @@ function finishMotionSelection(event: PointerEvent) {
     const point = pointInStage(event)
     const x = (stageRect.left + point.x - iframeRect.left) / scaleX
     const y = (stageRect.top + point.y - iframeRect.top) / scaleY
-    const candidate = doc.elementsFromPoint(x, y).find((element) => isSelectableMotionElement(element, viewport))
+    const candidate = pickMotionElementAtPoint(doc, x, y, viewport)
     if (candidate) picked = [candidate]
   }
   const elements = picked.map((element) => snapshotMotionElement(element, iframeRect, stageRect, time, viewport))
@@ -580,12 +782,14 @@ const marqueeStyle = computed(() => marquee.value ? ({
   height: `${marquee.value.height}px`,
 }) : {})
 
-function selectionBoxStyle(box: AgentMotionElementRef) {
+function selectionBoxStyle(box: MotionSelectionBox) {
+  const drag = moveDrag.value?.key === box.key ? moveDrag.value : null
   return {
     left: `${box.boundingBox.x}px`,
     top: `${box.boundingBox.y}px`,
     width: `${box.boundingBox.width}px`,
     height: `${box.boundingBox.height}px`,
+    transform: drag ? `translate(${drag.dx}px, ${drag.dy}px)` : undefined,
   }
 }
 
@@ -600,13 +804,19 @@ function refreshSelectionBoxes() {
     selectionBoxes.value = []
     return
   }
-  const boxes: Array<AgentMotionElementRef & { key: string }> = []
+  const boxes: Array<MotionSelectionBox> = []
   for (const selected of props.selectedMotionElements) {
     let element: Element | null = null
     try { element = context.doc.querySelector(selected.selector) } catch { /* 失效选择只隐藏高亮。 */ }
     if (!element || !isSelectableMotionElement(element, context.viewport)) continue
     const current = snapshotMotionElement(element, context.iframeRect, context.stageRect, targetTime(clip), context.viewport)
-    boxes.push({ ...current, label: selected.label, key: motionElementKey(selected) })
+    boxes.push({
+      ...current,
+      label: selected.label,
+      key: motionElementKey(selected),
+      // 有子元素时直接替换 textContent 会破坏内部结构，改字按钮只给纯文本元素。
+      textEditable: element.childElementCount === 0 && !!current.textContent,
+    })
   }
   selectionBoxes.value = boxes
 }
@@ -619,7 +829,11 @@ function queueSelectionRefresh() {
   })
 }
 
-watch(() => [props.selectedMotionElements, props.motionSelectionClipId, selectionClip.value?.id], queueSelectionRefresh, { deep: true })
+watch(() => [props.selectedMotionElements, props.motionSelectionClipId, selectionClip.value?.id], () => {
+  deleteArmedKey.value = ''
+  textEdit.value = null
+  queueSelectionRefresh()
+}, { deep: true })
 
 watch(
   playhead,
@@ -767,7 +981,88 @@ function formatTime(seconds: number): string {
   border-radius: 2px;
   background: rgba(34, 211, 238, 0.08);
   box-shadow: 0 0 0 1px rgba(8, 47, 73, 0.35);
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.motion-selection-box.is-moving {
+  cursor: grabbing;
+  background: rgba(34, 211, 238, 0.14);
+}
+
+.motion-selection-tools {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  z-index: 2;
+  display: flex;
+  gap: 3px;
+  pointer-events: auto;
+}
+
+.motion-selection-tools button {
+  padding: 2px 6px;
+  border: 1px solid rgba(103, 232, 249, 0.5);
+  border-radius: 4px;
+  background: #0e7490;
+  color: #ecfeff;
+  font-size: 9px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.motion-selection-tools button:hover {
+  background: #0891b2;
+}
+
+.motion-selection-tools button.is-danger {
+  background: rgba(127, 29, 29, 0.92);
+  border-color: rgba(252, 165, 165, 0.5);
+}
+
+.motion-selection-tools button.is-armed {
+  background: #dc2626;
+  border-color: #fecaca;
+}
+
+.motion-text-edit {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 4px;
+  border-radius: 6px;
+  background: rgba(8, 47, 73, 0.96);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+.motion-text-edit input {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid rgba(103, 232, 249, 0.5);
+  border-radius: 4px;
+  background: #082f49;
+  color: #ecfeff;
+  font-size: 10px;
+}
+
+.motion-text-edit button {
+  height: 24px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 4px;
+  background: #0891b2;
+  color: #fff;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.motion-text-edit button.is-ghost {
+  background: transparent;
+  color: #a5f3fc;
 }
 
 .motion-selection-box span {

@@ -138,14 +138,14 @@
       />
 
       <div v-if="selectedMotionElements?.length" class="ci-elements">
-        <strong>本轮只改选中的 {{ selectedMotionElements.length }} 个元素</strong>
+        <strong>已选中 {{ selectedMotionElements.length }} 个元素</strong>
         <ul>
           <li v-for="element in selectedMotionElements" :key="element.selector">
             <span>{{ element.label }}</span>
             <small>{{ element.sectionLabel || '当前画面' }}{{ element.region ? ` · ${element.region}` : '' }}</small>
           </li>
         </ul>
-        <p>片段里其他元素保持不变；要改整段请直接在时间轴上点片段。</p>
+        <p>可以直接删除、改文字或拖动位置；写清要求再发给 AI，只会改这些元素。</p>
       </div>
 
       <p class="ci-hint">
@@ -172,7 +172,7 @@ interface InspectorEntry {
 const props = defineProps<{
   entries: InspectorEntry[]
   projectId: string
-  /** 主画面选中的元素：检查器明确显示“只改这些”。 */
+  /** 主画面选中的元素：检查器显示当前选择和可直接操作项。 */
   selectedMotionElements?: AgentMotionElementRef[]
 }>()
 
